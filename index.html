@@ -2260,13 +2260,10 @@ let authUsuarioRole = null;
 function inicializarFirebase() {
     try {
         const cfg = (typeof firebaseConfig_REAL !== 'undefined') ? firebaseConfig_REAL : firebaseConfig_PLACEHOLDER;
-        const placeholderVals = ['SUA_API_KEY_AQUI', 'SEU_PROJETO', 'SEU_SENDER_ID', 'SEU_APP_ID'];
         const isPlaceholder = (
             !cfg || !cfg.apiKey || !cfg.projectId ||
-            placeholderVals.some(v =>
-                (cfg.apiKey === v) || (cfg.projectId === v) ||
-                (cfg.messagingSenderId === v) || (cfg.appId === v)
-            )
+            cfg.apiKey === 'SUA_API_KEY_AQUI' || cfg.projectId === 'SEU_PROJETO' ||
+            cfg.messagingSenderId === 'SEU_SENDER_ID' || cfg.appId === 'SEU_APP_ID'
         );
 
         if (isPlaceholder) {
