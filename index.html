@@ -2405,56 +2405,107 @@ function abrirTelaComplemento() {
 async function authSalvarComplemento(e) {
     if (e) e.preventDefault();
     if (!authUsuarioAtual) { toast('error', 'Usuário não logado', 'Volte e autentique-se novamente.'); return false; }
-    const uid = authUsuarioAtual.uid;
-    const nome = document.getElementById('compNome').value.trim();
-    const cidade = document.getElementById('compCidade').value.trim();
-    const bairro = document.getElementById('compBairro').value.trim();
-    if (!nome || !cidade || !bairro) return false;
 
-    // Usa dados adicionais do usuário Google (email) e telefone (se Phone Auth)
-    const email = authUsuarioAtual?.email || '';
-    const fotoGoogle = authUsuarioAtual?.photoURL || '';
-    const telefoneLimpo = authTelefoneCompleto ? authTelefoneCompleto.replace('+55', '') : (authUsuarioAtual?.phoneNumber ? authUsuarioAtual.phoneNumber.replace('+55', '') : '');
+    const btn = document.querySelector('#formCompletarCadastro button[type="submit"]');
+    try {
+        // Desativa botão e mostra loading
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Salvando cadastro...';
+        }
 
-    if (authPerfilSelecionado === 'cliente') {
-        await fbSalvarCliente(uid, {
-            nome, cidade, bairro, email,
-            telefone: telefoneLimpo,
-            foto: fotoGoogle || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=1d4ed8&color=fff&size=400')
-        });
-        authUsuarioRole = 'cliente';
-        toast('success', 'Cadastro finalizado!', 'Bem-vindo(a), ' + nome.split(' ')[0] + '!');
-    } else {
-        const catRaw = document.getElementById('compCategoria').value;
-        const preco = parseFloat(document.getElementById('compPreco').value || '0');
-        const area = document.getElementById('compArea').value.trim();
-        const bio = document.getElementById('compBio').value.trim();
-        const foto = document.getElementById('compFoto').value.trim();
-        const catSemEmoji = (catRaw || '').replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\s]+/u, '').trim();
-        const categoriaLimpa = catSemEmoji || 'Marido de Aluguel';
-        if (!catRaw || !preco || !area || !bio) {
-            toast('error', 'Preencha todos os dados', 'Campos profissional são obrigatórios'); return false;
+        const uid = authUsuarioAtual.uid;
+        const nome = document.getElementById('compNome').value.trim();
+        const cidade = document.getElementById('compCidade').value.trim();
+        const bairro = document.getElementById('compBairro').value.trim();
+        if (!nome || !cidade || !bairro) {
+            toast('error', 'Preencha todos os campos', 'Nome, cidade e bairro são obrigatórios.');
+            return false;
         }
-        const proData = {
-            nome, telefone: telefoneLimpo, email,
-            foto: foto || fotoGoogle || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=3b82f6&color=fff&size=400'),
-            categoria: categoriaLimpa, categorias: [categoriaLimpa], cidade, bairro,
-            precoHora: preco, areaAtendimento: area, bio,
-            avaliacoes: [], numeroAvaliacoes: 0, totalServicos: 0,
-            verificado: false, assinaturaAtiva: true
-        };
-        await fbSalvarProfissional(uid, proData);
-        authUsuarioRole = 'profissional';
-        toast('success', 'Perfil profissional criado!', nome.split(' ')[0] + ', seu perfil já está nas buscas! 🎉');
-        if (USAR_FIREBASE) {
-            const pro = await fbBuscarPerfil(uid, 'profissional');
-            if (pro && !profissionais.find(p => p.id === pro.id)) profissionais.push(pro);
+
+        const email = authUsuarioAtual?.email || '';
+        const fotoGoogle = authUsuarioAtual?.photoURL || '';
+        const telefoneLimpo = authTelefoneCompleto ? authTelefoneCompleto.replace('+55', '') : (authUsuarioAtual?.phoneNumber ? authUsuarioAtual.phoneNumber.replace('+55', '') : '');
+
+        if (authPerfilSelecionado === 'cliente') {
+            const data = {
+                uid, nome, cidade, bairro, email,
+                telefone: telefoneLimpo,
+                foto: fotoGoogle || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=1d4ed8&color=fff&size=400'),
+                role: 'cliente',
+                createdAt: new Date().toISOString()
+            };
+            const res = await Promise.race([
+                fbSalvarCliente(uid, data),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo excedido ao salvar cliente (15s)')), 15000))
+            ]);
+            console.log('[Cadastro] Cliente salvo com sucesso:', res);
+            authUsuarioRole = 'cliente';
+            toast('success', 'Cadastro finalizado!', 'Bem-vindo(a), ' + nome.split(' ')[0] + '!');
+        } else {
+            const catRaw = document.getElementById('compCategoria').value;
+            const preco = parseFloat(document.getElementById('compPreco').value || '0');
+            const area = document.getElementById('compArea').value.trim();
+            const bio = document.getElementById('compBio').value.trim();
+            const foto = document.getElementById('compFoto').value.trim();
+            const catSemEmoji = (catRaw || '').replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\s]+/u, '').trim();
+            const categoriaLimpa = catSemEmoji || 'Marido de Aluguel';
+            if (!catRaw || !preco || !area || !bio || isNaN(preco) || preco <= 0) {
+                toast('error', 'Preencha todos os dados profissionais', 'Categoria, preço/hora, área de atendimento e bio são obrigatórios.');
+                return false;
+            }
+            const proData = {
+                uid, nome, telefone: telefoneLimpo, email,
+                foto: foto || fotoGoogle || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=3b82f6&color=fff&size=400'),
+                categoria: categoriaLimpa, categorias: [categoriaLimpa], cidade, bairro,
+                precoHora: preco, areaAtendimento: area, bio,
+                avaliacoes: [], numeroAvaliacoes: 0, totalServicos: 0,
+                verificado: false, assinaturaAtiva: true,
+                createdAt: new Date().toISOString()
+            };
+            // Promise.race com timeout de 15s → impede tela de travar infinitamente se Firestore der erro
+            const res = await Promise.race([
+                fbSalvarProfissional(uid, proData),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo excedido ao salvar profissional (15s)')), 15000))
+            ]);
+            console.log('[Cadastro] Profissional salvo com sucesso:', res);
+            authUsuarioRole = 'profissional';
+            toast('success', 'Perfil profissional criado!', nome.split(' ')[0] + ', seu perfil já está nas buscas! 🎉');
+
+            // Atualiza lista local de profissionais para já aparecer na home
+            try {
+                if (USAR_FIREBASE) {
+                    const pro = await Promise.race([
+                        fbBuscarPerfil(uid, 'profissional'),
+                        new Promise(res => setTimeout(res, 3000, null))
+                    ]);
+                    if (pro && !profissionais.find(p => p.id === pro.id)) profissionais.push(pro);
+                } else {
+                    if (!profissionais.find(p => p.id === uid)) profissionais.push({ id: uid, ...proData });
+                }
+                renderProfissionais();
+            } catch (errRender) {
+                console.warn('[Cadastro] Aviso: não foi possível recarregar profissionais na home agora.', errRender?.message);
+            }
         }
-        renderProfissionais();
+
+        atualizarHeaderUsuario();
+        fbAtualizarNavBotaoEntrar();
+        navigateTo('home');
+        return false;
+    } catch (err) {
+        console.error('[Cadastro] authSalvarComplemento ERRO:', err?.message || err);
+        toast('error', 'Não foi possível finalizar o cadastro agora',
+            (err?.message || 'Erro desconhecido. Tente novamente.') +
+            '\n\n💡 Dica: você pode voltar e tentar novamente. Se o erro persistir, o Firebase pode estar bloqueando gravações. Verifique as Regras de Segurança do Firestore no Console.'
+        );
+        return false;
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Finalizar cadastro e entrar';
+        }
     }
-    atualizarHeaderUsuario();
-    navigateTo('home');
-    return false;
 }
 
 function atualizarHeaderUsuario() {
