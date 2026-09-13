@@ -1955,6 +1955,11 @@ function salvarSolicitacoes() {
 // ============================================================
 // FIRESTORE WRAPPERS
 // ============================================================
+// Helper anti-travamento: timeout em Promises do Firestore
+function timeoutPromise(ms, msg = 'Tempo limite esgotado (tente novamente)') {
+    return new Promise((_, reject) => setTimeout(() => reject(new Error(msg)), ms));
+}
+
 async function fbCriarColecaoVazia() {
     // helper placeholder para coleções vazias
 }
@@ -1967,12 +1972,15 @@ async function fbSalvarCliente(uid, data) {
         localStorage.setItem('ajeita_clientes', JSON.stringify(clientes));
         return;
     }
-    await firebaseDb.collection('clientes').doc(uid).set({
-        ...data,
-        uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        role: 'cliente'
-    }, { merge: true });
+    await Promise.race([
+        firebaseDb.collection('clientes').doc(uid).set({
+            ...data,
+            uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            role: 'cliente'
+        }, { merge: true }),
+        timeoutPromise(15000, 'Tempo limite ao salvar cliente (verifique regras Firestore)')
+    ]);
 }
 
 async function fbSalvarProfissional(uid, data) {
@@ -1984,19 +1992,30 @@ async function fbSalvarProfissional(uid, data) {
         salvarProfissionais();
         return;
     }
-    await firebaseDb.collection('profissionais').doc(uid).set({
-        ...data,
-        uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        role: 'profissional'
-    }, { merge: true });
+    await Promise.race([
+        firebaseDb.collection('profissionais').doc(uid).set({
+            ...data,
+            uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            role: 'profissional'
+        }, { merge: true }),
+        timeoutPromise(15000, 'Tempo limite ao salvar profissional (verifique regras Firestore)')
+    ]);
 }
 
 async function fbBuscarPerfil(uid, role) {
     if (!USAR_FIREBASE) return null;
-    const col = role === 'profissional' ? 'profissionais' : 'clientes';
-    const snap = await firebaseDb.collection(col).doc(uid).get();
-    return snap.exists ? { id: snap.id, ...snap.data() } : null;
+    try {
+        const col = role === 'profissional' ? 'profissionais' : 'clientes';
+        const snap = await Promise.race([
+            firebaseDb.collection(col).doc(uid).get(),
+            timeoutPromise(12000, 'Firestore demorou para buscar o perfil')
+        ]);
+        return snap.exists ? { id: snap.id, ...snap.data() } : null;
+    } catch (err) {
+        console.warn('[fbBuscarPerfil] ERRO (regra Firestore/rede?):', err?.code || '', err?.message || err);
+        return null;
+    }
 }
 
 async function fbCriarSolicitacao(data) {
@@ -2325,7 +2344,7 @@ function authVerificarCodigo(e) {
     const digits = [...document.querySelectorAll('.otp-digit')];
     const codigo = digits.map(d => d.value).join('');
     if (codigo.length !== 6) { toast('error', 'Código incompleto', 'Digite os 6 dígitos.'); return false; }
-    if (!authConfirmationResult) { toast('error', 'Sessão expirou', 'Volte e envie o código novamente.'); return false; }
+    if (!authConfirmationResult) { toast('error', 'Sessão expirou', 'Volte e envie o código novamente.'); navigateTo('auth'); return false; }
 
     const btn = document.getElementById('authBtnVerificar');
     btn.disabled = true;
@@ -2333,15 +2352,31 @@ function authVerificarCodigo(e) {
 
     authConfirmationResult.confirm(codigo)
         .then(async (result) => {
-            authUsuarioAtual = result.user;
-            authUsuarioRole = authPerfilSelecionado;
-            toast('success', 'Autenticado!', 'Telefone verificado com sucesso!');
-            // Verifica se perfil já existe na coleção
-            await authPosLoginVerificarPerfil();
+            try {
+                authUsuarioAtual = result.user || authUsuarioAtual;
+                authUsuarioRole = authPerfilSelecionado;
+                console.log('[authVerificarCodigo] OTP confirmado. uid=', authUsuarioAtual?.uid, 'role=', authPerfilSelecionado);
+                toast('success', 'Autenticado!', 'Telefone verificado com sucesso!');
+                // 🔥 Chama verificacao do perfil — SEM TRAVAR: garantido por try/catch + fallback
+                await authPosLoginVerificarPerfil();
+            } catch (errInterno) {
+                console.error('[authVerificarCodigo] Erro no fluxo pós-OTP → abrindo complementar:', errInterno);
+                toast('info', 'Quase lá...', 'Vamos completar seus dados agora.');
+                abrirTelaComplemento();
+            }
         })
         .catch(err => {
-            console.error(err);
-            toast('error', 'Código inválido', err.message || 'Verifique e tente novamente.');
+            console.error('[authVerificarCodigo] confirm() ERRO:', err?.code || '', err?.message || err);
+            let msg = err?.message || 'Verifique e tente novamente.';
+            let titulo = 'Código inválido';
+            if (String(err?.message || '').toLowerCase().includes('expirado') || err?.code === 'auth/session-expired') {
+                titulo = 'Sessão expirou';
+                msg = 'Volte e solicite um novo código SMS.';
+            } else if (err?.code === 'auth/invalid-verification-code') {
+                titulo = 'Código incorreto';
+                msg = 'Os 6 dígitos não conferem com o código SMS enviado. Verifique e tente novamente.';
+            }
+            toast('error', titulo, msg);
         })
         .finally(() => {
             btn.disabled = false;
@@ -2351,26 +2386,41 @@ function authVerificarCodigo(e) {
 }
 
 async function authPosLoginVerificarPerfil() {
-    if (!authUsuarioAtual) return;
-    const uid = authUsuarioAtual.uid;
-    let perfil = null;
-    if (USAR_FIREBASE) {
-        perfil = await fbBuscarPerfil(uid, authPerfilSelecionado);
-    } else {
-        // Fallback local
-        const todos = authPerfilSelecionado === 'profissional' ? profissionais : (clientes || []);
-        perfil = todos.find(p => (p.uid === uid || p.telefone === authTelefoneCompleto?.replace('+55', ''))) || null;
+    if (!authUsuarioAtual) {
+        console.warn('[authPosLoginVerificarPerfil] authUsuarioAtual é vazio, indo para auth-completar');
+        abrirTelaComplemento();
+        return;
     }
+    try {
+        const uid = authUsuarioAtual.uid;
+        let perfil = null;
+        if (USAR_FIREBASE) {
+            perfil = await Promise.race([
+                fbBuscarPerfil(uid, authPerfilSelecionado),
+                timeoutPromise(15000, 'Timeout ao buscar perfil existente')
+            ]);
+        } else {
+            // Fallback local
+            const todos = authPerfilSelecionado === 'profissional' ? profissionais : (clientes || []);
+            perfil = todos.find(p => (p.uid === uid || p.telefone === authTelefoneCompleto?.replace('+55', ''))) || null;
+        }
 
-    if (perfil) {
-        // Usuário já tem perfil completo → só navega
-        toast('success', 'Bem-vindo(a) de volta!', perfil.nome || perfil.telefone);
-        authUsuarioRole = authPerfilSelecionado;
-        atualizarHeaderUsuario();
-        fbAtualizarNavBotaoEntrar();
-        navigateTo('home');
-    } else {
-        // 1º login → abre tela complementar
+        if (perfil) {
+            console.log('[authPosLoginVerificarPerfil] perfil ENCONTRADO → HOME', perfil);
+            // Usuário já tem perfil completo → só navega
+            toast('success', 'Bem-vindo(a) de volta!', perfil.nome || perfil.telefone);
+            authUsuarioRole = authPerfilSelecionado;
+            atualizarHeaderUsuario();
+            fbAtualizarNavBotaoEntrar();
+            navigateTo('home');
+        } else {
+            console.log('[authPosLoginVerificarPerfil] perfil NÃO ENCONTRADO → TELA COMPLEMENTAR (uid=', uid, 'role=', authPerfilSelecionado, ')');
+            abrirTelaComplemento();
+        }
+    } catch (err) {
+        console.error('[authPosLoginVerificarPerfil] ERRO GERAL → fallback para tela complementar:', err?.message || err);
+        toast('info', 'Continuando seu cadastro...', 'Não conseguimos verificar seu perfil, vamos completar os dados agora.');
+        // 🔥 GARANTIA ABSOLUTA DE NÃO TRAVAR: sempre abre a complementar
         abrirTelaComplemento();
     }
 }
