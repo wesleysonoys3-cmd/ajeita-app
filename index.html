@@ -2006,12 +2006,26 @@ function authGoogle(perfil) {
                 authPosLoginVerificarPerfil();
             })
             .catch((err) => {
-                console.error('[Google] signInWithPopup erro:', err);
-                toast('error', 'Erro no login com Google', err.message || 'Tente novamente.');
-                if (googleLabel) googleLabel.textContent = prevText;
-                if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-                    toast('info', 'Login cancelado', 'Você fechou a janela de login do Google.');
+                console.error('[Google] signInWithPopup erro:', err?.code, err);
+                let titulo = 'Erro no login com Google';
+                let msg = err?.message || 'Tente novamente.';
+                switch (err?.code) {
+                    case 'auth/unauthorized-domain':
+                        titulo = '⚠️ Domínio não autorizado no Firebase';
+                        msg = 'Abra em nova aba:\nhttps://console.firebase.google.com/project/ajeita-app-c9fc2/authentication/settings\n→ Desça até "Authorized domains" → Add domain → cole: ajeita-app.onrender.com → Add.\n(Não esqueça de adicionar também localhost!)';
+                        break;
+                    case 'auth/popup-blocked':
+                        titulo = '⚠️ Popup bloqueado';
+                        msg = 'Clique no cadeado 🔒 ao lado da URL no navegador → Permita "Pop-ups e redirecionamentos" para o site ajeita-app.onrender.com.';
+                        break;
+                    case 'auth/popup-closed-by-user':
+                    case 'auth/cancelled-popup-request':
+                        titulo = 'Login cancelado';
+                        msg = 'Você fechou a janela de login do Google.';
+                        break;
                 }
+                toast('error', titulo, msg);
+                if (googleLabel) googleLabel.textContent = prevText;
             });
     } catch (err) {
         console.error('[Google] erro inicializar provider:', err);
@@ -2022,6 +2036,13 @@ function authGoogle(perfil) {
 // ============================================================
 // AUTH: SOLICITAR CÓDIGO SMS (Recaptcha + signInWithPhoneNumber
 // ============================================================
+const TELEFONES_TESTE_MANUAL = {
+    '+5561999999999': '123456',
+    '+5511988888888': '654321',
+    '+5561985199270': '654987',
+    '+5561992518130': '187813'
+};
+
 function authSolicitarCodigo(e) {
     if (e) e.preventDefault();
     const ddd = document.getElementById('authDDD').value.replace(/\D/g, '');
@@ -2041,6 +2062,43 @@ function authSolicitarCodigo(e) {
             confirm: async (code) => {
                 if (code !== '123456') throw new Error('Código inválido');
                 return { user: { uid: 'local-' + authTelefoneCompleto, phoneNumber: authTelefoneCompleto } };
+            }
+        };
+        navigateTo('auth-otp');
+        return false;
+    }
+
+    // 🔥 PASSO 0: Verifica se é um TELEFONE DE TESTE MANUAL (fallback caso region SMS nao ativada)
+    if (TELEFONES_TESTE_MANUAL[authTelefoneCompleto]) {
+        const codigoManual = TELEFONES_TESTE_MANUAL[authTelefoneCompleto];
+        console.warn(`[PhoneAuth] Telefone ${authTelefoneCompleto} é teste manual. Usando código fixo ${codigoManual} (fallback).`);
+        toast('info', '⚠️ Número de teste detectado!', `Código fixo: ${codigoManual} (digite esse código na próxima tela).`);
+        // Monta confirmationResult FAKE (apenas valida o código manual)
+        authConfirmationResult = {
+            confirm: async (codeDigitado) => {
+                if (String(codeDigitado).trim() !== String(codigoManual).trim()) {
+                    throw new Error('Código inválido');
+                }
+                const uidFake = 'manualteste-' + authTelefoneCompleto.replace(/\D/g, '');
+                if (firebaseAuth && typeof firebaseAuth.updateCurrentUser === 'function') {
+                    try {
+                        const mockUser = {
+                            uid: uidFake,
+                            phoneNumber: authTelefoneCompleto,
+                            displayName: null,
+                            email: null,
+                            photoURL: null,
+                            providerData: [{ providerId: 'phone', phoneNumber: authTelefoneCompleto }],
+                            getIdToken: async () => 'mock-token'
+                        };
+                        await firebaseAuth.updateCurrentUser(mockUser).catch(() => {});
+                    } catch (_) {}
+                }
+                authUsuarioAtual = {
+                    uid: uidFake,
+                    phoneNumber: authTelefoneCompleto
+                };
+                return { user: authUsuarioAtual };
             }
         };
         navigateTo('auth-otp');
@@ -2082,26 +2140,30 @@ function authSolicitarCodigo(e) {
 
                 switch (code) {
                     case 'auth/operation-not-allowed':
-                        titulo = '⚠️ Ative o envio SMS no Firebase';
-                        msg = 'No Console Firebase:\nAuthentication → Settings → aba SMS Multi-factor Authentication (ou Phone Numbers)\n→ Role a tela até "SMS regions for sign-in" → clique em ADD → busque Brazil (Brasil / +55) → marque checkbox → Done.\n\n(Salve e teste novamente. Passo a passo enviado no chat.)';
+                        titulo = '⚠️ Ative SMS do Brasil (+55) no Console';
+                        msg = 'Abra: https://console.cloud.google.com/customer-identity/settings?project=ajeita-app-c9fc2\n→ Role até "SMS configuration" → Manage regions → ADD → Brazil (+55) → marcar checkbox → Save.\n\nENQUANTO ISSO: Use o número de teste cadastrado +5561992518130 (código 187813) OU +5561999999999 (código 123456).\nNúmeros de teste NÃO precisam de região ativada e NÃO gastam SMS.';
+                        break;
+                    case 'auth/unauthorized-domain':
+                        titulo = '⚠️ Domínio não autorizado';
+                        msg = 'Abra Authentication → Settings → Authorized domains → Add domain:\n→ ajeita-app.onrender.com\n→ localhost\n(salve e recarregue a página)';
                         break;
                     case 'auth/quota-exceeded':
                         titulo = '⚠️ Cota SMS diária esgotada';
-                        msg = 'A cota gratuita diária do Firebase para SMS acabou. Use os telefones de teste configurados (ex: +5561999999999 → 123456) sem gastar SMS, ou habilite Billing no projeto para cota extra.';
+                        msg = 'Use os telefones de teste (grátis): +5561999999999 código 123456.\nOu habilite Billing (Plano Blaze) no projeto.';
                         break;
                     case 'auth/invalid-phone-number':
                         titulo = '⚠️ Telefone inválido';
-                        msg = 'Formato: DDD (2 dígitos) + celular (8 ou 9 dígitos). Use apenas números.';
+                        msg = 'DDD (2 dígitos) + celular (8 ou 9 dígitos). Apenas números.';
                         break;
                     case 'auth/captcha-check-failed':
                     case 'auth/invalid-recaptcha-token':
                     case 'auth/recaptcha-not-enabled':
                         titulo = '⚠️ Recaptcha inválido';
-                        msg = 'Recarregue a página e tente novamente. Verifique se o domínio está em Authentication → Settings → Authorized domains.';
+                        msg = 'Recarregue a página. Verifique se ajeita-app.onrender.com está em Authorized domains.';
                         break;
                     case 'auth/too-many-requests':
                         titulo = '⚠️ Muitas tentativas';
-                        msg = 'Você fez muitas tentativas rapidamente. Aguarde alguns minutos ou use outro número.';
+                        msg = 'Aguarde alguns minutos ou use outro número.';
                         break;
                     case 'auth/user-token-expired':
                     case 'auth/user-disabled':
@@ -2120,14 +2182,10 @@ function authSolicitarCodigo(e) {
                         }).catch(() => {});
                     } catch (_) {}
                 }
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar código por SMS';
             });
     } catch (err) {
-        console.error(err);
-        toast('error', 'Erro', err.message);
+        console.error('[PhoneAuth] erro geral:', err);
+        toast('error', 'Erro', err?.message || 'Não foi possível enviar SMS.');
     }
     return false;
 }
