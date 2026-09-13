@@ -1744,6 +1744,15 @@ function inicializarFirebase() {
         firebaseDb = firebase.firestore();
 
         firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+        // 🌐 Configura idioma do Firebase Auth para PORTUGUÊS BRASILEIRO
+        // → SMS OTP, ReCaptcha, telas de erro aparecem em pt-BR para usuários brasileiros
+        try {
+            firebaseAuth.languageCode = 'pt-BR';
+            // Fallback: usa o idioma do dispositivo/navegador do usuário se preferir
+            // firebaseAuth.useDeviceLanguage();
+        } catch (_) {}
+
         firebaseAuth.onAuthStateChanged((user) => {
             authUsuarioAtual = user || null;
             if (authUsuarioAtual) {
