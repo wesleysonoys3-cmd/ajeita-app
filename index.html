@@ -10,6 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- GOOGLE IDENTITY SERVICES (Login com Google) — substitua client_id abaixo pelo seu (ver passo-a-passo no rodapé) -->
+<meta name="google-signin-client_id" content="YOUR_CLIENT_ID.apps.googleusercontent.com">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 tailwind.config = {
   theme: {
@@ -110,13 +113,38 @@ tailwind.config = {
           </button>
         </div>
 
+        <!-- AVATAR GOOGLE CLIENTE (se logado) -->
+        <div id="headerAvatarGoogleContainer" class="hidden items-center gap-2">
+          <div class="hidden sm:flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-xl px-3 py-1.5">
+            <img id="headerAvatarFotoGoogle" src="" alt="" class="w-8 h-8 rounded-full border-2 border-white shadow-sm" onerror="this.style.display='none'">
+            <div class="text-left">
+              <div class="text-xs font-black text-primary-700 leading-tight">👤 <span id="headerAvatarNomeGoogle">Cliente</span></div>
+              <div class="text-[10px] font-bold text-primary-500 leading-tight">Conta Google</div>
+            </div>
+          </div>
+          <button id="headerBtnLogoutGoogleCliente" onclick="logoutGoogleTotal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 w-10 h-10 rounded-xl items-center justify-center flex transition" title="Sair da conta Google">
+            <i class="fa-solid fa-right-from-bracket text-sm"></i>
+          </button>
+        </div>
+
+        <!-- BOTAO ENTRAR COM GOOGLE (desktop, mostrado se NAO logado Google cliente e NAO profissional logado) -->
+        <button id="headerBtnEntrarGoogle" onclick="abrirLoginGoogle('cliente')" class="hidden lg:flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold px-3.5 py-2 rounded-xl shadow-sm hover:shadow transition text-sm">
+          <svg width="16" height="16" viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+          </svg>
+          Entrar com Google
+        </button>
+
         <!-- CTA Cadastrar Profissional -->
         <button onclick="navigateTo('view-profissional-cadastro')" id="headerBtnCadastrar" class="hidden sm:flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-semibold px-4 py-2.5 rounded-xl shadow-card hover:shadow-pop transition text-sm">
           <i class="fa-solid fa-user-plus"></i>
           Cadastrar como Profissional
         </button>
 
-        <!-- Logout -->
+        <!-- Logout (profissional) -->
         <button onclick="fazerLogoutProfissional()" id="headerBtnLogout" class="hidden items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-2 rounded-xl transition text-sm">
           <i class="fa-solid fa-right-from-bracket"></i>
           <span class="hidden sm:inline">Sair</span>
@@ -156,14 +184,35 @@ tailwind.config = {
         <button onclick="navigateTo('view-admin-login'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-shield-halved text-primary-700 w-5"></i>Área do Admin</button>
       </nav>
       <div class="p-4 border-t border-slate-100 space-y-2">
+        <button onclick="abrirLoginGoogle('cliente'); toggleMobileMenu()" id="mobileBtnEntrarGoogleCliente" class="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 rounded-xl shadow-sm transition">
+          <svg width="16" height="16" viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+          </svg>
+          Entrar com Google (Cliente)
+        </button>
+        <button onclick="abrirLoginGoogle('profissional'); toggleMobileMenu()" id="mobileBtnEntrarGoogleProfissional" class="w-full flex items-center justify-center gap-2 bg-primary-50 hover:bg-primary-100 border border-primary-200 text-primary-700 font-bold py-3 rounded-xl shadow-sm transition">
+          <svg width="16" height="16" viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+          </svg>
+          Entrar com Google (Profissional)
+        </button>
         <button onclick="navigateTo('view-profissional-cadastro'); toggleMobileMenu()" id="mobileBtnCadastrar" class="w-full bg-gradient-to-r from-primary-500 to-primary-700 text-white font-semibold py-3 rounded-xl shadow-card">
           <i class="fa-solid fa-user-plus mr-2"></i>Cadastrar como Profissional
         </button>
         <button onclick="abrirLojaMoedas(); toggleMobileMenu()" id="mobileBtnRecarga" class="hidden w-full bg-gradient-to-r from-accent-500 to-accent-600 text-white font-semibold py-3 rounded-xl">
           🪙 Recarregar Moedas
         </button>
+        <button onclick="logoutGoogleTotal(); toggleMobileMenu()" id="mobileBtnLogoutGoogleCliente" class="hidden w-full bg-primary-50 text-primary-700 font-bold py-3 rounded-xl border border-primary-200">
+          👤 Sair da Conta Google
+        </button>
         <button onclick="fazerLogoutProfissional(); toggleMobileMenu()" id="mobileBtnLogout" class="hidden w-full bg-slate-100 text-slate-700 font-medium py-3 rounded-xl">
-          <i class="fa-solid fa-right-from-bracket mr-2"></i>Sair da Conta
+          <i class="fa-solid fa-right-from-bracket mr-2"></i>Sair da Conta (Profissional)
         </button>
       </div>
     </aside>
@@ -309,11 +358,24 @@ tailwind.config = {
       </div>
 
       <div class="bg-white rounded-3xl shadow-card p-6 sm:p-10 border border-slate-100">
+        <div class="mb-6 pb-5 border-b border-slate-100">
+          <div class="text-xs font-black uppercase tracking-wider text-primary-600 mb-2.5">Comece rápido e seguro 👇</div>
+          <div id="btnGoogleCadastroProfissional"><!-- Renderizado dinamicamente por JS --></div>
+          <div class="flex items-center gap-3 my-4">
+            <div class="flex-1 h-px bg-slate-200"></div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ou preencha manualmente</div>
+            <div class="flex-1 h-px bg-slate-200"></div>
+          </div>
+        </div>
         <form id="formCadastroProfissional" onsubmit="submitCadastroProfissional(event)" class="space-y-5">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div class="sm:col-span-2">
               <label class="block text-sm font-bold text-slate-700 mb-2">Nome Completo *</label>
               <input required id="cadNome" type="text" placeholder="Ex: João Silva dos Santos" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">E-mail (opcional)</label>
+              <input id="cadEmail" type="email" placeholder="joao@email.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
             </div>
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-2">WhatsApp *</label>
@@ -634,6 +696,15 @@ tailwind.config = {
       </button>
     </div>
     <form id="formSolicitarOrcamento" onsubmit="submitSolicitarOrcamento(event)" class="p-6 sm:p-8 space-y-4">
+      <div class="mb-1 pb-3 border-b border-slate-100">
+        <div class="text-[11px] font-black uppercase tracking-wider text-accent-600 mb-2">Mais rápido com Google</div>
+        <div id="btnGoogleSolicitarOrcamento"><!-- Renderizado dinamicamente por JS --></div>
+        <div class="flex items-center gap-3 my-3">
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ou informe abaixo</div>
+          <div class="flex-1 h-px bg-slate-200"></div>
+        </div>
+      </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">Seu Nome</label>
@@ -828,6 +899,8 @@ tailwind.config = {
 const PREFIXO_STORAGE = 'ajeita_moeda_app_';
 const CHAVE_PIX_PROPRIETARIO = '+55 61 99251-8130'; // Telefone formatado com DDI + DDD
 const NOME_BENEFICIARIO_PIX = 'Wesley - Ajeita Serviços Domésticos';
+// ⚠️ GOOGLE CLIENT ID — crie o seu em console.cloud.google.com e cole aqui (ver passo-a-passo rodapé do app)
+const GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
 const CATEGORIAS_GLOBAIS = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
 const CATEGORIAS_ICONE = {
   'Pedreiro':'fa-trowel','Eletricista':'fa-bolt','Encanador':'fa-faucet','Pintor':'fa-paint-roller',
@@ -836,7 +909,7 @@ const CATEGORIAS_ICONE = {
 
 let profissionais = [];
 let pedidos = [];
-let profissionalLogado = null; // { id, ... }
+let profissionalLogado = null; // { id, ... } — pode ter googleId
 let adminLogado = false;
 let desbloqueios = []; // { id, pedidoId, profissionalId, custo, timestamp }
 let recargas = []; // { id, pacoteKey, qtd, preco, timestamp, profissionalId }
@@ -844,6 +917,9 @@ let avaliacoes = []; // { id, pedidoId, profissionalId, nota, comentario, data }
 let configEconomia = null;
 let meusPedidosClienteIds = []; // [pedidoId1, pedidoId2,...] apenas pedidos CRIADOS neste navegador
 let clienteUltimosDados = null; // {nome, whatsapp, cidade, bairro} autocomplete próximo pedido
+// 👇 Google Login vars
+let clienteGoogleLogado = null; // { googleId, email, nome, foto, tipo: 'cliente', timestamp }
+let googleLoginIntent = null; // 'cliente' | 'profissional' — onde o usuário clicou no botao Google
 
 // Temporários de fluxo
 let pedidoDesbloqueioAtual = null;
@@ -1034,6 +1110,7 @@ function salvarTodosGlobaisNoStorage() {
   salvarNoStorage('configEconomia', configEconomia);
   salvarNoStorage('meusPedidosClienteIds', meusPedidosClienteIds);
   salvarNoStorage('clienteUltimosDados', clienteUltimosDados);
+  salvarNoStorage('clienteGoogleLogado', clienteGoogleLogado);
 }
 function carregarDadosStorageBootstrap() {
   const profissionaisSalvos = pegarDoStorage('profissionais');
@@ -1052,7 +1129,244 @@ function carregarDadosStorageBootstrap() {
   avaliacoes = pegarDoStorage('avaliacoes', []);
   meusPedidosClienteIds = pegarDoStorage('meusPedidosClienteIds', []);
   clienteUltimosDados = pegarDoStorage('clienteUltimosDados', null);
+  clienteGoogleLogado = pegarDoStorage('clienteGoogleLogado', null);
   salvarTodosGlobaisNoStorage();
+}
+
+// ======================================================
+// FUNÇÕES — LOGIN COM GOOGLE (Google Identity Services)
+// ======================================================
+/**
+ * Decodifica o payload JWT retornado pelo Google Identity Services
+ * (não validamos signature client-side pois é UX-only).
+ */
+function decodeGoogleJwtPayload(jwt) {
+  try {
+    const base64Url = jwt.split('.')[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(window.atob(base64).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    ).join(''));
+    return JSON.parse(json);
+  } catch(e) {
+    console.error('[Google JWT decode erro]', e);
+    return null;
+  }
+}
+
+/**
+ * Chamado automaticamente pelo Google Identity Services após
+ * o usuário clicar no botão "Continuar com o Google" e aceitar.
+ * @param {object} resp — credential response do GSI {credential, clientId, select_by}
+ */
+function handleGoogleCredentialResponse(resp) {
+  if (!resp || !resp.credential) {
+    toast('error','Falha login Google','Resposta inválida do Google. Tente novamente.');
+    return;
+  }
+  const payload = decodeGoogleJwtPayload(resp.credential);
+  if (!payload || !payload.sub || !payload.email) {
+    toast('error','Falha login Google','Não foi possível ler dados da sua conta Google.');
+    return;
+  }
+  const dadosGoogle = {
+    googleId: payload.sub,
+    email: payload.email,
+    nome: payload.name || payload.given_name || 'Usuário Google',
+    primeiroNome: payload.given_name || (payload.name? payload.name.split(' ')[0] : 'Usuário'),
+    foto: payload.picture || null,
+    emailVerificado: !!payload.email_verified,
+    timestamp: Date.now()
+  };
+  const intent = googleLoginIntent || 'cliente';
+  googleLoginIntent = null;
+
+  if (intent === 'profissional') {
+    // --- Profissional: verifica se já existe por googleId OU email ---
+    let idxPro = profissionais.findIndex(p => (p.googleId && p.googleId === dadosGoogle.googleId));
+    if (idxPro < 0) idxPro = profissionais.findIndex(p => p.whatsapp && p.emailGoogle && p.emailGoogle === dadosGoogle.email);
+
+    if (idxPro >= 0) {
+      // Já cadastrado: atualiza foto/nome se necessário, loga direto
+      profissionais[idxPro].googleId = dadosGoogle.googleId;
+      profissionais[idxPro].emailGoogle = dadosGoogle.email;
+      if (dadosGoogle.foto && !profissionais[idxPro].foto) profissionais[idxPro].foto = dadosGoogle.foto;
+      if (!profissionais[idxPro].nome || profissionais[idxPro].nome.includes('Profissional')) profissionais[idxPro].nome = dadosGoogle.nome;
+      profissionalLogado = profissionais[idxPro];
+      salvarTodosGlobaisNoStorage();
+      atualizarHeaderPorSessao();
+      toast('success',`Olá, ${dadosGoogle.primeiroNome}!`, `Login Google realizado. Bem-vindo(a) de volta à Ajeita Profissional.`,5500);
+      navigateTo('view-profissional-loja');
+      return;
+    }
+    // --- NÃO CADASTRADO AINDA: preenche formulário e vai para tela Cadastrar Profissional ---
+    profissionalGoogleLogadoDados = dadosGoogle;
+    toast('info','Quase lá!', `Preencha WhatsApp, cidade, categorias e outros detalhes para finalizar seu cadastro profissional.`,6000);
+    navigateTo('view-profissional-cadastro');
+    setTimeout(() => preencherFormCadastroProfissionalComGoogle(dadosGoogle), 120);
+    return;
+  }
+
+  // --- Default: CLIENTE ---
+  clienteGoogleLogado = { ...dadosGoogle, tipo: 'cliente' };
+  // Atualiza clienteUltimosDados (autocomplete proximos pedidos)
+  if (!clienteUltimosDados) clienteUltimosDados = {};
+  clienteUltimosDados.nome = clienteUltimosDados.nome || dadosGoogle.nome;
+  salvarTodosGlobaisNoStorage();
+  atualizarHeaderPorSessao();
+  toast('success',`Olá, ${dadosGoogle.primeiroNome}! 👋`, `Login Google realizado como Cliente. Pode solicitar orçamentos e acompanhar seus pedidos.`,6000);
+  if (modalOrcamentoAberto()) setTimeout(()=>preencherModalSolicitarComClienteGoogle(dadosGoogle), 150);
+}
+let profissionalGoogleLogadoDados = null; // temporario apos login Google profissional
+
+/**
+ * Preenche form Cadastrar Profissional com dados Google recem logados
+ */
+function preencherFormCadastroProfissionalComGoogle(dados) {
+  const inpNome = document.getElementById('cadNome');
+  if (inpNome && (!inpNome.value || inpNome.value.length < 3)) inpNome.value = dados.nome;
+  const inpEmail = document.getElementById('cadEmail');
+  if (inpEmail) inpEmail.value = dados.email;
+  // Foto: guarda no global, ao submeter salvar no objeto profissional
+  profissionalGoogleFotoPending = dados.foto || null;
+  profissionalGoogleIdPending = dados.googleId || null;
+  profissionalGoogleEmailPending = dados.email || null;
+  // Chama onchange artificial para acionar validacao visual
+  if (inpNome) inpNome.dispatchEvent(new Event('input',{bubbles:true}));
+}
+let profissionalGoogleFotoPending = null;
+let profissionalGoogleIdPending = null;
+let profissionalGoogleEmailPending = null;
+
+/**
+ * Preenche o modal Solicitar Orçamento automaticamente com
+ * os dados do cliente Google recém conectado.
+ */
+function preencherModalSolicitarComClienteGoogle(dados) {
+  const nomeInput = document.getElementById('solicNomeCliente');
+  if (nomeInput && (!nomeInput.value || nomeInput.value.length < 2)) {
+    nomeInput.value = dados.nome;
+    nomeInput.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+}
+function modalOrcamentoAberto() {
+  const m = document.getElementById('modal-solicitar-orcamento');
+  return !!m && !m.classList.contains('hidden');
+}
+
+/**
+ * Abre o popup do Google para login. O usuário seleciona a conta.
+ * @param {'cliente'|'profissional'} tipoIntent 
+ */
+function abrirLoginGoogle(tipoIntent) {
+  if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+    // Biblioteca ainda não carregou (async/defer). Retry em 400ms.
+    setTimeout(()=>abrirLoginGoogle(tipoIntent), 400);
+    toast('info','Carregando Google...','Aguarde um instante e a janela do Google vai abrir.');
+    return;
+  }
+  if (GOOGLE_CLIENT_ID.startsWith('YOUR_CLIENT_ID')) {
+    toast('warning','Google ainda não configurado','Cole o seu GOOGLE_CLIENT_ID no código. Ver passo-a-passo no rodapé do site. Admin → Configurações Google.');
+    return;
+  }
+  googleLoginIntent = tipoIntent || 'cliente';
+  // Trigger do One Tap / Popup Google
+  try {
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+      ux_mode: 'popup'
+    });
+    window.google.accounts.id.prompt((notification)=>{
+      if (notification && notification.isNotDisplayed()) {
+        // fallback: força janela popup se o one-tap não puder exibir
+        window.google.accounts.id.prompt && window.google.accounts.id.prompt();
+      }
+    });
+  } catch(e) {
+    console.error('[Google Login erro init]', e);
+    toast('error','Erro Google','Não foi possível abrir a janela do Google. Tente novamente em alguns segundos.');
+  }
+}
+
+/**
+ * Botão customizado "Continuar com o Google" (bloco estilizado branco sombreado,
+ * respeitando as diretrizes de marca do Google).
+ */
+function htmlBotaoContinuarComGoogle(tipoIntent='cliente', labelExtra='') {
+  const txt = tipoIntent === 'profissional'
+    ? `Continuar com o Google ${labelExtra ? '— '+labelExtra : '(Profissional)'}`
+    : `Continuar com o Google ${labelExtra ? '— '+labelExtra : ''}`;
+  return `<button type="button" onclick="abrirLoginGoogle('${tipoIntent}')" class="w-full flex items-center justify-center gap-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 rounded-xl shadow-sm hover:shadow transition text-sm">
+    <svg width="18" height="18" viewBox="0 0 48 48">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+    </svg>
+    ${txt}
+  </button>`;
+}
+
+/**
+ * Desloga TODAS as contas Google (cliente + profissional) e sessão local.
+ */
+function logoutGoogleTotal() {
+  // Profissional local (se logado)
+  profissionalLogado = null;
+  // Cliente Google (se logado)
+  clienteGoogleLogado = null;
+  profissionalGoogleLogadoDados = null;
+  profissionalGoogleFotoPending = null;
+  profissionalGoogleIdPending = null;
+  profissionalGoogleEmailPending = null;
+  // Revoga sessão GSI se disponível
+  try { if (window.google?.accounts?.id) window.google.accounts.id.disableAutoSelect(); } catch(e){}
+  salvarTodosGlobaisNoStorage();
+  atualizarHeaderPorSessao();
+  toast('info','Desconectado','Saiu da conta Google.');
+  navigateTo('view-home');
+}
+
+/**
+ * Bootstrap Google Identity Services no load da página.
+ * Chamado no window.onload do app.
+ * Evita chamadas múltiplas repetidas (GSI_LOGGER warn).
+ */
+let _gsiInicializado = false;
+function inicializarGoogleIdentityBootstrap() {
+  if (_gsiInicializado) return;
+  if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+  try {
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+      ux_mode: 'popup'
+    });
+    _gsiInicializado = true;
+  } catch(e){
+    console.warn('[Google bootstrap aviso]', e);
+  }
+}
+
+/**
+ * Renderiza os placeholders estáticos com HTML dos botões Google.
+ * Chamado no DOMContentLoaded logo após o boot geral.
+ */
+function renderizarBotoesGooglePlaceholders() {
+  try {
+    const p1 = document.getElementById('btnGoogleCadastroProfissional');
+    if (p1) p1.innerHTML = htmlBotaoContinuarComGoogle('profissional','Cadastrar Profissional');
+  } catch(e) {}
+  try {
+    const p2 = document.getElementById('btnGoogleSolicitarOrcamento');
+    if (p2) p2.innerHTML = htmlBotaoContinuarComGoogle('cliente','Preencher dados');
+  } catch(e) {}
 }
 
 // --------------- UI HELPERS ---------------
@@ -1159,6 +1473,44 @@ function atualizarHeaderPorSessao() {
   const mobileRecarga = document.getElementById('mobileBtnRecarga');
   const mobileCadastro = document.getElementById('mobileBtnCadastrar');
   const mobileLogout = document.getElementById('mobileBtnLogout');
+  // Novos containers Google
+  const avatarContainer = document.getElementById('headerAvatarGoogleContainer');
+  const btnEntrarGoogle = document.getElementById('headerBtnEntrarGoogle');
+  const avatarFoto = document.getElementById('headerAvatarFotoGoogle');
+  const avatarNome = document.getElementById('headerAvatarNomeGoogle');
+  const mobileBtnEntrarGoogleCliente = document.getElementById('mobileBtnEntrarGoogleCliente');
+  const mobileBtnEntrarGoogleProfissional = document.getElementById('mobileBtnEntrarGoogleProfissional');
+  const mobileBtnLogoutGoogleCliente = document.getElementById('mobileBtnLogoutGoogleCliente');
+
+  const clienteGoogleLogadoAtivo = !!clienteGoogleLogado;
+
+  // --- AVATAR GOOGLE CLIENTE (header) ---
+  if (clienteGoogleLogadoAtivo && !profissionalLogado) {
+    avatarContainer?.classList.remove('hidden'); avatarContainer?.classList.add('flex');
+    if (avatarNome) avatarNome.textContent = clienteGoogleLogado.primeiroNome || clienteGoogleLogado.nome || 'Cliente Google';
+    if (avatarFoto && clienteGoogleLogado.foto) { avatarFoto.src = clienteGoogleLogado.foto; avatarFoto.style.display='block'; }
+    else if (avatarFoto) { avatarFoto.src=''; avatarFoto.style.display='none'; }
+    btnEntrarGoogle?.classList.add('hidden'); btnEntrarGoogle?.classList.remove('lg:flex');
+    if (mobileBtnEntrarGoogleCliente) mobileBtnEntrarGoogleCliente.classList.add('hidden');
+    if (mobileBtnEntrarGoogleProfissional) mobileBtnEntrarGoogleProfissional.classList.remove('hidden');
+    if (mobileBtnLogoutGoogleCliente) { mobileBtnLogoutGoogleCliente.classList.remove('hidden'); mobileBtnLogoutGoogleCliente.classList.add('block'); }
+  } else {
+    avatarContainer?.classList.add('hidden'); avatarContainer?.classList.remove('flex');
+    // Se NAO logou Google cliente, mostra botão "Entrar com Google" no desktop
+    if (!profissionalLogado) {
+      btnEntrarGoogle?.classList.remove('hidden'); btnEntrarGoogle?.classList.add('lg:flex');
+    } else {
+      btnEntrarGoogle?.classList.add('hidden'); btnEntrarGoogle?.classList.remove('lg:flex');
+    }
+    if (mobileBtnLogoutGoogleCliente) mobileBtnLogoutGoogleCliente.classList.add('hidden');
+    if (!profissionalLogado) {
+      if (mobileBtnEntrarGoogleCliente) mobileBtnEntrarGoogleCliente.classList.remove('hidden');
+      if (mobileBtnEntrarGoogleProfissional) mobileBtnEntrarGoogleProfissional.classList.remove('hidden');
+    } else {
+      if (mobileBtnEntrarGoogleCliente) mobileBtnEntrarGoogleCliente.classList.add('hidden');
+      if (mobileBtnEntrarGoogleProfissional) mobileBtnEntrarGoogleProfissional.classList.add('hidden');
+    }
+  }
 
   if (profissionalLogado) {
     // Garante que o objeto global reflete o array
@@ -2092,6 +2444,7 @@ function submitCadastroProfissional(e) {
   const wa = apenasNumeros(document.getElementById('cadWhatsApp').value);
   const cidade = document.getElementById('cadCidade').value;
   const bairro = (document.getElementById('cadBairro').value||'').trim();
+  const email = (document.getElementById('cadEmail').value||'').trim();
   const categoriasSelecionadas = Array.from(document.querySelectorAll('#formCadastroProfissional input[type="checkbox"]:checked')).map(el=>el.value);
 
   if (nome.length<3) { toast('warning','Nome inválido','Informe seu nome completo.'); return; }
@@ -2100,11 +2453,19 @@ function submitCadastroProfissional(e) {
   if (bairro.length<2) { toast('warning','Informe o bairro','Digite o bairro/região de atendimento.'); return; }
   if (categoriasSelecionadas.length===0) { toast('warning','Selecione categorias','Marque pelo menos 1 categoria de serviço.'); return; }
 
+  // Google: se usuário fez login Google para se cadastrar, injeta dados
+  const googleId = profissionalGoogleIdPending || null;
+  const emailGoogle = profissionalGoogleEmailPending || email || null;
+  const fotoFinal = profissionalGoogleFotoPending || FOTO_UI_AVATAR(nome);
+
   const id = 'pro_' + Date.now();
   const novo = {
     id, nome, whatsapp:wa, cidade, bairro,
+    email: email || null,
+    emailGoogle: emailGoogle || null,
+    googleId: googleId || null,
     categorias: categoriasSelecionadas,
-    foto: FOTO_UI_AVATAR(nome),
+    foto: fotoFinal,
     sobre: `${nome.split(' ')[0]} é um profissional verificado pela plataforma Ajeita, especializado em ${categoriasSelecionadas.join(', ')}. Atende com qualidade e pontualidade em ${cidade}.`,
     mediaAvaliacoes: 0, qtdAvaliacoes: 0,
     saldoMoedas: 10, // BÔNUS 10 moedas
@@ -2115,6 +2476,11 @@ function submitCadastroProfissional(e) {
 
   // Login automático
   profissionalLogado = { ...novo };
+  // Limpa dados pendentes do Google (já usados)
+  profissionalGoogleFotoPending = null;
+  profissionalGoogleIdPending = null;
+  profissionalGoogleEmailPending = null;
+  profissionalGoogleLogadoDados = null;
   salvarTodosGlobaisNoStorage();
 
   // Reset form
@@ -2275,9 +2641,13 @@ document.addEventListener('DOMContentLoaded', () => {
     carregarDadosStorageBootstrap();
     atualizarHeaderBoasVindasPorHora();
     setInterval(atualizarHeaderBoasVindasPorHora, 60000);
+    renderizarBotoesGooglePlaceholders();
     atualizarHeaderPorSessao();
     renderCatalogoProfissionais();
     renderMuralPedidos();
+    // Inicializa Google Identity Services após 500ms (garante que o script assincrono carregou)
+    setTimeout(inicializarGoogleIdentityBootstrap, 500);
+    setTimeout(()=> { if (window.google?.accounts?.id) inicializarGoogleIdentityBootstrap(); }, 1500);
   } catch (eBoot) {
     console.error('[Ajeita Boot Erro]:', eBoot);
     try {
