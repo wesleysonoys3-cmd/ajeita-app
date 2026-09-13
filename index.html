@@ -1,0 +1,2519 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajeita - Marido de Aluguel e Serviços Domésticos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { scroll-behavior: smooth; }
+        .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .gradient-hero { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%); }
+        .gradient-primary { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
+        .gradient-accent { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+        .star-filled { color: #f59e0b; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-up { animation: slideUp 0.4s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .category-icon { transition: all 0.2s ease; }
+        .category-icon:hover { transform: scale(1.05); background: #eff6ff; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 md:h-20">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('home')">
+                    <div class="w-10 h-10 md:w-12 md:h-12 gradient-primary rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-tools text-white text-lg md:text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-extrabold text-blue-700">Ajeita</h1>
+                        <p class="text-xs text-gray-500 hidden sm:block">Serviços domésticos</p>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden lg:flex items-center gap-6">
+                    <a href="#" onclick="navigateTo('home'); return false;" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
+                        <i class="fas fa-search"></i> Buscar Profissionais
+                    </a>
+                    <a href="#como-funciona" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
+                        <i class="fas fa-info-circle"></i> Como Funciona
+                    </a>
+                    <a href="#" onclick="navigateTo('cadastro'); return false;" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
+                        <i class="fas fa-user-tie"></i> Sou Profissional
+                    </a>
+                    <a href="#" onclick="navigateTo('solicitacoes'); return false;" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
+                        <i class="fas fa-clipboard-list"></i> Solicitações
+                    </a>
+                    <a href="#" onclick="openAdminLogin(); return false;" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
+                        <i class="fas fa-shield-alt"></i> Admin
+                    </a>
+                </nav>
+
+                <!-- CTA Button Desktop -->
+                <button onclick="navigateTo('cadastro')" class="hidden md:block gradient-accent hover:opacity-90 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg transition transform hover:scale-105">
+                    <i class="fas fa-user-plus mr-2"></i>Cadastrar como Profissional
+                </button>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-bars text-2xl text-gray-700"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden lg:hidden pb-4 space-y-2">
+                <a href="#" onclick="navigateTo('home'); toggleMobileMenu(); return false;" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
+                    <i class="fas fa-search mr-2 text-blue-600"></i> Buscar Profissionais
+                </a>
+                <a href="#como-funciona" onclick="toggleMobileMenu();" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
+                    <i class="fas fa-info-circle mr-2 text-blue-600"></i> Como Funciona
+                </a>
+                <a href="#" onclick="navigateTo('cadastro'); toggleMobileMenu(); return false;" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
+                    <i class="fas fa-user-tie mr-2 text-blue-600"></i> Sou Profissional
+                </a>
+                <a href="#" onclick="navigateTo('solicitacoes'); toggleMobileMenu(); return false;" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
+                    <i class="fas fa-clipboard-list mr-2 text-blue-600"></i> Solicitações
+                </a>
+                <a href="#" onclick="openAdminLogin(); toggleMobileMenu(); return false;" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
+                    <i class="fas fa-shield-alt mr-2 text-blue-600"></i> Área do Admin
+                </a>
+                <button onclick="navigateTo('cadastro'); toggleMobileMenu();" class="w-full gradient-accent text-white font-bold py-3 px-5 rounded-xl shadow-lg mt-2">
+                    <i class="fas fa-user-plus mr-2"></i>Cadastrar como Profissional
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main id="mainContainer">
+
+        <!-- ================= VIEW: HOME ================= -->
+        <section id="view-home" class="view-section fade-in bg-gray-50">
+
+            <!-- Welcome Header -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-10">
+                <!-- Mobile Boas-vindas -->
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900 mb-5 md:mb-6 text-center md:text-left">Boas-vindas 👋</h2>
+
+                <!-- Barra de Busca Principal -->
+                <div class="relative mb-6 md:mb-8 max-w-4xl md:mx-auto">
+                    <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 text-xl"></i>
+                    <input id="searchSimples" oninput="buscaSimples(this.value)" type="text" placeholder="O que você precisa?"
+                        class="w-full pl-14 pr-5 py-4 md:py-5 bg-gray-100 hover:bg-gray-200 transition rounded-2xl text-gray-800 placeholder-gray-500 text-base md:text-lg font-medium outline-none focus:ring-4 focus:ring-blue-200 focus:bg-white">
+                </div>
+
+                <!-- Ícones Rápidos (Categorias Macro) -->
+                <div class="mb-8 md:mb-10 overflow-x-auto -mx-4 px-4 pb-2 no-scrollbar">
+                    <div class="flex gap-3 md:gap-5 min-w-max md:grid md:grid-cols-6 md:min-w-0 md:overflow-visible">
+                        <button onclick="setCategoria('Montador de Móveis')" class="flex flex-col items-center gap-2 min-w-[88px] group">
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:shadow-md transition">
+                                <svg class="w-9 h-9 md:w-11 md:h-11" viewBox="0 0 48 48" fill="none">
+                                    <path d="M14 12 L14 36 L34 36 L34 12 Z" stroke="#3b82f6" stroke-width="2.5" fill="#eff6ff"/>
+                                    <path d="M14 24 L34 24" stroke="#3b82f6" stroke-width="2"/>
+                                    <path d="M24 12 L24 36" stroke="#3b82f6" stroke-width="2"/>
+                                    <circle cx="22" cy="18" r="1.5" fill="#fbbf24"/>
+                                    <circle cx="28" cy="30" r="1.5" fill="#fbbf24"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs md:text-sm font-semibold text-gray-700 text-center">Assistência<br>Técnica</span>
+                        </button>
+                        <button onclick="setCategoria('Pedreiro')" class="flex flex-col items-center gap-2 min-w-[88px] group">
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:shadow-md transition">
+                                <svg class="w-9 h-9 md:w-11 md:h-11" viewBox="0 0 48 48" fill="none">
+                                    <path d="M10 30 L24 14 L38 30 Z" stroke="#f59e0b" stroke-width="2.5" fill="#fffbeb" stroke-linejoin="round"/>
+                                    <path d="M14 34 L34 34 L34 38 L14 38 Z" stroke="#f59e0b" stroke-width="2" fill="#fff7ed"/>
+                                    <rect x="22" y="20" width="4" height="10" fill="#f59e0b" opacity="0.4"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs md:text-sm font-semibold text-gray-700 text-center">Reformas<br>e Reparos</span>
+                        </button>
+                        <button onclick="setCategoria('Diarista')" class="flex flex-col items-center gap-2 min-w-[88px] group">
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:shadow-md transition">
+                                <svg class="w-9 h-9 md:w-11 md:h-11" viewBox="0 0 48 48" fill="none">
+                                    <path d="M16 10 L30 10 L34 18 L34 38 L14 38 L14 18 Z" stroke="#f43f5e" stroke-width="2.5" fill="#fff1f2"/>
+                                    <path d="M14 18 L34 18" stroke="#f43f5e" stroke-width="2"/>
+                                    <path d="M20 8 A4 4 0 0 1 28 8 L28 10 L20 10 Z" fill="#fda4af"/>
+                                    <circle cx="24" cy="28" r="3" fill="#fda4af"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs md:text-sm font-semibold text-gray-700 text-center">Eventos</span>
+                        </button>
+                        <button onclick="setCategoria('Diarista')" class="flex flex-col items-center gap-2 min-w-[88px] group">
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:shadow-md transition">
+                                <svg class="w-9 h-9 md:w-11 md:h-11" viewBox="0 0 48 48" fill="none">
+                                    <path d="M12 20 L36 20 L36 40 L12 40 Z" stroke="#3b82f6" stroke-width="2.5" fill="#eff6ff"/>
+                                    <path d="M12 20 L24 8 L36 20" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" fill="#dbeafe"/>
+                                    <path d="M21 30 L27 30 L27 40 L21 40 Z" stroke="#3b82f6" stroke-width="2" fill="#93c5fd"/>
+                                    <rect x="18" y="23" width="5" height="5" fill="#fbbf24"/>
+                                    <rect x="28" y="23" width="5" height="5" fill="#fbbf24"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs md:text-sm font-semibold text-gray-700 text-center">Serviços<br>Domésticos</span>
+                        </button>
+                        <button onclick="setCategoria('Pintor')" class="flex flex-col items-center gap-2 min-w-[88px] group">
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:shadow-md transition">
+                                <svg class="w-9 h-9 md:w-11 md:h-11" viewBox="0 0 48 48" fill="none">
+                                    <path d="M14 38 L14 30 L22 22 L36 22 L36 38 Z" stroke="#a855f7" stroke-width="2.5" fill="#faf5ff"/>
+                                    <path d="M30 14 A4 4 0 1 1 30 22 L22 22 L22 14 Z" stroke="#a855f7" stroke-width="2" fill="#e9d5ff"/>
+                                    <path d="M16 22 L22 22 L22 30 L16 30 Z" fill="#facc15" opacity="0.7"/>
+                                    <path d="M26 22 L32 22 L32 30 L26 30 Z" fill="#fb7185" opacity="0.7"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs md:text-sm font-semibold text-gray-700 text-center">Aulas</span>
+                        </button>
+                        <button onclick="navigateTo('cadastro')" class="flex flex-col items-center gap-2 min-w-[88px] group">
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:shadow-md transition">
+                                <svg class="w-9 h-9 md:w-11 md:h-11" viewBox="0 0 48 48" fill="none">
+                                    <circle cx="24" cy="16" r="8" stroke="#fbbf24" stroke-width="2.5" fill="#fffbeb"/>
+                                    <path d="M12 42 C12 33 36 33 36 42" stroke="#fbbf24" stroke-width="2.5" fill="#fff7ed"/>
+                                    <path d="M20 14 L22 16 L28 10" stroke="#f59e0b" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs md:text-sm font-semibold text-gray-700 text-center">Autos</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Banner Azul "Acessar" -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 md:mb-10">
+                <div onclick="navigateTo('solicitacoes')" class="cursor-pointer gradient-primary rounded-3xl p-6 md:p-8 text-white flex items-center justify-between shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full"></div>
+                    <div class="absolute right-20 bottom-0 w-28 h-28 bg-white/5 rounded-full"></div>
+                    <div class="relative z-10">
+                        <h3 class="text-2xl md:text-3xl font-bold mb-1">Acessar</h3>
+                        <p class="text-blue-100 text-base md:text-lg">Acompanhe seus pedidos</p>
+                    </div>
+                    <button class="relative z-10 w-12 h-12 md:w-14 md:h-14 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition backdrop-blur">
+                        <i class="fas fa-arrow-right text-xl md:text-2xl"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ================= SEÇÕES COM VER TUDO (CARDS HORIZONTAIS) ================= -->
+            <div id="secoesCategorias" class="space-y-10 md:space-y-12">
+
+                <!-- Seção: Reformas e Reparos -->
+                <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl md:text-2xl font-extrabold text-gray-800">Reformas e Reparos</h3>
+                        <a href="#buscaAvancada" onclick="document.getElementById('filterCategoria').value='Pedreiro'; applyFilters();" class="text-blue-600 font-semibold hover:text-blue-700 transition flex items-center gap-1">Ver tudo <i class="fas fa-angle-right"></i></a>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+                        <button onclick="setCategoria('Eletricista')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=black%20electrician%20working%20on%20wires%20with%20yellow%20helmet&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Eletricista</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Marido de Aluguel')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden bg-blue-500/10">
+                                <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=professional%20tool%20belt%20on%20blue%20uniform&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Marido de aluguel</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Montador de Móveis')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1595187147139-56e3704c14ef?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=movers%20carrying%20cardboard%20box%20blue%20uniform&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Mudanças e Carretos</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Encanador')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1609205807107-456e2b9c5d48?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=plumber%20fixing%20pipes%20wrench&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Encanador</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Pintor')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=house%20painter%20with%20roller%20painting%20wall&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Pintor</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Pedreiro')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=bricklayer%20with%20trowel%20building%20wall&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Pedreiro</h4>
+                            </div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Destaque Diarista (Big Card) -->
+                <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div onclick="setCategoria('Diarista')" class="cursor-pointer bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition group">
+                        <div class="grid grid-cols-1 md:grid-cols-5">
+                            <div class="md:col-span-2 h-56 md:h-full overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cleaning%20lady%20with%20supplies%20smiling%20housework&image_size=landscape_4_3'">
+                            </div>
+                            <div class="md:col-span-3 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div class="max-w-xl">
+                                    <h4 class="text-2xl md:text-3xl font-extrabold text-gray-800 mb-2">Diarista</h4>
+                                    <p class="text-gray-600 md:text-lg leading-relaxed">
+                                        Contratar diarista, faxineira, empregada mensal ou semanal para residências e empresas com confiança total.
+                                    </p>
+                                </div>
+                                <button class="w-16 h-16 md:w-20 md:h-20 shrink-0 gradient-primary hover:scale-110 transition rounded-full flex items-center justify-center shadow-lg text-white">
+                                    <i class="fas fa-arrow-right text-2xl md:text-3xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Seção: Assistência Técnica -->
+                <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl md:text-2xl font-extrabold text-gray-800">Assistência Técnica</h3>
+                        <a href="#buscaAvancada" class="text-blue-600 font-semibold hover:text-blue-700 transition flex items-center gap-1">Ver tudo <i class="fas fa-angle-right"></i></a>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+                        <button onclick="setCategoria('Eletricista')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1631552939489-fcb6ceeb36c0?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=air%20conditioning%20technician%20repairing%20unit%20helmet&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Ar condicionado</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Eletricista')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1556656793-08538906a9f8?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=technician%20repairing%20broken%20smartphone%20screen&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Celular</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Marido de Aluguel')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=appliance%20technician%20fixing%20refrigerator%20back&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Geladeira e freezer</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Chaveiro')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1622398924389-2e1c413b44bb?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=locksmith%20working%20on%20lock%20with%20key&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Chaveiro 24h</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Montador de Móveis')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1609205807107-e836c841eb6f?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=welding%20machine%20welding%20metal%20sparks&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Solda e Serralheria</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Eletricista')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=tv%20wall%20mount%20installation%20technician&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Instalador de TV</h4>
+                            </div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Seção: Serviços Domésticos -->
+                <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl md:text-2xl font-extrabold text-gray-800">Serviços Domésticos</h3>
+                        <a href="#buscaAvancada" class="text-blue-600 font-semibold hover:text-blue-700 transition flex items-center gap-1">Ver tudo <i class="fas fa-angle-right"></i></a>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+                        <button onclick="setCategoria('Diarista')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=babysitter%20reading%20book%20to%20little%20girl&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Babá</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Diarista')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=personal%20cook%20chef%20in%20kitchen%20apron&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Cozinheira</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Diarista')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cleaning%20lady%20blue%20apron%20yellow%20gloves%20supplies&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Diarista</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Pintor')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1583842270253-10a0faa31c68?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=ironing%20clothes%20laundry%20domestic&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Passadeira</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Marido de Aluguel')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1581578017426-1b9ea5f4b3e9?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=professional%20driver%20with%20keys%20driver&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Motorista</h4>
+                            </div>
+                        </button>
+                        <button onclick="setCategoria('Diarista')" class="category-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition card-hover">
+                            <div class="h-32 md:h-40 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1559599238-308793637427?w=400&h=300&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=elderly%20caregiver%20senior%20person%20care&image_size=landscape_4_3'">
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h4 class="font-bold text-gray-800 md:text-base">Cuidador de Idosos</h4>
+                            </div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Banner Amarelo CTA: Cadastrar Serviços -->
+                <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 md:mb-8">
+                    <div class="relative overflow-hidden rounded-3xl p-8 md:p-10 bg-gradient-to-br from-yellow-300 via-yellow-400 to-amber-400 shadow-lg">
+                        <svg class="absolute -left-6 -top-6 w-48 h-48 opacity-30 text-white" viewBox="0 0 200 200" fill="currentColor">
+                            <path d="M 0 0 L 100 100 L 0 200 Z" opacity="0.4"/>
+                        </svg>
+                        <svg class="absolute -right-8 -bottom-8 w-56 h-56 opacity-30 text-white" viewBox="0 0 200 200" fill="currentColor">
+                            <polygon points="100,10 40,198 190,78 10,78 160,198" opacity="0.3"/>
+                        </svg>
+                        <div class="relative z-10 text-center max-w-2xl mx-auto">
+                            <h3 class="text-2xl md:text-4xl font-extrabold text-gray-900 mb-2">Cadastrar serviços</h3>
+                            <p class="text-gray-800 text-base md:text-lg mb-6 md:mb-8 font-medium">Confira todas as opções disponíveis para você!</p>
+                            <button onclick="navigateTo('cadastro')" class="inline-block gradient-primary hover:opacity-90 text-white font-extrabold py-4 px-10 rounded-2xl shadow-xl transition transform hover:scale-105 text-lg">
+                                Seja profissional
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Busca Avançada (Âncora) -->
+            <section id="buscaAvancada" class="gradient-hero text-white py-10 md:py-16 relative overflow-hidden mt-8">
+                <div class="absolute inset-0 opacity-10">
+                    <div class="absolute top-10 left-10 text-9xl"><i class="fas fa-hard-hat"></i></div>
+                    <div class="absolute bottom-10 right-10 text-9xl"><i class="fas fa-wrench"></i></div>
+                </div>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div class="text-center max-w-4xl mx-auto mb-8">
+                        <span class="inline-block bg-yellow-400 text-blue-900 font-bold text-sm px-4 py-1.5 rounded-full mb-3 shadow-lg">
+                            <i class="fas fa-star mr-1"></i> +10.000 profissionais verificados
+                        </span>
+                        <h2 class="text-2xl md:text-4xl font-extrabold mb-2 leading-tight">
+                            Encontre os melhores profissionais<br class="hidden md:block">
+                            <span class="text-yellow-300">bem perto de você</span>
+                        </h2>
+                        <p class="text-blue-100 md:text-lg max-w-2xl mx-auto">
+                            Filtre por categoria, cidade e bairro para resultados precisos.
+                        </p>
+                    </div>
+
+                    <!-- Advanced Search Bar -->
+                    <div class="bg-white rounded-2xl shadow-2xl p-4 md:p-6 max-w-5xl mx-auto">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Categoria</label>
+                                <select id="searchCategoria" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                    <option value="">Todas as categorias</option>
+                                    <option value="Eletricista">⚡ Eletricista</option>
+                                    <option value="Encanador">🔧 Encanador</option>
+                                    <option value="Pedreiro">🧱 Pedreiro</option>
+                                    <option value="Diarista">🧹 Diarista</option>
+                                    <option value="Pintor">🎨 Pintor</option>
+                                    <option value="Montador de Móveis">🛠️ Montador de Móveis</option>
+                                    <option value="Chaveiro">🔑 Chaveiro</option>
+                                    <option value="Marido de Aluguel">🔨 Marido de Aluguel</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Cidade</label>
+                                <input type="text" id="searchCidade" placeholder="Brasília, São Paulo..." 
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Bairro / Região</label>
+                                <input type="text" id="searchBairro" placeholder="Asa Sul, Samambaia..." 
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                            </div>
+                            <div class="md:col-span-3 flex flex-col gap-2">
+                                <button onclick="useGeolocation()" class="flex items-center justify-center gap-2 border-2 border-blue-200 hover:bg-blue-50 text-blue-700 font-semibold py-3 px-4 rounded-xl transition">
+                                    <i class="fas fa-location-crosshairs"></i>
+                                    <span class="text-sm">Usar minha localização</span>
+                                </button>
+                                <button onclick="applyFilters(); document.getElementById('profissionaisGrid').scrollIntoView({behavior:'smooth', block:'start'});" class="gradient-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition transform hover:scale-[1.02]">
+                                    <i class="fas fa-search mr-2"></i>Procurar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filtros + Lista de Profissionais -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-users text-blue-600"></i> Profissionais Disponíveis
+                        <span id="totalProfissionais" class="text-sm font-normal bg-blue-100 text-blue-700 px-3 py-1 rounded-full">0</span>
+                    </h3>
+                </div>
+
+                <!-- Filters Bar -->
+                <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5"><i class="fas fa-tag text-blue-600"></i> Categoria</label>
+                            <select id="filterCategoria" onchange="applyFilters()" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">Todas</option>
+                                <option value="Eletricista">⚡ Eletricista</option>
+                                <option value="Encanador">🔧 Encanador</option>
+                                <option value="Pedreiro">🧱 Pedreiro</option>
+                                <option value="Diarista">🧹 Diarista</option>
+                                <option value="Pintor">🎨 Pintor</option>
+                                <option value="Montador de Móveis">🛠️ Montador</option>
+                                <option value="Chaveiro">🔑 Chaveiro</option>
+                                <option value="Marido de Aluguel">🔨 Marido de Aluguel</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5"><i class="fas fa-city text-blue-600"></i> Cidade</label>
+                            <select id="filterCidade" onchange="applyFilters()" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5"><i class="fas fa-money-bill text-orange-600"></i> Preço máx. por hora</label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">R$</span>
+                                <input type="number" id="filterPreco" oninput="applyFilters()" min="0" max="500" placeholder="200"
+                                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5"><i class="fas fa-sort text-blue-600"></i> Ordenar por</label>
+                            <select id="filterOrdenacao" onchange="applyFilters()" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="avaliacao">⭐ Melhores Avaliados</option>
+                                <option value="preco">💰 Menor Preço</option>
+                                <option value="proximidade">📍 Mais Próximos</option>
+                                <option value="servicos">🔧 Mais Serviços</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profissionais Grid -->
+                <div id="profissionaisGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Cards rendered by JS -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyProfissionais" class="hidden text-center py-16">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-search text-4xl text-gray-400"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-700 mb-2">Nenhum profissional encontrado</h4>
+                    <p class="text-gray-500">Tente ajustar os filtros de busca.</p>
+                </div>
+            </section>
+
+            <!-- Como Funciona -->
+            <section id="como-funciona" class="bg-white py-16 border-t border-gray-100">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-12">
+                        <h3 class="text-3xl md:text-4xl font-extrabold text-gray-800 mb-3">Como Funciona o Ajeita</h3>
+                        <p class="text-gray-600 text-lg max-w-2xl mx-auto">Em apenas 3 passos você resolve tudo sem sair de casa</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="text-center p-6 rounded-2xl bg-gradient-to-b from-blue-50 to-white border border-blue-100">
+                            <div class="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg">
+                                <i class="fas fa-search text-2xl text-white"></i>
+                            </div>
+                            <div class="w-10 h-10 bg-yellow-400 text-blue-900 font-bold rounded-full flex items-center justify-center mx-auto mb-3 -mt-12 shadow-md">1</div>
+                            <h4 class="text-xl font-bold text-gray-800 mb-2 mt-4">Busque o Profissional</h4>
+                            <p class="text-gray-600">Informe a categoria, sua cidade e bairro. Encontre os melhores perto de você.</p>
+                        </div>
+                        <div class="text-center p-6 rounded-2xl bg-gradient-to-b from-yellow-50 to-white border border-yellow-100">
+                            <div class="w-16 h-16 gradient-accent rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg">
+                                <i class="fas fa-handshake text-2xl text-white"></i>
+                            </div>
+                            <div class="w-10 h-10 gradient-primary text-white font-bold rounded-full flex items-center justify-center mx-auto mb-3 -mt-12 shadow-md">2</div>
+                            <h4 class="text-xl font-bold text-gray-800 mb-2 mt-4">Solicite Orçamento</h4>
+                            <p class="text-gray-600">Converse com o profissional, explique o problema e combine data e horário.</p>
+                        </div>
+                        <div class="text-center p-6 rounded-2xl bg-gradient-to-b from-green-50 to-white border border-green-100">
+                            <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg">
+                                <i class="fas fa-check-double text-2xl text-white"></i>
+                            </div>
+                            <div class="w-10 h-10 bg-green-500 text-white font-bold rounded-full flex items-center justify-center mx-auto mb-3 -mt-12 shadow-md">3</div>
+                            <h4 class="text-xl font-bold text-gray-800 mb-2 mt-4">Resolvido!</h4>
+                            <p class="text-gray-600">Avalie o profissional e ajude outras pessoas a encontrar os melhores serviços.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="bg-gray-900 text-gray-300 pt-12 pb-8">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                        <div>
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-tools text-white"></i>
+                                </div>
+                                <h4 class="text-2xl font-extrabold text-white">Ajeita</h4>
+                            </div>
+                            <p class="text-sm text-gray-400">A plataforma que conecta você aos melhores profissionais de serviços domésticos.</p>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-white mb-4">Serviços</h5>
+                            <ul class="space-y-2 text-sm">
+                                <li><a href="#" onclick="setCategoria('Eletricista');return false;" class="hover:text-yellow-400">Eletricista</a></li>
+                                <li><a href="#" onclick="setCategoria('Encanador');return false;" class="hover:text-yellow-400">Encanador</a></li>
+                                <li><a href="#" onclick="setCategoria('Pedreiro');return false;" class="hover:text-yellow-400">Pedreiro</a></li>
+                                <li><a href="#" onclick="setCategoria('Diarista');return false;" class="hover:text-yellow-400">Diarista</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-white mb-4">Acesso Rápido</h5>
+                            <ul class="space-y-2 text-sm">
+                                <li><a href="#" onclick="navigateTo('home');return false;" class="hover:text-yellow-400">Buscar Profissionais</a></li>
+                                <li><a href="#" onclick="navigateTo('cadastro');return false;" class="hover:text-yellow-400">Sou Profissional</a></li>
+                                <li><a href="#" onclick="navigateTo('solicitacoes');return false;" class="hover:text-yellow-400">Minhas Solicitações</a></li>
+                                <li><a href="#" onclick="openAdminLogin();return false;" class="hover:text-yellow-400">Área do Admin</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-white mb-4">Contato</h5>
+                            <ul class="space-y-2 text-sm">
+                                <li><i class="fab fa-whatsapp mr-2 text-green-400"></i> (61) 99999-9999</li>
+                                <li><i class="fas fa-envelope mr-2 text-blue-400"></i> contato@ajeita.com.br</li>
+                                <li class="pt-2 flex gap-3">
+                                    <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition"><i class="fab fa-facebook-f"></i></a>
+                                    <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-pink-600 rounded-lg flex items-center justify-center transition"><i class="fab fa-instagram"></i></a>
+                                    <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-blue-400 rounded-lg flex items-center justify-center transition"><i class="fab fa-twitter"></i></a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800 pt-6 text-center text-sm text-gray-500">
+                        © 2024 Ajeita - Todos os direitos reservados. Feito com <i class="fas fa-heart text-red-500"></i> no Brasil.
+                    </div>
+                </div>
+            </footer>
+        </section>
+
+        <!-- ================= VIEW: CADASTRO PROFISSIONAL ================= -->
+        <section id="view-cadastro" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <button onclick="navigateTo('home')" class="mb-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Voltar para busca
+                </button>
+
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div class="gradient-primary p-8 text-white">
+                        <h2 class="text-3xl font-extrabold mb-2"><i class="fas fa-user-tie mr-2"></i>Cadastre-se como Profissional</h2>
+                        <p class="text-blue-100">Ative seu perfil e comece a receber solicitações de clientes na sua região!</p>
+                    </div>
+
+                    <form id="formCadastroProfissional" class="p-6 md:p-8 space-y-6">
+                        <div class="border-b border-gray-200 pb-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-user text-blue-600"></i> Dados Pessoais
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nome completo *</label>
+                                    <input type="text" id="cadNome" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="João da Silva Souza">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">WhatsApp/Telefone *</label>
+                                    <input type="tel" id="cadTelefone" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="(61) 99999-9999">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">E-mail</label>
+                                    <input type="email" id="cadEmail" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="joao@email.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-b border-gray-200 pb-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-map-marker-alt text-blue-600"></i> Localização de Atuação
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Estado (UF) *</label>
+                                    <select id="cadUf" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">Selecione</option>
+                                        <option>DF</option><option>SP</option><option>RJ</option><option>MG</option>
+                                        <option>BA</option><option>RS</option><option>PR</option><option>SC</option>
+                                        <option>GO</option><option>CE</option><option>PE</option><option>AM</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Cidade *</label>
+                                    <input type="text" id="cadCidade" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Brasília">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Bairro/Região principal *</label>
+                                    <input type="text" id="cadBairro" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Asa Sul, Samambaia...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-b border-gray-200 pb-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-briefcase text-blue-600"></i> Informações Profissionais
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Especialidade Principal *</label>
+                                    <select id="cadCategoria" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">Selecione</option>
+                                        <option>Eletricista</option><option>Encanador</option><option>Pedreiro</option>
+                                        <option>Diarista</option><option>Pintor</option><option>Montador de Móveis</option>
+                                        <option>Chaveiro</option><option>Marido de Aluguel</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Preço por hora (R$) *</label>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-500">R$</span>
+                                        <input type="number" id="cadPreco" required min="20" step="5" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="80">
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Outras especialidades (se houver)</label>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50"><input type="checkbox" class="cat-extra w-4 h-4 text-blue-600" value="Eletricista"><span class="text-sm">Eletricista</span></label>
+                                        <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50"><input type="checkbox" class="cat-extra w-4 h-4 text-blue-600" value="Encanador"><span class="text-sm">Encanador</span></label>
+                                        <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50"><input type="checkbox" class="cat-extra w-4 h-4 text-blue-600" value="Pedreiro"><span class="text-sm">Pedreiro</span></label>
+                                        <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50"><input type="checkbox" class="cat-extra w-4 h-4 text-blue-600" value="Pintor"><span class="text-sm">Pintor</span></label>
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Resumo de qualificações/experiência *</label>
+                                    <textarea id="cadBio" required rows="4" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Ex: Eletricista com 10 anos de experiência, especializado em instalações residenciais e industriais. Já realizei mais de 500 serviços com 100% de satisfação."></textarea>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">URL da foto de perfil</label>
+                                    <input type="url" id="cadFoto" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://... (opcional - usaremos padrão se não informar)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assinatura -->
+                        <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-2xl p-6">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">
+                                        <i class="fas fa-crown text-yellow-500"></i> Assinatura Ajeita Pro
+                                    </h3>
+                                    <p class="text-gray-600 text-sm">Ative seu perfil para aparecer nas buscas e receber solicitações!</p>
+                                </div>
+                                <div class="text-center md:text-right">
+                                    <div class="text-sm text-gray-500 line-through">De R$ 49,90</div>
+                                    <div class="text-4xl font-extrabold text-orange-600">R$ <span id="valorMensalidade">29,90</span><span class="text-lg text-gray-500">/mês</span></div>
+                                    <div class="text-xs text-green-600 font-semibold">👆 Valor definido pelo sistema</div>
+                                </div>
+                            </div>
+                            <div class="mt-5 bg-white rounded-xl p-4 border border-yellow-200">
+                                <h4 class="font-bold text-gray-800 mb-3"><i class="fas fa-credit-card text-blue-600"></i> Simulação de Pagamento</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-600 mb-1">Número do Cartão</label>
+                                        <input type="text" id="simCartao" maxlength="19" placeholder="0000 0000 0000 0000" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-600 mb-1">Validade / CVV</label>
+                                        <div class="flex gap-2">
+                                            <input type="text" id="simValidade" maxlength="5" placeholder="MM/AA" class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                            <input type="text" id="simCVV" maxlength="4" placeholder="CVV" class="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                    </div>
+                                </div>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="simConfirmarPagamento" class="w-5 h-5 text-blue-600">
+                                    <span class="text-sm text-gray-700">Confirmo que desejo ativar minha assinatura no valor de R$ <span id="valorMensalidade2">29,90</span>/mês</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                            <button type="submit" class="flex-1 gradient-accent hover:opacity-90 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition transform hover:scale-[1.02]">
+                                <i class="fas fa-check-circle mr-2"></i>Finalizar Cadastro e Ativar Perfil
+                            </button>
+                            <button type="button" onclick="navigateTo('home')" class="px-6 py-4 border-2 border-gray-200 hover:border-gray-300 rounded-xl font-semibold text-gray-700 transition">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW: SOLICITAÇÕES ================= -->
+        <section id="view-solicitacoes" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <button onclick="navigateTo('home')" class="mb-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                    <div>
+                        <h2 class="text-3xl font-extrabold text-gray-800 mb-1"><i class="fas fa-clipboard-list text-blue-600 mr-2"></i>Painel de Solicitações</h2>
+                        <p class="text-gray-600">Acompanhe suas solicitações enviadas e recebidas</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="setTabSolicitacoes('minhas')" id="tabMinhas" class="tab-solicitacoes px-5 py-2.5 rounded-xl font-semibold transition gradient-primary text-white">
+                            <i class="fas fa-paper-plane mr-2"></i> Meus Pedidos
+                        </button>
+                        <button onclick="setTabSolicitacoes('recebidas')" id="tabRecebidas" class="tab-solicitacoes px-5 py-2.5 rounded-xl font-semibold transition bg-white text-gray-700 border border-gray-200">
+                            <i class="fas fa-inbox mr-2"></i> Recebidas
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Meus Pedidos -->
+                <div id="solicitacoesMinhas" class="solicitacoes-content">
+                    <div id="listaSolicitacoesCliente" class="space-y-4">
+                        <!-- Rendered by JS -->
+                    </div>
+                    <div id="emptyMinhas" class="hidden text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+                        <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-inbox text-4xl text-blue-400"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-700 mb-2">Você ainda não tem solicitações</h4>
+                        <p class="text-gray-500 mb-5">Procure um profissional e envie seu primeiro pedido de orçamento!</p>
+                        <button onclick="navigateTo('home')" class="gradient-primary text-white font-bold py-3 px-6 rounded-xl shadow-lg">
+                            <i class="fas fa-search mr-2"></i>Buscar Profissionais
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recebidas -->
+                <div id="solicitacoesRecebidas" class="solicitacoes-content hidden">
+                    <div id="listaSolicitacoesProfissional" class="space-y-4">
+                        <!-- Rendered by JS -->
+                    </div>
+                    <div id="emptyRecebidas" class="hidden text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+                        <div class="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-briefcase text-4xl text-yellow-400"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-700 mb-2">Nenhuma solicitação recebida ainda</h4>
+                        <p class="text-gray-500 mb-5">Cadastre-se como profissional ou aguarde novos clientes entrarem em contato!</p>
+                        <button onclick="navigateTo('cadastro')" class="gradient-accent text-white font-bold py-3 px-6 rounded-xl shadow-lg">
+                            <i class="fas fa-user-plus mr-2"></i>Cadastrar como Profissional
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW: ADMIN DASHBOARD ================= -->
+        <section id="view-admin" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                    <div>
+                        <h2 class="text-3xl font-extrabold text-gray-800 mb-1">
+                            <i class="fas fa-shield-alt text-blue-700 mr-2"></i>Painel do Administrador
+                        </h2>
+                        <p class="text-gray-600">Gestão completa da plataforma Ajeita</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="navigateTo('home')" class="px-5 py-2.5 rounded-xl font-semibold bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition">
+                            <i class="fas fa-eye mr-2"></i> Ver Site
+                        </button>
+                        <button onclick="logoutAdmin()" class="px-5 py-2.5 rounded-xl font-semibold bg-red-600 hover:bg-red-700 text-white transition">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Sair
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Métricas -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-semibold text-gray-500">Total Profissionais</span>
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"><i class="fas fa-users text-blue-600"></i></div>
+                        </div>
+                        <div class="text-3xl font-extrabold text-gray-800" id="metricTotalPro">0</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-semibold text-gray-500">Assinaturas Ativas</span>
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center"><i class="fas fa-check-circle text-green-600"></i></div>
+                        </div>
+                        <div class="text-3xl font-extrabold text-gray-800" id="metricAtivos">0</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-semibold text-gray-500">Cidades Atendidas</span>
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center"><i class="fas fa-map-marker-alt text-purple-600"></i></div>
+                        </div>
+                        <div class="text-3xl font-extrabold text-gray-800" id="metricCidades">0</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-semibold text-gray-500">Receita Mensal Estimada</span>
+                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center"><i class="fas fa-coins text-yellow-600"></i></div>
+                        </div>
+                        <div class="text-3xl font-extrabold text-green-600">R$ <span id="metricReceita">0,00</span></div>
+                    </div>
+                </div>
+
+                <!-- Configuração de Mensalidade -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-5 flex items-center gap-2">
+                        <i class="fas fa-coins text-yellow-500"></i> Configuração de Mensalidade dos Profissionais
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Valor da Mensalidade (R$)</label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-500">R$</span>
+                                <input type="number" id="adminMensalidade" step="0.01" min="0" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg font-bold text-orange-600">
+                            </div>
+                        </div>
+                        <div class="md:col-span-2 flex gap-3">
+                            <button onclick="saveMensalidade()" class="gradient-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-xl shadow-lg">
+                                <i class="fas fa-save mr-2"></i>Salvar Novo Valor
+                            </button>
+                            <button onclick="atualizarDashboardAdmin()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl transition">
+                                <i class="fas fa-sync-alt mr-2"></i>Atualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestão de Profissionais -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 md:p-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-users-cog text-blue-600"></i> Gestão de Profissionais
+                            <span id="adminCountPro" class="text-sm font-normal bg-blue-100 text-blue-700 px-3 py-1 rounded-full">0</span>
+                        </h3>
+                        <div class="relative">
+                            <input type="text" id="adminBuscaPro" oninput="renderAdminProfissionais()" placeholder="Buscar profissional..." class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-80">
+                            <i class="fas fa-search absolute left-3.5 top-3.5 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-4 text-left">Profissional</th>
+                                    <th class="px-6 py-4 text-left">Localização</th>
+                                    <th class="px-6 py-4 text-left">Especialidade</th>
+                                    <th class="px-6 py-4 text-left">Avaliação</th>
+                                    <th class="px-6 py-4 text-left">Preço/Hora</th>
+                                    <th class="px-6 py-4 text-left">Status</th>
+                                    <th class="px-6 py-4 text-left">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTableProfissionais" class="divide-y divide-gray-100 text-sm">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="adminEmptyPro" class="hidden text-center py-12 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-3"></i>
+                        <p>Nenhum profissional cadastrado.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= MODAL: PERFIL DO PROFISSIONAL ================= -->
+    <div id="modalPerfil" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeModal('modalPerfil')"></div>
+        <div class="relative h-full overflow-y-auto p-4 py-8">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-4xl mx-auto slide-up relative">
+                <button onclick="closeModal('modalPerfil')" class="absolute top-4 right-4 z-10 w-10 h-10 bg-white shadow-md rounded-full hover:bg-gray-100 flex items-center justify-center transition">
+                    <i class="fas fa-times text-gray-600 text-lg"></i>
+                </button>
+                <div id="modalPerfilContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: AVALIAR PROFISSIONAL ================= -->
+    <div id="modalAvaliacao" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeModal('modalAvaliacao')"></div>
+        <div class="relative h-full flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full slide-up p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-extrabold text-gray-800"><i class="fas fa-star text-yellow-500 mr-2"></i>Avaliar Profissional</h3>
+                    <button onclick="closeModal('modalAvaliacao')" class="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-times text-gray-600"></i>
+                    </button>
+                </div>
+                <form id="formAvaliacao">
+                    <input type="hidden" id="avaliacaoSolicitacaoId">
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Sua Nota</label>
+                        <div id="estrelasAvaliacao" class="flex gap-2">
+                            <button type="button" data-valor="1" class="star-btn text-4xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
+                            <button type="button" data-valor="2" class="star-btn text-4xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
+                            <button type="button" data-valor="3" class="star-btn text-4xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
+                            <button type="button" data-valor="4" class="star-btn text-4xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
+                            <button type="button" data-valor="5" class="star-btn text-4xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
+                        </div>
+                        <input type="hidden" id="avaliacaoNota" value="0">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Seu Comentário</label>
+                        <textarea id="avaliacaoComentario" rows="4" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Conte como foi sua experiência com este profissional..."></textarea>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeModal('modalAvaliacao')" class="flex-1 px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="flex-1 gradient-accent text-white font-bold py-3 px-6 rounded-xl shadow-lg">
+                            <i class="fas fa-check mr-2"></i>Enviar Avaliação
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: LOGIN ADMIN ================= -->
+    <div id="modalAdminLogin" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeModal('modalAdminLogin')"></div>
+        <div class="relative h-full flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full slide-up overflow-hidden">
+                <div class="gradient-primary p-8 text-white text-center">
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shield-alt text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-extrabold">Área do Administrador</h3>
+                    <p class="text-blue-100 mt-1 text-sm">Acesso restrito ao painel de gestão</p>
+                </div>
+                <form id="formAdminLogin" class="p-8">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Login</label>
+                        <input type="text" id="adminLogin" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Digite o login">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Senha</label>
+                        <input type="password" id="adminSenha" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Digite a senha">
+                    </div>
+                    <div id="adminLoginError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Login ou senha inválidos. Tente novamente.</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeModal('modalAdminLogin')" class="flex-1 px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="flex-1 gradient-primary text-white font-bold py-3 px-6 rounded-xl shadow-lg">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Entrar
+                        </button>
+                    </div>
+                    <div class="mt-5 pt-5 border-t border-gray-100 text-center text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i> Acesso de demonstração: login <strong>admin10</strong> / senha <strong>bolo2024</strong>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-20 right-4 z-[100] hidden">
+        <div id="toastContent" class="bg-white shadow-2xl rounded-xl border-l-4 p-4 pr-6 flex items-center gap-3 max-w-sm">
+            <i id="toastIcon" class="text-2xl"></i>
+            <div>
+                <div id="toastTitle" class="font-bold text-gray-800"></div>
+                <div id="toastMsg" class="text-sm text-gray-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ONBOARDING CAROUSEL ================= -->
+    <div id="onboarding" class="fixed inset-0 z-[60] bg-white hidden">
+        <div class="h-full w-full flex flex-col">
+            <!-- Top bar -->
+            <div class="flex items-center justify-between px-6 py-5">
+                <button onclick="fecharOnboarding()" class="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center transition">
+                    <i class="fas fa-times text-gray-700 text-xl"></i>
+                </button>
+                <button onclick="navigateTo('cadastro'); fecharOnboarding();" class="text-blue-600 font-semibold text-base hover:text-blue-700">
+                    Sou profissional
+                </button>
+            </div>
+
+            <!-- Slides -->
+            <div class="flex-1 flex flex-col items-center justify-center px-8 relative overflow-hidden">
+                <div id="onboardingSlides" class="w-full max-w-md">
+                    <!-- Slide 1 -->
+                    <div class="onboarding-slide text-center" data-slide="0">
+                        <div class="relative mb-10">
+                            <div class="absolute -top-8 -left-8 w-32 h-32 bg-blue-50 rounded-full opacity-60"></div>
+                            <div class="absolute -bottom-10 -right-6 w-40 h-40 bg-yellow-50 rounded-full opacity-60"></div>
+                            <svg viewBox="0 0 200 210" class="w-56 h-56 md:w-72 md:h-72 mx-auto relative z-10">
+                                <path d="M60,140 C60,110 140,110 140,140 L140,180 C140,188 132,194 124,194 L76,194 C68,194 60,188 60,180 Z" fill="#f472b6" opacity="0.9"/>
+                                <path d="M45,145 L60,140 L60,180 C60,188 68,194 76,194 L55,194 C47,194 43,186 43,180 L43,148 C43,146 44,145 45,145 Z" fill="#ec4899" opacity="0.9"/>
+                                <path d="M155,145 L140,140 L140,180 C140,188 148,194 156,194 L157,194 C159,194 161,192 161,188 L161,150 C161,147 158,145 155,145 Z" fill="#facc15" opacity="0.9"/>
+                                <circle cx="100" cy="80" r="40" fill="#9ca3af"/>
+                                <circle cx="100" cy="78" r="36" fill="#d97706"/>
+                                <path d="M85,70 C85,58 115,58 115,70 L115,80 C115,90 85,90 85,80 Z" fill="#78350f" opacity="0.2"/>
+                                <circle cx="88" cy="74" r="3" fill="#111827"/>
+                                <circle cx="112" cy="74" r="3" fill="#111827"/>
+                                <path d="M92,86 C95,90 105,90 108,86" stroke="#111827" stroke-width="2" fill="none" stroke-linecap="round"/>
+                                <rect x="122" y="130" width="12" height="36" rx="2" fill="#3b82f6"/>
+                                <rect x="126" y="126" width="4" height="6" rx="1" fill="#1e40af"/>
+                                <circle cx="128" cy="162" r="3" fill="#1e3a8a" opacity="0.8"/>
+                                <rect x="66" y="140" width="10" height="30" rx="2" fill="#60a5fa"/>
+                                <rect x="56" y="168" width="30" height="8" rx="3" fill="#2563eb"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Encontre quem precisa</h2>
+                        <p class="text-gray-600 text-base md:text-lg leading-relaxed max-w-sm mx-auto">
+                            Filtre por categoria e localização para encontrar os melhores profissionais da sua região com rapidez.
+                        </p>
+                    </div>
+
+                    <!-- Slide 2 -->
+                    <div class="onboarding-slide hidden text-center" data-slide="1">
+                        <div class="relative mb-10">
+                            <div class="absolute -top-10 left-10 w-28 h-28 bg-yellow-50 rounded-full opacity-60"></div>
+                            <div class="absolute -bottom-8 -right-10 w-36 h-36 bg-blue-50 rounded-full opacity-60"></div>
+                            <svg viewBox="0 0 200 210" class="w-56 h-56 md:w-72 md:h-72 mx-auto relative z-10">
+                                <path d="M65,145 C65,115 135,115 135,145 L135,180 C135,188 128,195 120,195 L80,195 C72,195 65,188 65,180 Z" fill="#fde047"/>
+                                <path d="M100,50 L103,60 L114,60 L106,67 L109,78 L100,72 L91,78 L94,67 L86,60 L97,60 Z" fill="#facc15"/>
+                                <circle cx="72" cy="85" r="3" fill="#facc15"/>
+                                <circle cx="138" cy="90" r="2.5" fill="#facc15"/>
+                                <circle cx="100" cy="65" r="18" fill="#a3a3a3"/>
+                                <circle cx="100" cy="63" r="16" fill="#7c2d12"/>
+                                <circle cx="88" cy="61" r="2.5" fill="#111827"/>
+                                <circle cx="112" cy="61" r="2.5" fill="#111827"/>
+                                <path d="M92,71 C96,74 104,74 108,71" stroke="#111827" stroke-width="2" fill="none" stroke-linecap="round"/>
+                                <rect x="86" y="130" width="28" height="38" rx="4" fill="#16a34a"/>
+                                <rect x="90" y="136" width="10" height="4" rx="1" fill="#bbf7d0"/>
+                                <rect x="90" y="144" width="20" height="4" rx="1" fill="#bbf7d0"/>
+                                <circle cx="72" cy="150" r="3" fill="#16a34a"/>
+                                <circle cx="130" cy="140" r="3" fill="#22c55e"/>
+                                <path d="M80,160 C80,152 120,152 120,160 L120,180 L80,180 Z" fill="#4ade80" opacity="0.6"/>
+                                <path d="M75,135 L88,125 L112,125 L125,135" stroke="#16a34a" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                <path d="M75,135 L75,135 L72,140 M125,135 L125,135 L128,140" stroke="#16a34a" stroke-width="3" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Hora de negociar</h2>
+                        <p class="text-gray-600 text-base md:text-lg leading-relaxed max-w-sm mx-auto">
+                            Depois da solicitação feita, os profissionais interessados vão entrar em contato com você por WhatsApp, e-mail ou ligação.
+                        </p>
+                    </div>
+
+                    <!-- Slide 3 -->
+                    <div class="onboarding-slide hidden text-center" data-slide="2">
+                        <div class="relative mb-10">
+                            <div class="absolute -top-8 -right-10 w-32 h-32 bg-green-50 rounded-full opacity-70"></div>
+                            <div class="absolute -bottom-8 -left-10 w-36 h-36 bg-pink-50 rounded-full opacity-70"></div>
+                            <svg viewBox="0 0 200 210" class="w-56 h-56 md:w-72 md:h-72 mx-auto relative z-10">
+                                <path d="M70,150 C70,125 130,125 130,150 L130,185 C130,192 124,198 117,198 L83,198 C76,198 70,192 70,185 Z" fill="#fbbf24"/>
+                                <path d="M100,10 L104,20 L115,20 L107,28 L110,40 L100,32 L90,40 L93,28 L85,20 L96,20 Z" fill="#f97316"/>
+                                <circle cx="70" cy="70" r="2.5" fill="#f97316"/>
+                                <circle cx="145" cy="78" r="2" fill="#f97316"/>
+                                <circle cx="155" cy="130" r="2.5" fill="#fb7185"/>
+                                <circle cx="58" cy="120" r="2" fill="#fb7185"/>
+                                <circle cx="100" cy="85" r="28" fill="#166534"/>
+                                <circle cx="100" cy="85" r="28" fill="#16a34a"/>
+                                <path d="M100,57 L100,115 M72,85 L128,85" stroke="#bbf7d0" stroke-width="3"/>
+                                <path d="M82,68 L94,80 L118,56" stroke="#bbf7d0" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="72" cy="135" r="4" fill="#16a34a"/>
+                                <circle cx="132" cy="135" r="4" fill="#16a34a"/>
+                                <path d="M80,145 L120,145 L116,158 L84,158 Z" fill="#22c55e" opacity="0.8"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Qualidade garantida</h2>
+                        <p class="text-gray-600 text-base md:text-lg leading-relaxed max-w-sm mx-auto">
+                            Avalie os serviços realizados e ajude a manter nossa comunidade com os melhores profissionais do mercado.
+                        </p>
+                    </div>
+
+                    <!-- Slide 4 -->
+                    <div class="onboarding-slide hidden text-center" data-slide="3">
+                        <div class="relative mb-10">
+                            <div class="absolute -top-10 left-20 w-28 h-28 bg-indigo-50 rounded-full opacity-60"></div>
+                            <div class="absolute -bottom-8 right-8 w-36 h-36 bg-yellow-50 rounded-full opacity-60"></div>
+                            <svg viewBox="0 0 200 210" class="w-56 h-56 md:w-72 md:h-72 mx-auto relative z-10">
+                                <path d="M60,140 C60,112 140,112 140,140 L140,182 C140,190 133,196 125,196 L75,196 C67,196 60,190 60,182 Z" fill="#facc15"/>
+                                <circle cx="100" cy="72" r="40" fill="#fef3c7"/>
+                                <circle cx="100" cy="68" r="30" fill="#bbf7d0"/>
+                                <path d="M74,86 C72,96 76,104 84,108 L84,130 L116,130 L116,108 C124,104 128,96 126,86 L100,80 Z" fill="#3b82f6"/>
+                                <rect x="94" y="104" width="12" height="20" rx="2" fill="#1e40af"/>
+                                <circle cx="88" cy="70" r="3" fill="#111827"/>
+                                <circle cx="112" cy="70" r="3" fill="#111827"/>
+                                <path d="M92,82 C95,85 105,85 108,82" stroke="#111827" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                                <rect x="116" y="140" width="10" height="26" rx="2" fill="#1e3a8a"/>
+                                <rect x="74" y="150" width="8" height="24" rx="1.5" fill="#2563eb"/>
+                                <circle cx="122" cy="160" r="3" fill="#1e3a8a"/>
+                                <path d="M88,100 C84,102 80,100 78,102 M112,100 C116,102 120,100 122,102" stroke="#111827" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Acompanhe sua solicitação</h2>
+                        <p class="text-gray-600 text-base md:text-lg leading-relaxed max-w-sm mx-auto">
+                            Você pode acompanhar seus pedidos ativando as notificações ou buscar novos profissionais aqui pelo nosso app.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Dots -->
+                <div class="flex gap-2 mt-12 mb-8" id="onboardingDots">
+                    <button onclick="irSlide(0)" class="w-2.5 h-2.5 rounded-full bg-blue-600 transition-all"></button>
+                    <button onclick="irSlide(1)" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-all"></button>
+                    <button onclick="irSlide(2)" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-all"></button>
+                    <button onclick="irSlide(3)" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-all"></button>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="px-6 pb-10 pt-4 max-w-md mx-auto w-full space-y-3">
+                <button id="onboardingProximoBtn" onclick="proximoSlide()" class="w-full gradient-primary hover:opacity-90 text-white font-bold py-4 rounded-2xl shadow-xl transition transform hover:scale-[1.02] text-lg">
+                    Avançar
+                </button>
+                <button onclick="fecharOnboarding()" class="w-full text-blue-600 font-semibold py-3 hover:text-blue-700 transition">
+                    Pular
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= BOTTOM NAVIGATION (Mobile) ================= -->
+    <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-100 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] md:hidden">
+        <div class="grid grid-cols-4 max-w-lg mx-auto">
+            <button onclick="navigateTo('home')" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-blue-600" data-view="home">
+                <i class="fas fa-home text-2xl"></i>
+                <span class="text-xs font-semibold">Início</span>
+            </button>
+            <button onclick="scrollToBusca()" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600">
+                <i class="fas fa-search text-2xl"></i>
+                <span class="text-xs font-semibold">Buscar</span>
+            </button>
+            <button onclick="navigateTo('solicitacoes')" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600">
+                <i class="fas fa-briefcase text-2xl"></i>
+                <span class="text-xs font-semibold">Pedidos</span>
+            </button>
+            <button onclick="navigateTo('solicitacoes'); setTimeout(()=>setTabSolicitacoes('recebidas'), 100);" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600">
+                <i class="fas fa-user text-2xl"></i>
+                <span class="text-xs font-semibold">Entrar</span>
+            </button>
+        </div>
+    </nav>
+    <div class="h-20 md:hidden"></div>
+
+<script>
+// ============================================================
+// DADOS INICIAIS (MOCK DATA)
+// ============================================================
+const profissionaisMock = [
+    {
+        id: 'p1',
+        nome: 'Carlos Eduardo Mendes',
+        telefone: '61998765432',
+        email: 'carlos.edu@email.com',
+        foto: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400&h=400&fit=crop&crop=faces',
+        categoria: 'Eletricista',
+        categorias: ['Eletricista', 'Marido de Aluguel'],
+        cidade: 'Brasília',
+        uf: 'DF',
+        bairro: 'Asa Sul',
+        precoHora: 90,
+        bio: 'Eletricista profissional com mais de 12 anos de experiência em instalações residenciais e comerciais. Especialista em painéis elétricos, tomadas, iluminação LED e resolução de curtos-circuitos. Atendimento rápido e com garantia em todos os serviços.',
+        avaliacoes: [
+            { nome: 'Ana Paula', nota: 5, comentario: 'Excelente profissional! Resolveu o problema da fiação da minha casa em menos de 2 horas. Super recomendo!', data: '2024-08-15' },
+            { nome: 'Roberto Lima', nota: 5, comentario: 'Muito pontual, limpo e competente. Já contratei outras vezes e sempre deixa tudo perfeito.', data: '2024-07-20' },
+            { nome: 'Marina Costa', nota: 4, comentario: 'Bom atendimento e preço justo. Chegou no horário combinado.', data: '2024-06-10' }
+        ],
+        numeroAvaliacoes: 127,
+        totalServicos: 340,
+        verificado: true,
+        assinaturaAtiva: true
+    },
+    {
+        id: 'p2',
+        nome: 'Rosângela Maria da Silva',
+        telefone: '61997654321',
+        email: 'ro.maria@email.com',
+        foto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=faces',
+        categoria: 'Diarista',
+        categorias: ['Diarista'],
+        cidade: 'Brasília',
+        uf: 'DF',
+        bairro: 'Samambaia',
+        precoHora: 45,
+        bio: 'Diarista dedicada e experiente com mais de 8 anos em limpeza doméstica. Cuido da sua casa com muito carinho, organização e eficiência. Ofereço serviços de limpeza pesada, pós-obra, lavanderia e organização de armários.',
+        avaliacoes: [
+            { nome: 'Juliana Martins', nota: 5, comentario: 'A Rosângela é incrível! Deixa minha casa impecável. Confiança total.', data: '2024-08-05' },
+            { nome: 'Fernanda Souza', nota: 5, comentario: 'Profissional exemplar, pontual e atenciosa. Melhor diarista que já contratei!', data: '2024-07-18' }
+        ],
+        numeroAvaliacoes: 89,
+        totalServicos: 210,
+        verificado: true,
+        assinaturaAtiva: true
+    },
+    {
+        id: 'p3',
+        nome: 'João Paulo Ferreira',
+        telefone: '61996543210',
+        email: 'jp.ferreira@email.com',
+        foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=faces',
+        categoria: 'Encanador',
+        categorias: ['Encanador', 'Pedreiro', 'Marido de Aluguel'],
+        cidade: 'Brasília',
+        uf: 'DF',
+        bairro: 'Taguatinga',
+        precoHora: 100,
+        bio: 'Encanador qualificado com 15 anos de experiência. Resolvo vazamentos, entupimentos, instalação de pias, vasos sanitários, chuveiros, caixas d\'água e sistemas de esgoto. Atendimento 24h para emergências. Uso equipamentos modernos.',
+        avaliacoes: [
+            { nome: 'Paulo Ricardo', nota: 5, comentario: 'Resolveu um vazamento escondido que ninguém conseguia encontrar. Preço justo, excelente trabalho!', data: '2024-08-22' },
+            { nome: 'Camila Dias', nota: 4.5, comentario: 'Muito rápido e eficiente. Instalei todo o sistema hidráulico do meu apartamento.', data: '2024-07-30' }
+        ],
+        numeroAvaliacoes: 156,
+        totalServicos: 420,
+        verificado: true,
+        assinaturaAtiva: true
+    },
+    {
+        id: 'p4',
+        nome: 'Antônio Carlos Gomes',
+        telefone: '11995432109',
+        email: 'antonio.gomes@email.com',
+        foto: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=400&h=400&fit=crop&crop=faces',
+        categoria: 'Pintor',
+        categorias: ['Pintor', 'Pedreiro'],
+        cidade: 'São Paulo',
+        uf: 'SP',
+        bairro: 'Vila Mariana',
+        precoHora: 80,
+        bio: 'Pintor profissional com vasta experiência em acabamentos de alta qualidade. Pintura residencial e comercial, texturas, grafiato, esquadrias de madeira e ferro, papel de parede e restauração. Garanto acabamento perfeito e uso materiais de primeira.',
+        avaliacoes: [
+            { nome: 'Helena Rocha', nota: 5, comentario: 'Trabalho impecável! Minha casa ficou maravilhosa. Pontual e caprichoso.', data: '2024-08-10' },
+            { nome: 'Luís Henrique', nota: 5, comentario: 'Melhor pintor de São Paulo! Já pintei 3 apartamentos com ele.', data: '2024-06-25' }
+        ],
+        numeroAvaliacoes: 98,
+        totalServicos: 260,
+        verificado: true,
+        assinaturaAtiva: true
+    },
+    {
+        id: 'p5',
+        nome: 'Wagner Lucas Pereira',
+        telefone: '61994321098',
+        email: 'wagner.lucas@email.com',
+        foto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=faces',
+        categoria: 'Montador de Móveis',
+        categorias: ['Montador de Móveis', 'Marido de Aluguel', 'Eletricista'],
+        cidade: 'Brasília',
+        uf: 'DF',
+        bairro: 'Ceilândia',
+        precoHora: 70,
+        bio: 'Montador especializado em móveis planejados, MDF, IKEA, Tok&Stok, Etna e todas as principais marcas. Desmontagem, montagem, instalação de prateleiras, quadros e acessórios. Atuo em Brasília e região administrativa há mais de 7 anos.',
+        avaliacoes: [
+            { nome: 'Amanda Pereira', nota: 5, comentario: 'Montou meu guarda-roupas planejado com perfeição! Rápido e cuidadoso.', data: '2024-08-19' },
+            { nome: 'Diego Fernandes', nota: 5, comentario: 'Superou minhas expectativas. Organizou toda minha casa nova.', data: '2024-07-12' }
+        ],
+        numeroAvaliacoes: 74,
+        totalServicos: 180,
+        verificado: true,
+        assinaturaAtiva: true
+    },
+    {
+        id: 'p6',
+        nome: 'Ricardo Chaves Mendes',
+        telefone: '61993210987',
+        email: 'ricardo.chaves@email.com',
+        foto: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=400&fit=crop&crop=faces',
+        categoria: 'Chaveiro',
+        categorias: ['Chaveiro'],
+        cidade: 'Brasília',
+        uf: 'DF',
+        bairro: 'Asa Norte',
+        precoHora: 120,
+        bio: 'Chaveiro profissional 24 horas! Atendo emergências a qualquer hora do dia ou noite. Abro fechaduras residenciais, comerciais e automotivas, faço cópias de chaves, troco cilindros e instalo fechaduras digitais. Atendimento rápido em todo DF.',
+        avaliacoes: [
+            { nome: 'Bruno Almeida', nota: 5, comentario: 'Me salvou às 2h da manhã! Chegou em 15 minutos e abriu a porta sem danificar. Salve o número!', data: '2024-08-28' },
+            { nome: 'Vanessa Lopes', nota: 5, comentario: 'Atendimento nota 10. Instalei fechadura digital, ficou perfeito.', data: '2024-08-02' }
+        ],
+        numeroAvaliacoes: 201,
+        totalServicos: 550,
+        verificado: true,
+        assinaturaAtiva: true
+    },
+    {
+        id: 'p7',
+        nome: 'Marcelo Henrique Souza',
+        telefone: '61992109876',
+        email: 'marcelo.hsouza@email.com',
+        foto: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=400&h=400&fit=crop&crop=faces',
+        categoria: 'Pedreiro',
+        categorias: ['Pedreiro', 'Pintor'],
+        cidade: 'Brasília',
+        uf: 'DF',
+        bairro: 'Guará',
+        precoHora: 95,
+        bio: 'Pedreiro profissional com 18 anos de experiência em construção e reforma. Faço alvenaria, reboco, contrapiso, assentamento de pisos e azulejos, construção de muros, quartos, varandas gourmet e pequenas ampliações. Orçamento sem compromisso.',
+        avaliacoes: [
+            { nome: 'Eduardo Costa', nota: 5, comentario: 'Reformei toda minha área de lazer com ele. Obra limpa, prazo cumprido e qualidade!', data: '2024-07-22' },
+            { nome: 'Renata Prado', nota: 4.5, comentario: 'Colocou todo o piso da minha casa, ficou tudo alinhado e perfeito.', data: '2024-06-14' }
+        ],
+        numeroAvaliacoes: 112,
+        totalServicos: 300,
+        verificado: true,
+        assinaturaAtiva: true
+    },
+    {
+        id: 'p8',
+        nome: 'Fábio José Ramos',
+        telefone: '61991098765',
+        email: 'fabio.ramos@email.com',
+        foto: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&crop=faces',
+        categoria: 'Marido de Aluguel',
+        categorias: ['Marido de Aluguel', 'Eletricista', 'Encanador', 'Montador de Móveis', 'Pintor'],
+        cidade: 'São Paulo',
+        uf: 'SP',
+        bairro: 'Pinheiros',
+        precoHora: 85,
+        bio: 'Marido de Aluguel versátil! Resolvo pequenos reparos domésticos de todo tipo: elétrica básica, hidráulica, pintura, montagem de móveis, instalação de cortinas, persianas, ventiladores, utensílios de banheiro e cozinha. Tudo com qualidade.',
+        avaliacoes: [
+            { nome: 'Patrícia Andrade', nota: 5, comentario: 'Homem de todos os ofícios! Resolveu vários problemas da minha casa de uma vez só.', data: '2024-08-18' },
+            { nome: 'Alexandre Melo', nota: 5, comentario: 'Fábio é o "faz-tudo" que toda casa precisa. Recomendo muito!', data: '2024-07-25' }
+        ],
+        numeroAvaliacoes: 168,
+        totalServicos: 480,
+        verificado: true,
+        assinaturaAtiva: true
+    }
+];
+
+// ============================================================
+// VARIÁVEIS GLOBAIS
+// ============================================================
+let profissionais = [];
+let solicitacoes = [];
+let currentUserLocation = null; // { cidade, bairro }
+let currentView = 'home';
+let adminAutenticado = false;
+let valorMensalidadeAtual = 29.90;
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    carregarDados();
+    inicializarCidadeOptions();
+    renderProfissionais();
+    atualizarValoresMensalidade();
+    inicializarEventosGlobais();
+    setTimeout(inicializarOnboarding, 400);
+    console.log('✅ Ajeita carregado com sucesso!');
+});
+
+function carregarDados() {
+    // Profissionais
+    const savedPro = localStorage.getItem('ajeita_profissionais');
+    if (savedPro) {
+        profissionais = JSON.parse(savedPro);
+    } else {
+        profissionais = JSON.parse(JSON.stringify(profissionaisMock));
+        salvarProfissionais();
+    }
+
+    // Solicitações
+    const savedSol = localStorage.getItem('ajeita_solicitacoes');
+    solicitacoes = savedSol ? JSON.parse(savedSol) : [];
+
+    // Mensalidade
+    const savedMen = localStorage.getItem('ajeita_mensalidade');
+    valorMensalidadeAtual = savedMen ? parseFloat(savedMen) : 29.90;
+
+    // Admin autenticado (apenas em sessão)
+    adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true';
+}
+
+function salvarProfissionais() {
+    localStorage.setItem('ajeita_profissionais', JSON.stringify(profissionais));
+}
+function salvarSolicitacoes() {
+    localStorage.setItem('ajeita_solicitacoes', JSON.stringify(solicitacoes));
+}
+
+// ============================================================
+// NAVEGAÇÃO SPA
+// ============================================================
+function navigateTo(view) {
+    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+    const target = document.getElementById('view-' + view);
+    if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('fade-in');
+    }
+    currentView = view;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Update bottom nav state
+    document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+        btn.classList.remove('text-blue-600');
+        btn.classList.add('text-gray-500');
+    });
+    const activeBtn = document.querySelector(`.bottom-nav-btn[data-view="${view}"]`);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-gray-500');
+        activeBtn.classList.add('text-blue-600');
+    }
+
+    if (view === 'home') renderProfissionais();
+    if (view === 'solicitacoes') renderSolicitacoes();
+    if (view === 'admin') {
+        if (!adminAutenticado) {
+            openAdminLogin();
+            return;
+        }
+        atualizarDashboardAdmin();
+    }
+}
+
+// ============================================================
+// NOVAS FUNÇÕES: Onboarding, Busca Simples, Scroll Busca
+// ============================================================
+let slideAtual = 0;
+const totalSlides = 4;
+
+function inicializarOnboarding() {
+    const visitou = localStorage.getItem('ajeita_visitou');
+    if (!visitou) {
+        document.getElementById('onboarding').classList.remove('hidden');
+        irSlide(0);
+    }
+}
+
+function irSlide(n) {
+    slideAtual = n;
+    document.querySelectorAll('.onboarding-slide').forEach((s, i) => {
+        s.classList.toggle('hidden', i !== n);
+        if (i === n) s.classList.add('fade-in');
+        else s.classList.remove('fade-in');
+    });
+    const dots = document.querySelectorAll('#onboardingDots button');
+    dots.forEach((d, i) => {
+        d.classList.toggle('bg-blue-600', i === n);
+        d.classList.toggle('bg-gray-300', i !== n);
+        if (i === n) { d.style.width = '24px'; d.style.borderRadius = '999px'; }
+        else { d.style.width = '10px'; }
+    });
+    const btn = document.getElementById('onboardingProximoBtn');
+    if (btn) {
+        if (n === totalSlides - 1) {
+            btn.textContent = 'Começar';
+            btn.onclick = fecharOnboarding;
+        } else {
+            btn.textContent = 'Avançar';
+            btn.onclick = proximoSlide;
+        }
+    }
+}
+
+function proximoSlide() {
+    if (slideAtual < totalSlides - 1) irSlide(slideAtual + 1);
+    else fecharOnboarding();
+}
+
+function fecharOnboarding() {
+    document.getElementById('onboarding').classList.add('hidden');
+    localStorage.setItem('ajeita_visitou', 'true');
+}
+
+function buscaSimples(termo) {
+    termo = (termo || '').toLowerCase().trim();
+    if (!termo) { renderProfissionais(); return; }
+    const t = termo;
+    const matches = profissionais.filter(p => p.assinaturaAtiva && (
+        p.nome.toLowerCase().includes(t) ||
+        p.categoria.toLowerCase().includes(t) ||
+        p.cidade.toLowerCase().includes(t) ||
+        p.bairro.toLowerCase().includes(t) ||
+        p.bio.toLowerCase().includes(t) ||
+        (p.categorias && p.categorias.some(c => c.toLowerCase().includes(t)))
+    ));
+    const grid = document.getElementById('profissionaisGrid');
+    const empty = document.getElementById('emptyProfissionais');
+    const totalEl = document.getElementById('totalProfissionais');
+    totalEl.textContent = matches.length + ' profissional(es)';
+    if (matches.length === 0) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    document.getElementById('profissionaisGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    grid.innerHTML = matches.map(p => cardProfissional(p)).join('');
+}
+
+function scrollToBusca() {
+    navigateTo('home');
+    setTimeout(() => {
+        const el = document.getElementById('buscaAvancada') || document.getElementById('secoesCategorias');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else window.scrollTo({ top: 500, behavior: 'smooth' });
+    }, 150);
+}
+
+function cardProfissional(p) {
+    const media = calcularMedia(p);
+    return `
+        <div class="card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="relative">
+                <img src="${p.foto}" alt="${p.nome}" class="w-full h-48 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">
+                <div class="absolute top-3 left-3 flex gap-2">
+                    ${p.verificado ? '<span class="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fas fa-check-circle"></i>Verificado</span>' : ''}
+                    <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">${categoriaIcone(p.categoria)} ${p.categoria}</span>
+                </div>
+                <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg">
+                    <div class="text-center">
+                        <div class="text-yellow-500 font-bold text-sm leading-none">${media.toFixed(1)}</div>
+                        <div class="flex justify-center text-yellow-400 text-xs"><i class="fas fa-star"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-5">
+                <h4 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.nome}</h4>
+                <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
+                    <i class="fas fa-map-marker-alt text-red-400"></i>
+                    <span class="truncate">${p.cidade} - ${p.bairro}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm mb-4">
+                    <span class="text-gray-600">
+                        <i class="fas fa-comments text-blue-500 mr-1"></i> ${p.numeroAvaliacoes} avaliações
+                    </span>
+                    <span class="text-gray-600">
+                        <i class="fas fa-toolbox text-blue-500 mr-1"></i> ${p.totalServicos} serviços
+                    </span>
+                </div>
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div>
+                        <span class="text-xs text-gray-500">A partir de</span>
+                        <div class="text-xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}<span class="text-sm font-normal text-gray-500">/hora</span></div>
+                    </div>
+                    <button onclick="abrirPerfil('${p.id}')" class="gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                        <i class="fas fa-eye mr-1"></i>Ver Perfil
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    menu.classList.toggle('hidden');
+}
+
+// ============================================================
+// RENDER: LISTA DE PROFISSIONAIS
+// ============================================================
+function inicializarCidadeOptions() {
+    const cidades = [...new Set(profissionais.map(p => p.cidade))].sort();
+    const select = document.getElementById('filterCidade');
+    select.innerHTML = '<option value="">Todas</option>' + cidades.map(c => `<option>${c}</option>`).join('');
+}
+
+function renderProfissionais() {
+    const grid = document.getElementById('profissionaisGrid');
+    const empty = document.getElementById('emptyProfissionais');
+    const totalEl = document.getElementById('totalProfissionais');
+
+    let lista = [...profissionais].filter(p => p.assinaturaAtiva);
+
+    // Filtros
+    const categoria = document.getElementById('filterCategoria').value || document.getElementById('searchCategoria').value;
+    const cidade = document.getElementById('filterCidade').value || document.getElementById('searchCidade').value;
+    const bairro = document.getElementById('searchBairro').value;
+    const precoMax = parseFloat(document.getElementById('filterPreco').value);
+    const ordenacao = document.getElementById('filterOrdenacao').value;
+
+    if (categoria) lista = lista.filter(p =>
+        p.categoria === categoria || (p.categorias && p.categorias.includes(categoria))
+    );
+    if (cidade) lista = lista.filter(p => p.cidade.toLowerCase().includes(cidade.toLowerCase()));
+    if (bairro) lista = lista.filter(p => p.bairro.toLowerCase().includes(bairro.toLowerCase()));
+    if (!isNaN(precoMax)) lista = lista.filter(p => p.precoHora <= precoMax);
+
+    // Ordenação
+    switch (ordenacao) {
+        case 'avaliacao':
+            lista.sort((a, b) => calcularMedia(b) - calcularMedia(a));
+            break;
+        case 'preco':
+            lista.sort((a, b) => a.precoHora - b.precoHora);
+            break;
+        case 'servicos':
+            lista.sort((a, b) => b.totalServicos - a.totalServicos);
+            break;
+        case 'proximidade':
+            // Peso por match de localização usuário (se tiver)
+            if (currentUserLocation) {
+                lista.sort((a, b) => {
+                    const scoreA = (a.cidade === currentUserLocation.cidade ? 5 : 0) + (a.bairro === currentUserLocation.bairro ? 5 : 0);
+                    const scoreB = (b.cidade === currentUserLocation.cidade ? 5 : 0) + (b.bairro === currentUserLocation.bairro ? 5 : 0);
+                    return scoreB - scoreA || (calcularMedia(b) - calcularMedia(a));
+                });
+            } else {
+                lista.sort((a, b) => calcularMedia(b) - calcularMedia(a));
+            }
+            break;
+    }
+
+    totalEl.textContent = lista.length + ' profissional(es)';
+
+    if (lista.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+
+    grid.innerHTML = lista.map(p => `
+        <div class="card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="relative">
+                <img src="${p.foto}" alt="${p.nome}" class="w-full h-48 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">
+                <div class="absolute top-3 left-3 flex gap-2">
+                    ${p.verificado ? '<span class="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fas fa-check-circle"></i>Verificado</span>' : ''}
+                    <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">${categoriaIcone(p.categoria)} ${p.categoria}</span>
+                </div>
+                <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg">
+                    <div class="text-center">
+                        <div class="text-yellow-500 font-bold text-sm leading-none">${calcularMedia(p).toFixed(1)}</div>
+                        <div class="flex justify-center text-yellow-400 text-xs"><i class="fas fa-star"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-5">
+                <h4 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.nome}</h4>
+                <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
+                    <i class="fas fa-map-marker-alt text-red-400"></i>
+                    <span class="truncate">${p.cidade} - ${p.bairro}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm mb-4">
+                    <span class="text-gray-600">
+                        <i class="fas fa-comments text-blue-500 mr-1"></i> ${p.numeroAvaliacoes} avaliações
+                    </span>
+                    <span class="text-gray-600">
+                        <i class="fas fa-toolbox text-blue-500 mr-1"></i> ${p.totalServicos} serviços
+                    </span>
+                </div>
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div>
+                        <span class="text-xs text-gray-500">A partir de</span>
+                        <div class="text-xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}<span class="text-sm font-normal text-gray-500">/hora</span></div>
+                    </div>
+                    <button onclick="abrirPerfil('${p.id}')" class="gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                        <i class="fas fa-eye mr-1"></i>Ver Perfil
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function applyFilters() {
+    renderProfissionais();
+    if (window.innerWidth > 640) document.getElementById('profissionaisGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setCategoria(cat) {
+    document.getElementById('searchCategoria').value = cat;
+    document.getElementById('filterCategoria').value = cat;
+    applyFilters();
+}
+
+function categoriaIcone(cat) {
+    const m = {
+        'Eletricista': '⚡', 'Encanador': '🔧', 'Pedreiro': '🧱', 'Diarista': '🧹',
+        'Pintor': '🎨', 'Montador de Móveis': '🛠️', 'Chaveiro': '🔑', 'Marido de Aluguel': '🔨'
+    };
+    return m[cat] || '🔧';
+}
+
+function calcularMedia(p) {
+    if (!p.avaliacoes || p.avaliacoes.length === 0) {
+        // Gerar média baseada em numeroAvaliacoes (mock)
+        if (p.numeroAvaliacoes > 150) return 4.9;
+        if (p.numeroAvaliacoes > 100) return 4.8;
+        if (p.numeroAvaliacoes > 50) return 4.7;
+        return 4.5;
+    }
+    const soma = p.avaliacoes.reduce((acc, a) => acc + a.nota, 0);
+    return soma / p.avaliacoes.length;
+}
+
+// ============================================================
+// GEOLOCALIZAÇÃO
+// ============================================================
+function useGeolocation() {
+    if (!navigator.geolocation) {
+        toast('error', 'Indisponível', 'Seu navegador não suporta geolocalização.');
+        return;
+    }
+    toast('info', 'Localizando...', 'Aguarde enquanto detectamos sua região.');
+    navigator.geolocation.getCurrentPosition((pos) => {
+        // Simulando mapeamento coordenada -> bairro (em produção seria API externa)
+        // Vamos usar como padrão a cidade mais frequente da lista
+        const cidade = 'Brasília';
+        const bairros = ['Asa Sul', 'Asa Norte', 'Samambaia', 'Taguatinga', 'Ceilândia'];
+        const bairro = bairros[Math.floor(pos.coords.latitude.toString().slice(-1) % bairros.length)];
+        currentUserLocation = { cidade, bairro };
+        document.getElementById('searchCidade').value = cidade;
+        document.getElementById('searchBairro').value = bairro;
+        document.getElementById('filterOrdenacao').value = 'proximidade';
+        toast('success', 'Localização Detectada!', `📍 ${cidade} - ${bairro}. Filtrando mais próximos.`);
+        applyFilters();
+    }, (err) => {
+        toast('warning', 'Atenção', 'Permissão de localização negada. Preencha manualmente.');
+    }, { timeout: 8000, enableHighAccuracy: false });
+}
+
+// ============================================================
+// MODAL: PERFIL PROFISSIONAL
+// ============================================================
+function abrirPerfil(id) {
+    const p = profissionais.find(x => x.id === id);
+    if (!p) return;
+
+    const media = calcularMedia(p);
+    const avaliacoes = p.avaliacoes || [];
+
+    const jobs = (p.categorias && p.categorias.length > 0 ? p.categorias : [p.categoria]).map(c => {
+        let preco = p.precoHora;
+        if (c === 'Marido de Aluguel') preco = p.precoHora;
+        if (c === 'Eletricista') preco = Math.round(p.precoHora * 1.1);
+        if (c === 'Encanador') preco = Math.round(p.precoHora * 1.05);
+        return `<div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"><span class="font-medium text-gray-700">${categoriaIcone(c)} ${c}</span><span class="font-bold text-orange-600">R$ ${preco}/h</span></div>`;
+    }).join('');
+
+    // Fotos trabalhos (mock)
+    const trabalhos = [
+        `https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=300&h=200&fit=crop`,
+        `https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=300&h=200&fit=crop`,
+        `https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=200&fit=crop`,
+        `https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=300&h=200&fit=crop`
+    ];
+
+    document.getElementById('modalPerfilContent').innerHTML = `
+        <!-- Header perfil -->
+        <div class="relative">
+            <div class="gradient-primary h-40 md:h-52"></div>
+            <div class="px-6 md:px-10 -mt-20 pb-5 relative">
+                <div class="flex flex-col md:flex-row md:items-end gap-5">
+                    <img src="${p.foto}" alt="${p.nome}" class="w-36 h-36 rounded-2xl border-4 border-white shadow-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">
+                    <div class="flex-1 md:pb-3">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <h3 class="text-2xl md:text-3xl font-extrabold text-gray-800">${p.nome}</h3>
+                            ${p.verificado ? '<span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"><i class="fas fa-check-circle"></i>Profissional Verificado</span>' : ''}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                            <span class="flex items-center gap-1"><i class="fas fa-briefcase text-blue-500"></i> ${p.categoria}</span>
+                            <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-red-500"></i> ${p.cidade}/${p.uf} - ${p.bairro}</span>
+                            <span class="flex items-center gap-1 star-filled"><i class="fas fa-star"></i> <strong>${media.toFixed(1)}</strong> (${p.numeroAvaliacoes} avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="md:pb-3 text-left md:text-right">
+                        <div class="text-xs text-gray-500">Valor por hora</div>
+                        <div class="text-3xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 md:px-10 pb-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <!-- Coluna Esquerda -->
+            <div class="lg:col-span-3 space-y-6">
+                <!-- Bio -->
+                <div>
+                    <h4 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-user text-blue-600 mr-2"></i>Sobre Mim</h4>
+                    <p class="text-gray-600 leading-relaxed">${p.bio}</p>
+                </div>
+
+                <!-- Região atendimento -->
+                <div class="bg-blue-50 rounded-xl p-5 border border-blue-100">
+                    <h4 class="font-bold text-blue-900 mb-2"><i class="fas fa-location-dot mr-2"></i>Região de Cobertura</h4>
+                    <p class="text-blue-800 text-sm">Atendo principalmente em <strong>${p.cidade}</strong>, bairro <strong>${p.bairro}</strong> e adjacências. Consulte disponibilidade para outras regiões via WhatsApp.</p>
+                </div>
+
+                <!-- Galeria -->
+                <div>
+                    <h4 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-images text-blue-600 mr-2"></i>Trabalhos Anteriores</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        ${trabalhos.map(url => `<img src="${url}" class="rounded-xl object-cover h-28 w-full hover:opacity-90 transition cursor-pointer" alt="Trabalho">`).join('')}
+                    </div>
+                </div>
+
+                <!-- Avaliações -->
+                <div>
+                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">
+                        <span><i class="fas fa-star text-yellow-500 mr-2"></i>Avaliações e Depoimentos</span>
+                        <span class="text-sm font-normal text-gray-500">${avaliacoes.length} de ${p.numeroAvaliacoes}</span>
+                    </h4>
+                    <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                        ${avaliacoes.length === 0 ? '<p class="text-gray-400 text-sm text-center py-4">Sem avaliações ainda.</p>' :
+                        avaliacoes.map(a => `
+                            <div class="bg-gray-50 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-9 h-9 gradient-primary rounded-full flex items-center justify-center text-white text-sm font-bold">${a.nome.charAt(0)}</div>
+                                        <div>
+                                            <div class="font-semibold text-gray-800 text-sm">${a.nome}</div>
+                                            <div class="text-xs text-gray-500">${formatarData(a.data)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex star-filled text-sm">${estrelasDisplay(a.nota)}</div>
+                                </div>
+                                <p class="text-sm text-gray-600">${a.comentario}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Form orçamento -->
+            <div class="lg:col-span-2">
+                <div class="bg-gradient-to-b from-blue-50 to-white border border-blue-100 rounded-2xl p-6 sticky top-28">
+                    <h4 class="text-xl font-bold text-gray-800 mb-1"><i class="fas fa-paper-plane text-blue-600 mr-2"></i>Solicitar Orçamento</h4>
+                    <p class="text-sm text-gray-500 mb-5">Preencha e envie direto para o WhatsApp!</p>
+
+                    <form id="formOrcamento" data-proid="${p.id}" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Seu Nome *</label>
+                            <input required type="text" id="orcNome" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nome completo">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Telefone/WhatsApp *</label>
+                            <input required type="tel" id="orcTelefone" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="(00) 90000-0000">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Endereço/Bairro *</label>
+                            <input required type="text" id="orcEndereco" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Rua, Nº - Bairro">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Descreva o problema *</label>
+                            <textarea required id="orcDescricao" rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Ex: Chuveiro queimou, precisa trocar resistência..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Data desejada</label>
+                            <input type="date" id="orcData" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <button type="submit" class="w-full gradient-accent hover:opacity-90 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2">
+                            <i class="fab fa-whatsapp mr-2"></i>Enviar via WhatsApp
+                        </button>
+                        <p class="text-xs text-center text-gray-500">
+                            <i class="fas fa-lock mr-1"></i>Seus dados estarão seguros e visíveis apenas ao profissional.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Hook submit form orçamento
+    document.getElementById('formOrcamento').addEventListener('submit', (e) => {
+        e.preventDefault();
+        enviarOrcamento(p.id);
+    });
+
+    openModal('modalPerfil');
+}
+
+function enviarOrcamento(proId) {
+    const p = profissionais.find(x => x.id === proId);
+    const nome = document.getElementById('orcNome').value.trim();
+    const telefone = document.getElementById('orcTelefone').value.trim();
+    const endereco = document.getElementById('orcEndereco').value.trim();
+    const desc = document.getElementById('orcDescricao').value.trim();
+    const data = document.getElementById('orcData').value;
+
+    const dataStr = data ? formatarData(data) : 'A combinar';
+    const mensagem = `Olá ${p.nome}! Vi seu perfil no Ajeita e gostaria de solicitar um orçamento:\n\n` +
+        `📋 Serviço: ${p.categoria}\n\n` +
+        `👤 Cliente: ${nome}\n` +
+        `📞 Telefone: ${telefone}\n` +
+        `📍 Endereço: ${endereco}\n` +
+        `📅 Data desejada: ${dataStr}\n\n` +
+        `💬 Descrição do problema:\n${desc}\n\n` +
+        `Aguardo seu retorno! 🏠 - Ajeita`;
+
+    // Salvar no localStorage
+    const solicitacao = {
+        id: 's' + Date.now(),
+        profissionalId: p.id,
+        profissionalNome: p.nome,
+        profissionalFoto: p.foto,
+        clienteNome: nome,
+        clienteTelefone: telefone,
+        clienteEndereco: endereco,
+        categoria: p.categoria,
+        descricao: desc,
+        dataDesejada: data,
+        dataSolicitacao: new Date().toISOString(),
+        status: 'Pendente',
+        avaliado: false
+    };
+    solicitacoes.push(solicitacao);
+    salvarSolicitacoes();
+
+    // Abrir WhatsApp
+    const telefoneLimpo = p.telefone.replace(/\D/g, '');
+    const url = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, '_blank');
+
+    closeModal('modalPerfil');
+    toast('success', 'Solicitação Enviada! 🎉', 'Orçamento salvo e WhatsApp aberto. Acompanhe em "Solicitações".');
+    setTimeout(() => navigateTo('solicitacoes'), 1500);
+}
+
+// ============================================================
+// SOLICITAÇÕES
+// ============================================================
+function setTabSolicitacoes(tab) {
+    document.querySelectorAll('.tab-solicitacoes').forEach(t => {
+        t.classList.remove('gradient-primary', 'text-white');
+        t.classList.add('bg-white', 'text-gray-700', 'border', 'border-gray-200');
+    });
+    const active = document.getElementById(tab === 'minhas' ? 'tabMinhas' : 'tabRecebidas');
+    active.classList.add('gradient-primary', 'text-white');
+    active.classList.remove('bg-white', 'text-gray-700', 'border', 'border-gray-200');
+
+    document.getElementById('solicitacoesMinhas').classList.toggle('hidden', tab !== 'minhas');
+    document.getElementById('solicitacoesRecebidas').classList.toggle('hidden', tab !== 'recebidas');
+}
+
+function renderSolicitacoes() {
+    // Minhas (como cliente)
+    const minhasDiv = document.getElementById('listaSolicitacoesCliente');
+    const emptyM = document.getElementById('emptyMinhas');
+    const minhas = [...solicitacoes].sort((a, b) => new Date(b.dataSolicitacao) - new Date(a.dataSolicitacao));
+
+    if (minhas.length === 0) {
+        minhasDiv.innerHTML = '';
+        emptyM.classList.remove('hidden');
+    } else {
+        emptyM.classList.add('hidden');
+        minhasDiv.innerHTML = minhas.map(s => solicitacaoCardCliente(s)).join('');
+    }
+
+    // Recebidas (como profissional - mostrando todas)
+    const recDiv = document.getElementById('listaSolicitacoesProfissional');
+    const emptyR = document.getElementById('emptyRecebidas');
+    if (solicitacoes.length === 0) {
+        recDiv.innerHTML = '';
+        emptyR.classList.remove('hidden');
+    } else {
+        emptyR.classList.add('hidden');
+        recDiv.innerHTML = [...solicitacoes]
+            .sort((a, b) => new Date(b.dataSolicitacao) - new Date(a.dataSolicitacao))
+            .map(s => solicitacaoCardProfissional(s))
+            .join('');
+    }
+}
+
+function solicitacaoCardCliente(s) {
+    const statusColor = { 'Pendente': 'bg-yellow-100 text-yellow-800', 'Concluído': 'bg-green-100 text-green-800', 'Atendido': 'bg-blue-100 text-blue-800' };
+    const pro = profissionais.find(p => p.id === s.profissionalId);
+    return `
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">
+                <img src="${s.profissionalFoto || (pro ? pro.foto : '')}" class="w-16 h-16 rounded-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(s.profissionalNome)}&background=3b82f6&color=fff'">
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <h5 class="font-bold text-gray-800">${s.profissionalNome}</h5>
+                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">${s.categoria}</span>
+                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}">${s.status}</span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-2 truncate">
+                        <i class="fas fa-map-marker-alt text-red-400 mr-1"></i>${s.clienteEndereco}
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-calendar text-blue-400 mr-1"></i>${formatarData(s.dataSolicitacao)}
+                    </div>
+                    <p class="text-sm text-gray-500 truncate"><i class="fas fa-quote-left text-blue-300 mr-1"></i>${s.descricao}</p>
+                </div>
+                <div class="flex gap-2">
+                    ${(s.status === 'Concluído' || s.status === 'Atendido') && !s.avaliado ? `
+                        <button onclick="abrirAvaliacao('${s.id}')" class="gradient-accent text-white font-semibold py-2.5 px-4 rounded-xl shadow text-sm hover:opacity-90">
+                            <i class="fas fa-star mr-1"></i>Avaliar
+                        </button>
+                    ` : s.avaliado ? `
+                        <span class="bg-green-50 text-green-700 font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center gap-1"><i class="fas fa-check-circle"></i>Avaliado</span>
+                    ` : ''}
+                    <button onclick="mudarStatusSolicitacao('${s.id}', 'Concluído')" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm">
+                        <i class="fas fa-check mr-1"></i>Concluir
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function solicitacaoCardProfissional(s) {
+    const statusColor = { 'Pendente': 'bg-yellow-100 text-yellow-800', 'Concluído': 'bg-green-100 text-green-800', 'Atendido': 'bg-blue-100 text-blue-800' };
+    const pro = profissionais.find(p => p.id === s.profissionalId);
+    const tel = pro ? pro.telefone : '';
+    return `
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">
+                <div class="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center text-white text-2xl font-bold shadow">
+                    ${s.clienteNome.charAt(0).toUpperCase()}
+                </div>
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <h5 class="font-bold text-gray-800">${s.clienteNome}</h5>
+                        <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-semibold">${s.categoria}</span>
+                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}">${s.status}</span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-1">
+                        <i class="fab fa-whatsapp text-green-500 mr-1"></i>${s.clienteTelefone}
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-map-marker-alt text-red-400 mr-1"></i>${s.clienteEndereco}
+                    </div>
+                    <p class="text-sm text-gray-500 truncate"><i class="fas fa-quote-left text-blue-300 mr-1"></i>${s.descricao}</p>
+                </div>
+                <div class="flex gap-2">
+                    <a href="https://wa.me/55${s.clienteTelefone.replace(/\D/g,'')}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm">
+                        <i class="fab fa-whatsapp mr-1"></i>Zap
+                    </a>
+                    <button onclick="mudarStatusSolicitacao('${s.id}', 'Atendido')" class="gradient-primary text-white font-semibold py-2.5 px-4 rounded-xl text-sm hover:opacity-90">
+                        <i class="fas fa-check mr-1"></i>Atender
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function mudarStatusSolicitacao(id, status) {
+    const s = solicitacoes.find(x => x.id === id);
+    if (!s) return;
+    s.status = status;
+    salvarSolicitacoes();
+    renderSolicitacoes();
+    toast('success', 'Status Atualizado', `Solicitação marcada como ${status}.`);
+}
+
+// ============================================================
+// AVALIAÇÃO
+// ============================================================
+let avaliacaoAtual = 0;
+
+function abrirAvaliacao(solicitacaoId) {
+    const s = solicitacoes.find(x => x.id === solicitacaoId);
+    if (!s) return;
+    document.getElementById('avaliacaoSolicitacaoId').value = solicitacaoId;
+    document.getElementById('avaliacaoNota').value = '0';
+    document.getElementById('avaliacaoComentario').value = '';
+    avaliacaoAtual = 0;
+    atualizarEstrelas(0);
+    openModal('modalAvaliacao');
+}
+
+function inicializarEventosGlobais() {
+    document.querySelectorAll('.star-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const v = parseInt(btn.dataset.valor);
+            avaliacaoAtual = v;
+            document.getElementById('avaliacaoNota').value = v;
+            atualizarEstrelas(v);
+        });
+    });
+
+    document.getElementById('formAvaliacao').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const solId = document.getElementById('avaliacaoSolicitacaoId').value;
+        const nota = parseFloat(document.getElementById('avaliacaoNota').value);
+        const comentario = document.getElementById('avaliacaoComentario').value.trim();
+        if (nota === 0) {
+            toast('warning', 'Selecione uma nota', 'Por favor, escolha de 1 a 5 estrelas.');
+            return;
+        }
+        if (!comentario) {
+            toast('warning', 'Escreva um comentário', 'Compartilhe sua experiência.');
+            return;
+        }
+        const sol = solicitacoes.find(s => s.id === solId);
+        if (!sol) return;
+        const pro = profissionais.find(p => p.id === sol.profissionalId);
+        if (!pro) return;
+
+        if (!pro.avaliacoes) pro.avaliacoes = [];
+        pro.avaliacoes.unshift({
+            nome: sol.clienteNome,
+            nota: nota,
+            comentario: comentario,
+            data: new Date().toISOString().split('T')[0]
+        });
+        pro.numeroAvaliacoes = (pro.numeroAvaliacoes || 0) + 1;
+        sol.avaliado = true;
+
+        salvarProfissionais();
+        salvarSolicitacoes();
+        closeModal('modalAvaliacao');
+        renderSolicitacoes();
+        toast('success', 'Obrigado pela avaliação! ⭐', `Sua nota de ${nota} estrelas foi registrada com sucesso.`);
+    });
+
+    // Admin
+    document.getElementById('formAdminLogin').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const login = document.getElementById('adminLogin').value.trim();
+        const senha = document.getElementById('adminSenha').value.trim();
+        if (login === 'admin10' && senha === 'bolo2024') {
+            adminAutenticado = true;
+            sessionStorage.setItem('ajeita_admin', 'true');
+            document.getElementById('adminLoginError').classList.add('hidden');
+            closeModal('modalAdminLogin');
+            navigateTo('admin');
+            toast('success', 'Acesso Autorizado', 'Bem-vindo, Administrador!');
+        } else {
+            document.getElementById('adminLoginError').classList.remove('hidden');
+        }
+    });
+
+    // Cadastro profissional
+    document.getElementById('formCadastroProfissional').addEventListener('submit', (e) => {
+        e.preventDefault();
+        cadastrarProfissional();
+    });
+
+    // Simulação cartão
+    document.getElementById('simCartao').addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, '').slice(0, 16);
+        e.target.value = v.replace(/(\d{4})/g, '$1 ').trim();
+    });
+    document.getElementById('simValidade').addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, '').slice(0, 4);
+        e.target.value = v.length >= 3 ? v.slice(0,2) + '/' + v.slice(2) : v;
+    });
+    document.getElementById('simCVV').addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    });
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.fixed.z-50:not(.hidden)').forEach(m => m.classList.add('hidden'));
+        }
+    });
+}
+
+function atualizarEstrelas(v) {
+    document.querySelectorAll('.star-btn').forEach((btn, idx) => {
+        if (idx < v) {
+            btn.classList.remove('text-gray-300');
+            btn.classList.add('text-yellow-400');
+        } else {
+            btn.classList.remove('text-yellow-400');
+            btn.classList.add('text-gray-300');
+        }
+    });
+}
+
+function estrelasDisplay(nota) {
+    let r = '';
+    for (let i = 1; i <= 5; i++) {
+        if (nota >= i) r += '<i class="fas fa-star star-filled"></i>';
+        else if (nota >= i - 0.5) r += '<i class="fas fa-star-half-alt star-filled"></i>';
+        else r += '<i class="far fa-star text-gray-300"></i>';
+    }
+    return r;
+}
+
+// ============================================================
+// CADASTRO DE PROFISSIONAL
+// ============================================================
+function cadastrarProfissional() {
+    const nome = document.getElementById('cadNome').value.trim();
+    const telefone = document.getElementById('cadTelefone').value.trim();
+    const email = document.getElementById('cadEmail').value.trim();
+    const uf = document.getElementById('cadUf').value;
+    const cidade = document.getElementById('cadCidade').value.trim();
+    const bairro = document.getElementById('cadBairro').value.trim();
+    const categoria = document.getElementById('cadCategoria').value;
+    const preco = parseFloat(document.getElementById('cadPreco').value);
+    const bio = document.getElementById('cadBio').value.trim();
+    const foto = document.getElementById('cadFoto').value.trim() || `https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=3b82f6&color=fff&size=400`;
+
+    const catExtras = Array.from(document.querySelectorAll('.cat-extra:checked')).map(c => c.value);
+    let categorias = [categoria];
+    catExtras.forEach(c => { if (!categorias.includes(c)) categorias.push(c); });
+
+    const pagamentoConfirmado = document.getElementById('simConfirmarPagamento').checked;
+    if (!pagamentoConfirmado) {
+        toast('warning', 'Confirme a assinatura', 'Marque a opção para ativar seu perfil com a mensalidade.');
+        return;
+    }
+
+    const novoPro = {
+        id: 'p' + Date.now(),
+        nome, telefone, email, foto,
+        categoria, categorias,
+        cidade, uf, bairro,
+        precoHora: preco,
+        bio,
+        avaliacoes: [],
+        numeroAvaliacoes: 0,
+        totalServicos: 0,
+        verificado: false,
+        assinaturaAtiva: true
+    };
+
+    profissionais.unshift(novoPro);
+    salvarProfissionais();
+    inicializarCidadeOptions();
+
+    toast('success', 'Cadastro Realizado! 🎉', 'Seu perfil está ativo. Boas vendas!');
+    document.getElementById('formCadastroProfissional').reset();
+    setTimeout(() => navigateTo('home'), 1500);
+}
+
+function atualizarValoresMensalidade() {
+    const v = valorMensalidadeAtual.toFixed(2).replace('.', ',');
+    document.getElementById('valorMensalidade').textContent = v;
+    document.getElementById('valorMensalidade2').textContent = v;
+    const admInp = document.getElementById('adminMensalidade');
+    if (admInp) admInp.value = valorMensalidadeAtual;
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+function openAdminLogin() {
+    document.getElementById('adminLoginError').classList.add('hidden');
+    document.getElementById('adminLogin').value = '';
+    document.getElementById('adminSenha').value = '';
+    openModal('modalAdminLogin');
+}
+
+function logoutAdmin() {
+    adminAutenticado = false;
+    sessionStorage.removeItem('ajeita_admin');
+    navigateTo('home');
+    toast('info', 'Sessão encerrada', 'Você saiu da área administrativa.');
+}
+
+function saveMensalidade() {
+    const v = parseFloat(document.getElementById('adminMensalidade').value);
+    if (isNaN(v) || v < 0) {
+        toast('error', 'Valor inválido', 'Informe um valor válido para a mensalidade.');
+        return;
+    }
+    valorMensalidadeAtual = v;
+    localStorage.setItem('ajeita_mensalidade', v.toString());
+    atualizarValoresMensalidade();
+    atualizarDashboardAdmin();
+    toast('success', 'Valor atualizado', `Nova mensalidade: R$ ${v.toFixed(2).replace('.', ',')}`);
+}
+
+function atualizarDashboardAdmin() {
+    document.getElementById('adminMensalidade').value = valorMensalidadeAtual;
+    const total = profissionais.length;
+    const ativos = profissionais.filter(p => p.assinaturaAtiva).length;
+    const cidades = new Set(profissionais.map(p => p.cidade)).size;
+    const receita = (ativos * valorMensalidadeAtual);
+    document.getElementById('metricTotalPro').textContent = total;
+    document.getElementById('metricAtivos').textContent = ativos;
+    document.getElementById('metricCidades').textContent = cidades;
+    document.getElementById('metricReceita').textContent = receita.toFixed(2).replace('.', ',');
+    document.getElementById('adminCountPro').textContent = `${total} cadastrados`;
+    renderAdminProfissionais();
+}
+
+function renderAdminProfissionais() {
+    const busca = document.getElementById('adminBuscaPro').value.toLowerCase();
+    const tbody = document.getElementById('adminTableProfissionais');
+    const empty = document.getElementById('adminEmptyPro');
+    let lista = [...profissionais];
+    if (busca) lista = lista.filter(p =>
+        p.nome.toLowerCase().includes(busca) ||
+        p.cidade.toLowerCase().includes(busca) ||
+        p.bairro.toLowerCase().includes(busca) ||
+        p.categoria.toLowerCase().includes(busca)
+    );
+
+    if (lista.length === 0) {
+        tbody.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+
+    tbody.innerHTML = lista.map(p => `
+        <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <img src="${p.foto}" class="w-11 h-11 rounded-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff'">
+                    <div>
+                        <div class="font-semibold text-gray-800">${p.nome}</div>
+                        <div class="text-xs text-gray-500">${p.telefone} ${p.email ? '• ' + p.email : ''}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4">
+                <div class="text-gray-700">${p.cidade}/${p.uf}</div>
+                <div class="text-xs text-gray-500">📍 ${p.bairro}</div>
+            </td>
+            <td class="px-6 py-4">
+                <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold">${categoriaIcone(p.categoria)} ${p.categoria}</span>
+            </td>
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-1 star-filled"><i class="fas fa-star"></i><span class="font-bold text-gray-800 ml-1">${calcularMedia(p).toFixed(1)}</span></div>
+                <div class="text-xs text-gray-500">${p.numeroAvaliacoes} avaliações</div>
+            </td>
+            <td class="px-6 py-4 font-bold text-orange-600">R$ ${p.precoHora.toFixed(2)}/h</td>
+            <td class="px-6 py-4">
+                ${p.assinaturaAtiva
+                    ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><i class="fas fa-check"></i>Ativo</span>'
+                    : '<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><i class="fas fa-ban"></i>Inativo</span>'
+                }
+            </td>
+            <td class="px-6 py-4">
+                <div class="flex gap-2">
+                    ${p.assinaturaAtiva
+                        ? `<button onclick="toggleAssinatura('${p.id}')" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 p-2 rounded-lg transition" title="Desativar"><i class="fas fa-toggle-on"></i></button>`
+                        : `<button onclick="toggleAssinatura('${p.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 p-2 rounded-lg transition" title="Ativar"><i class="fas fa-toggle-off"></i></button>`
+                    }
+                    <button onclick="verificarPro('${p.id}')" class="bg-green-100 hover:bg-green-200 text-green-800 p-2 rounded-lg transition" title="Verificar"><i class="fas fa-check-circle"></i></button>
+                    <button onclick="excluirPro('${p.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition" title="Excluir"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function toggleAssinatura(id) {
+    const p = profissionais.find(x => x.id === id);
+    if (!p) return;
+    p.assinaturaAtiva = !p.assinaturaAtiva;
+    salvarProfissionais();
+    atualizarDashboardAdmin();
+    renderProfissionais();
+    toast('success', 'Status alterado', `${p.nome} agora está ${p.assinaturaAtiva ? 'ATIVO' : 'INATIVO'}.`);
+}
+
+function verificarPro(id) {
+    const p = profissionais.find(x => x.id === id);
+    if (!p) return;
+    p.verificado = true;
+    salvarProfissionais();
+    atualizarDashboardAdmin();
+    renderProfissionais();
+    toast('success', 'Verificado! ✅', `${p.nome} agora é um profissional verificado.`);
+}
+
+function excluirPro(id) {
+    if (!confirm('Deseja realmente excluir este profissional?')) return;
+    profissionais = profissionais.filter(p => p.id !== id);
+    salvarProfissionais();
+    atualizarDashboardAdmin();
+    inicializarCidadeOptions();
+    renderProfissionais();
+    toast('info', 'Profissional excluído', 'Cadastro removido do sistema.');
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function formatarData(data) {
+    if (!data) return '';
+    try {
+        let d = new Date(data);
+        if (isNaN(d)) {
+            const parts = data.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return data;
+        }
+        return d.toLocaleDateString('pt-BR');
+    } catch { return data; }
+}
+
+function toast(tipo, titulo, mensagem) {
+    const toast = document.getElementById('toast');
+    const content = document.getElementById('toastContent');
+    const icon = document.getElementById('toastIcon');
+    const t = document.getElementById('toastTitle');
+    const m = document.getElementById('toastMsg');
+
+    const configs = {
+        success: { border: 'border-green-500', icon: 'fas fa-check-circle text-green-500' },
+        error:   { border: 'border-red-500',   icon: 'fas fa-times-circle text-red-500' },
+        warning: { border: 'border-yellow-500', icon: 'fas fa-exclamation-triangle text-yellow-500' },
+        info:    { border: 'border-blue-500',   icon: 'fas fa-info-circle text-blue-500' }
+    };
+    const cfg = configs[tipo] || configs.info;
+
+    content.className = `bg-white shadow-2xl rounded-xl border-l-4 p-4 pr-6 flex items-center gap-3 max-w-sm ${cfg.border}`;
+    icon.className = cfg.icon;
+    t.textContent = titulo;
+    m.textContent = mensagem;
+
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 4500);
+}
+
+// ============================================================
+// INICIALIZAÇÃO EXTRA: searchInput listener
+// ============================================================
+document.getElementById('searchCategoria').addEventListener('change', () => {
+    document.getElementById('filterCategoria').value = document.getElementById('searchCategoria').value;
+});
+document.getElementById('searchCidade').addEventListener('input', applyFilters);
+document.getElementById('searchBairro').addEventListener('input', applyFilters);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: ajeita
+    env: static
+    buildCommand: ""
+    staticPublishPath: ./
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: sameorigin
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    routes:
+      - type: redirect
+        source: /(.*)
+        destination: /index.html
+        permanent: false
+        condition:
+          - type: file-not-found
+            value: true
