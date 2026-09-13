@@ -2121,23 +2121,23 @@ const profissionaisMock = [
 // 👇👇👇 COLE AQUI O SEU firebaseConfig REAL (Firebase Console → Project settings → App Web)
 // Para obter: https://console.firebase.google.com → seu projeto → ⚙️ Project settings → rolar até apps → clicar app Web ou criar novo (</>)
 const firebaseConfig_REAL = {
-  apiKey: "AIzaSyAr98KGfdrPe81NRfUHBmh25Jxf4cCl8dM",
-  authDomain: "ajeita-app-c9fc2.firebaseapp.com",
-  projectId: "ajeita-app-c9fc2",
-  storageBucket: "ajeita-app-c9fc2.firebasestorage.app",
-  messagingSenderId: "709414286122",
-  appId: "1:709414286122:web:238ea0d985907d5acb6453"
+  apiKey: 'AIzaSyAr98KGfdrPe81NRfUHBmh25Jxf4cCl8dM',
+  authDomain: 'ajeita-app-c9fc2.firebaseapp.com',
+  projectId: 'ajeita-app-c9fc2',
+  storageBucket: 'ajeita-app-c9fc2.firebasestorage.app',
+  messagingSenderId: '709414286122',
+  appId: '1:709414286122:web:238ea0d985907d5acb6453'
 };
 // 👆👆👆 Configuração do projeto ajeita-app-c9fc2 aplicada automaticamente!
 
 // Placeholder fallback (não mexa):
 const firebaseConfig_PLACEHOLDER = {
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.appspot.com",
-    messagingSenderId: "SEU_SENDER_ID",
-    appId: "SEU_APP_ID"
+    apiKey: 'SUA_API_KEY_AQUI',
+    authDomain: 'SEU_PROJETO.firebaseapp.com',
+    projectId: 'SEU_PROJETO',
+    storageBucket: 'SEU_PROJETO.appspot.com',
+    messagingSenderId: 'SEU_SENDER_ID',
+    appId: 'SEU_APP_ID'
 };
 
 // ============================================================
@@ -2146,14 +2146,14 @@ const firebaseConfig_PLACEHOLDER = {
 // MERCADO PAGO (Pagamentos Reais: PIX + Cartão)
 // ============================================================
 // 👇👇👇 COLE SUAS CHAVES DO MERCADO PAGO AQUI (https://www.mercadopago.com.br/settings/credentials)
-// - Public Key (client-side): começa com "APP_USR-" (ou "APP_TEST-" para sandbox)
+// - Public Key (client-side): começa com 'APP_USR-' (ou 'APP_TEST-' para sandbox)
 // - Access Token (server-side) - NÃO coloque em produção sem backend! Para teste inicial OK.
 const MERCADO_PAGO = {
-    PUBLIC_KEY: "",       // 👉 Cole aqui sua PUBLIC KEY do Mercado Pago (ex: APP_USR-1234...)
-    ACCESS_TOKEN: "",     // 👉 Cole aqui seu ACCESS TOKEN (produção ou sandbox). SANDOX: TEST-123...
+    PUBLIC_KEY: '',       // 👉 Cole aqui sua PUBLIC KEY do Mercado Pago (ex: APP_USR-1234...)
+    ACCESS_TOKEN: '',     // 👉 Cole aqui seu ACCESS TOKEN (produção ou sandbox). SANDOX: TEST-123...
     VALOR_ASSINATURA: 0.10,  // VALOR EM REAIS (R$ 0,10 teste). Altere para o valor real (ex: 29.90)
     MODO_SANDBOX: true,   // 👉 true = sandbox (teste, não cobra de verdade); false = produção (cobrança real)
-    NOTIFICACAO_WEBHOOK: "https://ajeita-app.onrender.com/webhook-mp" // Opcional: receber notificações de pagamento aprovado
+    NOTIFICACAO_WEBHOOK: 'https://ajeita-app.onrender.com/webhook-mp' // Opcional: receber notificações de pagamento aprovado
 };
 // 👆👆👆 Para obter credenciais: Painel Mercado Pago → Sua conta → Credenciais → Criar aplicação / Gerenciar
 // ============================================================
@@ -2224,7 +2224,7 @@ let authUsuarioRole = null;
                         }
                     }
                 } catch (_) {}
-                // 4) Esconde toast de "carregando" se estiver aberto
+                // 4) Esconde toast de 'carregando' se estiver aberto
                 try {
                     const tEl = document.getElementById('globalToast');
                     if (tEl) {
@@ -2608,7 +2608,7 @@ function carregarDados() {
         .catch(e => console.warn('carregarDados erro (usando localStorage fallback...', e?.message || e))
         .finally(() => {
             // Roda depois de carregarDadosFirestore, SEMPRE (sucesso OU erro!)
-            // Evita "fica só carregando..."
+            // Evita 'fica só carregando...'
             try {
                 const txt = document.getElementById('badgeFirebaseTexto');
                 if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
@@ -2846,7 +2846,7 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 badge.title = 'Firebase não configurado (usando dados demo).';
                 break;
             default: // 'carregando' — NÃO DEVE MAIS SER USADO! Fallback = 🔴 Local.
-                // NÃO TEM MAIS estado "carregando" azul. Se chegar aqui, força 🔴.
+                // NÃO TEM MAIS estado 'carregando' azul. Se chegar aqui, força 🔴.
                 console.warn('❌ atualizarBadgeFirebase chamado com modo inválido/antigo "carregando". Mudando para 🔴 Local (erro!).');
                 badge.classList.add('bg-red-50','text-red-700','border-red-200');
                 ponto.classList.add('bg-red-500');
@@ -3564,40 +3564,40 @@ async function pagamentoCriarPreferenciaMercadoPago(dadosPro, valor) {
             ? 'https://api.mercadopago.com'
             : 'https://api.mercadopago.com'; // ambos são o mesmo endpoint em MP v1
         const body = {
-            "items": [{
-                "title": "Assinatura Profissional Ajeita - " + (dadosPro.categoria || 'Serviços'),
-                "quantity": 1,
-                "unit_price": valor,
-                "currency_id": "BRL",
-                "description": "Liberação do perfil: " + (dadosPro.nome || 'Profissional') + " - UID " + (dadosPro.uid || '')
+            'items': [{
+                'title': 'Assinatura Profissional Ajeita - ' + (dadosPro.categoria || 'Serviços'),
+                'quantity': 1,
+                'unit_price': valor,
+                'currency_id': 'BRL',
+                'description': 'Liberação do perfil: ' + (dadosPro.nome || 'Profissional') + ' - UID ' + (dadosPro.uid || '')
             }],
-            "payer": {
-                "email": (dadosPro.email || 'cliente@ajeita.com.br'),
-                "first_name": (dadosPro.nome || '').split(' ')[0] || 'Profissional',
-                "last_name": (dadosPro.nome || '').split(' ').slice(1).join(' ') || 'Ajeita'
+            'payer': {
+                'email': (dadosPro.email || 'cliente@ajeita.com.br'),
+                'first_name': (dadosPro.nome || '').split(' ')[0] || 'Profissional',
+                'last_name': (dadosPro.nome || '').split(' ').slice(1).join(' ') || 'Ajeita'
             },
-            "metadata": {
-                "app": "ajeita",
-                "uid": dadosPro.uid || '',
-                "tipo": "assinatura_profissional",
-                "categoria": dadosPro.categoria || '',
-                "cidade": dadosPro.cidade || ''
+            'metadata': {
+                'app': 'ajeita',
+                'uid': dadosPro.uid || '',
+                'tipo': 'assinatura_profissional',
+                'categoria': dadosPro.categoria || '',
+                'cidade': dadosPro.cidade || ''
             },
-            "payment_methods": {
-                "excluded_payment_types": [
-                    { "id": "ticket" },
-                    { "id": "atm" }
+            'payment_methods': {
+                'excluded_payment_types': [
+                    { 'id': 'ticket' },
+                    { 'id': 'atm' }
                 ],
-                "installments": 1
+                'installments': 1
             },
-            "binary_mode": true,
-            "back_urls": {
-                "success": window.location.origin + window.location.pathname + "?pagamento=aprovado",
-                "failure": window.location.origin + window.location.pathname + "?pagamento=falhou",
-                "pending": window.location.origin + window.location.pathname + "?pagamento=pendente"
+            'binary_mode': true,
+            'back_urls': {
+                'success': window.location.origin + window.location.pathname + '?pagamento=aprovado',
+                'failure': window.location.origin + window.location.pathname + '?pagamento=falhou',
+                'pending': window.location.origin + window.location.pathname + '?pagamento=pendente'
             },
-            "auto_return": "approved",
-            "notification_url": MERCADO_PAGO.NOTIFICACAO_WEBHOOK || ''
+            'auto_return': 'approved',
+            'notification_url': MERCADO_PAGO.NOTIFICACAO_WEBHOOK || ''
         };
         const res = await Promise.race([
             fetch(`${urlBase}/checkout/preferences`, {
