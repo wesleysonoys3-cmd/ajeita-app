@@ -53,7 +53,7 @@
                     </div>
                 </div>
                 <div id="bannerRegrasBotoes" class="flex flex-wrap gap-2 shrink-0">
-                    <button onclick="diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
+                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-header-diag', 28); diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
                         <i class="fas fa-stethoscope"></i>
                         <span class="hidden sm:inline">Diagnóstico</span>
                         <span class="sm:hidden">Testar</span>
@@ -2402,24 +2402,49 @@ document.addEventListener('DOMContentLoaded', () => {
     // FORÇA SAIR (evita badge azul infinito!)
     // ============================================================
     FIRESTORE_CARREGAMENTO_INICIADO_EM = Date.now();
-    setTimeout(() => {
+
+    // Função helper de fallback (pode ser chamada várias vezes abaixo)
+    function fallbackSairCarregando(motivoFallback) {
         try {
             const txt = document.getElementById('badgeFirebaseTexto');
             if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
-                console.warn('🔥 FALLBACK GLOBAL 35s: badge ainda carregando → forçando sair!');
-                // Carrega local para o usuário não ficar sem lista
+                console.warn('🔥 FALLBACK GLOBAL (' + motivoFallback + '): badge ainda carregando → forçando sair!');
                 const savedPro = localStorage.getItem('ajeita_profissionais');
                 if (savedPro) profissionais = JSON.parse(savedPro);
                 else profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
                 try { renderProfissionais && renderProfissionais(); } catch (_) {}
-                atualizarBadgeFirebase('local-erro', 'fallback-global-35s-timeout');
+                try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
+                atualizarBadgeFirebase('local-erro', 'fallback-global-' + motivoFallback);
                 toast('warning',
-                    '⚠️ Firestore demorou muito para responder',
-                    'Mostrando dados locais (salvos no seu navegador).\n\nCausas prováveis:\n• Internet ruim (3G/Wi-Fi fraco)\n• Firestore em manutenção\n• Seu país bloqueou conexão com Google Cloud\n\nSolução: Clique no badge azul para recarregar manualmente, ou espere 1 minuto e recarregue a página.',
+                    '⚠️ Operação demorou muito para responder',
+                    'Mostrando dados locais (salvos no seu navegador).\n\nCausas prováveis:\n• Internet ruim (3G/Wi-Fi fraco)\n• Firestore em manutenção\n• Seu país bloqueou conexão com Google Cloud\n\nSolução: Clique no badge 🔴 ou no botão correspondente para recarregar manualmente, ou espere 1 minuto e recarregue a página.',
                     16000);
+                return true;
             }
-        } catch (eFb) { console.warn('Fallback global 35s:', eFb); }
-    }, 35000);
+        } catch (eFb) { console.warn('Fallback global (' + motivoFallback + '):', eFb); }
+        return false;
+    }
+
+    setTimeout(() => { fallbackSairCarregando('35s-onload'); }, 35000);
+    setTimeout(() => { fallbackSairCarregando('40s-onload'); }, 40000);
+
+    // ============================================================
+    // FALLBACK GLOBAL TAMBÉM DISPARA AO CLICAR EM BOTÕES IMPORTANTES
+    // (Diagnóstico, Importar demo, Salvar perfil, Pagar)
+    // Se após 30s do clique ainda estiver "carregando" → força sair.
+    // ============================================================
+    window._ajeitaRegistrarFallbackAposAcao = function (rotulo, segundosMax) {
+        segundosMax = segundosMax || 30;
+        setTimeout(() => {
+            try {
+                const txt = document.getElementById('badgeFirebaseTexto');
+                if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                    console.warn('🔥 FALLBACK AÇÃO (' + rotulo + ' ' + segundosMax + 's): badge ainda carregando → forçando sair.');
+                    fallbackSairCarregando(rotulo + '-' + segundosMax + 's');
+                }
+            } catch (_) {}
+        }, segundosMax * 1000);
+    };
 });
 
 function carregarDados() {
@@ -2632,7 +2657,7 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 bannerTitulo.textContent = '⚠️ Dados SÓ neste aparelho!';
                 bannerSub.innerHTML = 'Badge 🔴 = <b class="text-yellow-200">Firestore com erro (provavelmente regras não publicadas)</b>. Clique nos botões abaixo para arrumar.';
                 bannerBotoes.innerHTML = `
-                    <button onclick="diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
+                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-header-diag', 28); diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
                         <i class="fas fa-stethoscope"></i>
                         <span class="hidden sm:inline">Diagnóstico</span>
                         <span class="sm:hidden">Testar</span>
@@ -2654,7 +2679,7 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 bannerTitulo.textContent = '⚠️ Banco Firestore VAZIO (0 documentos!)';
                 bannerSub.innerHTML = 'Regras publicadas ✅ mas <b>banco Firestore ainda não tem profissionais</b>. Clique abaixo para importar os 8 dados demo iniciais e a lista funcionar em TODOS os celulares.';
                 bannerBotoes.innerHTML = `
-                    <button onclick="forcarRodarSeedFirestore()" class="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black text-[11px] md:text-sm px-4 md:px-6 py-2.5 md:py-3 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition animate-pulse">
+                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-importar-demo', 23); forcarRodarSeedFirestore()" class="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black text-[11px] md:text-sm px-4 md:px-6 py-2.5 md:py-3 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition animate-pulse">
                         <i class="fas fa-cloud-upload-alt"></i>
                         ⬆️ Importar dados demo (8 profissionais)
                     </button>
@@ -2872,155 +2897,181 @@ function verUltimoErroFirestore() {
 async function diagnosticarFirestore() {
     const resultados = [];
     let totalOk = 0;
-    atualizarBadgeFirebase('carregando');
-    toast('info', '🔬 Rodando diagnóstico...', '4 testes em ~5 segundos. Por favor aguarde.', 5000);
-
-    // ================================================================
-    // TESTE 1: Firebase SDK INICIALIZADO?
-    // ================================================================
+    let finalizou = false;
+    const tmr = setTimeout(() => {
+        if (!finalizou) {
+            try {
+                atualizarBadgeFirebase('local-erro', 'fallback-diag-timeout-30s');
+                toast('warning', '⚠️ Diagnóstico demorou muito para responder',
+                    'Servidor Firestore não finalizou em 30s. Tente:\n• Recarregar a página\n• Melhorar a internet\n• Depois clique no botão AMARELO de novo.',
+                    14000);
+            } catch (_) {}
+        }
+    }, 30000);
     try {
-        if (firebaseInicializado && firebaseDb && firebaseAuth) {
-            resultados.push({ ok: true, nome: '1. Firebase SDK', msg: 'SDKs app/auth/firestore inicializados corretamente.' });
-            totalOk++;
-        } else if (!firebaseInicializado) {
-            resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Firebase NÃO inicializado (inicializarFirebase() não rodou). Verifique conexão com CDN.' });
-        } else if (!firebaseDb) {
-            resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Firestore (firebaseDb) NÃO criado. Reinstale os SDKs.' });
-        } else {
-            resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Auth (firebaseAuth) NÃO criado. Verifique a URL do SDK auth-compat.js.' });
-        }
-    } catch (e) { resultados.push({ ok: false, nome: '1. Firebase SDK', msg: String(e) }); }
+        atualizarBadgeFirebase('carregando');
+        toast('info', '🔬 Rodando diagnóstico...', '4 testes em ~5 segundos. Por favor aguarde.', 5000);
 
-    // ================================================================
-    // TESTE 2: CONECTIVIDADE com servidor Firestore (network)
-    // ================================================================
-    let conectividadeOk = false;
-    try {
-        if (!USAR_FIREBASE) {
-            resultados.push({ ok: false, nome: '2. Conectividade', msg: 'MODO LOCAL (USAR_FIREBASE = false). Verifique as chaves do firebaseConfig_REAL no topo do código JS. Devem ser reais, não placeholders.' });
-        } else {
-            const netCheck = await Promise.race([
-                (async () => {
-                    const col = firebaseDb.collection('config').limit(1);
-                    await col.get(); // se der permission denied aqui também, cai no catch interno abaixo
-                    return true;
-                })(),
-                new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), 7000))
-            ]);
-            conectividadeOk = !!netCheck;
-            resultados.push({ ok: true, nome: '2. Conectividade', msg: 'Rede OK — seu celular consegue conversar com os servidores do Firebase.' });
-            totalOk++;
-        }
-    } catch (eNet) {
-        const m = (eNet?.message || String(eNet)).toLowerCase();
-        const c = String(eNet?.code || '').toLowerCase();
-        if (m.includes('timeout')) {
-            resultados.push({ ok: false, nome: '2. Conectividade', msg: 'TIMEOUT em 7s — Firestore não respondeu. Causa mais comum: SEM INTERNET ou firewall bloqueando porta 443.' });
-        } else if (m.includes('network') || c.includes('unavailable')) {
-            resultados.push({ ok: false, nome: '2. Conectividade', msg: 'SEM CONEXÃO REDE (Erro network/unavailable). Ative/desative o modo avião e tente novamente.' });
-        } else {
-            conectividadeOk = true; // mesmo com permission, não é network
-            resultados.push({ ok: true, nome: '2. Conectividade', msg: 'Rede OK (respondeu com erro não-rede). Vamos testar regras no passo 3.' });
-            totalOk++;
-        }
-    }
-
-    // ================================================================
-    // TESTE 3: LEITURA DADOS (profissionais) → testa se regra allow read publicada
-    // ================================================================
-    let leituraOk = false;
-    let qtdDocsLidos = 0;
-    if (resultados[0].ok && USAR_FIREBASE) {
+        // TESTE 1: Firebase SDK
         try {
-            const snap = await Promise.race([
-                firebaseDb.collection('profissionais').limit(3).get(),
-                new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_LEITURA')), 12000))
-            ]);
-            qtdDocsLidos = snap?.docs?.length || 0;
-            resultados.push({ ok: true, nome: '3. Regras LEITURA (profissionais)', msg: `✅ Leitura LIBERADA! Encontrados ${qtdDocsLidos} docs no /profissionais. Regra allow read publicada corretamente.${qtdDocsLidos === 0 ? ' BANCO VAZIO (0 profissionais!) → clique no botão verde IMPORTAR DADOS no topo da página.' : ''}` });
-            leituraOk = true; totalOk++;
-        } catch (eLer) {
-            const mLer = (eLer?.message || String(eLer)).toLowerCase();
-            const cLer = String(eLer?.code || '').toLowerCase();
-            registrarErroFirestore('Diagnóstico ler profissionais', eLer);
-            if (cLer.includes('permission') || cLer.includes('unauthenticated') || mLer.includes('insufficient')) {
-                resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: '🔒 BLOCKED (permission-denied). REGRAS NÃO PUBLICADAS! Clique no botão AZUL "Regras + Console" → cole → PUBLICAR.' });
-            } else if (mLer.includes('timeout_leitura') || mLer.includes('timeout')) {
-                resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: 'TIMEOUT (12s). Provavelmente regras estão publicadas mas Firestore ainda propagando. Aguarde 1 minuto e clique no badge para recarregar.' });
-            } else if (cLer.includes('not-found')) {
-                resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: '🧱 FIRESTORE NÃO CRIADO! Vá Console → Firestore Database → Criar banco → Modo Produção → Região São Paulo (southamerica-east1).' });
+            if (firebaseInicializado && firebaseDb && firebaseAuth) {
+                resultados.push({ ok: true, nome: '1. Firebase SDK', msg: 'SDKs app/auth/firestore inicializados corretamente.' });
+                totalOk++;
+            } else if (!firebaseInicializado) {
+                resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Firebase NÃO inicializado. Verifique conexão com CDN.' });
+            } else if (!firebaseDb) {
+                resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Firestore (firebaseDb) NÃO criado.' });
             } else {
-                resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: `Erro ${cLer || 'desconhecido'}: ${mLer}. Clique no botão VER ERRO para mais detalhes.` });
+                resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Auth (firebaseAuth) NÃO criado.' });
+            }
+        } catch (e) { resultados.push({ ok: false, nome: '1. Firebase SDK', msg: String(e) }); }
+
+        // TESTE 2: CONECTIVIDADE
+        let conectividadeOk = false;
+        try {
+            if (!USAR_FIREBASE) {
+                resultados.push({ ok: false, nome: '2. Conectividade', msg: 'MODO LOCAL (USAR_FIREBASE = false). Verifique chaves firebaseConfig_REAL.' });
+            } else {
+                await Promise.race([
+                    (async () => {
+                        const col = firebaseDb.collection('config').limit(1);
+                        await col.get();
+                        return true;
+                    })(),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), 7000))
+                ]);
+                conectividadeOk = true;
+                resultados.push({ ok: true, nome: '2. Conectividade', msg: 'Rede OK — seu celular consegue conversar com servidores Firebase.' });
+                totalOk++;
+            }
+        } catch (eNet) {
+            const m = (eNet?.message || String(eNet)).toLowerCase();
+            const c = String(eNet?.code || '').toLowerCase();
+            if (m.includes('timeout')) {
+                resultados.push({ ok: false, nome: '2. Conectividade', msg: 'TIMEOUT em 7s — SEM INTERNET ou firewall bloqueando porta 443.' });
+            } else if (m.includes('network') || c.includes('unavailable')) {
+                resultados.push({ ok: false, nome: '2. Conectividade', msg: 'SEM CONEXÃO REDE. Ative/desative modo avião.' });
+            } else {
+                conectividadeOk = true;
+                resultados.push({ ok: true, nome: '2. Conectividade', msg: 'Rede OK (respondeu com erro não-rede). Vamos testar regras no passo 3.' });
+                totalOk++;
             }
         }
-    } else {
-        resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: 'Pulado (ver passo 1 ou 2).' });
-    }
 
-    // ================================================================
-    // TESTE 4: ESCRITA DADOS (SÓ se usuário logado) → testa allow write regra
-    // ================================================================
-    if (authUsuarioAtual && authUsuarioRole && (authUsuarioRole === 'profissional' || authUsuarioRole === 'cliente')) {
-        try {
-            const uid = authUsuarioAtual.uid;
-            const colecao = authUsuarioRole === 'profissional' ? 'profissionais' : 'clientes';
-            const docRef = firebaseDb.collection(colecao).doc(uid);
-            await Promise.race([
-                docRef.set({ _diagWrite: new Date().toISOString() }, { merge: true }),
-                new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_ESCRITA')), 12000))
-            ]);
-            resultados.push({ ok: true, nome: `4. Regras ESCRITA (${colecao}/${uid.substring(0,6)}...)`, msg: `✅ Escrita LIBERADA! Regra allow write (uid dono do documento) publicada.` });
-            totalOk++;
-        } catch (eEscrever) {
-            const mEs = (eEscrever?.message || String(eEscrever)).toLowerCase();
-            const cEs = String(eEscrever?.code || '').toLowerCase();
-            registrarErroFirestore('Diagnóstico escrever perfil', eEscrever);
-            if (cEs.includes('permission') || cEs.includes('unauthenticated') || mEs.includes('insufficient')) {
-                resultados.push({ ok: false, nome: '4. Regras ESCRITA', msg: '🔒 BLOCKED (permission-denied). REGRAS NÃO PUBLICADAS! Botão AZUL "Regras + Console" → cole → PUBLICAR.' });
-            } else {
-                resultados.push({ ok: false, nome: '4. Regras ESCRITA', msg: `Erro ${cEs || 'desconhecido'}: ${mEs}. Ver botão VER ERRO.` });
+        // TESTE 3: LEITURA DADOS
+        let leituraOk = false;
+        let qtdDocsLidos = 0;
+        if (resultados[0].ok && USAR_FIREBASE) {
+            try {
+                const snap = await Promise.race([
+                    firebaseDb.collection('profissionais').limit(3).get(),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_LEITURA')), 12000))
+                ]);
+                qtdDocsLidos = snap?.docs?.length || 0;
+                resultados.push({ ok: true, nome: '3. Regras LEITURA (profissionais)', msg: `✅ Leitura LIBERADA! Encontrados ${qtdDocsLidos} docs. Regra allow read publicada corretamente.${qtdDocsLidos === 0 ? ' BANCO VAZIO (0 profissionais!) → clique no botão verde IMPORTAR DADOS no topo da página.' : ''}` });
+                leituraOk = true; totalOk++;
+            } catch (eLer) {
+                const mLer = (eLer?.message || String(eLer)).toLowerCase();
+                const cLer = String(eLer?.code || '').toLowerCase();
+                registrarErroFirestore('Diagnóstico ler profissionais', eLer);
+                if (cLer.includes('permission') || cLer.includes('unauthenticated') || mLer.includes('insufficient')) {
+                    resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: '🔒 BLOCKED (permission-denied). REGRAS NÃO PUBLICADAS! Clique AZUL Regras + Console → cole → PUBLICAR.' });
+                } else if (mLer.includes('timeout_leitura') || mLer.includes('timeout')) {
+                    resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: 'TIMEOUT (12s). Provavelmente regras publicadas mas Firestore ainda propagando. Aguarde 1min e clique no badge.' });
+                } else if (cLer.includes('not-found')) {
+                    resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: '🧱 FIRESTORE NÃO CRIADO! Console → Firestore Database → Criar banco.' });
+                } else {
+                    resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: `Erro ${cLer || 'desconhecido'}: ${mLer}. Clique VER ERRO.` });
+                }
             }
-        }
-    } else {
-        resultados.push({ ok: false, nome: '4. Regras ESCRITA (precisa logar)', msg: 'Pulado (não há usuário cliente/profissional logado). Logue-se para testar também a escrita.' });
-    }
-
-    // ================================================================
-    // EXIBE RESUMO FINAL + ATUALIZA BANNER/STATUS
-    // ================================================================
-    const ok = resultados.filter(r => r.ok).length;
-    const total = resultados.length;
-    const titulo = (ok === total) ? `🎉 DIAGNÓSTICO APROVADO (${ok}/${total})` : (ok === 0) ? `❌ TUDO FALHOU (${ok}/${total})` : `⚠️ PARCIAL (${ok}/${total} OK)`;
-    const corpoStr = resultados.map(r => `${r.ok ? '✅' : '❌'} ${r.nome}\n   ${r.msg}`).join('\n\n');
-
-    // ============== DETECÇÃO ESPECIAL: TUDO OK (regras publicadas) MAS 0 DOCUMENTOS!
-    const bancoVazio = (leituraOk && qtdDocsLidos === 0);
-    let rodape;
-    if (ok === total) {
-        if (bancoVazio) {
-            rodape = '\n\n⚠️ ATENÇÃO: Regras publicadas PERFEITAMENTE, mas banco FIRESTORE REAL está VAZIO (0 profissionais!).\n👉 CLICA NO BOTÃO VERDE GRANDE NO TOPO: ⬆️ Importar dados demo (8 profissionais).\nApós importar, a lista aparece em TODOS os celulares!';
-            atualizarBadgeFirebase('firebase-vazio', 'banco vazio seed pendente');
         } else {
-            rodape = '\n\n🔥 Tudo certo! Dados sincronizados. Clique no badge para recarregar → deve ficar VERDE 🟢 e lista com profissionais funciona em TODOS celulares.';
-            atualizarBadgeFirebase('firebase');
+            resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: 'Pulado (ver passo 1 ou 2).' });
         }
-    } else {
-        const temPerm = resultados.some(r => String(r.msg).toLowerCase().includes('permission') || String(r.msg).toLowerCase().includes('regras') || String(r.msg).toLowerCase().includes('publicada'));
-        rodape = (temPerm) ? '\n\n👉 RESOLUÇÃO (95%): clique no botão AZUL "Regras + Console" no banner vermelho → cole → PUBLICAR.' : '\n👉 Clique no botão VER ERRO (branco) para detalhes ou envie esta mensagem para o suporte.';
-        if (bancoVazio) {
-            // Mesmo que parcial, se banco vazio mostra o botão verde
-            atualizarBadgeFirebase('firebase-vazio', 'banco vazio seed pendente');
+
+        // TESTE 4: ESCRITA DADOS (só se logado)
+        if (authUsuarioAtual && authUsuarioRole && (authUsuarioRole === 'profissional' || authUsuarioRole === 'cliente')) {
+            try {
+                const uid = authUsuarioAtual.uid;
+                const colecao = authUsuarioRole === 'profissional' ? 'profissionais' : 'clientes';
+                const docRef = firebaseDb.collection(colecao).doc(uid);
+                await Promise.race([
+                    docRef.set({ _diagWrite: new Date().toISOString() }, { merge: true }),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_ESCRITA')), 12000))
+                ]);
+                resultados.push({ ok: true, nome: `4. Regras ESCRITA (${colecao}/${uid.substring(0,6)}...)`, msg: `✅ Escrita LIBERADA! Regra allow write (uid dono) publicada.` });
+                totalOk++;
+            } catch (eEscrever) {
+                const mEs = (eEscrever?.message || String(eEscrever)).toLowerCase();
+                const cEs = String(eEscrever?.code || '').toLowerCase();
+                registrarErroFirestore('Diagnóstico escrever perfil', eEscrever);
+                if (cEs.includes('permission') || cEs.includes('unauthenticated') || mEs.includes('insufficient')) {
+                    resultados.push({ ok: false, nome: '4. Regras ESCRITA', msg: '🔒 BLOCKED (permission-denied). REGRAS NÃO PUBLICADAS! Botão AZUL Regras + Console → cole → PUBLICAR.' });
+                } else {
+                    resultados.push({ ok: false, nome: '4. Regras ESCRITA', msg: `Erro ${cEs || 'desconhecido'}: ${mEs}. Ver botão VER ERRO.` });
+                }
+            }
+        } else {
+            resultados.push({ ok: false, nome: '4. Regras ESCRITA (precisa logar)', msg: 'Pulado (não há usuário logado).' });
         }
+
+        // RESUMO FINAL
+        const ok = resultados.filter(r => r.ok).length;
+        const total = resultados.length;
+        const titulo = (ok === total) ? `🎉 DIAGNÓSTICO APROVADO (${ok}/${total})` : (ok === 0) ? `❌ TUDO FALHOU (${ok}/${total})` : `⚠️ PARCIAL (${ok}/${total} OK)`;
+        const corpoStr = resultados.map(r => `${r.ok ? '✅' : '❌'} ${r.nome}
+   ${r.msg}`).join('
+
+');
+        const bancoVazio = (leituraOk && qtdDocsLidos === 0);
+        let rodape;
+        if (ok === total) {
+            if (bancoVazio) {
+                rodape = '\n\n⚠️ ATENÇÃO: Regras PERFEITAS mas banco VAZIO!\n👉 BOTÃO VERDE GRANDE NO TOPO: ⬆️ Importar dados demo (8).\nApós importar, a lista aparece em TODOS celulares!';
+                atualizarBadgeFirebase('firebase-vazio', 'banco vazio seed pendente');
+            } else {
+                rodape = '\n\n🔥 Tudo certo! Dados sincronizados. Badge fica VERDE 🟢 e funciona em TODOS celulares.';
+                atualizarBadgeFirebase('firebase');
+            }
+        } else {
+            const temPerm = resultados.some(r => String(r.msg).toLowerCase().includes('permission') || String(r.msg).toLowerCase().includes('regras') || String(r.msg).toLowerCase().includes('publicada'));
+            rodape = (temPerm) ? '\n\n👉 RESOLUÇÃO (95%): clique botão AZUL Regras + Console → cole → PUBLICAR.' : '\n👉 Clique VER ERRO para detalhes.';
+            if (bancoVazio) atualizarBadgeFirebase('firebase-vazio', 'banco vazio seed pendente');
+        }
+        toast(bancoVazio ? 'warning' : ((ok === total) ? 'success' : 'error', titulo, corpoStr + rodape, bancoVazio ? 22000 : 18000);
+        if (ok < total && !bancoVazio) atualizarBadgeFirebase('local-erro', 'diagnostico_falhou');
+    } catch (e) {
+        console.error('diagnosticarFirestore catch geral:', e);
+        atualizarBadgeFirebase('local-erro', 'diagnostico catch');
+        toast('error', '❌ Diagnóstico falhou', 'Erro: ' + (e?.message || String(e)), 12000);
+    } finally {
+        finalizou = true;
+        try { clearTimeout(tmr); } catch (_) {}
+        try {
+            const txt = document.getElementById('badgeFirebaseTexto');
+            if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                console.warn('diagnosticarFirestore FINALLY: badge ainda carregando → forçando local-erro.');
+                atualizarBadgeFirebase('local-erro', 'finally-fallback-diag');
+            }
+        } catch (_) {}
     }
-    toast(bancoVazio ? 'warning' : ((ok === total) ? 'success' : 'error'), titulo, corpoStr + rodape, bancoVazio ? 22000 : 18000);
-    // Se ainda falhou e não é banco vazio: volta para local-erro
-    if (ok < total && !bancoVazio) atualizarBadgeFirebase('local-erro', 'diagnostico_falhou');
 }
+
 
 // ============================================================
 // FORÇAR RODAR SEED FIRESTORE (botão verde quando banco vazio)
 // ============================================================
 async function forcarRodarSeedFirestore() {
+    let finalizou = false;
+    const tmr = setTimeout(() => {
+        if (!finalizou) {
+            try {
+                atualizarBadgeFirebase('local-erro', 'fallback-seed-timeout-25s');
+                toast('warning', '⚠️ Importação demorou muito para responder',
+                    'Firestore não respondeu em 25s. Tente:\n• Recarregar a página\n• Trocar Wi-Fi para 4G\n• Depois clique no botão verde novamente.',
+                    16000);
+            } catch (_) {}
+        }
+    }, 25000);
     try {
         if (!USAR_FIREBASE || !firebaseDb || !firebaseInicializado) {
             toast('error', 'Firebase não conectado', 'Inicialize o Firebase primeiro. Recarregue a página.', 9000);
@@ -3046,7 +3097,6 @@ async function forcarRodarSeedFirestore() {
             pCopia._seedImportadoEm = new Date().toISOString();
             batch.set(firebaseDb.collection('profissionais').doc(id), pCopia, { merge: false });
         });
-        // Seed também do config/admin
         batch.set(firebaseDb.collection('config').doc('admin'), {
             valorMensalidade: 29.90,
             moeda: 'BRL',
@@ -3058,7 +3108,6 @@ async function forcarRodarSeedFirestore() {
             new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_SEED')), 20000))
         ]);
 
-        // Atualiza array global com os mocks e salva cache local
         profissionais = profissionaisMock.map(p => ({
             ...p,
             uid: p.uid || p.id,
@@ -3066,7 +3115,6 @@ async function forcarRodarSeedFirestore() {
             _seedImportadoEm: new Date().toISOString()
         }));
         salvarProfissionais();
-        // Re-renderiza a lista
         try { renderProfissionais && renderProfissionais(); } catch (_) {}
         try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
 
@@ -3077,7 +3125,7 @@ async function forcarRodarSeedFirestore() {
         const m = (eSeed?.message || String(eSeed)).toLowerCase();
         const c = String(eSeed?.code || '').toLowerCase();
         registrarErroFirestore('Forçar importar seed demo', eSeed);
-        atualizarBadgeFirestore('local-erro', 'seed falhou: ' + (c || m));
+        atualizarBadgeFirebase('local-erro', 'seed falhou: ' + (c || m));
         let titulo, corpo;
         if (c.includes('permission') || c.includes('unauthenticated') || m.includes('insufficient')) {
             titulo = '🔒 PERMISSÃO NEGADA!';
@@ -3090,8 +3138,19 @@ async function forcarRodarSeedFirestore() {
             corpo = 'Mensagem: ' + (eSeed?.message || String(eSeed)) + '\n\nClique em VER ERRO no banner para mais detalhes.';
         }
         toast('error', titulo, corpo, 18000);
+    } finally {
+        finalizou = true;
+        try { clearTimeout(tmr); } catch (_) {}
+        try {
+            const txt = document.getElementById('badgeFirebaseTexto');
+            if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                console.warn('forcarRodarSeedFirestore FINALLY: badge ainda carregando → forçando local-erro.');
+                atualizarBadgeFirebase('local-erro', 'finally-fallback-seed');
+            }
+        } catch (_) {}
     }
 }
+
 
 // ============================================================
 // FIRESTORE WRAPPERS
@@ -3152,12 +3211,19 @@ async function fbCriarColecaoVazia() {
 
 async function fbSalvarCliente(uid, data) {
     if (!USAR_FIREBASE) {
-        // fallback localStorage
         clientes = clientes || [];
         clientes.push({ uid, ...data });
         localStorage.setItem('ajeita_clientes', JSON.stringify(clientes));
         return;
     }
+    let finalizou = false;
+    const tmr = setTimeout(() => {
+        if (!finalizou) {
+            try {
+                atualizarBadgeFirebase('local-erro', 'fallback-fbSalvarCliente-timeout-18s');
+            } catch (_) {}
+        }
+    }, 18000);
     try {
         await Promise.race([
             firebaseDb.collection('clientes').doc(uid).set({
@@ -3170,7 +3236,6 @@ async function fbSalvarCliente(uid, data) {
         ]);
     } catch (e) {
         console.warn('[fbSalvarCliente] Firestore falhou → salvando só em localStorage:', e);
-        // Fallback: salva localmente mas AVISA USUÁRIO
         clientes = clientes || [];
         const idx = clientes.findIndex(c => c.uid === uid || c.id === uid);
         if (idx >= 0) clientes[idx] = { ...clientes[idx], uid, ...data };
@@ -3178,8 +3243,18 @@ async function fbSalvarCliente(uid, data) {
         localStorage.setItem('ajeita_clientes', JSON.stringify(clientes));
         atualizarBadgeFirebase('local-erro', e?.code || e?.message || 'erro salvar cliente');
         toastErroFirestore('salvar perfil cliente', e);
+    } finally {
+        finalizou = true;
+        try { clearTimeout(tmr); } catch (_) {}
+        try {
+            const txt = document.getElementById('badgeFirebaseTexto');
+            if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                atualizarBadgeFirebase('local-erro', 'finally-fallback-fbSalvarCliente');
+            }
+        } catch (_) {}
     }
 }
+
 
 async function fbSalvarProfissional(uid, data) {
     if (!USAR_FIREBASE) {
@@ -3190,6 +3265,14 @@ async function fbSalvarProfissional(uid, data) {
         salvarProfissionais();
         return;
     }
+    let finalizou = false;
+    const tmr = setTimeout(() => {
+        if (!finalizou) {
+            try {
+                atualizarBadgeFirebase('local-erro', 'fallback-fbSalvarProfissional-timeout-18s');
+            } catch (_) {}
+        }
+    }, 18000);
     try {
         await Promise.race([
             firebaseDb.collection('profissionais').doc(uid).set({
@@ -3200,15 +3283,13 @@ async function fbSalvarProfissional(uid, data) {
             }, { merge: true }),
             timeoutPromise(15000, 'Tempo limite ao salvar profissional (verifique regras Firestore)')
         ]);
-        // Se o array global também tiver esse profissional, atualiza localmente também para não ficar desatualizado
         const idx = profissionais.findIndex(p => p.uid === uid || p.id === uid);
         const proCompleto = { id: uid, uid, ...data, assinaturaAtiva: typeof data.assinaturaAtiva === 'boolean' ? data.assinaturaAtiva : true };
         if (idx >= 0) profissionais[idx] = {...profissionais[idx], ...proCompleto};
         else profissionais.push(proCompleto);
         try { renderProfissionais(); } catch (_) {}
     } catch (e) {
-        console.warn('[fbSalvarProfissional] Firestore FALHOU (⚠️ perfil NÃO aparece em outros celulares) → salvando só localStorage:', e);
-        // Fallback: salva localmente mas AVISA USUÁRIO
+        console.warn('[fbSalvarProfissional] Firestore FALHOU → salvando só localStorage:', e);
         let pro = { id: uid, uid, ...data, assinaturaAtiva: typeof data.assinaturaAtiva === 'boolean' ? data.assinaturaAtiva : true };
         const idx = profissionais.findIndex(p => p.uid === uid || p.id === uid);
         if (idx >= 0) profissionais[idx] = {...profissionais[idx], ...pro};
@@ -3217,8 +3298,18 @@ async function fbSalvarProfissional(uid, data) {
         try { renderProfissionais(); } catch (_) {}
         atualizarBadgeFirebase('local-erro', e?.code || e?.message || 'erro salvar profissional');
         toastErroFirestore('salvar perfil profissional', e);
+    } finally {
+        finalizou = true;
+        try { clearTimeout(tmr); } catch (_) {}
+        try {
+            const txt = document.getElementById('badgeFirebaseTexto');
+            if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                atualizarBadgeFirebase('local-erro', 'finally-fallback-fbSalvarProfissional');
+            }
+        } catch (_) {}
     }
 }
+
 
 async function fbBuscarPerfil(uid, role) {
     if (!USAR_FIREBASE) return null;
