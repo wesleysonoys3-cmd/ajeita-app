@@ -39,20 +39,20 @@
 </head>
 <body class="bg-gray-50 font-sans antialiased">
 
-    <!-- ================ BANNER REGAS FIRESTORE NÃO PUBLICADAS (aparece só quando badge = local-erro) ================ -->
+    <!-- ================ BANNER REGAS FIRESTORE NÃO PUBLICADAS / SEED VAZIO ================ -->
     <div id="bannerRegrasFirestore" class="hidden sticky top-0 z-[60] w-full">
-        <div class="bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 px-3 md:px-5 shadow-2xl">
+        <div id="bannerRegrasBg" class="bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 px-3 md:px-5 shadow-2xl">
             <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center gap-2.5 md:gap-4">
                 <div class="flex items-start gap-2.5 flex-1">
-                    <i class="fas fa-exclamation-triangle text-yellow-300 text-xl mt-0.5 shrink-0"></i>
+                    <i id="bannerRegrasIcone" class="fas fa-exclamation-triangle text-yellow-300 text-xl mt-0.5 shrink-0"></i>
                     <div class="flex-1 min-w-0">
-                        <div class="font-black text-sm md:text-lg leading-tight">⚠️ Dados SÓ neste aparelho!</div>
-                        <div class="text-white/92 text-[11px] md:text-sm mt-0.5">
+                        <div id="bannerRegrasTitulo" class="font-black text-sm md:text-lg leading-tight">⚠️ Dados SÓ neste aparelho!</div>
+                        <div id="bannerRegrasSub" class="text-white/92 text-[11px] md:text-sm mt-0.5">
                             Badge 🔴 = <b class="text-yellow-200">Firestore falhando</b>. Clique nos botões abaixo para ver o motivo e arrumar em 1 minuto.
                         </div>
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2 shrink-0">
+                <div id="bannerRegrasBotoes" class="flex flex-wrap gap-2 shrink-0">
                     <button onclick="diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
                         <i class="fas fa-stethoscope"></i>
                         <span class="hidden sm:inline">Diagnóstico</span>
@@ -2447,17 +2447,39 @@ async function carregarDadosFirestore() {
                 if (profissionais.length === 0) {
                     console.log('🔥 Injetando seed inicial (coleção vazia)...');
                     const batch = firebaseDb.batch();
+                    let seedErro = false;
                     profissionaisMock.forEach(p => {
-                        const id = p.id;
-                        const pCopia = JSON.parse(JSON.stringify(p));
-                        delete pCopia.id;
-                        pCopia.assinaturaAtiva = true;
-                        if (!pCopia.createdAt) pCopia.createdAt = new Date().toISOString();
-                        batch.set(firebaseDb.collection('profissionais').doc(id), pCopia);
+                        try {
+                            const id = p.id;
+                            const pCopia = JSON.parse(JSON.stringify(p));
+                            delete pCopia.id;
+                            pCopia.assinaturaAtiva = true;
+                            if (!pCopia.createdAt) pCopia.createdAt = new Date().toISOString();
+                            batch.set(firebaseDb.collection('profissionais').doc(id), pCopia);
+                        } catch (eSeedItem) { console.warn('Seed item erro:', eSeedItem); seedErro = true; }
                     });
-                    await batch.commit();
-                    profissionais = profissionaisMock.map(p => ({...p}));
-                    console.log(`🔥 Seed injetado (${profissionais.length}).`);
+                    try {
+                        batch.set(firebaseDb.collection('config').doc('admin'), {
+                            valorMensalidade: 29.90, moeda: 'BRL',
+                            updatedAt: new Date().toISOString()
+                        }, { merge: true });
+                    } catch (_) {}
+                    try {
+                        await Promise.race([
+                            batch.commit(),
+                            new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_SEED_AUTO')), 18000))
+                        ]);
+                        profissionais = profissionaisMock.map(p => ({...p}));
+                        console.log(`🔥 Seed auto injetado com sucesso (${profissionais.length}).`);
+                    } catch (eSeedAuto) {
+                        console.warn('🔥 Seed auto FALHOU (batch.commit):', eSeedAuto?.message || eSeedAuto);
+                        // Seed falhou mas regras estão ok? → Marca como firebase-vazio para mostrar botão verde
+                        registrarErroFirestore('Injetar seed auto (carregarDados)', eSeedAuto);
+                        modoBadgeFim = 'firebase-vazio';
+                        detalheErro = 'seed-auto-falhou: ' + (eSeedAuto?.code || eSeedAuto?.message || '');
+                        // Usa mocks LOCALMENTE só para exibir, mas não salvou na nuvem
+                        profissionais = JSON.parse(JSON.stringify(profissionaisMock));
+                    }
                 } else {
                     // Salva cache local para fallback offline
                     salvarProfissionais();
@@ -2475,6 +2497,22 @@ async function carregarDadosFirestore() {
         if (savedPro) profissionais = JSON.parse(savedPro);
         else { profissionais = JSON.parse(JSON.stringify(profissionaisMock)); salvarProfissionais(); }
         toastErroFirestore('carregar profissionais', errFire);
+    }
+
+    // ============== DETECÇÃO EXTRA: Se carregou do Firestore mas docs=0 → seed não rodou
+    if (USAR_FIREBASE && firebaseInicializado && modoBadgeFim !== 'local-erro' && modoBadgeFim !== 'local-offline' && modoBadgeFim !== 'sem-firebase') {
+        if (profissionais.length === 0) {
+            // (A) Se caiu aqui direto, carregou do Firestore e veio 0 docs → seed não rodou
+            if (detalheErro && detalheErro.startsWith('seed-auto-falhou')) {
+                modoBadgeFim = 'firebase-vazio';
+            } else if (!detalheErro) {
+                modoBadgeFim = 'firebase-vazio';
+                detalheErro = 'banco vazio 0 documentos (seed não executou ainda)';
+            }
+        } else if (modoBadgeFim === 'carregando' || !modoBadgeFim) {
+            // Se chegou aqui sem erro e tem profissionais = tudo ok
+            modoBadgeFim = 'firebase';
+        }
     }
 
     // 2) Config admin / mensalidade
@@ -2508,23 +2546,68 @@ function salvarSolicitacoes() {
 // ============================================================
 // BADGE STATUS FIREBASE (ao lado do logo: 🟢 Nuvem / 🔴 Local)
 // ============================================================
-// modo: 'carregando' | 'firebase' | 'local-erro' | 'local-offline' | 'sem-firebase'
+// ============================================================
+// BADGE STATUS FIREBASE (ao lado do logo: 🟢 Nuvem / 🔴 Local)
+// ============================================================
+// modo: 'carregando' | 'firebase' | 'local-erro' | 'local-offline' | 'sem-firebase' | 'firebase-vazio'
+// 'firebase-vazio' = Firestore conectado mas 0 docs (seed não rodou, precisa botão verde importar)
 function atualizarBadgeFirebase(modo, detalheErro) {
     try {
         const badge = document.getElementById('badgeFirebaseStatus');
         const ponto = document.getElementById('badgeFirebasePonto');
         const texto = document.getElementById('badgeFirebaseTexto');
-        const bannerRegras = document.getElementById('bannerRegrasFirestore');
+        const banner = document.getElementById('bannerRegrasFirestore');
+        const bannerBg = document.getElementById('bannerRegrasBg');
+        const bannerIcone = document.getElementById('bannerRegrasIcone');
+        const bannerTitulo = document.getElementById('bannerRegrasTitulo');
+        const bannerSub = document.getElementById('bannerRegrasSub');
+        const bannerBotoes = document.getElementById('bannerRegrasBotoes');
         if (!badge || !ponto || !texto) return;
-        // Banner aparece SEMPRE que estiver em modo local-erro (quase sempre = regras não publicadas)
-        if (bannerRegras) {
+        // ============== LÓGICA BANNER (4 MODOS ==============
+        if (banner && bannerBg && bannerIcone && bannerTitulo && bannerSub && bannerBotoes) {
             if (modo === 'local-erro') {
-                bannerRegras.classList.remove('hidden');
+                // MODO ERRO (vermelho) - permissões/não publicado
+                banner.classList.remove('hidden');
+                bannerBg.className = 'bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 px-3 md:px-5 shadow-2xl';
+                bannerIcone.className = 'fas fa-exclamation-triangle text-yellow-300 text-xl mt-0.5 shrink-0';
+                bannerTitulo.textContent = '⚠️ Dados SÓ neste aparelho!';
+                bannerSub.innerHTML = 'Badge 🔴 = <b class="text-yellow-200">Firestore com erro (provavelmente regras não publicadas)</b>. Clique nos botões abaixo para arrumar.';
+                bannerBotoes.innerHTML = `
+                    <button onclick="diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
+                        <i class="fas fa-stethoscope"></i>
+                        <span class="hidden sm:inline">Diagnóstico</span>
+                        <span class="sm:hidden">Testar</span>
+                    </button>
+                    <button onclick="verUltimoErroFirestore()" class="flex items-center justify-center gap-1.5 bg-white/95 hover:bg-white text-red-700 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
+                        <i class="fas fa-eye"></i>
+                        Ver erro
+                    </button>
+                    <button onclick="copiarRegrasFirestoreEAbrirConsole()" class="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
+                        <i class="fas fa-copy"></i>
+                        Regras + Console
+                    </button>
+                `;
+            } else if (modo === 'firebase-vazio') {
+                // MODO FIRESTORE OK MAS SEM DADOS (verde-amarelo) - precisa importar seed
+                banner.classList.remove('hidden');
+                bannerBg.className = 'bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white py-3 px-3 md:px-5 shadow-2xl';
+                bannerIcone.className = 'fas fa-database text-white text-xl mt-0.5 shrink-0';
+                bannerTitulo.textContent = '⚠️ Banco Firestore VAZIO (0 documentos!)';
+                bannerSub.innerHTML = 'Regras publicadas ✅ mas <b>banco Firestore ainda não tem profissionais</b>. Clique abaixo para importar os 8 dados demo iniciais e a lista funcionar em TODOS os celulares.';
+                bannerBotoes.innerHTML = `
+                    <button onclick="forcarRodarSeedFirestore()" class="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black text-[11px] md:text-sm px-4 md:px-6 py-2.5 md:py-3 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition animate-pulse">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        ⬆️ Importar dados demo (8 profissionais)
+                    </button>
+                `;
+            } else if (modo === 'firebase') {
+                // MODO SUCESSO (verde) - remove banner
+                banner.classList.add('hidden');
             } else {
-                bannerRegras.classList.add('hidden');
+                banner.classList.add('hidden');
             }
         }
-        // Reset classes
+        // ============== BADGE (AO LADO DO LOGO ==============
         badge.className = 'cursor-pointer inline-flex items-center gap-1 text-[10px] md:text-xs font-black px-2 py-0.5 rounded-full border transition hover:scale-105';
         ponto.className = 'w-1.5 h-1.5 rounded-full';
         switch (modo) {
@@ -2533,6 +2616,12 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 ponto.classList.add('bg-green-500');
                 texto.textContent = '🟢 Nuvem';
                 badge.title = 'Conectado ao Firestore. Dados aparecem em TODOS os dispositivos.';
+                break;
+            case 'firebase-vazio':
+                badge.classList.add('bg-amber-50','text-amber-700','border-amber-200');
+                ponto.classList.add('bg-amber-500','animate-pulse');
+                texto.textContent = '☁️ Nuvem (vazia)';
+                badge.title = 'Firestore conectado mas banco VAZIO! Clique no botão AMARELO no topo para importar os 8 profissionais demo.';
                 break;
             case 'local-erro':
                 badge.classList.add('bg-red-50','text-red-700','border-red-200');
@@ -2777,13 +2866,15 @@ async function diagnosticarFirestore() {
     // TESTE 3: LEITURA DADOS (profissionais) → testa se regra allow read publicada
     // ================================================================
     let leituraOk = false;
+    let qtdDocsLidos = 0;
     if (resultados[0].ok && USAR_FIREBASE) {
         try {
             const snap = await Promise.race([
                 firebaseDb.collection('profissionais').limit(3).get(),
                 new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_LEITURA')), 12000))
             ]);
-            resultados.push({ ok: true, nome: '3. Regras LEITURA (profissionais)', msg: `✅ Leitura LIBERADA! Encontrados ${snap?.docs?.length || 0} docs no /profissionais. Regra allow read publicada corretamente.` });
+            qtdDocsLidos = snap?.docs?.length || 0;
+            resultados.push({ ok: true, nome: '3. Regras LEITURA (profissionais)', msg: `✅ Leitura LIBERADA! Encontrados ${qtdDocsLidos} docs no /profissionais. Regra allow read publicada corretamente.${qtdDocsLidos === 0 ? ' BANCO VAZIO (0 profissionais!) → clique no botão verde IMPORTAR DADOS no topo da página.' : ''}` });
             leituraOk = true; totalOk++;
         } catch (eLer) {
             const mLer = (eLer?.message || String(eLer)).toLowerCase();
@@ -2832,23 +2923,111 @@ async function diagnosticarFirestore() {
     }
 
     // ================================================================
-    // EXIBE RESUMO FINAL
+    // EXIBE RESUMO FINAL + ATUALIZA BANNER/STATUS
     // ================================================================
     const ok = resultados.filter(r => r.ok).length;
     const total = resultados.length;
     const titulo = (ok === total) ? `🎉 DIAGNÓSTICO APROVADO (${ok}/${total})` : (ok === 0) ? `❌ TUDO FALHOU (${ok}/${total})` : `⚠️ PARCIAL (${ok}/${total} OK)`;
     const corpoStr = resultados.map(r => `${r.ok ? '✅' : '❌'} ${r.nome}\n   ${r.msg}`).join('\n\n');
+
+    // ============== DETECÇÃO ESPECIAL: TUDO OK (regras publicadas) MAS 0 DOCUMENTOS!
+    const bancoVazio = (leituraOk && qtdDocsLidos === 0);
     let rodape;
     if (ok === total) {
-        rodape = '\n\n🔥 Tudo certo! Clique no badge vermelho para recarregar → deve ficar VERDE 🟢 agora. Se ainda ficar vermelho, recarregue a página.';
-        atualizarBadgeFirebase('firebase');
+        if (bancoVazio) {
+            rodape = '\n\n⚠️ ATENÇÃO: Regras publicadas PERFEITAMENTE, mas banco FIRESTORE REAL está VAZIO (0 profissionais!).\n👉 CLICA NO BOTÃO VERDE GRANDE NO TOPO: ⬆️ Importar dados demo (8 profissionais).\nApós importar, a lista aparece em TODOS os celulares!';
+            atualizarBadgeFirebase('firebase-vazio', 'banco vazio seed pendente');
+        } else {
+            rodape = '\n\n🔥 Tudo certo! Dados sincronizados. Clique no badge para recarregar → deve ficar VERDE 🟢 e lista com profissionais funciona em TODOS celulares.';
+            atualizarBadgeFirebase('firebase');
+        }
     } else {
         const temPerm = resultados.some(r => String(r.msg).toLowerCase().includes('permission') || String(r.msg).toLowerCase().includes('regras') || String(r.msg).toLowerCase().includes('publicada'));
-        rodape = (temPerm) ? '\n\n👉 RESOLUÇÃO IMEDIATA (95% dos casos): clique no botão AZUL "Regras + Console" no banner → cole → PUBLICAR. É ISSO QUE FALTA!' : '\n👉 Clique no botão VER ERRO (branco) para detalhes ou envie esta mensagem para o suporte.';
+        rodape = (temPerm) ? '\n\n👉 RESOLUÇÃO (95%): clique no botão AZUL "Regras + Console" no banner vermelho → cole → PUBLICAR.' : '\n👉 Clique no botão VER ERRO (branco) para detalhes ou envie esta mensagem para o suporte.';
+        if (bancoVazio) {
+            // Mesmo que parcial, se banco vazio mostra o botão verde
+            atualizarBadgeFirebase('firebase-vazio', 'banco vazio seed pendente');
+        }
     }
-    toast((ok === total) ? 'success' : 'error', titulo, corpoStr + rodape, 18000);
-    // Se ainda falhou: volta para local-erro (não muda), se tudo ok: permanece firebase
-    if (ok < total) atualizarBadgeFirebase('local-erro', 'diagnostico_falhou');
+    toast(bancoVazio ? 'warning' : ((ok === total) ? 'success' : 'error'), titulo, corpoStr + rodape, bancoVazio ? 22000 : 18000);
+    // Se ainda falhou e não é banco vazio: volta para local-erro
+    if (ok < total && !bancoVazio) atualizarBadgeFirebase('local-erro', 'diagnostico_falhou');
+}
+
+// ============================================================
+// FORÇAR RODAR SEED FIRESTORE (botão verde quando banco vazio)
+// ============================================================
+async function forcarRodarSeedFirestore() {
+    try {
+        if (!USAR_FIREBASE || !firebaseDb || !firebaseInicializado) {
+            toast('error', 'Firebase não conectado', 'Inicialize o Firebase primeiro. Recarregue a página.', 9000);
+            return;
+        }
+        if (!Array.isArray(profissionaisMock) || profissionaisMock.length < 3) {
+            toast('error', 'Dados demo indisponíveis', 'Recarregue a página e tente novamente.', 9000);
+            return;
+        }
+        atualizarBadgeFirebase('carregando');
+        toast('info', '⬆️ Importando dados demo...', `Gravando ${profissionaisMock.length} profissionais + config/admin no Firestore real (nuvem). Aguarde ~5 segundos.`, 6000);
+
+        const batch = firebaseDb.batch();
+        const seedIds = new Set();
+        profissionaisMock.forEach(p => {
+            const id = String(p.id || ('mock-' + (p.nome || 'pro').replace(/\s+/g, '_')));
+            seedIds.add(id);
+            const pCopia = JSON.parse(JSON.stringify(p));
+            delete pCopia.id;
+            pCopia.uid = id;
+            pCopia.assinaturaAtiva = true;
+            pCopia.createdAt = pCopia.createdAt || new Date().toISOString();
+            pCopia._seedImportadoEm = new Date().toISOString();
+            batch.set(firebaseDb.collection('profissionais').doc(id), pCopia, { merge: false });
+        });
+        // Seed também do config/admin
+        batch.set(firebaseDb.collection('config').doc('admin'), {
+            valorMensalidade: 29.90,
+            moeda: 'BRL',
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        await Promise.race([
+            batch.commit(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_SEED')), 20000))
+        ]);
+
+        // Atualiza array global com os mocks e salva cache local
+        profissionais = profissionaisMock.map(p => ({
+            ...p,
+            uid: p.uid || p.id,
+            assinaturaAtiva: true,
+            _seedImportadoEm: new Date().toISOString()
+        }));
+        salvarProfissionais();
+        // Re-renderiza a lista
+        try { renderProfissionais && renderProfissionais(); } catch (_) {}
+        try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
+
+        atualizarBadgeFirebase('firebase', 'seed importado com sucesso');
+        toast('success', '✅ Dados demo importados!', `${profissionais.length} profissionais + config/admin gravados no Firestore (nuvem)!\n\n✅ Agora abre em QUALQUER celular do mundo!\n\n📱 Recarregue em outros dispositivos para confirmar que a lista aparece lá também.`, 16000);
+        console.log(`🔥 Seed forçado importou ${profissionais.length} profissionais no Firestore. IDs:`, [...seedIds]);
+    } catch (eSeed) {
+        const m = (eSeed?.message || String(eSeed)).toLowerCase();
+        const c = String(eSeed?.code || '').toLowerCase();
+        registrarErroFirestore('Forçar importar seed demo', eSeed);
+        atualizarBadgeFirestore('local-erro', 'seed falhou: ' + (c || m));
+        let titulo, corpo;
+        if (c.includes('permission') || c.includes('unauthenticated') || m.includes('insufficient')) {
+            titulo = '🔒 PERMISSÃO NEGADA!';
+            corpo = 'Regras de ESCRITA do Firestore NÃO PUBLICADAS!\n\nSolução:\n1) Clique no botão AZUL "Regras + Console"\n2) Cole as regras → CLIQUE EM PUBLICAR\n3) Volte e clique aqui de novo.\n\nErro: ' + (c || m);
+        } else if (m.includes('timeout_seed') || m.includes('timeout')) {
+            titulo = '⏱️ TIMEOUT';
+            corpo = 'O Firestore demorou mais de 20 segundos para responder. Verifique sua internet → recarregue a página → tente novamente.';
+        } else {
+            titulo = `❌ Erro ao importar: ${c || 'desconhecido'}`;
+            corpo = 'Mensagem: ' + (eSeed?.message || String(eSeed)) + '\n\nClique em VER ERRO no banner para mais detalhes.';
+        }
+        toast('error', titulo, corpo, 18000);
+    }
 }
 
 // ============================================================
