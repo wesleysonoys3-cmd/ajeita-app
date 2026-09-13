@@ -50,7 +50,12 @@
                     </div>
                     <div>
                         <h1 class="text-xl md:text-2xl font-extrabold text-blue-700">Ajeita</h1>
-                        <p class="text-xs text-gray-500 hidden sm:block">Serviços domésticos</p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span id="badgeFirebaseStatus" title="Clique para recarregar" onclick="event.stopPropagation();forcarRecarregarFirestore();" class="cursor-pointer inline-flex items-center gap-1 text-[10px] md:text-xs font-black px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 transition hover:scale-105">
+                                <span id="badgeFirebasePonto" class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                <span id="badgeFirebaseTexto">Carregando...</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -2210,10 +2215,13 @@ function inicializarFirebase() {
         firebaseInicializado = true;
         USAR_FIREBASE = true;
         console.log(`🔥 Firebase inicializado com SUCESSO!\n   • Projeto: ${cfg.projectId}\n   • Auth (Phone + Google) ON\n   • Firestore ON\n   • Render domínios autorizados: configure-os em Authentication → Settings → Authorized domains`);
-        toast('success', 'Firebase conectado!', `Projeto ${cfg.projectId}`);
+        atualizarBadgeFirebase('carregando');
+        try { toast('success', 'Firebase conectado!', `Projeto ${cfg.projectId}`); } catch (_) {}
     } catch (e) {
         console.error('❌ Erro ao iniciar Firebase:', e);
-        toast('error', 'Erro Firebase', e.message || 'Verifique o console.');
+        USAR_FIREBASE = false;
+        atualizarBadgeFirebase('sem-firebase');
+        try { toast('error', 'Erro Firebase', e.message || 'Verifique o console.'); } catch (_) {}
     }
 }
 
@@ -2355,6 +2363,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function carregarDados() {
     // MODO LOCAL (fallback se Firebase não estiver configurado)
     if (!USAR_FIREBASE) {
+        atualizarBadgeFirebase('sem-firebase');
         const savedPro = localStorage.getItem('ajeita_profissionais');
         if (savedPro) { profissionais = JSON.parse(savedPro); }
         else { profissionais = JSON.parse(JSON.stringify(profissionaisMock)); salvarProfissionais(); }
@@ -2365,20 +2374,21 @@ function carregarDados() {
         return;
     }
 
-    // 🔥 MODO FIREBASE (Firestore
+    // 🔥 MODO FIREBASE (Firestore)
     console.log('🔥 Carregando dados do Firestore...');
+    atualizarBadgeFirebase('carregando');
     carregarDadosFirestore().catch(e => console.warn('Firestore carregamento (usando localStorage fallback...', e.message));
 }
 
 async function carregarDadosFirestore() {
-    if (!USAR_FIREBASE) return;
+    if (!USAR_FIREBASE) { atualizarBadgeFirebase('sem-firebase'); return; }
+    let modoBadgeFim = 'firebase';
+    let detalheErro = null;
     try {
         // Timeout geral (evita Promise pending infinita se rede/Firestore travado)
         await Promise.race([
             (async () => {
                 // 1) BUSCA TODOS os profissionais no Firestore (ORDENADO por criação, últimos 100)
-                // OBS: Removido where('assinaturaAtiva','==',true) temporariamente para modo teste
-                //      mostra TODOS os profissionais (inclusive novos recém-cadastrados em outras contas!)
                 let snapPro;
                 try {
                     snapPro = await firebaseDb.collection('profissionais')
@@ -2423,9 +2433,14 @@ async function carregarDadosFirestore() {
         ]);
     } catch (errFire) {
         console.warn('🔥 [carregarDadosFirestore] FALHOU → carregando localStorage/mocks:', errFire?.message || errFire);
+        modoBadgeFim = (String(errFire?.message || '').toLowerCase().includes('network') || String(errFire?.message || '').toLowerCase().includes('offline') || String(errFire?.message || '').toLowerCase().includes('timeout'))
+            ? 'local-offline'
+            : 'local-erro';
+        detalheErro = errFire?.code || errFire?.message || String(errFire || '');
         const savedPro = localStorage.getItem('ajeita_profissionais');
         if (savedPro) profissionais = JSON.parse(savedPro);
         else { profissionais = JSON.parse(JSON.stringify(profissionaisMock)); salvarProfissionais(); }
+        toastErroFirestore('carregar profissionais', errFire);
     }
 
     // 2) Config admin / mensalidade
@@ -2444,6 +2459,7 @@ async function carregarDadosFirestore() {
     adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true';
     // 🔥 SEMPRE re-renderiza a lista de profissionais no final do carregamento
     try { renderProfissionais(); } catch (_) {}
+    atualizarBadgeFirebase(modoBadgeFim, detalheErro);
 }
 
 function salvarProfissionais() {
@@ -2453,6 +2469,85 @@ function salvarProfissionais() {
 function salvarSolicitacoes() {
     if (USAR_FIREBASE) return;
     localStorage.setItem('ajeita_solicitacoes', JSON.stringify(solicitacoes));
+}
+
+// ============================================================
+// BADGE STATUS FIREBASE (ao lado do logo: 🟢 Nuvem / 🔴 Local)
+// ============================================================
+// modo: 'carregando' | 'firebase' | 'local-erro' | 'local-offline' | 'sem-firebase'
+function atualizarBadgeFirebase(modo, detalheErro) {
+    try {
+        const badge = document.getElementById('badgeFirebaseStatus');
+        const ponto = document.getElementById('badgeFirebasePonto');
+        const texto = document.getElementById('badgeFirebaseTexto');
+        if (!badge || !ponto || !texto) return;
+        // Reset classes
+        badge.className = 'cursor-pointer inline-flex items-center gap-1 text-[10px] md:text-xs font-black px-2 py-0.5 rounded-full border transition hover:scale-105';
+        ponto.className = 'w-1.5 h-1.5 rounded-full';
+        switch (modo) {
+            case 'firebase':
+                badge.classList.add('bg-green-50','text-green-700','border-green-200');
+                ponto.classList.add('bg-green-500');
+                texto.textContent = '🟢 Nuvem';
+                badge.title = 'Conectado ao Firestore. Dados aparecem em TODOS os dispositivos.';
+                break;
+            case 'local-erro':
+                badge.classList.add('bg-red-50','text-red-700','border-red-200');
+                ponto.classList.add('bg-red-500');
+                texto.textContent = '🔴 Local (erro!)';
+                badge.title = '⚠️ ERRO FIRESTORE: dados salvos SÓ neste navegador! Clique para tentar recarregar. Motivo: ' + (detalheErro || 'ver regras Firestore.');
+                break;
+            case 'local-offline':
+                badge.classList.add('bg-amber-50','text-amber-700','border-amber-200');
+                ponto.classList.add('bg-amber-500');
+                texto.textContent = '⚠️ Offline';
+                badge.title = 'Sem internet no momento. Dados salvos localmente.';
+                break;
+            case 'sem-firebase':
+                badge.classList.add('bg-gray-100','text-gray-600','border-gray-300');
+                ponto.classList.add('bg-gray-500');
+                texto.textContent = 'Demo Local';
+                badge.title = 'Firebase não configurado (usando dados demo).';
+                break;
+            default: // 'carregando'
+                badge.classList.add('bg-blue-50','text-blue-700','border-blue-200');
+                ponto.classList.add('bg-blue-500','animate-pulse');
+                texto.textContent = 'Carregando...';
+                badge.title = 'Conectando ao Firestore...';
+                break;
+        }
+    } catch (e) { console.warn('atualizarBadgeFirebase erro:', e); }
+}
+
+async function forcarRecarregarFirestore() {
+    try {
+        if (!USAR_FIREBASE) {
+            toast('info', 'Firebase desligado', 'Usando dados demo locais (sem Firebase).');
+            return;
+        }
+        atualizarBadgeFirebase('carregando');
+        toast('info', 'Recarregando do Firestore...', 'Buscando dados mais recentes da nuvem 🔄');
+        await carregarDadosFirestore();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// Helper de toast genérico para erros Firestore (instrui usuário a publicar regras)
+function toastErroFirestore(acao, err) {
+    const cod = err?.code || '';
+    const msg = err?.message || String(err || '');
+    let titulo = 'Erro no Firestore';
+    let corpo = 'Tente novamente em alguns segundos.';
+    if (cod.includes('permission') || cod.includes('unauthenticated') || msg.includes('insufficient permissions') || msg.includes('permission')) {
+        titulo = '⚠️ REGRAS FIRESTORE NÃO PUBLICADAS!';
+        corpo = 'Abra o Console Firebase → Firestore → Rules → Cole o conteúdo de firestore.rules e clique em PUBLICAR. SÓ ASSIM os dados aparecem em outros celulares.';
+    } else if (cod.includes('deadline') || msg.includes('timeout') || msg.includes('Timeout') || msg.includes('network')) {
+        titulo = 'Sem conexão com Firestore';
+        corpo = 'Verifique sua internet. Dados estão sendo salvos apenas neste aparelho por enquanto.';
+    }
+    try { toast('error', titulo, corpo, 10000); } catch (_) { alert(titulo + '\n\n' + corpo); }
+    console.error('[FIRESTORE ERRO] Ação: ', acao, 'Code:', cod, 'Msg:', msg);
 }
 
 // ============================================================
@@ -2520,15 +2615,27 @@ async function fbSalvarCliente(uid, data) {
         localStorage.setItem('ajeita_clientes', JSON.stringify(clientes));
         return;
     }
-    await Promise.race([
-        firebaseDb.collection('clientes').doc(uid).set({
-            ...data,
-            uid,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            role: 'cliente'
-        }, { merge: true }),
-        timeoutPromise(15000, 'Tempo limite ao salvar cliente (verifique regras Firestore)')
-    ]);
+    try {
+        await Promise.race([
+            firebaseDb.collection('clientes').doc(uid).set({
+                ...data,
+                uid,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                role: 'cliente'
+            }, { merge: true }),
+            timeoutPromise(15000, 'Tempo limite ao salvar cliente (verifique regras Firestore)')
+        ]);
+    } catch (e) {
+        console.warn('[fbSalvarCliente] Firestore falhou → salvando só em localStorage:', e);
+        // Fallback: salva localmente mas AVISA USUÁRIO
+        clientes = clientes || [];
+        const idx = clientes.findIndex(c => c.uid === uid || c.id === uid);
+        if (idx >= 0) clientes[idx] = { ...clientes[idx], uid, ...data };
+        else clientes.push({ uid, ...data });
+        localStorage.setItem('ajeita_clientes', JSON.stringify(clientes));
+        atualizarBadgeFirebase('local-erro', e?.code || e?.message || 'erro salvar cliente');
+        toastErroFirestore('salvar perfil cliente', e);
+    }
 }
 
 async function fbSalvarProfissional(uid, data) {
@@ -2540,15 +2647,34 @@ async function fbSalvarProfissional(uid, data) {
         salvarProfissionais();
         return;
     }
-    await Promise.race([
-        firebaseDb.collection('profissionais').doc(uid).set({
-            ...data,
-            uid,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            role: 'profissional'
-        }, { merge: true }),
-        timeoutPromise(15000, 'Tempo limite ao salvar profissional (verifique regras Firestore)')
-    ]);
+    try {
+        await Promise.race([
+            firebaseDb.collection('profissionais').doc(uid).set({
+                ...data,
+                uid,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                role: 'profissional'
+            }, { merge: true }),
+            timeoutPromise(15000, 'Tempo limite ao salvar profissional (verifique regras Firestore)')
+        ]);
+        // Se o array global também tiver esse profissional, atualiza localmente também para não ficar desatualizado
+        const idx = profissionais.findIndex(p => p.uid === uid || p.id === uid);
+        const proCompleto = { id: uid, uid, ...data, assinaturaAtiva: typeof data.assinaturaAtiva === 'boolean' ? data.assinaturaAtiva : true };
+        if (idx >= 0) profissionais[idx] = {...profissionais[idx], ...proCompleto};
+        else profissionais.push(proCompleto);
+        try { renderProfissionais(); } catch (_) {}
+    } catch (e) {
+        console.warn('[fbSalvarProfissional] Firestore FALHOU (⚠️ perfil NÃO aparece em outros celulares) → salvando só localStorage:', e);
+        // Fallback: salva localmente mas AVISA USUÁRIO
+        let pro = { id: uid, uid, ...data, assinaturaAtiva: typeof data.assinaturaAtiva === 'boolean' ? data.assinaturaAtiva : true };
+        const idx = profissionais.findIndex(p => p.uid === uid || p.id === uid);
+        if (idx >= 0) profissionais[idx] = {...profissionais[idx], ...pro};
+        else profissionais.push(pro);
+        salvarProfissionais();
+        try { renderProfissionais(); } catch (_) {}
+        atualizarBadgeFirebase('local-erro', e?.code || e?.message || 'erro salvar profissional');
+        toastErroFirestore('salvar perfil profissional', e);
+    }
 }
 
 async function fbBuscarPerfil(uid, role) {
@@ -2964,12 +3090,13 @@ async function pagamentoAprovar(metodo) {
             return;
         }
         const agora = new Date();
+        const valorAssinaturaPag = MERCADO_PAGO?.VALOR_ASSINATURA ?? 0.10;
         const dadosPagto = {
             assinaturaAtiva: true,
-            pagamentoValor: 0.10,
+            pagamentoValor: valorAssinaturaPag,
             pagamentoMetodo: metodo || 'pix',
             pagamentoStatus: 'aprovado',
-            pagamentoCodigoTransacao: (metodo === 'pix' ? 'PIX-' : 'CART-') + Date.now(),
+            pagamentoCodigoTransacao: (metodo === 'pix' ? 'PIX-' : (metodo === 'cartao' ? 'CART-' : (metodo === 'mercado-pago' ? 'MP-' : 'TRANS-'))) + Date.now(),
             pagamentoData: agora.toISOString(),
             pagamentoExpiraEm: new Date(agora.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString(),
             updatedAt: agora.toISOString()
@@ -2986,6 +3113,8 @@ async function pagamentoAprovar(metodo) {
                 console.log('[pagamentoAprovar] ✅ Firestore atualizado assinaturaAtiva=true');
             } catch (errFire) {
                 console.warn('[pagamentoAprovar] ⚠️ Não atualizou Firestore → fallback localStorage:', errFire?.message || errFire);
+                atualizarBadgeFirebase('local-erro', errFire?.code || errFire?.message || '');
+                toastErroFirestore('salvar assinatura profissional', errFire);
             }
         }
 
@@ -3010,7 +3139,12 @@ async function pagamentoAprovar(metodo) {
         try { fbAtualizarNavBotaoEntrar(); } catch (_) {}
 
         const primeiroNome = (pagUltimosDadosPro?.nome || '').split(' ')[0] || 'Profissional';
-        toast('success', '✅ Pagamento aprovado!', primeiroNome + ', seu perfil já está visível para todos os clientes! 🎉');
+        if (salvouNoFire) {
+            toast('success', '✅ Pagamento aprovado!', primeiroNome + ', seu perfil já está visível para todos os clientes em TODOS os celulares! 🎉');
+            atualizarBadgeFirebase('firebase');
+        } else {
+            toast('warning', '⚠️ Pagamento aprovado (modo local)', primeiroNome + ', perfil está visível SÓ neste aparelho. Para aparecer em outros, precisa publicar regras Firestore no Console.');
+        }
 
         if (pagTimerInterval) { clearInterval(pagTimerInterval); pagTimerInterval = null; }
         setTimeout(() => navigateTo('home'), 1300);
