@@ -83,9 +83,9 @@
                     <div>
                         <h1 class="text-xl md:text-2xl font-extrabold text-blue-700">Ajeita</h1>
                         <div class="flex items-center gap-1.5 mt-0.5">
-                            <span id="badgeFirebaseStatus" title="Clique para recarregar" onclick="event.stopPropagation();forcarRecarregarFirestore();" class="cursor-pointer inline-flex items-center gap-1 text-[10px] md:text-xs font-black px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 transition hover:scale-105">
-                                <span id="badgeFirebasePonto" class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                <span id="badgeFirebaseTexto">Carregando...</span>
+                            <span id="badgeFirebaseStatus" title="Clique para recarregar" onclick="event.stopPropagation();forcarRecarregarFirestore();" class="cursor-pointer inline-flex items-center gap-1 text-[10px] md:text-xs font-black px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 transition hover:scale-105">
+                                <span id="badgeFirebasePonto" class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                <span id="badgeFirebaseTexto">🔴 Local (erro!)</span>
                             </span>
                         </div>
                     </div>
@@ -2321,7 +2321,7 @@ function inicializarFirebase() {
         firebaseInicializado = true;
         USAR_FIREBASE = true;
         console.log(`🔥 Firebase inicializado com SUCESSO!\n   • Projeto: ${cfg.projectId}\n   • Auth (Phone + Google) ON\n   • Firestore ON\n   • Render domínios autorizados: configure-os em Authentication → Settings → Authorized domains`);
-        atualizarBadgeFirebase('carregando');
+// (estado carregando removido - previne tela azul infinita)
         try { toast('success', 'Firebase conectado!', `Projeto ${cfg.projectId}`); } catch (_) {}
     } catch (e) {
         console.error('❌ Erro ao iniciar Firebase:', e);
@@ -2455,6 +2455,8 @@ function atualizarHeaderUsuario() {
     try { fbAtualizarNavBotaoEntrar(); } catch (_) {}
 }
 let FIRESTORE_CARREGAMENTO_INICIADO_EM = 0;
+// 🔴 NÃO EXISTE MAIS estado 'carregando' AZUL no badge! Default = 🔴 Local (erro!).
+// 🔴 Só muda para 🟢/🟡 SE houver SUCESSO Firestore. Isso PREVINE TELA AZUL INFINITA!
 
 // ============================================================
 // 🚀 UI PRIMEIRO SÍNCRONO (SÓ DADOS LOCAIS — NÃO TRAVA NUNCA!)
@@ -2614,7 +2616,7 @@ function carregarDados() {
 
     // 🔥 MODO FIREBASE (Firestore)
     console.log('🔥 Carregando dados do Firestore...');
-    atualizarBadgeFirebase('carregando');
+// (estado carregando removido - previne tela azul infinita)
     // .finally() GARANTE que não fica carregando infinito mesmo se exceção não pega
     carregarDadosFirestore()
         .catch(e => console.warn('carregarDados erro (usando localStorage fallback...', e?.message || e))
@@ -2876,11 +2878,13 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 texto.textContent = 'Demo Local';
                 badge.title = 'Firebase não configurado (usando dados demo).';
                 break;
-            default: // 'carregando'
-                badge.classList.add('bg-blue-50','text-blue-700','border-blue-200');
-                ponto.classList.add('bg-blue-500','animate-pulse');
-                texto.textContent = 'Carregando...';
-                badge.title = 'Conectando ao Firestore...';
+            default: // 'carregando' — NÃO DEVE MAIS SER USADO! Fallback = 🔴 Local.
+                // NÃO TEM MAIS estado "carregando" azul. Se chegar aqui, força 🔴.
+                console.warn('❌ atualizarBadgeFirebase chamado com modo inválido/antigo "carregando". Mudando para 🔴 Local (erro!).');
+                badge.classList.add('bg-red-50','text-red-700','border-red-200');
+                ponto.classList.add('bg-red-500');
+                texto.textContent = '🔴 Local (erro!)';
+                badge.title = '⚠️ ERRO FIRESTORE: dados salvos SÓ neste navegador! Clique para tentar recarregar.';
                 break;
         }
     } catch (e) { console.warn('atualizarBadgeFirebase erro:', e); }
@@ -2892,7 +2896,7 @@ async function forcarRecarregarFirestore() {
             toast('info', 'Firebase desligado', 'Usando dados demo locais (sem Firebase).');
             return;
         }
-        atualizarBadgeFirebase('carregando');
+// (estado carregando removido - previne tela azul infinita)
         toast('info', 'Recarregando do Firestore...', 'Buscando dados mais recentes da nuvem 🔄');
         await Promise.race([
             carregarDadosFirestore(),
@@ -3060,7 +3064,7 @@ async function diagnosticarFirestore() {
         }
     }, 30000);
     try {
-        atualizarBadgeFirebase('carregando');
+// (estado carregando removido - previne tela azul infinita)
         toast('info', '🔬 Rodando diagnóstico...', '4 testes em ~5 segundos. Por favor aguarde.', 5000);
 
         // TESTE 1: Firebase SDK
@@ -3240,7 +3244,7 @@ async function forcarRodarSeedFirestore() {
             toast('error', 'Dados demo indisponíveis', 'Recarregue a página e tente novamente.', 9000);
             return;
         }
-        atualizarBadgeFirebase('carregando');
+// (estado carregando removido - previne tela azul infinita)
         toast('info', '⬆️ Importando dados demo...', `Gravando ${profissionaisMock.length} profissionais + config/admin no Firestore real (nuvem). Aguarde ~5 segundos.`, 6000);
 
         const batch = firebaseDb.batch();
