@@ -2385,66 +2385,113 @@ function atualizarHeaderUsuario() {
 let FIRESTORE_CARREGAMENTO_INICIADO_EM = 0; // fallback global anti-carregando-infinito
 
 document.addEventListener('DOMContentLoaded', () => {
-    inicializarFirebase();
-    // Garante que mesmo que inicializarFirebase demore/ficar pendente,
-    // carregarDados é chamado com atraso e depois o fallback global ativa.
-    try { carregarDados(); } catch (e) { console.warn('carregarDados onload:', e); }
-    try { inicializarCidadeOptions(); } catch (_) {}
-    try { renderProfissionais(); } catch (_) {}
-    try { atualizarValoresMensalidade(); } catch (_) {}
-    try { inicializarEventosGlobais(); } catch (_) {}
-    try { inicializarOtpInputs(); } catch (_) {}
-    try { setTimeout(inicializarOnboarding, 400); } catch (_) {}
-    console.log('✅ Ajeita carregado com sucesso! Firebase OK:', firebaseInicializado);
-
-    // ============================================================
-    // FALLBACK GLOBAL 35 SEGUNDOS: SE AINDA ESTIVER "Carregando..."
-    // FORÇA SAIR (evita badge azul infinito!)
-    // ============================================================
-    FIRESTORE_CARREGAMENTO_INICIADO_EM = Date.now();
-
-    // Função helper de fallback (pode ser chamada várias vezes abaixo)
-    function fallbackSairCarregando(motivoFallback) {
-        try {
-            const txt = document.getElementById('badgeFirebaseTexto');
-            if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
-                console.warn('🔥 FALLBACK GLOBAL (' + motivoFallback + '): badge ainda carregando → forçando sair!');
+    let finalizouOnload = false;
+    const tmrOnload = setTimeout(() => {
+        if (!finalizouOnload) {
+            try {
+                console.warn('🔥 FALLBACK onload em 18s: inicializarFirestore ou carregarDados ainda em progresso → força UI carregar.');
+                // Força renderizar lista com mocks/localStorage para não ficar tela branca
                 const savedPro = localStorage.getItem('ajeita_profissionais');
                 if (savedPro) profissionais = JSON.parse(savedPro);
                 else profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
                 try { renderProfissionais && renderProfissionais(); } catch (_) {}
                 try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
-                atualizarBadgeFirebase('local-erro', 'fallback-global-' + motivoFallback);
-                toast('warning',
-                    '⚠️ Operação demorou muito para responder',
-                    'Mostrando dados locais (salvos no seu navegador).\n\nCausas prováveis:\n• Internet ruim (3G/Wi-Fi fraco)\n• Firestore em manutenção\n• Seu país bloqueou conexão com Google Cloud\n\nSolução: Clique no badge 🔴 ou no botão correspondente para recarregar manualmente, ou espere 1 minuto e recarregue a página.',
-                    16000);
-                return true;
-            }
-        } catch (eFb) { console.warn('Fallback global (' + motivoFallback + '):', eFb); }
-        return false;
-    }
+                try {
+                    const txt = document.getElementById('badgeFirebaseTexto');
+                    if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                        atualizarBadgeFirebase('local-erro', 'onload-fallback-18s');
+                    }
+                } catch (_) {}
+            } catch (eFb) { console.warn('Fallback onload 18s:', eFb); }
+        }
+    }, 18000);
 
-    setTimeout(() => { fallbackSairCarregando('35s-onload'); }, 35000);
-    setTimeout(() => { fallbackSairCarregando('40s-onload'); }, 40000);
+    try {
+        // CARREGA A INTERFACE RÁPIDO (local) ANTES — para nunca ficar com tela branca/travada
+        try {
+            const savedPro = localStorage.getItem('ajeita_profissionais');
+            if (savedPro) profissionais = JSON.parse(savedPro);
+            else { profissionais = JSON.parse(JSON.stringify(profissionaisMock || [])); salvarProfissionais && salvarProfissionais(); }
+        } catch (_) {}
+        try {
+            const savedSol = localStorage.getItem('ajeita_solicitacoes'); solicitacoes = savedSol ? JSON.parse(savedSol) : [];
+        } catch (_) {}
+        try {
+            const savedMen = localStorage.getItem('ajeita_mensalidade');
+            valorMensalidadeAtual = savedMen ? parseFloat(savedMen) : 29.90;
+        } catch (_) {}
+        adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true';
+        try { renderProfissionais && renderProfissionais(); } catch (_) {}
+        try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
 
-    // ============================================================
-    // FALLBACK GLOBAL TAMBÉM DISPARA AO CLICAR EM BOTÕES IMPORTANTES
-    // (Diagnóstico, Importar demo, Salvar perfil, Pagar)
-    // Se após 30s do clique ainda estiver "carregando" → força sair.
-    // ============================================================
-    window._ajeitaRegistrarFallbackAposAcao = function (rotulo, segundosMax) {
-        segundosMax = segundosMax || 30;
-        setTimeout(() => {
+        // AGORA CHAMA FIREBASE, MAS SEMPRE COM TRY/CATCH
+        try { inicializarFirebase && inicializarFirebase(); } catch (e) { console.warn('inicializarFirebase onload erro:', e); }
+
+        // FIREBASE Carregamento: AGENDA para 2 segundos DEPOIS (não trava UI!)
+        try {
+            setTimeout(() => {
+                try {
+                    if (typeof carregarDados === 'function') carregarDados();
+                } catch (eLoad) { console.warn('carregarDados scheduled onload erro:', eLoad); }
+            }, 2000);
+        } catch (_) {}
+
+        try { inicializarCidadeOptions && inicializarCidadeOptions(); } catch (_) {}
+        try { atualizarValoresMensalidade && atualizarValoresMensalidade(); } catch (_) {}
+        try { inicializarEventosGlobais && inicializarEventosGlobais(); } catch (_) {}
+        try { inicializarOtpInputs && inicializarOtpInputs(); } catch (_) {}
+        try { setTimeout(() => { try { inicializarOnboarding && inicializarOnboarding(); } catch (_) {} }, 400); } catch (_) {}
+        console.log('✅ Ajeita carregado com sucesso! Firebase OK:', firebaseInicializado);
+
+        // ============================================================
+        // FALLBACK GLOBAL 35 SEGUNDOS: SE AINDA ESTIVER "Carregando..."
+        // FORÇA SAIR (evita badge azul infinito!)
+        // ============================================================
+        FIRESTORE_CARREGAMENTO_INICIADO_EM = Date.now();
+
+        function fallbackSairCarregando(motivoFallback) {
             try {
                 const txt = document.getElementById('badgeFirebaseTexto');
                 if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
-                    console.warn('🔥 FALLBACK AÇÃO (' + rotulo + ' ' + segundosMax + 's): badge ainda carregando → forçando sair.');
-                    fallbackSairCarregando(rotulo + '-' + segundosMax + 's');
+                    console.warn('🔥 FALLBACK GLOBAL (' + motivoFallback + '): badge ainda carregando → forçando sair!');
+                    const savedPro = localStorage.getItem('ajeita_profissionais');
+                    if (savedPro) profissionais = JSON.parse(savedPro);
+                    else profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
+                    try { renderProfissionais && renderProfissionais(); } catch (_) {}
+                    try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
+                    atualizarBadgeFirebase('local-erro', 'fallback-global-' + motivoFallback);
+                    toast('warning',
+                        '⚠️ Operação demorou muito para responder',
+                        'Mostrando dados locais (salvos no seu navegador).\n\nCausas prováveis:\n• Internet ruim (3G/Wi-Fi fraco)\n• Firestore em manutenção\n• Seu país bloqueou conexão com Google Cloud\n\nSolução: Clique no badge 🔴 ou no botão correspondente para recarregar manualmente, ou espere 1 minuto e recarregue a página.',
+                        16000);
+                    return true;
                 }
-            } catch (_) {}
-        }, segundosMax * 1000);
-    };
+            } catch (eFb) { console.warn('Fallback global (' + motivoFallback + '):', eFb); }
+            return false;
+        }
+
+        setTimeout(() => { fallbackSairCarregando('35s-onload'); }, 35000);
+        setTimeout(() => { fallbackSairCarregando('40s-onload'); }, 40000);
+
+        window._ajeitaRegistrarFallbackAposAcao = function (rotulo, segundosMax) {
+            segundosMax = segundosMax || 30;
+            setTimeout(() => {
+                try {
+                    const txt = document.getElementById('badgeFirebaseTexto');
+                    if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                        console.warn('🔥 FALLBACK AÇÃO (' + rotulo + ' ' + segundosMax + 's): badge ainda carregando → forçando sair.');
+                        fallbackSairCarregando(rotulo + '-' + segundosMax + 's');
+                    }
+                } catch (_) {}
+            }, segundosMax * 1000);
+        };
+    } catch (errOnload) {
+        console.error('❌ DOMContentLoaded CATCH GERAL (tela não trava):', errOnload);
+        try { alert('Aviso: pequeno erro ao carregar. Recarregue a página para tentar novamente.'); } catch (_) {}
+    } finally {
+        finalizouOnload = true;
+        try { clearTimeout(tmrOnload); } catch (_) {}
+    }
 });
 
 function carregarDados() {
@@ -3037,8 +3084,16 @@ async function diagnosticarFirestore() {
             rodape = (temPerm) ? '\n\n👉 RESOLUÇÃO (95%): clique botão AZUL Regras + Console → cole → PUBLICAR.' : '\n👉 Clique VER ERRO para detalhes.';
             if (bancoVazio) atualizarBadgeFirebase('firebase-vazio', 'banco vazio seed pendente');
         }
-        toast(bancoVazio ? 'warning' : ((ok === total) ? 'success' : 'error', titulo, corpoStr + rodape, bancoVazio ? 22000 : 18000);
-        if (ok < total && !bancoVazio) atualizarBadgeFirebase('local-erro', 'diagnostico_falhou');
+        try {
+            const bancoVazioLocal = !!(leituraOk && qtdDocsLidos === 0);
+            const tipoToast = bancoVazioLocal ? 'warning' : ((ok === total) ? 'success' : 'error');
+            const duracaoMs = bancoVazioLocal ? 22000 : 18000;
+            toast(tipoToast, titulo, corpoStr + rodape, duracaoMs);
+        } catch (eToast) {
+            console.error('Toast final diagnostico erro:', eToast);
+            alert('Diagnóstico: ' + titulo + '\n\n' + corpoStr);
+        }
+        if (ok < total && !(leituraOk && qtdDocsLidos === 0)) atualizarBadgeFirebase('local-erro', 'diagnostico_falhou');
     } catch (e) {
         console.error('diagnosticarFirestore catch geral:', e);
         atualizarBadgeFirebase('local-erro', 'diagnostico catch');
