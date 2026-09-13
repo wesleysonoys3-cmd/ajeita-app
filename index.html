@@ -678,6 +678,26 @@
 
                     <!-- FORM TELEFONE -->
                     <form id="formAuthTelefone" class="p-6 md:p-8 space-y-5" onsubmit="return authSolicitarCodigo(event)">
+
+                        <!-- ================ LOGIN COM GOOGLE (CLIENTE / PROFISSIONAL) ================ -->
+                        <div class="space-y-3 pb-5 border-b border-gray-100">
+                            <button type="button" onclick="authGoogle('cliente')" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold py-4 rounded-2xl shadow-sm hover:shadow-md transition text-base">
+                                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                                </svg>
+                                <span id="googleBtnLabel">Continuar com Google (Cliente)</span>
+                            </button>
+                        </div>
+
+                        <div class="text-center -mt-2 mb-2">
+                            <span class="inline-block px-3 py-1 text-xs uppercase tracking-wider text-gray-400 bg-gray-50 rounded-full border border-gray-100 font-semibold">
+                                Ou continue com seu celular
+                            </span>
+                        </div>
+
                         <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-800">
                             <i class="fas fa-info-circle mr-2"></i>
                             <strong id="authInfoPerfil">Para clientes:</strong> Enviaremos um código por SMS para confirmar seu número de telefone.
@@ -1916,14 +1936,80 @@ function authMudarPerfil(perfil) {
     const tCliente = document.getElementById('authTabCliente');
     const tPro = document.getElementById('authTabProfissional');
     const info = document.getElementById('authInfoPerfil');
+    const googleLabel = document.getElementById('googleBtnLabel');
     if (perfil === 'cliente') {
         tCliente.className = 'py-4 font-bold text-lg transition bg-blue-600 text-white';
         tPro.className = 'py-4 font-bold text-lg transition text-gray-600 hover:bg-gray-50';
         info.innerHTML = '<strong>Para clientes:</strong> Enviaremos um código por SMS para contratar profissionais e acompanhar seus pedidos.';
+        if (googleLabel) googleLabel.textContent = 'Continuar com Google (Cliente)';
     } else {
         tPro.className = 'py-4 font-bold text-lg transition bg-blue-600 text-white';
         tCliente.className = 'py-4 font-bold text-lg transition text-gray-600 hover:bg-gray-50';
         info.innerHTML = '<strong>Para profissionais:</strong> Cadastre seus serviços e receba solicitações de clientes na sua região.';
+        if (googleLabel) googleLabel.textContent = 'Continuar com Google (Profissional)';
+    }
+}
+
+// ============================================================
+// AUTH: LOGIN COM GOOGLE (signInWithPopup GoogleAuthProvider)
+// ============================================================
+function authGoogle(perfil) {
+    authPerfilSelecionado = perfil || authPerfilSelecionado || 'cliente';
+    authMudarPerfil(authPerfilSelecionado);
+
+    if (!USAR_FIREBASE) {
+        // 🔥 Fallback modo LOCAL: simula login Google
+        console.warn('Firebase não configurado. Modo teste local: simulando Google sign-in.');
+        toast('info', 'Modo teste (sem Firebase)', 'Login com Google simulado.');
+        authUsuarioAtual = {
+            uid: 'google-local-' + Date.now(),
+            displayName: 'Usuário Google (Teste)',
+            email: 'teste.google@ajeita.app',
+            photoURL: 'https://ui-avatars.com/api/?name=Google+Teste&background=4285F4&color=fff&size=400',
+            phoneNumber: null,
+            providerId: 'google.com'
+        };
+        authRole = authPerfilSelecionado;
+        fbAtualizarNavBotaoEntrar();
+        authPosLoginVerificarPerfil();
+        return;
+    }
+
+    // 🔥 MODO FIREBASE REAL
+    try {
+        const googleLabel = document.getElementById('googleBtnLabel');
+        const prevText = googleLabel ? googleLabel.textContent : '';
+        if (googleLabel) googleLabel.textContent = 'Entrando com Google...';
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        firebaseAuth.signInWithPopup(provider)
+            .then((result) => {
+                const user = result.user;
+                authUsuarioAtual = {
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    phoneNumber: user.phoneNumber,
+                    providerId: 'google.com'
+                };
+                authRole = authPerfilSelecionado;
+                console.log('[Google] signInWithPopup OK. uid=', user.uid, 'perfil=', authPerfilSelecionado);
+                fbAtualizarNavBotaoEntrar();
+                authPosLoginVerificarPerfil();
+            })
+            .catch((err) => {
+                console.error('[Google] signInWithPopup erro:', err);
+                toast('error', 'Erro no login com Google', err.message || 'Tente novamente.');
+                if (googleLabel) googleLabel.textContent = prevText;
+                if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+                    toast('info', 'Login cancelado', 'Você fechou a janela de login do Google.');
+                }
+            });
+    } catch (err) {
+        console.error('[Google] erro inicializar provider:', err);
+        toast('error', 'Erro', err.message || 'Não foi possível iniciar o login com Google.');
     }
 }
 
@@ -2081,7 +2167,7 @@ async function authPosLoginVerificarPerfil() {
 }
 
 function abrirTelaComplemento() {
-    // Carrega pré preenche telefone
+    // Carrega pré preenche telefone + dados Google (nome, foto, email)
     const camposPro = document.getElementById('compCamposProfissional');
     const sub = document.getElementById('completarSubtitulo');
     if (authPerfilSelecionado === 'profissional') {
@@ -2091,6 +2177,19 @@ function abrirTelaComplemento() {
         camposPro.classList.add('hidden');
         sub.textContent = 'Só mais alguns dados para você começar a contratar!';
     }
+
+    // Preenchimento automático se vier do Google / provider com dados
+    if (authUsuarioAtual) {
+        const inputNome = document.getElementById('compNome');
+        const inputFoto = document.getElementById('compFoto');
+        if (inputNome && authUsuarioAtual.displayName && !inputNome.value.trim()) {
+            inputNome.value = authUsuarioAtual.displayName;
+        }
+        if (inputFoto && authUsuarioAtual.photoURL && !inputFoto.value.trim()) {
+            inputFoto.value = authUsuarioAtual.photoURL;
+        }
+    }
+
     navigateTo('auth-completar');
 }
 
@@ -2103,15 +2202,20 @@ async function authSalvarComplemento(e) {
     const bairro = document.getElementById('compBairro').value.trim();
     if (!nome || !cidade || !bairro) return false;
 
+    // Usa dados adicionais do usuário Google (email) e telefone (se Phone Auth)
+    const email = authUsuarioAtual?.email || '';
+    const fotoGoogle = authUsuarioAtual?.photoURL || '';
+    const telefoneLimpo = authTelefoneCompleto ? authTelefoneCompleto.replace('+55', '') : (authUsuarioAtual?.phoneNumber ? authUsuarioAtual.phoneNumber.replace('+55', '') : '');
+
     if (authPerfilSelecionado === 'cliente') {
         await fbSalvarCliente(uid, {
-            nome, cidade, bairro,
-            telefone: authTelefoneCompleto ? authTelefoneCompleto.replace('+55', '') : ''
+            nome, cidade, bairro, email,
+            telefone: telefoneLimpo,
+            foto: fotoGoogle || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=1d4ed8&color=fff&size=400')
         });
         authUsuarioRole = 'cliente';
         toast('success', 'Cadastro finalizado!', 'Bem-vindo(a), ' + nome.split(' ')[0] + '!');
     } else {
-        // Profissional
         const catRaw = document.getElementById('compCategoria').value;
         const preco = parseFloat(document.getElementById('compPreco').value || '0');
         const area = document.getElementById('compArea').value.trim();
@@ -2123,8 +2227,8 @@ async function authSalvarComplemento(e) {
             toast('error', 'Preencha todos os dados', 'Campos profissional são obrigatórios'); return false;
         }
         const proData = {
-            nome, telefone: authTelefoneCompleto ? authTelefoneCompleto.replace('+55', '') : '',
-            foto: foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=3b82f6&color=fff&size=400',
+            nome, telefone: telefoneLimpo, email,
+            foto: foto || fotoGoogle || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=3b82f6&color=fff&size=400'),
             categoria: categoriaLimpa, categorias: [categoriaLimpa], cidade, bairro,
             precoHora: preco, areaAtendimento: area, bio,
             avaliacoes: [], numeroAvaliacoes: 0, totalServicos: 0,
@@ -2133,11 +2237,7 @@ async function authSalvarComplemento(e) {
         await fbSalvarProfissional(uid, proData);
         authUsuarioRole = 'profissional';
         toast('success', 'Perfil profissional criado!', nome.split(' ')[0] + ', seu perfil já está nas buscas! 🎉');
-        // Atualiza lista
-        if (!USAR_FIREBASE) {
-            // já salvou no array
-        } else {
-            // recarrega
+        if (USAR_FIREBASE) {
             const pro = await fbBuscarPerfil(uid, 'profissional');
             if (pro && !profissionais.find(p => p.id === pro.id)) profissionais.push(pro);
         }

@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /profissionais/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /clientes/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /solicitacoes/{id} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.clienteId;
+      allow read, update: if request.auth != null && (
+        request.auth.uid == resource.data.clienteId ||
+        request.auth.uid == resource.data.profissionalId
+      );
+    }
+
+    match /avaliacoes/{id} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.clienteId;
+    }
+
+    match /config/admin {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
