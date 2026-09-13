@@ -1720,10 +1720,17 @@ let authUsuarioRole = null;             // 'cliente' | 'profissional' | 'admin'
 function inicializarFirebase() {
     try {
         const cfg = (typeof firebaseConfig_REAL !== 'undefined') ? firebaseConfig_REAL : firebaseConfig_PLACEHOLDER;
-        const isPlaceholder = (cfg.apiKey === 'SUA_API_KEY_AQUI');
+        const placeholderVals = ['SUA_API_KEY_AQUI', 'SEU_PROJETO', 'SEU_SENDER_ID', 'SEU_APP_ID'];
+        const isPlaceholder = (
+            !cfg || !cfg.apiKey || !cfg.projectId ||
+            placeholderVals.some(v =>
+                (cfg.apiKey === v) || (cfg.projectId === v) ||
+                (cfg.messagingSenderId === v) || (cfg.appId === v)
+            )
+        );
 
         if (isPlaceholder) {
-            console.warn('🔥 Firebase não inicializado: use Firebase');
+            console.warn('🔥 Firebase não inicializado: firebaseConfig_REAL ainda é PLACEHOLDER. Cole seus dados reais no index.html linha ~1673.');
             return;
         }
 
@@ -1736,26 +1743,25 @@ function inicializarFirebase() {
         firebaseAuth = firebase.auth();
         firebaseDb = firebase.firestore();
 
-        // Settings de persistência Auth
         firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
-        // Listener global Auth
         firebaseAuth.onAuthStateChanged((user) => {
             authUsuarioAtual = user || null;
             if (authUsuarioAtual) {
-                // Logged in — carregar dados complementares do perfil logado
-                console.log('🔥 Firebase Auth: usuario logado', user?.uid);
+                console.log('🔥 Firebase Auth: usuario logado', user?.uid, 'provider=', user?.providerData?.[0]?.providerId);
             } else {
                 authUsuarioAtual = null;
                 authUsuarioRole = null;
             }
+            fbAtualizarNavBotaoEntrar();
         });
 
         firebaseInicializado = true;
         USAR_FIREBASE = true;
-        console.log('🔥 Firebase inicializado com sucesso! (Phone Auth + Firestore)');
+        console.log(`🔥 Firebase inicializado com SUCESSO!\n   • Projeto: ${cfg.projectId}\n   • Auth (Phone + Google) ON\n   • Firestore ON\n   • Render domínios autorizados: configure-os em Authentication → Settings → Authorized domains`);
+        toast('success', 'Firebase conectado!', `Projeto ${cfg.projectId}`);
     } catch (e) {
         console.error('❌ Erro ao iniciar Firebase:', e);
+        toast('error', 'Erro Firebase', e.message || 'Verifique o console.');
     }
 }
 
@@ -2059,14 +2065,60 @@ function authSolicitarCodigo(e) {
         firebaseAuth.signInWithPhoneNumber(authTelefoneCompleto, window.recaptchaVerifier)
             .then(confirm => {
                 authConfirmationResult = confirm;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar código por SMS';
                 toast('success', 'Código enviado!', 'SMS chegou, digite os 6 dígitos.');
                 navigateTo('auth-otp');
             })
             .catch(err => {
-                console.error(err);
-                toast('error', 'Erro ao enviar SMS', err.message || 'Tente novamente.');
+                console.error('[PhoneAuth] signInWithPhoneNumber erro:', err?.code, err?.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar código por SMS';
+
+                // Trata erros comuns com mensagens AMIGÁVEIS
+                const code = err?.code || '';
+                let titulo = 'Erro ao enviar SMS';
+                let msg = err?.message || 'Tente novamente.';
+
+                switch (code) {
+                    case 'auth/operation-not-allowed':
+                        titulo = '⚠️ Ative o envio SMS no Firebase';
+                        msg = 'No Console Firebase:\nAuthentication → Settings → aba SMS Multi-factor Authentication (ou Phone Numbers)\n→ Role a tela até "SMS regions for sign-in" → clique em ADD → busque Brazil (Brasil / +55) → marque checkbox → Done.\n\n(Salve e teste novamente. Passo a passo enviado no chat.)';
+                        break;
+                    case 'auth/quota-exceeded':
+                        titulo = '⚠️ Cota SMS diária esgotada';
+                        msg = 'A cota gratuita diária do Firebase para SMS acabou. Use os telefones de teste configurados (ex: +5561999999999 → 123456) sem gastar SMS, ou habilite Billing no projeto para cota extra.';
+                        break;
+                    case 'auth/invalid-phone-number':
+                        titulo = '⚠️ Telefone inválido';
+                        msg = 'Formato: DDD (2 dígitos) + celular (8 ou 9 dígitos). Use apenas números.';
+                        break;
+                    case 'auth/captcha-check-failed':
+                    case 'auth/invalid-recaptcha-token':
+                    case 'auth/recaptcha-not-enabled':
+                        titulo = '⚠️ Recaptcha inválido';
+                        msg = 'Recarregue a página e tente novamente. Verifique se o domínio está em Authentication → Settings → Authorized domains.';
+                        break;
+                    case 'auth/too-many-requests':
+                        titulo = '⚠️ Muitas tentativas';
+                        msg = 'Você fez muitas tentativas rapidamente. Aguarde alguns minutos ou use outro número.';
+                        break;
+                    case 'auth/user-token-expired':
+                    case 'auth/user-disabled':
+                        titulo = '⚠️ Usuário bloqueado';
+                        msg = 'Esse usuário foi desativado no Console Firebase.';
+                        break;
+                }
+
+                toast('error', titulo, msg);
+
+                // Reseta Recaptcha em caso de erro
                 if (window.recaptchaVerifier) {
-                    window.recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId));
+                    try {
+                        window.recaptchaVerifier.render().then(widgetId => {
+                            if (typeof grecaptcha !== 'undefined' && widgetId != null) grecaptcha.reset(widgetId);
+                        }).catch(() => {});
+                    } catch (_) {}
                 }
             })
             .finally(() => {
