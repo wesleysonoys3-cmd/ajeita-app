@@ -83,9 +83,10 @@
                     <div>
                         <h1 class="text-xl md:text-2xl font-extrabold text-blue-700">Ajeita</h1>
                         <div class="flex items-center gap-1.5 mt-0.5">
-                            <span id='badgeFirebaseStatus' title="Clique para recarregar" onclick="event.stopPropagation();forcarRecarregarFirestore();" class="cursor-pointer inline-flex items-center gap-1 text-[10px] md:text-xs font-black px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 transition hover:scale-105">
-                                <span id='badgeFirebasePonto' class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                <span id='badgeFirebaseTexto'>🔴 Local (erro!)</span>
+                            <!-- REMOVIDO BADGE NUVEM FIREBASE (pedido usuario 13/09/2026) - substituido por saudacao boas-vindas -->
+                            <span id='headerBoasVindas' class="text-[10px] md:text-xs font-bold text-gray-500 flex items-center gap-1">
+                                <span id='headerBoasVindasEmoji' class="text-sm md:text-base">👋</span>
+                                <span id='headerBoasVindasTexto'>Boas-vindas ao site</span>
                             </span>
                         </div>
                     </div>
@@ -2892,31 +2893,45 @@ function iniciarListenerProfissionais() {
 }
 
 // ============================================================
-// BADGE STATUS FIREBASE (ao lado do logo: 🟢 Nuvem / 🔴 Local)
+// BADGE STATUS FIREBASE (REMVIDO DO HEADER - pedido usuário 13/09/2026)
+// Agora: ATUALIZA SAUDAÇÃO BOAS-VINDAS (headerBoasVindas) baseado na hora do dia.
+// Obs: BANNER (🔴 modo local-erro) CONTINUA existindo pois é útil para diagnosticar falhas de regra/erro.
 // ============================================================
 // modo: 'carregando' | 'firebase' | 'local-erro' | 'local-offline' | 'sem-firebase' | 'firebase-vazio'
-// 'firebase-vazio' = Firestore conectado mas 0 docs (seed não rodou, precisa botão verde importar)
+// 'firebase-vazio' = Firestore conectado mas 0 docs
 function atualizarBadgeFirebase(modo, detalheErro) {
     try {
-        const badge = document.getElementById('badgeFirebaseStatus');
-        const ponto = document.getElementById('badgeFirebasePonto');
-        const texto = document.getElementById('badgeFirebaseTexto');
         const banner = document.getElementById('bannerRegrasFirestore');
         const bannerBg = document.getElementById('bannerRegrasBg');
         const bannerIcone = document.getElementById('bannerRegrasIcone');
         const bannerTitulo = document.getElementById('bannerRegrasTitulo');
         const bannerSub = document.getElementById('bannerRegrasSub');
         const bannerBotoes = document.getElementById('bannerRegrasBotoes');
-        if (!badge || !ponto || !texto) return;
-        // ============== LÓGICA BANNER (4 MODOS ==============
+
+        // ============== LÓGICA BOAS-VINDAS HEADER (dinâmica por hora + saudação extra se Firebase conectou) ==============
+        try {
+            const saud = document.getElementById('headerBoasVindas');
+            const txtSaud = document.getElementById('headerBoasVindasTexto');
+            const emojiSaud = document.getElementById('headerBoasVindasEmoji');
+            if (saud && txtSaud && emojiSaud) {
+                const h = new Date().getHours();
+                let msg, em;
+                if (h < 12) { msg = 'Bom dia!'; em = '🌅'; }
+                else if (h < 18) { msg = 'Boa tarde!'; em = '☀️'; }
+                else { msg = 'Boa noite!'; em = '🌙'; }
+                txtSaud.textContent = msg;
+                emojiSaud.textContent = em;
+            }
+        } catch(_ajeitaSaudErr) {}
+
+        // ============== LÓGICA BANNER (só aparece em ERRO real) ==============
         if (banner && bannerBg && bannerIcone && bannerTitulo && bannerSub && bannerBotoes) {
             if (modo === 'local-erro') {
-                // MODO ERRO (vermelho) - permissões/não publicado
                 banner.classList.remove('hidden');
                 bannerBg.className = 'bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 px-3 md:px-5 shadow-2xl';
                 bannerIcone.className = 'fas fa-exclamation-triangle text-yellow-300 text-xl mt-0.5 shrink-0';
                 bannerTitulo.textContent = '⚠️ Dados SÓ neste aparelho!';
-                bannerSub.innerHTML = 'Badge 🔴 = <b class="text-yellow-200">Firestore com erro (provavelmente regras não publicadas)</b>. Clique nos botões abaixo para arrumar.';
+                bannerSub.innerHTML = 'Firestore com erro (provavelmente regras não publicadas). Clique nos botões abaixo para arrumar.';
                 bannerBotoes.innerHTML = `
                     <button onclick="(function(){ try { window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-header-diag', 28); } catch(_){} diagnosticarFirestore(); })()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
                         <i class="fas fa-stethoscope"></i>
@@ -2932,62 +2947,13 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                         Regras + Console
                     </button>
                 `;
-            } else if (modo === 'firebase-vazio') {
-                // REMOVIDO BOTÃO VERDE IMPORTAR DEMO (pedido usuário 13/09/2026)
-                // Regras publicadas e Firebase conectado mas 0 profissionais:
-                // → NÃO mostra banner (não há erro!)
-                // → Profissionais REAIS são cadastrados pelo próprio app ("Sou Profissional → Cadastre-se").
-                banner.classList.add('hidden');
-            } else if (modo === 'firebase') {
-                // MODO SUCESSO (verde) - remove banner
+            } else if (modo === 'firebase-vazio' || modo === 'firebase' || modo === 'local-offline' || modo === 'sem-firebase' || modo === 'carregando') {
                 banner.classList.add('hidden');
             } else {
                 banner.classList.add('hidden');
             }
         }
-        // ============== BADGE (AO LADO DO LOGO ==============
-        badge.className = 'cursor-pointer inline-flex items-center gap-1 text-[10px] md:text-xs font-black px-2 py-0.5 rounded-full border transition hover:scale-105';
-        ponto.className = 'w-1.5 h-1.5 rounded-full';
-        switch (modo) {
-            case 'firebase':
-                badge.classList.add('bg-green-50','text-green-700','border-green-200');
-                ponto.classList.add('bg-green-500');
-                texto.textContent = '🟢 Nuvem';
-                badge.title = 'Conectado ao Firestore. Dados aparecem em TODOS os dispositivos.';
-                break;
-            case 'firebase-vazio':
-                badge.classList.add('bg-amber-50','text-amber-700','border-amber-200');
-                ponto.classList.add('bg-amber-500','animate-pulse');
-                texto.textContent = '☁️ Nuvem (vazia)';
-                badge.title = 'Firestore conectado mas banco VAZIO! Clique no botão AMARELO no topo para importar os 8 profissionais demo.';
-                break;
-            case 'local-erro':
-                badge.classList.add('bg-red-50','text-red-700','border-red-200');
-                ponto.classList.add('bg-red-500');
-                texto.textContent = '🔴 Local (erro!)';
-                badge.title = '⚠️ ERRO FIRESTORE: dados salvos SÓ neste navegador! Clique para tentar recarregar. Motivo: ' + (detalheErro || 'ver regras Firestore.');
-                break;
-            case 'local-offline':
-                badge.classList.add('bg-amber-50','text-amber-700','border-amber-200');
-                ponto.classList.add('bg-amber-500');
-                texto.textContent = '⚠️ Offline';
-                badge.title = 'Sem internet no momento. Dados salvos localmente.';
-                break;
-            case 'sem-firebase':
-                badge.classList.add('bg-gray-100','text-gray-600','border-gray-300');
-                ponto.classList.add('bg-gray-500');
-                texto.textContent = 'Demo Local';
-                badge.title = 'Firebase não configurado (usando dados demo).';
-                break;
-            default: // 'carregando' — NÃO DEVE MAIS SER USADO! Fallback = 🔴 Local.
-                // NÃO TEM MAIS estado 'carregando' azul. Se chegar aqui, força 🔴.
-                console.warn(`❌ atualizarBadgeFirebase chamado com modo inválido/antigo 'carregando'. Mudando para 🔴 Local (erro!).`);
-                badge.classList.add('bg-red-50','text-red-700','border-red-200');
-                ponto.classList.add('bg-red-500');
-                texto.textContent = '🔴 Local (erro!)';
-                badge.title = '⚠️ ERRO FIRESTORE: dados salvos SÓ neste navegador! Clique para tentar recarregar.';
-                break;
-        }
+        // BADGE HEADER ANTIGO (🟢 Nuvem / 🔴 Local) → REMOVIDO do HTML por pedido do usuário. Não faz mais nada.
     } catch (e) { console.warn('atualizarBadgeFirebase erro:', e); }
 }
 
