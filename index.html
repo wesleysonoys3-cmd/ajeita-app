@@ -899,6 +899,215 @@
             </div>
         </section>
 
+        <!-- ================= VIEW: PAGAMENTO PROFISSIONAL (R$ 0,10 TESTE PIX + CARTÃO) ================= -->
+        <section id="view-pagamento" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10 pb-28">
+            <div class="max-w-2xl mx-auto px-4 md:px-8">
+                <!-- Header amarelo -->
+                <div class="bg-gradient-to-r from-amber-400 to-orange-500 rounded-3xl p-6 md:p-8 shadow-lg text-white mb-8">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="inline-block bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-bold mb-3">
+                                💎 MODO TESTE — R$ 0,10
+                            </div>
+                            <h2 class="text-2xl md:text-3xl font-black leading-tight mb-2">
+                                Último passo!
+                            </h2>
+                            <p class="text-white/90 font-medium mb-1">Libere seu perfil na plataforma agora mesmo</p>
+                            <p class="text-4xl md:text-5xl font-black mt-3 tracking-tight">
+                                <span class="text-sm align-top mr-1 opacity-90">R$</span>
+                                <span>0,10</span>
+                            </p>
+                            <p class="text-xs mt-2 text-white/80">Assinatura de 30 dias — após pagamento, seu perfil aparece em TODAS as buscas</p>
+                        </div>
+                        <div class="hidden sm:block">
+                            <div class="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center text-5xl backdrop-blur">
+                                🔒
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dados do profissional (resumo) -->
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm mb-6">
+                    <div class="flex items-center gap-4">
+                        <img id="pagFotoPro" src="https://ui-avatars.com/api/?name=Profissional&background=3b82f6&color=fff&size=200" alt="Foto" class="w-16 h-16 rounded-2xl object-cover border-2 border-blue-100">
+                        <div class="flex-1 min-w-0">
+                            <h3 id="pagNomePro" class="font-bold text-gray-800 text-lg truncate">Seu perfil</h3>
+                            <p id="pagCategoriaPro" class="text-sm text-gray-500 truncate">Categoria profissional</p>
+                            <p id="pagCidadePro" class="text-xs text-gray-400 truncate mt-0.5">Cidade / Bairro</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="inline-flex items-center gap-1 bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-xs font-bold">
+                                <i class="fas fa-check"></i> Perfil criado
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Escolha de método -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button type="button" id="pagBtnMetodoPix" onclick="pagamentoSelecionarMetodo('pix')" class="relative p-5 rounded-2xl border-2 transition bg-white flex flex-col items-center gap-2 group hover:bg-gray-50">
+                        <i class="fas fa-qrcode text-3xl text-green-600 group-hover:scale-110 transition-transform"></i>
+                        <span class="font-bold text-gray-800">PIX</span>
+                        <span class="text-xs text-green-600 font-semibold">Imediato</span>
+                        <div id="pagBadgePix" class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full text-white text-xs flex items-center justify-center hidden">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    </button>
+                    <button type="button" id="pagBtnMetodoCartao" onclick="pagamentoSelecionarMetodo('cartao')" class="relative p-5 rounded-2xl border-2 transition bg-white flex flex-col items-center gap-2 group hover:bg-gray-50">
+                        <i class="fas fa-credit-card text-3xl text-blue-600 group-hover:scale-110 transition-transform"></i>
+                        <span class="font-bold text-gray-800">Cartão</span>
+                        <span class="text-xs text-blue-600 font-semibold">Crédito</span>
+                        <div id="pagBadgeCartao" class="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full text-white text-xs flex items-center justify-center hidden">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- ================ ÁREA PIX (inicialmente oculta) ================ -->
+                <div id="pagAreaPix" class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm mb-6 hidden">
+                    <h4 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+                        <i class="fas fa-qrcode text-green-600"></i> PIX — Código copia e cola
+                    </h4>
+                    <!-- QR Code (SVG inline mock) -->
+                    <div class="flex flex-col items-center gap-5">
+                        <div class="bg-green-50 p-4 rounded-3xl border-2 border-green-200">
+                            <div id="pagQrCodePix" class="w-48 h-48 md:w-56 md:h-56 bg-white rounded-2xl p-3 flex items-center justify-center">
+                                <!-- SVG QR Fake (padrão bonito) -->
+                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                                    <rect width="100" height="100" fill="#fff"/>
+                                    <!-- Quadrados fixos padrão QR (3 cantos) -->
+                                    <g fill="#111">
+                                        <!-- Canto superior esquerdo -->
+                                        <rect x="2" y="2" width="25" height="25" fill="none" stroke="#111" stroke-width="3"/>
+                                        <rect x="7" y="7" width="15" height="15"/>
+                                        <rect x="10" y="10" width="9" height="9" fill="#fff"/>
+                                        <!-- Canto superior direito -->
+                                        <rect x="73" y="2" width="25" height="25" fill="none" stroke="#111" stroke-width="3"/>
+                                        <rect x="78" y="7" width="15" height="15"/>
+                                        <rect x="81" y="10" width="9" height="9" fill="#fff"/>
+                                        <!-- Canto inferior esquerdo -->
+                                        <rect x="2" y="73" width="25" height="25" fill="none" stroke="#111" stroke-width="3"/>
+                                        <rect x="7" y="78" width="15" height="15"/>
+                                        <rect x="10" y="81" width="9" height="9" fill="#fff"/>
+                                        <!-- Pontos aleatórios restantes (padrão) -->
+                                        <rect x="32" y="8" width="4" height="4"/><rect x="40" y="12" width="4" height="4"/><rect x="48" y="8" width="4" height="4"/>
+                                        <rect x="56" y="16" width="4" height="4"/><rect x="64" y="12" width="4" height="4"/>
+                                        <rect x="32" y="24" width="4" height="4"/><rect x="40" y="28" width="4" height="4"/><rect x="52" y="24" width="4" height="4"/>
+                                        <rect x="64" y="28" width="4" height="4"/>
+                                        <rect x="8" y="34" width="4" height="4"/><rect x="16" y="38" width="4" height="4"/><rect x="24" y="34" width="4" height="4"/>
+                                        <rect x="36" y="38" width="4" height="4"/><rect x="44" y="34" width="4" height="4"/><rect x="56" y="38" width="4" height="4"/>
+                                        <rect x="68" y="34" width="4" height="4"/><rect x="76" y="38" width="4" height="4"/><rect x="88" y="34" width="4" height="4"/>
+                                        <rect x="12" y="46" width="4" height="4"/><rect x="28" y="46" width="4" height="4"/><rect x="40" y="50" width="4" height="4"/>
+                                        <rect x="48" y="54" width="4" height="4"/><rect x="60" y="46" width="4" height="4"/><rect x="80" y="50" width="4" height="4"/>
+                                        <rect x="8" y="58" width="4" height="4"/><rect x="20" y="62" width="4" height="4"/><rect x="36" y="58" width="4" height="4"/>
+                                        <rect x="48" y="62" width="4" height="4"/><rect x="60" y="58" width="4" height="4"/><rect x="72" y="62" width="4" height="4"/>
+                                        <rect x="88" y="58" width="4" height="4"/>
+                                        <rect x="32" y="70" width="4" height="4"/><rect x="44" y="74" width="4" height="4"/><rect x="56" y="70" width="4" height="4"/>
+                                        <rect x="68" y="74" width="4" height="4"/><rect x="80" y="70" width="4" height="4"/>
+                                        <rect x="36" y="82" width="4" height="4"/><rect x="48" y="86" width="4" height="4"/><rect x="56" y="82" width="4" height="4"/>
+                                        <rect x="72" y="86" width="4" height="4"/><rect x="88" y="82" width="4" height="4"/>
+                                        <rect x="40" y="94" width="4" height="4"/><rect x="56" y="94" width="4" height="4"/><rect x="68" y="94" width="4" height="4"/><rect x="84" y="94" width="4" height="4"/>
+                                    </g>
+                                </svg>
+                            </div>
+                        </div>
+                        <!-- Código copia e cola -->
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Código PIX copia e cola</label>
+                            <div class="flex gap-2">
+                                <input type="text" readonly id="pagCodigoPix" class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-600 outline-none" value="">
+                                <button type="button" onclick="pagamentoCopiarPix()" class="px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold text-sm shadow-sm transition flex items-center gap-1 shrink-0">
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2 text-center">
+                                <i class="far fa-clock mr-1"></i> Tempo expira em: <span id="pagPixTimer" class="font-bold text-green-600">02:00</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-gray-100">
+
+                    <button type="button" onclick="pagamentoSimularAprovado('pix')" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i> Já efetuei o pagamento (simular)
+                    </button>
+                </div>
+
+                <!-- ================ ÁREA CARTÃO (inicialmente oculta) ================ -->
+                <div id="pagAreaCartao" class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm mb-6 hidden">
+                    <h4 class="font-bold text-gray-800 text-lg mb-5 flex items-center gap-2">
+                        <i class="fas fa-credit-card text-blue-600"></i> Cartão de crédito
+                    </h4>
+
+                    <!-- Mini card pré-visualização -->
+                    <div class="relative mb-6">
+                        <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-5 md:p-6 shadow-lg text-white overflow-hidden">
+                            <div class="flex justify-between items-start mb-6">
+                                <i class="fas fa-wifi text-2xl rotate-90 text-white/70"></i>
+                                <div id="pagCartaoBandeira" class="text-2xl font-black italic">VISA</div>
+                            </div>
+                            <div id="pagCartaoNumero" class="font-mono text-xl md:text-2xl tracking-widest mb-4 text-white/95">
+                                •••• •••• •••• ••••
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-[10px] uppercase tracking-wider text-white/60 mb-1">Titular</div>
+                                    <div id="pagCartaoNome" class="text-sm font-bold truncate">NOME DO CARTÃO</div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] uppercase tracking-wider text-white/60 mb-1">Validade</div>
+                                    <div id="pagCartaoValidade" class="text-sm font-bold">••/••</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="pagFormCartao" onsubmit="return pagamentoCartaoSubmit(event)" class="space-y-4" novalidate>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Número do cartão</label>
+                            <input type="tel" id="cartaoNumero" maxlength="19" placeholder="0000 0000 0000 0000" oninput="pagamentoCartaoAtualizarPreview()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm tracking-wider">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Nome impresso no cartão</label>
+                            <input type="text" id="cartaoNome" placeholder="Ex: JOÃO PAULO SILVA" oninput="pagamentoCartaoAtualizarPreview()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm uppercase">
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Validade</label>
+                                <input type="tel" id="cartaoValidade" maxlength="5" placeholder="MM/AA" oninput="pagamentoCartaoAtualizarPreview()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">CVV</label>
+                                <input type="tel" id="cartaoCvv" maxlength="4" placeholder="123" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Parcelas</label>
+                                <select id="cartaoParcelas" class="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
+                                    <option value="1">1x R$ 0,10</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">CPF do titular</label>
+                            <input type="tel" id="cartaoCpf" maxlength="14" placeholder="000.000.000-00" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2 mt-4">
+                            🔒 Pagar R$ 0,10 agora
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Observações -->
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
+                    <p class="text-xs text-amber-800 leading-relaxed flex gap-2">
+                        <i class="fas fa-info-circle text-amber-500 shrink-0 mt-0.5"></i>
+                        <span><strong>Ambiente de testes:</strong> nenhum valor real será cobrado. Use o botão "simular pagamento" (PIX) ou envie qualquer cartão com 16 dígitos para aprovar automaticamente e liberar seu perfil.</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
         <!-- ================= VIEW: CADASTRO PROFISSIONAL (ACESSÍVEL APENAS APÓS LOGIN PHONE AUTH) ================= -->
         <section id="view-cadastro" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1933,23 +2142,60 @@ function carregarDados() {
 
 async function carregarDadosFirestore() {
     if (!USAR_FIREBASE) return;
+    try {
+        // Timeout geral (evita Promise pending infinita se rede/Firestore travado)
+        await Promise.race([
+            (async () => {
+                // 1) BUSCA TODOS os profissionais no Firestore (ORDENADO por criação, últimos 100)
+                // OBS: Removido where('assinaturaAtiva','==',true) temporariamente para modo teste
+                //      mostra TODOS os profissionais (inclusive novos recém-cadastrados em outras contas!)
+                let snapPro;
+                try {
+                    snapPro = await firebaseDb.collection('profissionais')
+                        .orderBy('createdAt', 'desc')
+                        .limit(100)
+                        .get();
+                } catch (errOrder) {
+                    // Fallback se índice não tiver criado ainda (orderBy precisa de índice composto)
+                    console.warn('🔥 [carregarDadosFirestore] Sem índice para orderBy → buscando sem ordem:', errOrder?.message);
+                    snapPro = await firebaseDb.collection('profissionais').limit(100).get();
+                }
+                profissionais = snapPro.docs.map(d => {
+                    const dados = d.data();
+                    return {
+                        id: d.id, uid: dados.uid || d.id, ...dados,
+                        assinaturaAtiva: typeof dados.assinaturaAtiva === 'boolean' ? dados.assinaturaAtiva : true
+                    };
+                });
+                console.log(`🔥 ${profissionais.length} profissionais carregados do Firestore (SEM filtro assinatura)`);
 
-    // 1) Profissionais ativos (assinatura ativa)
-    const snapPro = await firebaseDb.collection('profissionais').where('assinaturaAtiva', '==', true).get();
-    profissionais = snapPro.docs.map(d => ({ id: d.id, ...d.data() }));
-    console.log(`🔥 ${profissionais.length} profissionais carregados do Firestore`);
-
-    // Se for o primeiro acesso sem nenhum profissional, inicializa os MOCKs
-    if (profissionais.length === 0) {
-        console.log('🔥 Injetando seed inicial (vazio)...');
-        const batch = firebaseDb.batch();
-        profissionaisMock.forEach(p => {
-            const id = p.id;
-            delete p.id;
-            batch.set(firebaseDb.collection('profissionais').doc(id), p);
-        });
-        await batch.commit();
-        profissionais = profissionaisMock.map(p => ({...p}));
+                // Se for o primeiro acesso e não TIVER NENHUM profissional, inicializa os MOCKs (seed batch)
+                if (profissionais.length === 0) {
+                    console.log('🔥 Injetando seed inicial (coleção vazia)...');
+                    const batch = firebaseDb.batch();
+                    profissionaisMock.forEach(p => {
+                        const id = p.id;
+                        const pCopia = JSON.parse(JSON.stringify(p));
+                        delete pCopia.id;
+                        pCopia.assinaturaAtiva = true;
+                        if (!pCopia.createdAt) pCopia.createdAt = new Date().toISOString();
+                        batch.set(firebaseDb.collection('profissionais').doc(id), pCopia);
+                    });
+                    await batch.commit();
+                    profissionais = profissionaisMock.map(p => ({...p}));
+                    console.log(`🔥 Seed injetado (${profissionais.length}).`);
+                } else {
+                    // Salva cache local para fallback offline
+                    salvarProfissionais();
+                }
+            })(),
+            timeoutPromise(20000, 'Timeout ao carregar profissionais do Firestore')
+        ]);
+    } catch (errFire) {
+        console.warn('🔥 [carregarDadosFirestore] FALHOU → carregando localStorage/mocks:', errFire?.message || errFire);
+        const savedPro = localStorage.getItem('ajeita_profissionais');
+        if (savedPro) profissionais = JSON.parse(savedPro);
+        else { profissionais = JSON.parse(JSON.stringify(profissionaisMock)); salvarProfissionais(); }
     }
 
     // 2) Config admin / mensalidade
@@ -1957,9 +2203,17 @@ async function carregarDadosFirestore() {
         const snapCfg = await firebaseDb.collection('config').doc('admin').get();
         if (snapCfg.exists) {
             const cfg = snapCfg.data();
-            if (cfg.mensalidade) valorMensalidadeAtual = parseFloat(cfg.mensalidade);
+            valorMensalidadeAtual = cfg.valorMensalidade || 29.90;
+            localStorage.setItem('ajeita_mensalidade', String(valorMensalidadeAtual));
         }
-    } catch(e) {}
+    } catch (_) {
+        const savedMen = localStorage.getItem('ajeita_mensalidade');
+        valorMensalidadeAtual = savedMen ? parseFloat(savedMen) : 29.90;
+    }
+
+    adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true';
+    // 🔥 SEMPRE re-renderiza a lista de profissionais no final do carregamento
+    try { renderProfissionais(); } catch (_) {}
 }
 
 function salvarProfissionais() {
@@ -2114,6 +2368,276 @@ async function fbAtualizarMensalidade(valor) {
         mensalidade: valor,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+}
+
+// ============================================================
+// PAGAMENTO PROFISSIONAL (MODO TESTE R$ 0,10)
+// Fluxo: cadastro complementar salvo → pagamento (PIX ou Cartão) → aprovar → assinaturaAtiva=true → Home
+// ============================================================
+let pagTimerInterval = null;
+let pagUltimosDadosPro = null;
+
+function pagamentoAbrirTela(dadosPro) {
+    try {
+        pagUltimosDadosPro = {...(dadosPro || {})};
+        console.log('[pagamentoAbrirTela] dadosPro:', pagUltimosDadosPro);
+        const foto = dadosPro.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(dadosPro.nome || 'Profissional') + '&background=3b82f6&color=fff&size=400';
+        const imgFoto = document.getElementById('pagFotoPro');
+        if (imgFoto) {
+            imgFoto.src = foto;
+            imgFoto.onerror = function() { this.src = 'https://ui-avatars.com/api/?name=Profissional&background=3b82f6&color=fff&size=400'; };
+        }
+        document.getElementById('pagNomePro').textContent = dadosPro.nome || 'Seu perfil';
+        document.getElementById('pagCategoriaPro').textContent = (dadosPro.categoria || 'Categoria') + ' • R$ ' + (typeof dadosPro.precoHora === 'number' ? dadosPro.precoHora.toFixed(2) : '0,00') + '/h';
+        document.getElementById('pagCidadePro').textContent = (dadosPro.cidade || 'Cidade') + ' / ' + (dadosPro.bairro || 'Bairro');
+
+        const codPix = '00020126580014br.gov.bcb.pix0136ajeita-' + (dadosPro.uid || Date.now()) + '-0105202652040000000010REAUMERCADO PAGO5802BR5913AJEITA SERVICOS LTDA6009SAO PAULO62070503***6304ABCD';
+        document.getElementById('pagCodigoPix').value = codPix;
+
+        if (pagTimerInterval) { clearInterval(pagTimerInterval); pagTimerInterval = null; }
+        let seg = 120;
+        const atualizarTimer = () => {
+            const min = String(Math.floor(seg / 60)).padStart(2, '0');
+            const s = String(seg % 60).padStart(2, '0');
+            const el = document.getElementById('pagPixTimer');
+            if (el) el.textContent = min + ':' + s;
+            if (seg <= 0 && pagTimerInterval) { clearInterval(pagTimerInterval); pagTimerInterval = null; }
+            else seg--;
+        };
+        atualizarTimer();
+        pagTimerInterval = setInterval(atualizarTimer, 1000);
+
+        pagamentoSelecionarMetodo('pix');
+
+        try {
+            document.getElementById('cartaoNumero').value = '';
+            document.getElementById('cartaoNome').value = '';
+            document.getElementById('cartaoValidade').value = '';
+            document.getElementById('cartaoCvv').value = '';
+            document.getElementById('cartaoCpf').value = '';
+            pagamentoCartaoAtualizarPreview();
+        } catch (_) {}
+    } catch (e) {
+        console.error('[pagamentoAbrirTela] erro:', e);
+    }
+}
+
+function pagamentoSelecionarMetodo(metodo) {
+    try {
+        const areaPix = document.getElementById('pagAreaPix');
+        const areaCartao = document.getElementById('pagAreaCartao');
+        const btnPix = document.getElementById('pagBtnMetodoPix');
+        const btnCartao = document.getElementById('pagBtnMetodoCartao');
+        const badgePix = document.getElementById('pagBadgePix');
+        const badgeCartao = document.getElementById('pagBadgeCartao');
+
+        if (areaPix) areaPix.classList.add('hidden');
+        if (areaCartao) areaCartao.classList.add('hidden');
+        [btnPix, btnCartao].forEach(btn => {
+            if (!btn) return;
+            btn.classList.remove('border-green-500', 'bg-green-50', 'border-blue-500', 'bg-blue-50');
+            btn.classList.add('border-gray-200');
+        });
+        if (badgePix) badgePix.classList.add('hidden');
+        if (badgeCartao) badgeCartao.classList.add('hidden');
+
+        if (metodo === 'pix') {
+            if (areaPix) areaPix.classList.remove('hidden');
+            if (btnPix) { btnPix.classList.remove('border-gray-200'); btnPix.classList.add('border-green-500', 'bg-green-50'); }
+            if (badgePix) badgePix.classList.remove('hidden');
+        } else if (metodo === 'cartao') {
+            if (areaCartao) areaCartao.classList.remove('hidden');
+            if (btnCartao) { btnCartao.classList.remove('border-gray-200'); btnCartao.classList.add('border-blue-500', 'bg-blue-50'); }
+            if (badgeCartao) badgeCartao.classList.remove('hidden');
+        }
+    } catch (e) {
+        console.error('[pagamentoSelecionarMetodo] erro:', e);
+    }
+}
+
+function pagamentoCopiarPix() {
+    try {
+        const input = document.getElementById('pagCodigoPix');
+        if (!input || !input.value) {
+            toast('error', 'Nada para copiar', 'Código PIX não disponível.');
+            return;
+        }
+        const copiar = () => {
+            input.select();
+            document.execCommand('copy');
+            toast('success', 'Copiado! 📋', 'Código PIX copiado para a área de transferência.');
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(input.value).then(copiar).catch(copiar);
+        } else copiar();
+    } catch (e) {
+        toast('error', 'Erro ao copiar', 'Selecione e copie manualmente o texto.');
+    }
+}
+
+function pagamentoCartaoAtualizarPreview() {
+    try {
+        const numEl = document.getElementById('cartaoNumero');
+        const valEl = document.getElementById('cartaoValidade');
+        const cpfEl = document.getElementById('cartaoCpf');
+
+        const num = (numEl?.value || '').replace(/\D/g, '').slice(0, 16);
+        const nome = (document.getElementById('cartaoNome')?.value || '').toUpperCase();
+        const valRaw = (valEl?.value || '').replace(/\D/g, '').slice(0, 4);
+
+        if (numEl) {
+            const parts = [];
+            for (let i = 0; i < num.length; i += 4) parts.push(num.slice(i, i + 4));
+            numEl.value = parts.join(' ');
+        }
+        if (valEl) {
+            valEl.value = valRaw.length >= 3 ? (valRaw.slice(0, 2) + '/' + valRaw.slice(2)) : valRaw;
+        }
+        if (cpfEl) {
+            let v = (cpfEl.value || '').replace(/\D/g, '').slice(0, 11);
+            if (v.length > 9) v = v.slice(0, 3) + '.' + v.slice(3, 6) + '.' + v.slice(6, 9) + '-' + v.slice(9, 11);
+            else if (v.length > 6) v = v.slice(0, 3) + '.' + v.slice(3, 6) + '.' + v.slice(6);
+            else if (v.length > 3) v = v.slice(0, 3) + '.' + v.slice(3);
+            cpfEl.value = v;
+        }
+
+        const pvNum = document.getElementById('pagCartaoNumero');
+        if (pvNum) {
+            const masc = num.padEnd(16, '•');
+            const partes = [];
+            for (let i = 0; i < 16; i += 4) partes.push(masc.slice(i, i + 4));
+            pvNum.textContent = partes.join(' ');
+        }
+        const pvNome = document.getElementById('pagCartaoNome');
+        if (pvNome) pvNome.textContent = (nome || 'NOME DO CARTÃO').slice(0, 22);
+        const pvVal = document.getElementById('pagCartaoValidade');
+        if (pvVal) pvVal.textContent = (valRaw.length >= 2 ? valRaw.slice(0, 2) + '/' + valRaw.slice(2) : '') || '••/••';
+        const pvBandeira = document.getElementById('pagCartaoBandeira');
+        if (pvBandeira) {
+            const primeiro = num[0];
+            if (primeiro === '5' || primeiro === '2') pvBandeira.textContent = 'MASTER';
+            else if (primeiro === '4') pvBandeira.textContent = 'VISA';
+            else if (primeiro === '3') pvBandeira.textContent = 'AMEX';
+            else if (primeiro === '6') pvBandeira.textContent = 'ELO';
+            else pvBandeira.textContent = 'VISA';
+        }
+    } catch (e) {
+        console.error('[pagamentoCartaoAtualizarPreview] erro:', e);
+    }
+}
+
+function pagamentoCartaoSubmit(e) {
+    if (e) { try { e.preventDefault(); e.stopPropagation(); } catch (_) {} }
+    try {
+        const num = (document.getElementById('cartaoNumero')?.value || '').replace(/\D/g, '');
+        const nome = (document.getElementById('cartaoNome')?.value || '').trim();
+        const val = (document.getElementById('cartaoValidade')?.value || '').trim();
+        const cvv = (document.getElementById('cartaoCvv')?.value || '').replace(/\D/g, '');
+        const cpf = (document.getElementById('cartaoCpf')?.value || '').replace(/\D/g, '');
+
+        if (num.length < 13) { toast('error', 'Número inválido', 'Digite um número de cartão válido (13+ dígitos).'); return false; }
+        if (nome.length < 3) { toast('error', 'Nome inválido', 'Digite o nome impresso no cartão.'); return false; }
+        if (val.length !== 5) { toast('error', 'Validade inválida', 'Use o formato MM/AA.'); return false; }
+        if (cvv.length < 3) { toast('error', 'CVV inválido', 'Digite o CVV de 3 ou 4 dígitos.'); return false; }
+        if (cpf.length !== 11) { toast('error', 'CPF inválido', 'Digite o CPF completo do titular.'); return false; }
+
+        const btn = document.querySelector('#pagFormCartao button[type="submit"]');
+        let txtOriginal = '';
+        if (btn) {
+            txtOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processando pagamento...';
+        }
+
+        toast('info', 'Processando...', 'Estamos validando seu cartão de R$ 0,10. Aguarde.');
+        setTimeout(() => {
+            try { if (btn && txtOriginal) { btn.disabled = false; btn.innerHTML = txtOriginal; } } catch (_) {}
+            pagamentoSimularAprovado('cartao');
+        }, 1400);
+        return false;
+    } catch (e) {
+        console.error('[pagamentoCartaoSubmit] erro:', e);
+        toast('error', 'Erro no pagamento', 'Tente novamente ou use PIX.');
+        return false;
+    }
+}
+
+function pagamentoSimularAprovado(metodo) {
+    try {
+        toast('info', 'Confirmando pagamento...', 'Aguarde — validando ' + (metodo === 'pix' ? 'comprovante PIX' : 'transação do cartão') + '...');
+        setTimeout(() => pagamentoAprovar(metodo), 900);
+    } catch (e) {
+        pagamentoAprovar(metodo || 'pix');
+    }
+}
+
+async function pagamentoAprovar(metodo) {
+    try {
+        console.log('[pagamentoAprovar] método:', metodo);
+        const uid = (pagUltimosDadosPro?.uid) || (authUsuarioAtual?.uid);
+        if (!uid) {
+            toast('error', 'Usuário não identificado', 'Por favor, faça login novamente.');
+            navigateTo('auth');
+            return;
+        }
+        const agora = new Date();
+        const dadosPagto = {
+            assinaturaAtiva: true,
+            pagamentoValor: 0.10,
+            pagamentoMetodo: metodo || 'pix',
+            pagamentoStatus: 'aprovado',
+            pagamentoCodigoTransacao: (metodo === 'pix' ? 'PIX-' : 'CART-') + Date.now(),
+            pagamentoData: agora.toISOString(),
+            pagamentoExpiraEm: new Date(agora.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString(),
+            updatedAt: agora.toISOString()
+        };
+
+        let salvouNoFire = false;
+        if (USAR_FIREBASE) {
+            try {
+                await Promise.race([
+                    firebaseDb.collection('profissionais').doc(uid).set(dadosPagto, { merge: true }),
+                    timeoutPromise(12000, 'Timeout ao atualizar assinatura no Firestore')
+                ]);
+                salvouNoFire = true;
+                console.log('[pagamentoAprovar] ✅ Firestore atualizado assinaturaAtiva=true');
+            } catch (errFire) {
+                console.warn('[pagamentoAprovar] ⚠️ Não atualizou Firestore → fallback localStorage:', errFire?.message || errFire);
+            }
+        }
+
+        // Atualiza array global profissionais (para APARECER NA HOME na mesma sessão!)
+        try {
+            const idx = profissionais.findIndex(p => (p.uid === uid) || (p.id === uid));
+            const fotoAtual = pagUltimosDadosPro?.foto || (idx >= 0 ? profissionais[idx]?.foto : '');
+            const dadosCompletos = { ...(pagUltimosDadosPro || {}), ...dadosPagto, foto: fotoAtual, uid, id: uid };
+            if (idx >= 0) profissionais[idx] = { ...profissionais[idx], ...dadosCompletos };
+            else profissionais.push(dadosCompletos);
+            salvarProfissionais();
+            console.log('[pagamentoAprovar] ✅ Array global profissionais atualizada → vai aparecer na home!');
+        } catch (e) {
+            console.error('[pagamentoAprovar] erro atualizar array global:', e);
+        }
+
+        // 🔥 RECARREGA TODOS os profissionais do Firestore (atualiza cache global para próximas buscas)
+        try { if (USAR_FIREBASE) { await Promise.race([carregarDadosFirestore(), timeoutPromise(10000)]).catch(() => {}); } } catch (_) {}
+        try { renderProfissionais(); } catch (_) {}
+
+        try { atualizarHeaderUsuario(); } catch (_) {}
+        try { fbAtualizarNavBotaoEntrar(); } catch (_) {}
+
+        const primeiroNome = (pagUltimosDadosPro?.nome || '').split(' ')[0] || 'Profissional';
+        toast('success', '✅ Pagamento aprovado!', primeiroNome + ', seu perfil já está visível para todos os clientes! 🎉');
+
+        if (pagTimerInterval) { clearInterval(pagTimerInterval); pagTimerInterval = null; }
+        setTimeout(() => navigateTo('home'), 1300);
+    } catch (errGeral) {
+        console.error('[pagamentoAprovar] CATCH GERAL → navegando home mesmo assim:', errGeral);
+        try { atualizarHeaderUsuario(); } catch (_) {}
+        try { renderProfissionais(); } catch (_) {}
+        toast('success', 'Assinatura ativada!', 'Seu perfil já está liberado.');
+        setTimeout(() => navigateTo('home'), 700);
+    }
 }
 
 // ============================================================
@@ -2746,24 +3270,64 @@ async function authSalvarComplemento(e) {
                 console.warn('[authSalvarComplemento] Aviso: não recarregou lista profissionais na home.', errRender?.message);
             }
 
-            try { toast('success', 'Perfil profissional criado!', nome.split(' ')[0] + ', seu perfil já está nas buscas! 🎉'); } catch (_) {}
+            try { toast('success', 'Perfil criado!', nome.split(' ')[0] + ', agora é só confirmar o pagamento de R$ 0,10 para liberar seu perfil.'); } catch (_) {}
+
+            // GUARDA dados do profissional para usar na tela de pagamento (pagamentoAprovar vai precisar)
+            const proDadosCompletos = { id: uid, uid, ...proData };
+            if (!profissionais.find(p => p.id === uid)) profissionais.push(proDadosCompletos);
+            salvarProfissionais();
+            try { renderProfissionais(); } catch (_) {}
         }
 
         // ============================================================
-        // 5. FINALIZAÇÃO OBRIGATÓRIA — NAVEGA SEMPRE PARA A HOME
+        // 5. FINALIZAÇÃO OBRIGATÓRIA
+        //    CLIENTE → HOME
+        //    PROFISSIONAL → PAGAMENTO (R$ 0,10)
         // ============================================================
-        console.log('[authSalvarComplemento] ✅ FIM — navegando para HOME');
         try { atualizarHeaderUsuario(); } catch (_) {}
         try { fbAtualizarNavBotaoEntrar(); } catch (_) {}
-        try { navigateTo('home'); } catch (errNav) {
-            console.error('[authSalvarComplemento] ERRO navigateTo home → fallback manual:', errNav);
-            // FALLBACK NAVEGAÇÃO MANUAL SE navigateTo FALHAR
+
+        if (authUsuarioRole === 'profissional') {
+            // 👉 PROFISSIONAL SEMPRE PASSA POR PAGAMENTO
+            console.log('[authSalvarComplemento] ✅ FIM — navegando para TELA DE PAGAMENTO');
             try {
-                document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
-                const home = document.getElementById('view-home');
-                if (home) home.classList.remove('hidden');
-                window.scrollTo(0, 0);
-            } catch (_) {}
+                // Monta os dados para o resumo da tela de pagamento
+                const dadosPagamento = {
+                    uid: uid,
+                    nome: nome,
+                    cidade: cidade,
+                    bairro: bairro,
+                    categoria: (typeof categoriaLimpa !== 'undefined') ? categoriaLimpa : (document.getElementById('compCategoria')?.value || 'Marido de Aluguel'),
+                    precoHora: (typeof preco !== 'undefined') ? preco : (parseFloat(document.getElementById('compPreco')?.value || '0') || 30),
+                    foto: (typeof fotoFinal !== 'undefined') ? fotoFinal : document.getElementById('pagFotoPro')?.src || '',
+                    telefone: (typeof telefoneLimpo !== 'undefined') ? telefoneLimpo : '',
+                    createdAt: new Date().toISOString()
+                };
+                pagamentoAbrirTela(dadosPagamento);
+            } catch (e) {
+                console.error('[authSalvarComplemento] Erro ao abrir tela pagamento → fallback home:', e);
+            }
+            try { navigateTo('pagamento'); } catch (errNav) {
+                console.error('[authSalvarComplemento] ERRO navigateTo pagamento → fallback manual:', errNav);
+                try {
+                    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+                    const pag = document.getElementById('view-pagamento');
+                    if (pag) pag.classList.remove('hidden');
+                    window.scrollTo(0, 0);
+                } catch (_) {}
+            }
+        } else {
+            // 👉 CLIENTE → HOME DIRETO (sem pagamento)
+            console.log('[authSalvarComplemento] ✅ FIM — navegando para HOME (cliente)');
+            try { navigateTo('home'); } catch (errNav) {
+                console.error('[authSalvarComplemento] ERRO navigateTo home → fallback manual:', errNav);
+                try {
+                    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+                    const home = document.getElementById('view-home');
+                    if (home) home.classList.remove('hidden');
+                    window.scrollTo(0, 0);
+                } catch (_) {}
+            }
         }
         return false;
 
@@ -2836,14 +3400,42 @@ async function authSalvarComplemento(e) {
 
                 try { atualizarHeaderUsuario(); } catch (_) {}
                 try { fbAtualizarNavBotaoEntrar(); } catch (_) {}
-                try { navigateTo('home'); } catch (_) {
-                    // Manual fallback navigation
+
+                if (authUsuarioRole === 'profissional') {
+                    // 👉 Profissional em modo fallback também passa por pagamento
                     try {
-                        document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
-                        const home = document.getElementById('view-home');
-                        if (home) home.classList.remove('hidden');
-                        window.scrollTo(0, 0);
-                    } catch (__) {}
+                        const nomeFb = document.getElementById('compNome')?.value?.trim() || 'Profissional';
+                        const uidFb = authUsuarioAtual?.uid || ('fallback-' + Date.now());
+                        const cidadeFb = document.getElementById('compCidade')?.value?.trim() || 'Cidade';
+                        const bairroFb = document.getElementById('compBairro')?.value?.trim() || 'Bairro';
+                        const precoFb = parseFloat(document.getElementById('compPreco')?.value || '0') || 30;
+                        const catRawFb = document.getElementById('compCategoria')?.value || 'Marido de Aluguel';
+                        const catSem = catRawFb.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\s]+/u, '').trim() || 'Marido de Aluguel';
+                        const fb64 = document.getElementById('compFotoBase64')?.value?.trim() || '';
+                        const furl = document.getElementById('compFoto')?.value?.trim() || '';
+                        const fotoFt = (fb64 && fb64.startsWith('data:image')) ? fb64 : (furl || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nomeFb) + '&background=3b82f6&color=fff&size=400'));
+                        pagamentoAbrirTela({
+                            uid: uidFb, nome: nomeFb, cidade: cidadeFb, bairro: bairroFb,
+                            categoria: catSem, precoHora: precoFb, foto: fotoFt
+                        });
+                    } catch (_) {}
+                    try { navigateTo('pagamento'); } catch (_) {
+                        try {
+                            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+                            const pag = document.getElementById('view-pagamento');
+                            if (pag) pag.classList.remove('hidden');
+                            window.scrollTo(0, 0);
+                        } catch (__) {}
+                    }
+                } else {
+                    try { navigateTo('home'); } catch (_) {
+                        try {
+                            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+                            const home = document.getElementById('view-home');
+                            if (home) home.classList.remove('hidden');
+                            window.scrollTo(0, 0);
+                        } catch (__) {}
+                    }
                 }
             } catch (errFinal) {
                 console.error('[authSalvarComplemento] ERRO NO FALLBACK FINAL (isso é MUITO raro):', errFinal);
@@ -2919,7 +3511,7 @@ function navigateTo(view) {
         btn.classList.add('text-gray-500');
     });
     let botaoAtivarView = view;
-    if (['auth', 'auth-otp', 'auth-completar'].includes(view)) botaoAtivarView = 'auth';
+    if (['auth', 'auth-otp', 'auth-completar', 'pagamento'].includes(view)) botaoAtivarView = 'auth';
     if (view === 'cadastro') botaoAtivarView = 'auth';
     const activeBtn = document.querySelector(`.bottom-nav-btn[data-view="${botaoAtivarView}"]`);
     if (activeBtn) {
