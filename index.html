@@ -2132,6 +2132,19 @@ const profissionaisMock = [
     }
 ];
 
+// =====================================================================
+// REMOVER NOMES DE TESTE/DEMO (pedido do usuário 13/09/2026)
+// ESVAZIAR O ARRAY DE MOCK em RUNTIME (100% seguro — evita SyntaxError de edição longa)
+// Mesmo que o array profissionaisMock acima esteja preenchido com p1..p8,
+// a linha abaixo remove TODOS os elementos do array (0 restantes) → seed NÃO cria demo
+try {
+    if (typeof profissionaisMock !== 'undefined' && Array.isArray(profissionaisMock)) {
+        profissionaisMock.splice(0, profissionaisMock.length);
+        console.info('[MOCK] Array profissionaisMock ESVAZIADO por pedido do usuário (sem nomes de teste).');
+    }
+} catch(_ajeitaLimparMockErr) {}
+// =====================================================================
+
 // ============================================================
 // FIREBASE CONFIG + INIT
 // ============================================================
@@ -3368,12 +3381,17 @@ async function forcarRodarSeedFirestore() {
             if (btn && textoBtnOriginal) { btn.disabled = false; btn.innerHTML = textoBtnOriginal; }
             return;
         }
-        if (!Array.isArray(profissionaisMock) || profissionaisMock.length < 3) {
+        if (!Array.isArray(profissionaisMock)) {
             toast('error', 'Dados demo indisponíveis', 'Recarregue a página e tente novamente.', 9000);
             if (btn && textoBtnOriginal) { btn.disabled = false; btn.innerHTML = textoBtnOriginal; }
             return;
         }
-        toast('info', '⬆️ Importando dados demo...', `Gravando ${profissionaisMock.length} profissionais + config/admin no Firestore real (nuvem). Aguarde ~5 segundos.`, 6000);
+        const TEM_PROFISSIONAIS_DEMO = profissionaisMock.length > 0;
+        if (TEM_PROFISSIONAIS_DEMO) {
+            toast('info', '⬆️ Importando dados demo...', `Gravando ${profissionaisMock.length} profissionais + config/admin no Firestore real (nuvem). Aguarde ~5 segundos.`, 6000);
+        } else {
+            toast('info', '⬆️ Configurando base limpa...', `Criando apenas o documento /config/admin (regras Firestore) no Firestore real. Sem profissionais de teste/demo.`, 6000);
+        }
 
         let batch = firebaseDb.batch();
         const seedIds = new Set();
@@ -3452,20 +3470,27 @@ async function forcarRodarSeedFirestore() {
             }
         }
 
-        profissionais = profissionaisMock.map(p => ({
-            ...p,
-            uid: p.uid || p.id,
-            assinaturaAtiva: true,
-            _seedImportadoEm: new Date().toISOString()
-        }));
-        salvarProfissionais();
-        try { renderProfissionais && renderProfissionais(); } catch (_) {}
-        try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
+        if (TEM_PROFISSIONAIS_DEMO) {
+            profissionais = profissionaisMock.map(p => ({
+                ...p,
+                uid: p.uid || p.id,
+                assinaturaAtiva: true,
+                _seedImportadoEm: new Date().toISOString()
+            }));
+            salvarProfissionais();
+            try { renderProfissionais && renderProfissionais(); } catch (_) {}
+            try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
+        }
 
         atualizarBadgeFirebase('firebase', 'seed importado com sucesso');
         try { _ajeitaMarcarFirestoreConectou(); } catch(_) {}
-        toast('success', '✅ Dados demo importados!', `${profissionais.length} profissionais + config/admin gravados no Firestore (nuvem)!\n\n✅ Agora abre em QUALQUER celular do mundo!\n\n📱 Recarregue em outros dispositivos para confirmar que a lista aparece lá também.`, 16000);
-        console.log(`🔥 Seed forçado importou ${profissionais.length} profissionais no Firestore. IDs:`, [...seedIds]);
+        if (TEM_PROFISSIONAIS_DEMO) {
+            toast('success', '✅ Dados demo importados!', `${profissionais.length} profissionais + config/admin gravados no Firestore (nuvem)!\n\n✅ Agora abre em QUALQUER celular do mundo!\n\n📱 Recarregue em outros dispositivos para confirmar que a lista aparece lá também.`, 16000);
+            console.log(`🔥 Seed forçado importou ${profissionais.length} profissionais no Firestore. IDs:`, [...seedIds]);
+        } else {
+            toast('success', '✅ Base configurada!', `Documento /config/admin gravado com sucesso no Firestore (nuvem)!\n\n✅ Nenhum profissional de teste foi adicionado.\n\nAgora crie profissionais REAIS pelo app ou cadastre manualmente.`, 16000);
+            console.log(`🔥 Seed forçado: base configurada (SEM profissionais demo). Apenas /config/admin criado.`);
+        }
         if (btn && textoBtnOriginal) { btn.disabled = false; btn.innerHTML = textoBtnOriginal; }
     } catch (eSeed) {
         const m = (eSeed?.message || String(eSeed)).toLowerCase();
@@ -5304,9 +5329,16 @@ function applyFilters() {
 }
 
 function setCategoria(cat) {
-    document.getElementById('searchCategoria').value = cat;
-    document.getElementById('filterCategoria').value = cat;
-    applyFilters();
+    try { if (typeof navigateTo === 'function') navigateTo('home'); } catch(_) {}
+    try { document.getElementById('searchCategoria').value = cat; } catch(_) {}
+    try { document.getElementById('filterCategoria').value = cat; } catch(_) {}
+    try { applyFilters(); } catch(_) {}
+    setTimeout(function() {
+        try {
+            var alvo = document.getElementById('profissionaisGrid') || document.getElementById('view-home');
+            if (alvo && alvo.scrollIntoView) alvo.scrollIntoView({behavior:'smooth', block:'start', inline:'nearest'});
+        } catch(_) {}
+    }, 60);
 }
 
 function categoriaIcone(cat) {
