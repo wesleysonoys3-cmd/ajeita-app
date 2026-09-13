@@ -748,12 +748,20 @@ tailwind.config = {
       <div id="pixValor" class="text-4xl font-black">R$ 0,00</div>
     </div>
     <div class="p-6 sm:p-8">
+      <div class="bg-primary-50 border border-primary-200 rounded-2xl p-4 mb-5 flex items-start gap-3 text-sm text-primary-800">
+        <i class="fa-solid fa-user-tie text-primary-600 mt-0.5 text-lg flex-shrink-0"></i>
+        <div>
+          <div class="font-black uppercase tracking-wider text-xs text-primary-600 mb-0.5">Beneficiário</div>
+          <div class="font-extrabold" id="pixBeneficiario">Wesley - Ajeita Serviços Domésticos</div>
+          <div class="text-xs text-primary-700 mt-1">Chave Pix (telefone): <span id="pixChaveLabel" class="font-mono font-bold">+55 61 99251-8130</span></div>
+        </div>
+      </div>
       <div class="text-center mb-5">
         <div class="text-sm font-bold text-slate-700 mb-3">Escaneie o QR Code no seu app do banco</div>
         <div id="pixQrCode" class="inline-block bg-white border-4 border-slate-100 p-4 rounded-2xl shadow-inner"></div>
       </div>
       <div class="mb-5">
-        <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Chave Pix (Copia e Cola)</label>
+        <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Chave Pix Telefone (Copia e Cola)</label>
         <div class="flex gap-2">
           <input id="pixChaveCopiaCola" readonly type="text" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs sm:text-sm font-mono text-slate-700 focus:outline-none">
           <button onclick="copiarChavePix()" id="btnCopiarPix" class="px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm transition flex items-center gap-1.5">
@@ -818,6 +826,8 @@ tailwind.config = {
 
 // --------------- VARS GLOBAIS ---------------
 const PREFIXO_STORAGE = 'ajeita_moeda_app_';
+const CHAVE_PIX_PROPRIETARIO = '+55 61 99251-8130'; // Telefone formatado com DDI + DDD
+const NOME_BENEFICIARIO_PIX = 'Wesley - Ajeita Serviços Domésticos';
 const CATEGORIAS_GLOBAIS = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
 const CATEGORIAS_ICONE = {
   'Pedreiro':'fa-trowel','Eletricista':'fa-bolt','Encanador':'fa-faucet','Pintor':'fa-paint-roller',
@@ -1761,9 +1771,11 @@ function abrirPixPagamento(pkgKey) {
   if (!pkg) return;
   pacotePixAtual = pkg;
   document.getElementById('pixValor').textContent = formatarBRL(pkg.preco);
-  const chave = gerarChavePixAleatoria(pkgKey + pkg.preco + Date.now());
+  const chave = CHAVE_PIX_PROPRIETARIO;
+  document.getElementById('pixBeneficiario').textContent = NOME_BENEFICIARIO_PIX;
+  document.getElementById('pixChaveLabel').textContent = chave;
   document.getElementById('pixChaveCopiaCola').value = chave;
-  document.getElementById('pixQrCode').innerHTML = gerarQrCodeVisual(chave);
+  document.getElementById('pixQrCode').innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + chave.replace(/\D/g,''));
   document.getElementById('btnConfirmarPix').disabled = false;
   document.getElementById('btnConfirmarPix').textContent = '';
   document.getElementById('btnConfirmarPix').innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>Já paguei! Confirmar Pagamento PIX';
@@ -1777,11 +1789,11 @@ function copiarChavePix() {
     inp.select();
     inp.setSelectionRange(0, 99999);
     const ok = document.execCommand('copy');
-    if (ok) toast('success','Chave copiada!','Cole no seu app de banco no campo "Chave Pix Aleatória/EVP".');
+    if (ok) toast('success','Chave copiada!','Cole no seu app de banco no campo "Chave Pix → Telefone". Pagamento para Wesley.');
     else throw new Error('fallback');
   } catch(e) {
     navigator.clipboard?.writeText(inp.value).then(
-      ()=>toast('success','Chave copiada!','Cole no seu app de banco.'),
+      ()=>toast('success','Chave copiada!','Cole no seu app de banco. Chave Pix Telefone Wesley.'),
       ()=>toast('warning','Selecione e copie','Não foi possível copiar automaticamente, selecione a chave manualmente.')
     );
   }
