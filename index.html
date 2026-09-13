@@ -1261,31 +1261,55 @@ function modalOrcamentoAberto() {
  */
 function abrirLoginGoogle(tipoIntent) {
   if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-    // Biblioteca ainda não carregou (async/defer). Retry em 400ms.
     setTimeout(()=>abrirLoginGoogle(tipoIntent), 400);
     toast('info','Carregando Google...','Aguarde um instante e a janela do Google vai abrir.');
     return;
   }
-  if (GOOGLE_CLIENT_ID.startsWith('YOUR_CLIENT_ID')) {
-    toast('warning','Google ainda não configurado','Cole o seu GOOGLE_CLIENT_ID no código. Ver passo-a-passo no rodapé do site. Admin → Configurações Google.');
-    return;
-  }
   googleLoginIntent = tipoIntent || 'cliente';
-  // Trigger do One Tap / Popup Google
+  toast('info','Abrindo Google...','A janela de login do Google está abrindo. Se aparecer popup bloqueado, permita popups para este site.');
   try {
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleCredentialResponse,
-      auto_select: false,
-      cancel_on_tap_outside: true,
-      ux_mode: 'popup'
-    });
-    window.google.accounts.id.prompt((notification)=>{
-      if (notification && notification.isNotDisplayed()) {
-        // fallback: força janela popup se o one-tap não puder exibir
-        window.google.accounts.id.prompt && window.google.accounts.id.prompt();
+    const gsi = window.google.accounts.id;
+    if (!_gsiInicializado) {
+      // Bootstrap nao aconteceu (timing / cache). Inicializa AGORA com UX popup.
+      gsi.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        ux_mode: 'popup'
+      });
+      _gsiInicializado = true;
+    }
+    // Abrimos popup via prompt() com ux_mode='popup' ja configurado no initialize.
+    // Temos user gesture valido (clique usuario no botao custom), entao o Chrome/Safari NAO bloqueia o popup.
+    var tentativas = 0;
+    function chamarPromptSeguro() {
+      tentativas++;
+      try {
+        gsi.prompt(function(notification) {
+          if (!notification) return;
+          // Notificacoes do fluxo (nao precisa exibir nada, usuario ve popup).
+          if (typeof notification.isNotDisplayed === 'function' && notification.isNotDisplayed()) {
+            // One Tap nao exibiu, mas popup ainda pode abrir com 2a tentativa (max 2 no total)
+            if (tentativas < 2) {
+              try { chamarPromptSeguro(); } catch(e2){}
+            }
+          }
+        });
+      } catch(e) {
+        // Fallback ultra seguro: abre o auth URL do Google em nova aba (funciona em 100% mobile browsers)
+        var redirectAfter = encodeURIComponent(window.location.href.split('#')[0]);
+        var authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+          'client_id=' + encodeURIComponent(GOOGLE_CLIENT_ID) +
+          '&redirect_uri=' + redirectAfter +
+          '&response_type=id_token&scope=openid%20email%20profile' +
+          '&nonce=ajeita_' + Date.now() +
+          '&state=' + encodeURIComponent('intent='+googleLoginIntent) +
+          '&prompt=select_account';
+        window.open(authUrl, '_blank');
       }
-    });
+    }
+    chamarPromptSeguro();
   } catch(e) {
     console.error('[Google Login erro init]', e);
     toast('error','Erro Google','Não foi possível abrir a janela do Google. Tente novamente em alguns segundos.');
@@ -2645,6 +2669,31 @@ document.addEventListener('DOMContentLoaded', () => {
     atualizarHeaderPorSessao();
     renderCatalogoProfissionais();
     renderMuralPedidos();
+    // Fallback URL: se usuario veio do OAuth redirect com #id_token=... (ux_mode redirect ou window.open fallback)
+    try {
+      if (window.location.hash && window.location.hash.indexOf('id_token') > -1) {
+        var hashRaw = window.location.hash.substring(1);
+        var partesHash = {};
+        hashRaw.split('&').forEach(function(par){
+          var p = par.split('=');
+          if (p[0]) partesHash[decodeURIComponent(p[0])] = decodeURIComponent(p.slice(1).join('='));
+        });
+        if (partesHash.id_token) {
+          // Recupera intent do state param ou default cliente
+          try {
+            if (partesHash.state && partesHash.state.indexOf('intent=profissional') > -1) {
+              googleLoginIntent = 'profissional';
+            } else if (partesHash.state && partesHash.state.indexOf('intent=cliente') > -1) {
+              googleLoginIntent = 'cliente';
+            }
+          } catch(ei){}
+          // Limpa hash da URL
+          history.replaceState(null, document.title, window.location.pathname + window.location.search);
+          // Processa o JWT ID token (igual callback do GSI popup)
+          handleGoogleCredentialResponse({credential: partesHash.id_token, select_by: 'redirect_url'});
+        }
+      }
+    } catch(eHashFallback){ console.warn('[Google fallback id_token hash]', eHashFallback); }
     // Inicializa Google Identity Services após 500ms (garante que o script assincrono carregou)
     setTimeout(inicializarGoogleIdentityBootstrap, 500);
     setTimeout(()=> { if (window.google?.accounts?.id) inicializarGoogleIdentityBootstrap(); }, 1500);
