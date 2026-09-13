@@ -634,6 +634,16 @@ tailwind.config = {
       </button>
     </div>
     <form id="formSolicitarOrcamento" onsubmit="submitSolicitarOrcamento(event)" class="p-6 sm:p-8 space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Seu Nome</label>
+          <input id="solicNomeCliente" type="text" placeholder="Ex: Maria Silva" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Seu WhatsApp *</label>
+          <input required id="solicWhatsApp" type="tel" placeholder="(61) 99999-9999" oninput="mascaraInputTel(this)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
+        </div>
+      </div>
       <div>
         <label class="block text-sm font-bold text-slate-700 mb-2">Categoria do serviço *</label>
         <select required id="solicCategoria" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
@@ -659,15 +669,9 @@ tailwind.config = {
         <label class="block text-sm font-bold text-slate-700 mb-2">Descreva seu problema *</label>
         <textarea required id="solicDescricao" rows="3" placeholder="Ex: Infiltração no banheiro, preciso arrumar o rejunte..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"></textarea>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">Data pretendida</label>
-          <input id="solicData" type="date" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
-        </div>
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">Seu WhatsApp *</label>
-          <input required id="solicWhatsApp" type="tel" placeholder="(61) 99999-9999" oninput="mascaraInputTel(this)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
-        </div>
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-2">Data pretendida</label>
+        <input id="solicData" type="date" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
       </div>
       <div class="bg-primary-50 border border-primary-200 rounded-2xl p-4 flex items-start gap-3">
         <i class="fa-solid fa-shield-halved text-primary-600 text-lg mt-0.5"></i>
@@ -828,6 +832,8 @@ let desbloqueios = []; // { id, pedidoId, profissionalId, custo, timestamp }
 let recargas = []; // { id, pacoteKey, qtd, preco, timestamp, profissionalId }
 let avaliacoes = []; // { id, pedidoId, profissionalId, nota, comentario, data }
 let configEconomia = null;
+let meusPedidosClienteIds = []; // [pedidoId1, pedidoId2,...] apenas pedidos CRIADOS neste navegador
+let clienteUltimosDados = null; // {nome, whatsapp, cidade, bairro} autocomplete próximo pedido
 
 // Temporários de fluxo
 let pedidoDesbloqueioAtual = null;
@@ -1016,6 +1022,8 @@ function salvarTodosGlobaisNoStorage() {
   salvarNoStorage('recargas', recargas);
   salvarNoStorage('avaliacoes', avaliacoes);
   salvarNoStorage('configEconomia', configEconomia);
+  salvarNoStorage('meusPedidosClienteIds', meusPedidosClienteIds);
+  salvarNoStorage('clienteUltimosDados', clienteUltimosDados);
 }
 function carregarDadosStorageBootstrap() {
   const profissionaisSalvos = pegarDoStorage('profissionais');
@@ -1032,6 +1040,8 @@ function carregarDadosStorageBootstrap() {
   desbloqueios = pegarDoStorage('desbloqueios', []);
   recargas = pegarDoStorage('recargas', []);
   avaliacoes = pegarDoStorage('avaliacoes', []);
+  meusPedidosClienteIds = pegarDoStorage('meusPedidosClienteIds', []);
+  clienteUltimosDados = pegarDoStorage('clienteUltimosDados', null);
   salvarTodosGlobaisNoStorage();
 }
 
@@ -1407,9 +1417,22 @@ function abrirPerfilProfissional(proId) {
 }
 
 // --------------- MURAL DE PEDIDOS ---------------
-function abrirModalSolicitarOrcamento() { abrirModal('modal-solicitar-orcamento'); }
+function abrirModalSolicitarOrcamento() {
+  // Auto-preenche com últimos dados do cliente (UX)
+  if (clienteUltimosDados) {
+    const ult = clienteUltimosDados || {};
+    try {
+      if (ult.nome) document.getElementById('solicNomeCliente').value = ult.nome;
+      if (ult.whatsapp) document.getElementById('solicWhatsApp').value = formataWhatsAppBrasil(ult.whatsapp);
+      if (ult.cidade) document.getElementById('solicCidade').value = ult.cidade;
+      if (ult.bairro) document.getElementById('solicBairro').value = ult.bairro;
+    } catch(e){}
+  }
+  abrirModal('modal-solicitar-orcamento');
+}
 function submitSolicitarOrcamento(e) {
   if (e) e.preventDefault();
+  const nomeCli = (document.getElementById('solicNomeCliente').value||'').trim();
   const cat = document.getElementById('solicCategoria').value;
   const cid = document.getElementById('solicCidade').value;
   const bai = document.getElementById('solicBairro').value.trim();
@@ -1425,14 +1448,29 @@ function submitSolicitarOrcamento(e) {
     id: 'ped_' + Date.now() + Math.random().toString(36).slice(2,6),
     categoria:cat, cidade:cid, bairro:bai, descricao:desc,
     data: new Date().toISOString(), whatsapp:wa, dataPreferida:dataPref,
-    qtdDesbloqueios:0, status:'aberto', finalizado:false, avaliado:false
+    qtdDesbloqueios:0, status:'aberto', finalizado:false, avaliado:false,
+    nomeCliente: nomeCli || null
   };
   pedidos.unshift(novo);
+  // Vincula o pedido AO CLIENTE DESTE NAVEGADOR
+  if (!meusPedidosClienteIds.includes(novo.id)) meusPedidosClienteIds.unshift(novo.id);
+  clienteUltimosDados = { nome: nomeCli || null, whatsapp: wa, cidade:cid, bairro:bai };
   salvarTodosGlobaisNoStorage();
   renderMuralPedidos();
   document.getElementById('formSolicitarOrcamento').reset();
   fecharModal('modal-solicitar-orcamento');
-  toast('success','Pedido publicado!','Seu orçamento já está visível para profissionais.');
+  const saudacao = nomeCli ? `${nomeCli.split(' ')[0]}, seu` : 'Seu';
+  toast('success','Pedido publicado!',
+    `${saudacao} orçamento já está visível para profissionais. Acompanhe em "Meus Pedidos" 📋`,
+    6000);
+  // Auto navega para Meus Pedidos aba Cliente para mostrar o novo pedido
+  try {
+    _tabMeusPedidosAtual = 'cliente';
+    const btnC = document.getElementById('tabClienteBtn');
+    const btnP = document.getElementById('tabProfissionalBtn');
+    if (btnC) btnC.className='px-5 py-2.5 rounded-xl text-sm font-bold transition bg-primary-600 text-white shadow-sm';
+    if (btnP) btnP.className='px-5 py-2.5 rounded-xl text-sm font-bold transition text-slate-600 hover:bg-slate-100';
+  } catch(e){}
 }
 
 function euJaDesbloquei(pedId) {
@@ -1803,7 +1841,11 @@ function renderMeusPedidos() {
 
   let listaPedidosMostrar = [];
   if (_tabMeusPedidosAtual==='cliente') {
-    listaPedidosMostrar = [...pedidos].sort((a,b)=> new Date(b.data)-new Date(a.data));
+    // Mostra SOMENTE pedidos que ESTE CLIENTE criou (navegador atual)
+    const idsValidos = (meusPedidosClienteIds || []).filter(x => !!x);
+    listaPedidosMostrar = pedidos
+      .filter(p => idsValidos.includes(p.id))
+      .sort((a,b)=> new Date(b.data)-new Date(a.data));
   } else {
     if (!profissionalLogado) {
       container.innerHTML = `
@@ -2006,7 +2048,10 @@ function enviarAvaliacao() {
       profissionais[idxP].qtdAvaliacoes = novaQtd;
       // Adiciona depoimento
       if (comentario) {
-        const nomeAutor = 'Cliente Ajeita';
+        // Tenta pegar nome do cliente: 1) pedido.nomeCliente 2) clienteUltimosDados 3) genérico
+        let nomeAutor = 'Cliente Ajeita';
+        if (ped.nomeCliente) nomeAutor = ped.nomeCliente;
+        else if (clienteUltimosDados && clienteUltimosDados.nome) nomeAutor = clienteUltimosDados.nome;
         if (!profissionais[idxP].depoimentos) profissionais[idxP].depoimentos = [];
         profissionais[idxP].depoimentos.unshift({ nome:nomeAutor, nota:avaliacaoNotaAtual, texto:comentario });
         if (profissionais[idxP].depoimentos.length > 8) profissionais[idxP].depoimentos.length = 8;
