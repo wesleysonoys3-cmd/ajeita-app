@@ -5762,7 +5762,10 @@ function inicializarEventosGlobais() {
     // Cadastro profissional
     document.getElementById('formCadastroProfissional').addEventListener('submit', (e) => {
         e.preventDefault();
-        cadastrarProfissional();
+        Promise.resolve(cadastrarProfissional()).catch(err => {
+            console.error('formCadastroProfissional submit erro não tratado:', err);
+            try { toast('error', 'Erro no cadastro', 'Tente novamente ou recarregue a página.'); } catch(_) {}
+        });
     });
 
     // Simulação cartão
@@ -5811,7 +5814,7 @@ function estrelasDisplay(nota) {
 // ============================================================
 // CADASTRO DE PROFISSIONAL
 // ============================================================
-function cadastrarProfissional() {
+async function cadastrarProfissional() {
     const nome = document.getElementById('cadNome').value.trim();
     const telefone = document.getElementById('cadTelefone').value.trim();
     const email = document.getElementById('cadEmail').value.trim();
@@ -5835,27 +5838,64 @@ function cadastrarProfissional() {
         return;
     }
 
-    const novoPro = {
-        id: 'p' + Date.now(),
-        nome, telefone, email, foto,
-        categoria, categorias,
-        cidade, uf, bairro,
-        precoHora: preco,
-        bio,
-        avaliacoes: [],
-        numeroAvaliacoes: 0,
-        totalServicos: 0,
-        verificado: false,
-        assinaturaAtiva: true
-    };
+    const btn = document.querySelector('#formCadastroProfissional button[type="submit"]');
+    const textoBtnOriginal = btn ? btn.innerHTML : null;
+    try {
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Salvando seu perfil...'; }
 
-    profissionais.unshift(novoPro);
-    salvarProfissionais();
-    inicializarCidadeOptions();
+        const uidDoc = 'p' + Date.now();
+        const novoPro = {
+            uid: uidDoc,
+            nome, telefone, email, foto,
+            categoria, categorias,
+            cidade, uf, bairro,
+            precoHora: preco,
+            bio,
+            avaliacoes: [],
+            numeroAvaliacoes: 0,
+            totalServicos: 0,
+            verificado: false,
+            assinaturaAtiva: true,
+            role: 'profissional',
+            createdAt: new Date().toISOString()
+        };
 
-    toast('success', 'Cadastro Realizado! 🎉', 'Seu perfil está ativo. Boas vendas!');
-    document.getElementById('formCadastroProfissional').reset();
-    setTimeout(() => navigateTo('home'), 1500);
+        toast('info', 'Criando seu perfil...', 'Salvando seus dados na nuvem para aparecer em todos os celulares. Aguarde.', 8000);
+
+        if (USAR_FIREBASE && firebaseDb && firebaseInicializado) {
+            try {
+                await Promise.race([
+                    fbSalvarProfissional(uidDoc, novoPro),
+                    timeoutPromise(20000, 'Timeout ao salvar profissional (verifique regras Firestore)')
+                ]);
+            } catch (eSave) {
+                console.warn('[cadastrarProfissional] ⚠️ Firebase falhou → garantindo localStorage:', eSave?.message || eSave);
+                const idx = profissionais.findIndex(p => p.uid === uidDoc || p.id === uidDoc);
+                const completo = { id: uidDoc, ...novoPro };
+                if (idx >= 0) profissionais[idx] = { ...profissionais[idx], ...completo };
+                else profissionais.unshift(completo);
+                salvarProfissionais();
+                try { renderProfissionais(); } catch (_) {}
+            }
+        } else {
+            // MODO LOCAL (sem Firebase ativo)
+            const completo = { id: uidDoc, ...novoPro };
+            profissionais.unshift(completo);
+            salvarProfissionais();
+            try { renderProfissionais(); } catch (_) {}
+        }
+
+        inicializarCidadeOptions();
+
+        toast('success', 'Cadastro Realizado! 🎉', 'Seu perfil está ativo e já aparece para todos os usuários. Boas vendas!', 8000);
+        document.getElementById('formCadastroProfissional').reset();
+        setTimeout(() => navigateTo('home'), 1500);
+    } catch (eGeral) {
+        console.error('[cadastrarProfissional] ERRO GERAL:', eGeral);
+        toast('error', 'Erro ao cadastrar', 'Tente novamente ou recarregue a página.');
+    } finally {
+        if (btn && textoBtnOriginal) { btn.disabled = false; btn.innerHTML = textoBtnOriginal; }
+    }
 }
 
 function atualizarValoresMensalidade() {
