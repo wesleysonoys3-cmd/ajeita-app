@@ -1740,7 +1740,7 @@
                 <button onclick="fecharOnboarding()" class="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center transition">
                     <i class="fas fa-times text-gray-700 text-xl"></i>
                 </button>
-                <button onclick="fecharOnboarding();" setTimeout(()=>{authMudarPerfil('profissional');navigateTo('auth');}, 50);" class="text-blue-600 font-semibold text-base hover:text-blue-700">
+                <button onclick="(function(){ try { fecharOnboarding(); } catch(_) {} setTimeout(function(){ try { authMudarPerfil('profissional'); navigateTo('auth'); } catch(_) {} }, 50); })()" class="text-blue-600 font-semibold text-base hover:text-blue-700">
                     Sou profissional
                 </button>
             </div>
@@ -2933,18 +2933,11 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                     </button>
                 `;
             } else if (modo === 'firebase-vazio') {
-                // MODO FIRESTORE OK MAS SEM DADOS (verde-amarelo) - precisa importar seed
-                banner.classList.remove('hidden');
-                bannerBg.className = 'bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white py-3 px-3 md:px-5 shadow-2xl';
-                bannerIcone.className = 'fas fa-database text-white text-xl mt-0.5 shrink-0';
-                bannerTitulo.textContent = '⚠️ Banco Firestore VAZIO (0 documentos!)';
-                bannerSub.innerHTML = 'Regras publicadas ✅ mas <b>banco Firestore ainda não tem profissionais</b>. Clique abaixo para importar os 8 dados demo iniciais e a lista funcionar em TODOS os celulares.';
-                bannerBotoes.innerHTML = `
-                    <button onclick="(function(){ try { window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-importar-demo', 23); } catch(_){} forcarRodarSeedFirestore(); })()" class="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black text-[11px] md:text-sm px-4 md:px-6 py-2.5 md:py-3 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition animate-pulse">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        ⬆️ Importar dados demo (8 profissionais)
-                    </button>
-                `;
+                // REMOVIDO BOTÃO VERDE IMPORTAR DEMO (pedido usuário 13/09/2026)
+                // Regras publicadas e Firebase conectado mas 0 profissionais:
+                // → NÃO mostra banner (não há erro!)
+                // → Profissionais REAIS são cadastrados pelo próprio app ("Sou Profissional → Cadastre-se").
+                banner.classList.add('hidden');
             } else if (modo === 'firebase') {
                 // MODO SUCESSO (verde) - remove banner
                 banner.classList.add('hidden');
@@ -3312,7 +3305,8 @@ async function diagnosticarFirestore() {
         let rodape;
         if (ok === total) {
             if (bancoVazio) {
-                rodape = '\n\n⚠️ ATENÇÃO: Regras PERFEITAS mas banco VAZIO!\n👉 BOTÃO VERDE GRANDE NO TOPO: ⬆️ Importar dados demo (8).\nApós importar, a lista aparece em TODOS celulares!';
+                // Removida referencia ao botao verde de importar demo (pedido usuario 13/09/2026)
+                rodape = '\n\n✅ Regras PERFEITAS e Firebase conectado!\n\n📋 Banco está VAZIO (0 profissionais) — é NORMAL quando ainda não cadastrou ninguém.\n\n👉 Para adicionar profissionais REAIS: clique no menu "Sou Profissional → Cadastre-se".';
                 atualizarBadgeFirebase('firebase-vazio', 'banco vazio seed pendente');
             } else {
                 rodape = '\n\n🔥 Tudo certo! Dados sincronizados. Badge fica VERDE 🟢 e funciona em TODOS celulares.';
