@@ -866,8 +866,27 @@
                                     <textarea id="compBio" rows="3" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="Conte um pouco sobre você, seu tempo de experiência, etc."></textarea>
                                 </div>
                                 <div class="md:col-span-2">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Foto do perfil (URL)</label>
-                                    <input type="url" id="compFoto" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="https://... (opcional, usaremos avatares se vazio)">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Foto do perfil</label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                                        <!-- Preview da foto -->
+                                        <div class="sm:col-span-1 flex flex-col items-center justify-center gap-3">
+                                            <div class="w-32 h-32 rounded-2xl border-4 border-green-100 shadow-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                                                <img id="compFotoPreview" src="https://ui-avatars.com/api/?name=Profissional&background=3b82f6&color=fff&size=400" alt="Foto perfil" class="w-full h-full object-cover">
+                                            </div>
+                                            <span class="text-xs text-gray-400 text-center">Pré-visualização</span>
+                                        </div>
+                                        <!-- Upload + URL -->
+                                        <div class="sm:col-span-2 space-y-3">
+                                            <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-green-200 rounded-2xl cursor-pointer bg-green-50 hover:bg-green-100 transition">
+                                                <i class="fas fa-cloud-upload-alt text-3xl text-green-500 mb-2"></i>
+                                                <span class="text-sm font-semibold text-green-700">Clique para enviar foto</span>
+                                                <span class="text-xs text-gray-500 mt-1">Galeria ou Câmera (opcional)</span>
+                                                <input type="file" id="compFotoUpload" accept="image/*" class="hidden" onchange="lerArquivoFotoPerfil(this, 'compFotoPreview', 'compFotoBase64')">
+                                            </label>
+                                            <input type="hidden" id="compFotoBase64" value="">
+                                            <input type="url" id="compFoto" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ou cole um link de imagem aqui (https://...) — opcional">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1960,6 +1979,51 @@ function timeoutPromise(ms, msg = 'Tempo limite esgotado (tente novamente)') {
     return new Promise((_, reject) => setTimeout(() => reject(new Error(msg)), ms));
 }
 
+// ============================================================
+// HELPER: Ler arquivo de foto do perfil (FileReader → base64)
+// NÃO USA FIREBASE STORAGE — grava direto no documento como string.
+// Parâmetros: inputEl = input type=file; previewImgId = id do <img>; hiddenBase64Id = id do hidden input para salvar
+// ============================================================
+function lerArquivoFotoPerfil(inputEl, previewImgId, hiddenBase64Id) {
+    try {
+        if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+        const file = inputEl.files[0];
+        if (!file.type.startsWith('image/')) {
+            toast('error', 'Arquivo inválido', 'Selecione apenas uma imagem (JPG, PNG, etc).');
+            inputEl.value = '';
+            return;
+        }
+        // Limita tamanho para 2MB (evita documento Firestore muito grande que passa do limite 1MB)
+        const TAM_MAX = 2 * 1024 * 1024;
+        if (file.size > TAM_MAX) {
+            toast('error', 'Foto muito grande', 'Escolha uma imagem menor que 2MB, ou reduza a qualidade.');
+            inputEl.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+            try {
+                const base64 = ev.target.result;
+                const imgPreview = document.getElementById(previewImgId);
+                const hiddenInput = document.getElementById(hiddenBase64Id);
+                if (imgPreview) imgPreview.src = base64;
+                if (hiddenInput) hiddenInput.value = base64;
+                toast('success', 'Foto selecionada!', 'Sua foto foi carregada com sucesso.');
+            } catch (err) {
+                console.error('[lerArquivoFotoPerfil] onload erro:', err);
+                toast('error', 'Erro ao carregar foto', 'Tente outra imagem.');
+            }
+        };
+        reader.onerror = function () {
+            toast('error', 'Erro ao ler arquivo', 'Tente novamente com outra foto.');
+        };
+        reader.readAsDataURL(file);
+    } catch (err) {
+        console.error('[lerArquivoFotoPerfil] erro geral:', err);
+        toast('error', 'Erro inesperado', 'Não conseguimos carregar a foto.');
+    }
+}
+
 async function fbCriarColecaoVazia() {
     // helper placeholder para coleções vazias
 }
@@ -2537,14 +2601,32 @@ async function authSalvarComplemento(e) {
         const telefoneLimpo = authTelefoneCompleto ? authTelefoneCompleto.replace('+55', '') : (authUsuarioAtual?.phoneNumber ? authUsuarioAtual.phoneNumber.replace('+55', '') : '');
 
         // ============================================================
+        // OBTÉM FOTO DE PERFIL (ordem de prioridade):
+        // 1. Base64 UPLOAD LOCAL (compFotoBase64) → NÃO PASSA POR FIREBASE STORAGE
+        // 2. URL colada manual (compFoto)
+        // 3. Foto Google OAuth
+        // 4. Fallback ui-avatars.com por nome
+        // ============================================================
+        const fotoBase64 = document.getElementById('compFotoBase64')?.value?.trim() || '';
+        const fotoUrlManual = document.getElementById('compFoto')?.value?.trim() || '';
+        const obterFoto = (corFundo = '3b82f6') => {
+            if (fotoBase64 && fotoBase64.startsWith('data:image')) return fotoBase64;
+            if (fotoUrlManual) return fotoUrlManual;
+            if (fotoGoogle) return fotoGoogle;
+            return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nome || 'Usuario') + '&background=' + corFundo + '&color=fff&size=400';
+        };
+
+        // ============================================================
         // 3. RAMO CLIENTE
         // ============================================================
         if (authPerfilSelecionado === 'cliente') {
             console.log('[authSalvarComplemento] → SALVANDO CLIENTE');
+            const fotoFinal = obterFoto('1d4ed8');
+            console.log('[authSalvarComplemento] Cliente fonte foto:', fotoBase64 ? 'UPLOAD base64' : fotoUrlManual ? 'URL manual' : fotoGoogle ? 'Google' : 'ui-avatars fallback');
             const data = {
                 uid, nome, cidade, bairro, email,
                 telefone: telefoneLimpo,
-                foto: fotoGoogle || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=1d4ed8&color=fff&size=400'),
+                foto: fotoFinal,
                 role: 'cliente',
                 createdAt: new Date().toISOString()
             };
@@ -2590,17 +2672,16 @@ async function authSalvarComplemento(e) {
             const elPreco = document.getElementById('compPreco');
             const elArea = document.getElementById('compArea');
             const elBio = document.getElementById('compBio');
-            const elFoto = document.getElementById('compFoto');
 
             const catRaw = elCat ? elCat.value : '';
             const preco = parseFloat(elPreco ? (elPreco.value || '0') : '0');
             const area = elArea ? elArea.value.trim() : '';
             const bio = elBio ? elBio.value.trim() : '';
-            const foto = elFoto ? elFoto.value.trim() : '';
             const catSemEmoji = (catRaw || '').replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\s]+/u, '').trim();
             const categoriaLimpa = catSemEmoji || 'Marido de Aluguel';
 
             console.log('[authSalvarComplemento] Dados profissionais: cat=', categoriaLimpa, '| preco=', preco, '| area=', area, '| bio=', bio);
+            console.log('[authSalvarComplemento] Profissional fonte foto:', fotoBase64 ? 'UPLOAD base64' : fotoUrlManual ? 'URL manual' : fotoGoogle ? 'Google' : 'ui-avatars fallback');
 
             if (!catRaw || !preco || !area || !bio || isNaN(preco) || preco <= 0) {
                 toast('error', 'Preencha todos os dados profissionais', 'Categoria, preço/hora, área de atendimento e bio são obrigatórios.');
@@ -2608,9 +2689,10 @@ async function authSalvarComplemento(e) {
                 return false;
             }
 
+            const fotoFinal = obterFoto('3b82f6');
             const proData = {
                 uid, nome, telefone: telefoneLimpo, email,
-                foto: foto || fotoGoogle || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=3b82f6&color=fff&size=400'),
+                foto: fotoFinal,
                 categoria: categoriaLimpa, categorias: [categoriaLimpa], cidade, bairro,
                 precoHora: preco, areaAtendimento: area, bio,
                 avaliacoes: [], numeroAvaliacoes: 0, totalServicos: 0,
@@ -2714,13 +2796,16 @@ async function authSalvarComplemento(e) {
                         const bio = document.getElementById('compBio')?.value?.trim() || 'Profissional qualificado';
                         const catRaw = document.getElementById('compCategoria')?.value || 'Marido de Aluguel';
                         const catSemEmoji = catRaw.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\s]+/u, '').trim() || 'Marido de Aluguel';
+                        const fb64 = document.getElementById('compFotoBase64')?.value?.trim() || '';
+                        const furl = document.getElementById('compFoto')?.value?.trim() || '';
+                        const fotoFallback = (fb64 && fb64.startsWith('data:image')) ? fb64 : (furl || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=3b82f6&color=fff&size=400'));
                         const proData = {
                             id: uid, uid, nome, cidade, bairro, role: 'profissional',
                             telefone: authTelefoneCompleto?.replace('+55','') || '',
                             categoria: catSemEmoji, precoHora: preco || 30,
                             areaAtendimento: area, bio,
                             avaliacoes: [], numeroAvaliacoes: 0, totalServicos: 0,
-                            foto: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=3b82f6&color=fff&size=400',
+                            foto: fotoFallback,
                             createdAt: new Date().toISOString()
                         };
                         const idx = profissionais.findIndex(p => p.uid === uid || p.id === uid);
@@ -2733,10 +2818,13 @@ async function authSalvarComplemento(e) {
                         clientes = clientes || [];
                         const cidade = document.getElementById('compCidade')?.value?.trim() || 'Cidade';
                         const bairro = document.getElementById('compBairro')?.value?.trim() || 'Bairro';
+                        const fb64 = document.getElementById('compFotoBase64')?.value?.trim() || '';
+                        const furl = document.getElementById('compFoto')?.value?.trim() || '';
+                        const fotoFallback = (fb64 && fb64.startsWith('data:image')) ? fb64 : (furl || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=1d4ed8&color=fff&size=400'));
                         const cliData = {
                             id: uid, uid, nome, cidade, bairro, role: 'cliente',
                             telefone: authTelefoneCompleto?.replace('+55','') || '',
-                            foto: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=1d4ed8&color=fff&size=400',
+                            foto: fotoFallback,
                             createdAt: new Date().toISOString()
                         };
                         const idx = clientes.findIndex(c => c.uid === uid || c.id === uid);
