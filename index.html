@@ -1993,7 +1993,7 @@ const profissionaisMock = [
         uf: 'DF',
         bairro: 'Taguatinga',
         precoHora: 100,
-        bio: "Encanador qualificado com 15 anos de experiência. Resolvo vazamentos, entupimentos, instalação de pias, vasos sanitários, chuveiros, caixas d'água e sistemas de esgoto. Atendimento 24h para emergências. Uso equipamentos modernos.",
+        bio: 'Encanador qualificado com 15 anos de experiência. Resolvo vazamentos, entupimentos, instalação de pias, vasos sanitários, chuveiros, caixas d´água e sistemas de esgoto. Atendimento 24h para emergências. Uso equipamentos modernos.',
         avaliacoes: [
             { nome: 'Paulo Ricardo', nota: 5, comentario: 'Resolveu um vazamento escondido que ninguém conseguia encontrar. Preço justo, excelente trabalho!', data: '2024-08-22' },
             { nome: 'Camila Dias', nota: 4.5, comentario: 'Muito rápido e eficiente. Instalei todo o sistema hidráulico do meu apartamento.', data: '2024-07-30' }
@@ -2106,7 +2106,7 @@ const profissionaisMock = [
         bio: 'Marido de Aluguel versátil! Resolvo pequenos reparos domésticos de todo tipo: elétrica básica, hidráulica, pintura, montagem de móveis, instalação de cortinas, persianas, ventiladores, utensílios de banheiro e cozinha. Tudo com qualidade.',
         avaliacoes: [
             { nome: 'Patrícia Andrade', nota: 5, comentario: 'Homem de todos os ofícios! Resolveu vários problemas da minha casa de uma vez só.', data: '2024-08-18' },
-            { nome: 'Alexandre Melo', nota: 5, comentario: 'Fábio é o "faz-tudo" que toda casa precisa. Recomendo muito!', data: '2024-07-25' }
+            { nome: 'Alexandre Melo', nota: 5, comentario: 'Fábio é o ´faz-tudo´ que toda casa precisa. Recomendo muito!', data: '2024-07-25' }
         ],
         numeroAvaliacoes: 168,
         totalServicos: 480,
@@ -2381,8 +2381,8 @@ async function fbAtualizarNavBotaoEntrar() {
             if (blocoDeslogado) blocoDeslogado.classList.remove('hidden');
             if (blocoLogado) blocoLogado.classList.add('hidden');
             if (headerBtnEntrar) {
-                headerBtnEntrar.setAttribute('onclick', "authMudarPerfil('cliente');navigateTo('auth');");
-                headerBtnEntrar.innerHTML = '<i class="fas fa-user mr-2"></i>Entrar';
+                headerBtnEntrar.setAttribute('onclick', 'authMudarPerfil(´cliente´);navigateTo(´auth´);');
+                headerBtnEntrar.innerHTML = '<i class=´fas fa-user mr-2´></i>Entrar';
             }
         }
     } catch (e) { console.error('header menu erro:', e); }
@@ -2794,8 +2794,8 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 bannerBg.className = 'bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 px-3 md:px-5 shadow-2xl';
                 bannerIcone.className = 'fas fa-exclamation-triangle text-yellow-300 text-xl mt-0.5 shrink-0';
                 bannerTitulo.textContent = '⚠️ Dados SÓ neste aparelho!';
-                bannerSub.innerHTML = 'Badge 🔴 = <b class="text-yellow-200">Firestore com erro (provavelmente regras não publicadas)</b>. Clique nos botões abaixo para arrumar.';
-                bannerBotoes.innerHTML = `\n                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-header-diag', 28); diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">\n                        <i class="fas fa-stethoscope"></i>\n                        <span class="hidden sm:inline">Diagnóstico</span>\n                        <span class="sm:hidden">Testar</span>\n                    </button>\n                    <button onclick="verUltimoErroFirestore()" class="flex items-center justify-center gap-1.5 bg-white/95 hover:bg-white text-red-700 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">\n                        <i class="fas fa-eye"></i>\n                        Ver erro\n                    </button>\n                    <button onclick="copiarRegrasFirestoreEAbrirConsole()" class="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">\n                        <i class="fas fa-copy"></i>\n                        Regras + Console\n                    </button>\n                `;
+                bannerSub.innerHTML = 'Badge 🔴 = <b class=´text-yellow-200´>Firestore com erro (provavelmente regras não publicadas)</b>. Clique nos botões abaixo para arrumar.';
+                bannerBotoes.innerHTML = `\n                    <button onclick='window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-header-diag', 28); diagnosticarFirestore()' class='flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition'>\n                        <i class='fas fa-stethoscope'></i>\n                        <span class='hidden sm:inline'>Diagnóstico</span>\n                        <span class='sm:hidden'>Testar</span>\n                    </button>\n                    <button onclick='verUltimoErroFirestore()' class='flex items-center justify-center gap-1.5 bg-white/95 hover:bg-white text-red-700 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition'>\n                        <i class='fas fa-eye'></i>\n                        Ver erro\n                    </button>\n                    <button onclick='copiarRegrasFirestoreEAbrirConsole()' class='flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition'>\n                        <i class='fas fa-copy'></i>\n                        Regras + Console\n                    </button>\n                `;
             } else if (modo === 'firebase-vazio') {
                 // MODO FIRESTORE OK MAS SEM DADOS (verde-amarelo) - precisa importar seed
                 banner.classList.remove('hidden');
@@ -2803,7 +2803,7 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 bannerIcone.className = 'fas fa-database text-white text-xl mt-0.5 shrink-0';
                 bannerTitulo.textContent = '⚠️ Banco Firestore VAZIO (0 documentos!)';
                 bannerSub.innerHTML = 'Regras publicadas ✅ mas <b>banco Firestore ainda não tem profissionais</b>. Clique abaixo para importar os 8 dados demo iniciais e a lista funcionar em TODOS os celulares.';
-                bannerBotoes.innerHTML = `\n                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-importar-demo', 23); forcarRodarSeedFirestore()" class="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black text-[11px] md:text-sm px-4 md:px-6 py-2.5 md:py-3 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition animate-pulse">\n                        <i class="fas fa-cloud-upload-alt"></i>\n                        ⬆️ Importar dados demo (8 profissionais)\n                    </button>\n                `;
+                bannerBotoes.innerHTML = `\n                    <button onclick='window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-importar-demo', 23); forcarRodarSeedFirestore()' class='flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black text-[11px] md:text-sm px-4 md:px-6 py-2.5 md:py-3 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition animate-pulse'>\n                        <i class='fas fa-cloud-upload-alt'></i>\n                        ⬆️ Importar dados demo (8 profissionais)\n                    </button>\n                `;
             } else if (modo === 'firebase') {
                 // MODO SUCESSO (verde) - remove banner
                 banner.classList.add('hidden');
@@ -2847,7 +2847,7 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 break;
             default: // 'carregando' — NÃO DEVE MAIS SER USADO! Fallback = 🔴 Local.
                 // NÃO TEM MAIS estado 'carregando' azul. Se chegar aqui, força 🔴.
-                console.warn('❌ atualizarBadgeFirebase chamado com modo inválido/antigo "carregando". Mudando para 🔴 Local (erro!).');
+                console.warn('❌ atualizarBadgeFirebase chamado com modo inválido/antigo ´carregando´. Mudando para 🔴 Local (erro!).');
                 badge.classList.add('bg-red-50','text-red-700','border-red-200');
                 ponto.classList.add('bg-red-500');
                 texto.textContent = '🔴 Local (erro!)';
@@ -2892,7 +2892,7 @@ function toastErroFirestore(acao, err) {
     const cod = ULTIMO_ERRO_FIRESTORE?.code || '';
     const msg = ULTIMO_ERRO_FIRESTORE?.message || String(err || '');
     let titulo = 'Erro no Firestore';
-    let corpo = 'Tente novamente em alguns segundos. Clique no botão "Ver erro detalhado" no banner vermelho.';
+    let corpo = 'Tente novamente em alguns segundos. Clique no botão ´Ver erro detalhado´ no banner vermelho.';
     if (cod.includes('permission') || cod.includes('unauthenticated') || msg.includes('insufficient permissions') || msg.includes('permission')) {
         titulo = '⚠️ REGRAS FIRESTORE NÃO PUBLICADAS!';
         corpo = 'Abra o Console Firebase → Firestore → Rules → Cole o conteúdo de firestore.rules e clique em PUBLICAR. SÓ ASSIM os dados aparecem em outros celulares. Use os botões no banner vermelho no topo para copiar regras e abrir direto.';
@@ -2956,7 +2956,7 @@ async function copiarRegrasFirestoreEAbrirConsole() {
 function verUltimoErroFirestore() {
     try {
         if (!ULTIMO_ERRO_FIRESTORE) {
-            toast('info', 'Nenhum erro registrado ainda', 'Clique no botão "Diagnóstico" amarelo para rodar 4 testes e descobrir o problema.', 8000);
+            toast('info', 'Nenhum erro registrado ainda', 'Clique no botão ´Diagnóstico´ amarelo para rodar 4 testes e descobrir o problema.', 8000);
             return;
         }
         const e = ULTIMO_ERRO_FIRESTORE;
@@ -2966,16 +2966,16 @@ function verUltimoErroFirestore() {
         const msgBaixo = String(e.message || '').toLowerCase();
         if (temCode && (codeBaixo.includes('permission') || codeBaixo.includes('unauthenticated') || msgBaixo.includes('permission') || msgBaixo.includes('insufficient permissions'))) {
             titulo = '🔒 ERRO DE PERMISSÃO (Regras Firestore NÃO PUBLICADAS)';
-            corpo = `Problema: ${e.code} — ${e.message}\n\nComo resolver (2 cliques, 30s):\n1) Clique no botão azul "Regras + Console"\n2) Cole as regras (já vem copiadas) → CLIQUE EM PUBLICAR\n3) Atualize a página. O badge ficará 🟢 Nuvem.\n\nAção que falhou: ${e.acao}\nHorário: ${e.horario}`;
+            corpo = `Problema: ${e.code} — ${e.message}\n\nComo resolver (2 cliques, 30s):\n1) Clique no botão azul 'Regras + Console'\n2) Cole as regras (já vem copiadas) → CLIQUE EM PUBLICAR\n3) Atualize a página. O badge ficará 🟢 Nuvem.\n\nAção que falhou: ${e.acao}\nHorário: ${e.horario}`;
         } else if (temCode && (codeBaixo.includes('network') || codeBaixo.includes('unavailable') || codeBaixo.includes('deadline') || msgBaixo.includes('timeout'))) {
             titulo = '📶 ERRO DE CONEXÃO (Sem internet / Firestore offline)';
             corpo = `Problema: ${e.code} — ${e.message}\n\nComo resolver:\n• Verifique se tem internet (Wi-Fi ou 4G)\n• Ative/desative o modo avião para resetar\n• Clique no badge vermelho ao lado do logo para recarregar\n• Tente novamente em 30 segundos\n\nAção: ${e.acao}\nHorário: ${e.horario}`;
         } else if (temCode && codeBaixo.includes('not-found')) {
             titulo = '🧱 Firestore NÃO CRIADO no projeto!';
-            corpo = `Problema: ${e.code} — ${e.message}\n\nComo resolver (1 clique no Console):\nAcesse Console → Firestore Database → Criar banco → Modo Produção → Região: southamerica-east1 (São Paulo).\nDepois volte e clique em "Regras + Console".\n\nAção: ${e.acao}\nHorário: ${e.horario}`;
+            corpo = `Problema: ${e.code} — ${e.message}\n\nComo resolver (1 clique no Console):\nAcesse Console → Firestore Database → Criar banco → Modo Produção → Região: southamerica-east1 (São Paulo).\nDepois volte e clique em 'Regras + Console'.\n\nAção: ${e.acao}\nHorário: ${e.horario}`;
         } else {
             titulo = `❌ Erro (${e.code || 'código nulo'}): ${e.acao}`;
-            corpo = `Mensagem completa: ${e.message}\n\nAção: ${e.acao}\nHorário: ${e.horario}\n\nTente clicar em "Diagnóstico" (botão amarelo) para rodar 4 testes separados.`;
+            corpo = `Mensagem completa: ${e.message}\n\nAção: ${e.acao}\nHorário: ${e.horario}\n\nTente clicar em 'Diagnóstico' (botão amarelo) para rodar 4 testes separados.`;
         }
         toast('error', titulo, corpo, 14000);
         try { console.table(e); } catch (_) {}
@@ -3227,7 +3227,7 @@ async function forcarRodarSeedFirestore() {
         let titulo, corpo;
         if (c.includes('permission') || c.includes('unauthenticated') || m.includes('insufficient')) {
             titulo = '🔒 PERMISSÃO NEGADA!';
-            corpo = 'Regras de ESCRITA do Firestore NÃO PUBLICADAS!\n\nSolução:\n1) Clique no botão AZUL "Regras + Console"\n2) Cole as regras → CLIQUE EM PUBLICAR\n3) Volte e clique aqui de novo.\n\nErro: ' + (c || m);
+            corpo = 'Regras de ESCRITA do Firestore NÃO PUBLICADAS!\n\nSolução:\n1) Clique no botão AZUL ´Regras + Console´\n2) Cole as regras → CLIQUE EM PUBLICAR\n3) Volte e clique aqui de novo.\n\nErro: ' + (c || m);
         } else if (m.includes('timeout_seed') || m.includes('timeout')) {
             titulo = '⏱️ TIMEOUT';
             corpo = 'O Firestore demorou mais de 20 segundos para responder. Verifique sua internet → recarregue a página → tente novamente.';
@@ -3622,7 +3622,7 @@ async function pagamentoCriarPreferenciaMercadoPago(dadosPro, valor) {
         const btnSimularPix = document.getElementById('pagBtnSimularPagamentoPix');
         const btnPagCartao = document.getElementById('pagBtnCartaoSubmit');
         if (btnSimularPix) {
-            btnSimularPix.innerHTML = `<i class="fas fa-external-link-alt mr-2"></i>Pagar no Mercado Pago (PIX / Cartão)`;
+            btnSimularPix.innerHTML = `<i class='fas fa-external-link-alt mr-2'></i>Pagar no Mercado Pago (PIX / Cartão)`;
             btnSimularPix.onclick = (e) => {
                 e.preventDefault();
                 if (pref.init_point) window.open(pref.init_point, '_blank');
@@ -3635,7 +3635,7 @@ async function pagamentoCriarPreferenciaMercadoPago(dadosPro, valor) {
             };
         }
         if (btnPagCartao) {
-            btnPagCartao.innerHTML = `<i class="fas fa-external-link-alt mr-2"></i>Pagar no Mercado Pago (R$ ${valor.toFixed(2)})`;
+            btnPagCartao.innerHTML = `<i class='fas fa-external-link-alt mr-2'></i>Pagar no Mercado Pago (R$ ${valor.toFixed(2)})`;
             btnPagCartao.onclick = (e) => {
                 e.preventDefault();
                 if (pref.init_point) window.open(pref.init_point, '_blank');
@@ -3653,11 +3653,11 @@ async function pagamentoCriarPreferenciaMercadoPago(dadosPro, valor) {
         const btnSimularPix = document.getElementById('pagBtnSimularPagamentoPix');
         const btnPagCartao = document.getElementById('pagBtnCartaoSubmit');
         if (btnSimularPix) {
-            btnSimularPix.innerHTML = `<i class="fas fa-check-circle mr-2"></i>Já efetuei o pagamento (simular)`;
+            btnSimularPix.innerHTML = `<i class='fas fa-check-circle mr-2'></i>Já efetuei o pagamento (simular)`;
             btnSimularPix.onclick = (e) => { e.preventDefault(); pagamentoSimularAprovado('pix'); };
         }
         if (btnPagCartao) {
-            btnPagCartao.innerHTML = `<i class="fas fa-lock mr-2"></i>Pagar R$ ${(MERCADO_PAGO?.VALOR_ASSINATURA ?? 0.10).toFixed(2)} agora`;
+            btnPagCartao.innerHTML = `<i class='fas fa-lock mr-2'></i>Pagar R$ ${(MERCADO_PAGO?.VALOR_ASSINATURA ?? 0.10).toFixed(2)} agora`;
             btnPagCartao.onclick = (e) => pagamentoCartaoSubmit(e);
         }
     }
@@ -3782,12 +3782,12 @@ function pagamentoCartaoSubmit(e) {
         if (cvv.length < 3) { toast('error', 'CVV inválido', 'Digite o CVV de 3 ou 4 dígitos.'); return false; }
         if (cpf.length !== 11) { toast('error', 'CPF inválido', 'Digite o CPF completo do titular.'); return false; }
 
-        const btn = document.querySelector('#pagFormCartao button[type="submit"]');
+        const btn = document.querySelector('#pagFormCartao button[type=´submit´]');
         let txtOriginal = '';
         if (btn) {
             txtOriginal = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processando pagamento...';
+            btn.innerHTML = '<i class=´fas fa-spinner fa-spin mr-2´></i> Processando pagamento...';
         }
 
         toast('info', 'Processando...', 'Estamos validando seu cartão de R$ 0,10. Aguarde.');
@@ -3967,11 +3967,11 @@ function authGoogle(perfil) {
                 switch (err?.code) {
                     case 'auth/unauthorized-domain':
                         titulo = '⚠️ Domínio não autorizado no Firebase';
-                        msg = 'Abra em nova aba:\nhttps://console.firebase.google.com/project/ajeita-app-c9fc2/authentication/settings\n→ Desça até "Authorized domains" → Add domain → cole: ajeita-app.onrender.com → Add.\n(Não esqueça de adicionar também localhost!)';
+                        msg = 'Abra em nova aba:\nhttps://console.firebase.google.com/project/ajeita-app-c9fc2/authentication/settings\n→ Desça até ´Authorized domains´ → Add domain → cole: ajeita-app.onrender.com → Add.\n(Não esqueça de adicionar também localhost!)';
                         break;
                     case 'auth/popup-blocked':
                         titulo = '⚠️ Popup bloqueado';
-                        msg = 'Clique no cadeado 🔒 ao lado da URL no navegador → Permita "Pop-ups e redirecionamentos" para o site ajeita-app.onrender.com.';
+                        msg = 'Clique no cadeado 🔒 ao lado da URL no navegador → Permita ´Pop-ups e redirecionamentos´ para o site ajeita-app.onrender.com.';
                         break;
                     case 'auth/popup-closed-by-user':
                     case 'auth/cancelled-popup-request':
@@ -4064,7 +4064,7 @@ function authSolicitarCodigo(e) {
     try {
         const btn = document.getElementById('authBtnEnviarCodigo');
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Enviando...';
+        btn.innerHTML = '<i class=´fas fa-spinner fa-spin mr-2´></i> Enviando...';
 
         // Garante que exista apenas um RecaptchaVerifier
         if (!window.recaptchaVerifier) {
@@ -4079,14 +4079,14 @@ function authSolicitarCodigo(e) {
             .then(confirm => {
                 authConfirmationResult = confirm;
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar código por SMS';
+                btn.innerHTML = '<i class=´fas fa-paper-plane´></i> Enviar código por SMS';
                 toast('success', 'Código enviado!', 'SMS chegou, digite os 6 dígitos.');
                 navigateTo('auth-otp');
             })
             .catch(err => {
                 console.error('[PhoneAuth] signInWithPhoneNumber erro:', err?.code, err?.message);
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar código por SMS';
+                btn.innerHTML = '<i class=´fas fa-paper-plane´></i> Enviar código por SMS';
 
                 // Trata erros comuns com mensagens AMIGÁVEIS
                 const code = err?.code || '';
@@ -4096,7 +4096,7 @@ function authSolicitarCodigo(e) {
                 switch (code) {
                     case 'auth/operation-not-allowed':
                         titulo = '⚠️ Ative SMS do Brasil (+55) no Console';
-                        msg = 'Abra: https://console.cloud.google.com/customer-identity/settings?project=ajeita-app-c9fc2\n→ Role até "SMS configuration" → Manage regions → ADD → Brazil (+55) → marcar checkbox → Save.\n\nENQUANTO ISSO: Use o número de teste cadastrado +5561992518130 (código 187813) OU +5561999999999 (código 123456).\nNúmeros de teste NÃO precisam de região ativada e NÃO gastam SMS.';
+                        msg = 'Abra: https://console.cloud.google.com/customer-identity/settings?project=ajeita-app-c9fc2\n→ Role até ´SMS configuration´ → Manage regions → ADD → Brazil (+55) → marcar checkbox → Save.\n\nENQUANTO ISSO: Use o número de teste cadastrado +5561992518130 (código 187813) OU +5561999999999 (código 123456).\nNúmeros de teste NÃO precisam de região ativada e NÃO gastam SMS.';
                         break;
                     case 'auth/unauthorized-domain':
                         titulo = '⚠️ Domínio não autorizado';
@@ -4185,7 +4185,7 @@ function authVerificarCodigo(e) {
 
     const btn = document.getElementById('authBtnVerificar');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Verificando...';
+    btn.innerHTML = '<i class=´fas fa-spinner fa-spin mr-2´></i> Verificando...';
 
     authConfirmationResult.confirm(codigo)
         .then(async (result) => {
@@ -4217,7 +4217,7 @@ function authVerificarCodigo(e) {
         })
         .finally(() => {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check-circle"></i> Verificar e entrar';
+            btn.innerHTML = '<i class=´fas fa-check-circle´></i> Verificar e entrar';
         });
     return false;
 }
@@ -4335,12 +4335,12 @@ async function authSalvarComplemento(e) {
 
     // PRIORIDADE 1: pegar o botão POR ID (garantido)
     const btn = document.getElementById('authBtnFinalizarCadastro')
-        || document.querySelector('#formCompletarCadastro button[type="submit"]');
+        || document.querySelector('#formCompletarCadastro button[type=´submit´]');
     let textoBtnOriginal = '';
     if (btn) {
         textoBtnOriginal = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Salvando cadastro...';
+        btn.innerHTML = '<i class=´fas fa-spinner fa-spin mr-2´></i> Salvando cadastro...';
         try {
             toast('info', 'Processando...', 'Estamos salvando seu cadastro, aguarde.');
         } catch (_) {}
@@ -4393,7 +4393,7 @@ async function authSalvarComplemento(e) {
 
         if (!nome || !cidade || !bairro) {
             toast('error', 'Preencha todos os campos', 'Nome, cidade e bairro são obrigatórios.');
-            if (btn) { btn.disabled = false; btn.innerHTML = textoBtnOriginal || '<i class="fas fa-check-circle"></i> Finalizar cadastro e entrar'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = textoBtnOriginal || '<i class=´fas fa-check-circle´></i> Finalizar cadastro e entrar'; }
             return false;
         }
 
@@ -4486,7 +4486,7 @@ async function authSalvarComplemento(e) {
 
             if (!catRaw || !preco || !area || !bio || isNaN(preco) || preco <= 0) {
                 toast('error', 'Preencha todos os dados profissionais', 'Categoria, preço/hora, área de atendimento e bio são obrigatórios.');
-                if (btn) { btn.disabled = false; btn.innerHTML = textoBtnOriginal || '<i class="fas fa-check-circle"></i> Finalizar cadastro e entrar'; }
+                if (btn) { btn.disabled = false; btn.innerHTML = textoBtnOriginal || '<i class=´fas fa-check-circle´></i> Finalizar cadastro e entrar'; }
                 return false;
             }
 
@@ -4726,7 +4726,7 @@ async function authSalvarComplemento(e) {
         if (btn) {
             try {
                 btn.disabled = false;
-                btn.innerHTML = textoBtnOriginal || '<i class="fas fa-check-circle"></i> Finalizar cadastro e entrar';
+                btn.innerHTML = textoBtnOriginal || '<i class=´fas fa-check-circle´></i> Finalizar cadastro e entrar';
             } catch (_) {}
         }
     }
@@ -4790,7 +4790,7 @@ function navigateTo(view) {
     let botaoAtivarView = view;
     if (['auth', 'auth-otp', 'auth-completar', 'pagamento', 'escolha-perfil'].includes(view)) botaoAtivarView = 'auth';
     if (view === 'cadastro') botaoAtivarView = 'auth';
-    const activeBtn = document.querySelector(`.bottom-nav-btn[data-view="${botaoAtivarView}"]`);
+    const activeBtn = document.querySelector(`.bottom-nav-btn[data-view='${botaoAtivarView}']`);
     if (activeBtn) {
         activeBtn.classList.remove('text-gray-500');
         activeBtn.classList.add('text-blue-600');
@@ -4891,7 +4891,7 @@ function scrollToBusca() {
 
 function cardProfissional(p) {
     const media = calcularMedia(p);
-    return `\n        <div class="card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">\n            <div class="relative">\n                <img src="${p.foto}" alt="${p.nome}" class="w-full h-48 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">\n                <div class="absolute top-3 left-3 flex gap-2">\n                    ${p.verificado ? '<span class="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fas fa-check-circle"></i>Verificado</span>' : ''}\n                    <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">${categoriaIcone(p.categoria)} ${p.categoria}</span>\n                </div>\n                <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg">\n                    <div class="text-center">\n                        <div class="text-yellow-500 font-bold text-sm leading-none">${media.toFixed(1)}</div>\n                        <div class="flex justify-center text-yellow-400 text-xs"><i class="fas fa-star"></i></div>\n                    </div>\n                </div>\n            </div>\n            <div class="p-5">\n                <h4 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.nome}</h4>\n                <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">\n                    <i class="fas fa-map-marker-alt text-red-400"></i>\n                    <span class="truncate">${p.cidade} - ${p.bairro}</span>\n                </div>\n                <div class="flex items-center justify-between text-sm mb-4">\n                    <span class="text-gray-600">\n                        <i class="fas fa-comments text-blue-500 mr-1"></i> ${p.numeroAvaliacoes} avaliações\n                    </span>\n                    <span class="text-gray-600">\n                        <i class="fas fa-toolbox text-blue-500 mr-1"></i> ${p.totalServicos} serviços\n                    </span>\n                </div>\n                <div class="flex items-center justify-between pt-4 border-t border-gray-100">\n                    <div>\n                        <span class="text-xs text-gray-500">A partir de</span>\n                        <div class="text-xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}<span class="text-sm font-normal text-gray-500">/hora</span></div>\n                    </div>\n                    <button onclick="abrirPerfil('${p.id}')" class="gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm">\n                        <i class="fas fa-eye mr-1"></i>Ver Perfil\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
+    return `\n        <div class='card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>\n            <div class='relative'>\n                <img src='${p.foto}' alt='${p.nome}' class='w-full h-48 object-cover' onerror='this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400''>\n                <div class='absolute top-3 left-3 flex gap-2'>\n                    ${p.verificado ? '<span class='bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1'><i class='fas fa-check-circle'></i>Verificado</span>' : ''}\n                    <span class='bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow'>${categoriaIcone(p.categoria)} ${p.categoria}</span>\n                </div>\n                <div class='absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg'>\n                    <div class='text-center'>\n                        <div class='text-yellow-500 font-bold text-sm leading-none'>${media.toFixed(1)}</div>\n                        <div class='flex justify-center text-yellow-400 text-xs'><i class='fas fa-star'></i></div>\n                    </div>\n                </div>\n            </div>\n            <div class='p-5'>\n                <h4 class='font-bold text-gray-800 text-lg mb-1 truncate'>${p.nome}</h4>\n                <div class='flex items-center gap-1.5 text-sm text-gray-500 mb-3'>\n                    <i class='fas fa-map-marker-alt text-red-400'></i>\n                    <span class='truncate'>${p.cidade} - ${p.bairro}</span>\n                </div>\n                <div class='flex items-center justify-between text-sm mb-4'>\n                    <span class='text-gray-600'>\n                        <i class='fas fa-comments text-blue-500 mr-1'></i> ${p.numeroAvaliacoes} avaliações\n                    </span>\n                    <span class='text-gray-600'>\n                        <i class='fas fa-toolbox text-blue-500 mr-1'></i> ${p.totalServicos} serviços\n                    </span>\n                </div>\n                <div class='flex items-center justify-between pt-4 border-t border-gray-100'>\n                    <div>\n                        <span class='text-xs text-gray-500'>A partir de</span>\n                        <div class='text-xl font-extrabold text-orange-600'>R$ ${p.precoHora.toFixed(2)}<span class='text-sm font-normal text-gray-500'>/hora</span></div>\n                    </div>\n                    <button onclick='abrirPerfil('${p.id}')' class='gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm'>\n                        <i class='fas fa-eye mr-1'></i>Ver Perfil\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
 }
 
 function toggleMobileMenu() {
@@ -4905,7 +4905,7 @@ function toggleMobileMenu() {
 function inicializarCidadeOptions() {
     const cidades = [...new Set(profissionais.map(p => p.cidade))].sort();
     const select = document.getElementById('filterCidade');
-    select.innerHTML = '<option value="">Todas</option>' + cidades.map(c => `<option>${c}</option>`).join('');
+    select.innerHTML = '<option value=´´>Todas</option>' + cidades.map(c => `<option>${c}</option>`).join('');
 }
 
 function renderProfissionais() {
@@ -4963,7 +4963,7 @@ function renderProfissionais() {
     }
     empty.classList.add('hidden');
 
-    grid.innerHTML = lista.map(p => `\n        <div class="card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">\n            <div class="relative">\n                <img src="${p.foto}" alt="${p.nome}" class="w-full h-48 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">\n                <div class="absolute top-3 left-3 flex gap-2">\n                    ${p.verificado ? '<span class="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fas fa-check-circle"></i>Verificado</span>' : ''}\n                    <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">${categoriaIcone(p.categoria)} ${p.categoria}</span>\n                </div>\n                <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg">\n                    <div class="text-center">\n                        <div class="text-yellow-500 font-bold text-sm leading-none">${calcularMedia(p).toFixed(1)}</div>\n                        <div class="flex justify-center text-yellow-400 text-xs"><i class="fas fa-star"></i></div>\n                    </div>\n                </div>\n            </div>\n            <div class="p-5">\n                <h4 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.nome}</h4>\n                <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">\n                    <i class="fas fa-map-marker-alt text-red-400"></i>\n                    <span class="truncate">${p.cidade} - ${p.bairro}</span>\n                </div>\n                <div class="flex items-center justify-between text-sm mb-4">\n                    <span class="text-gray-600">\n                        <i class="fas fa-comments text-blue-500 mr-1"></i> ${p.numeroAvaliacoes} avaliações\n                    </span>\n                    <span class="text-gray-600">\n                        <i class="fas fa-toolbox text-blue-500 mr-1"></i> ${p.totalServicos} serviços\n                    </span>\n                </div>\n                <div class="flex items-center justify-between pt-4 border-t border-gray-100">\n                    <div>\n                        <span class="text-xs text-gray-500">A partir de</span>\n                        <div class="text-xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}<span class="text-sm font-normal text-gray-500">/hora</span></div>\n                    </div>\n                    <button onclick="abrirPerfil('${p.id}')" class="gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm">\n                        <i class="fas fa-eye mr-1"></i>Ver Perfil\n                    </button>\n                </div>\n            </div>\n        </div>\n    `).join('');
+    grid.innerHTML = lista.map(p => `\n        <div class='card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>\n            <div class='relative'>\n                <img src='${p.foto}' alt='${p.nome}' class='w-full h-48 object-cover' onerror='this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400''>\n                <div class='absolute top-3 left-3 flex gap-2'>\n                    ${p.verificado ? '<span class='bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1'><i class='fas fa-check-circle'></i>Verificado</span>' : ''}\n                    <span class='bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow'>${categoriaIcone(p.categoria)} ${p.categoria}</span>\n                </div>\n                <div class='absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg'>\n                    <div class='text-center'>\n                        <div class='text-yellow-500 font-bold text-sm leading-none'>${calcularMedia(p).toFixed(1)}</div>\n                        <div class='flex justify-center text-yellow-400 text-xs'><i class='fas fa-star'></i></div>\n                    </div>\n                </div>\n            </div>\n            <div class='p-5'>\n                <h4 class='font-bold text-gray-800 text-lg mb-1 truncate'>${p.nome}</h4>\n                <div class='flex items-center gap-1.5 text-sm text-gray-500 mb-3'>\n                    <i class='fas fa-map-marker-alt text-red-400'></i>\n                    <span class='truncate'>${p.cidade} - ${p.bairro}</span>\n                </div>\n                <div class='flex items-center justify-between text-sm mb-4'>\n                    <span class='text-gray-600'>\n                        <i class='fas fa-comments text-blue-500 mr-1'></i> ${p.numeroAvaliacoes} avaliações\n                    </span>\n                    <span class='text-gray-600'>\n                        <i class='fas fa-toolbox text-blue-500 mr-1'></i> ${p.totalServicos} serviços\n                    </span>\n                </div>\n                <div class='flex items-center justify-between pt-4 border-t border-gray-100'>\n                    <div>\n                        <span class='text-xs text-gray-500'>A partir de</span>\n                        <div class='text-xl font-extrabold text-orange-600'>R$ ${p.precoHora.toFixed(2)}<span class='text-sm font-normal text-gray-500'>/hora</span></div>\n                    </div>\n                    <button onclick='abrirPerfil('${p.id}')' class='gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm'>\n                        <i class='fas fa-eye mr-1'></i>Ver Perfil\n                    </button>\n                </div>\n            </div>\n        </div>\n    `).join('');
 }
 
 function applyFilters() {
@@ -5038,7 +5038,7 @@ function abrirPerfil(id) {
         if (c === 'Marido de Aluguel') preco = p.precoHora;
         if (c === 'Eletricista') preco = Math.round(p.precoHora * 1.1);
         if (c === 'Encanador') preco = Math.round(p.precoHora * 1.05);
-        return `<div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"><span class="font-medium text-gray-700">${categoriaIcone(c)} ${c}</span><span class="font-bold text-orange-600">R$ ${preco}/h</span></div>`;
+        return `<div class='flex items-center justify-between py-2 border-b border-gray-100 last:border-0'><span class='font-medium text-gray-700'>${categoriaIcone(c)} ${c}</span><span class='font-bold text-orange-600'>R$ ${preco}/h</span></div>`;
     }).join('');
 
     // Fotos trabalhos (fallback SVG inline coloridos por categoria — 100% local, sem req externa)
@@ -5051,21 +5051,21 @@ function abrirPerfil(id) {
     const emojisTrab = ['🛠️', '🔧', '🧰', '⚡', '🪛', '🏗️', '🎨', '🧽', '💡'];
     const trabalhos = Array.from({length: 4}, (_, i) => svgTrabalho(bgTrabalhos[p.categoria] || bgTrabalhos.default, emojisTrab[i % emojisTrab.length]));
 
-    document.getElementById('modalPerfilContent').innerHTML = `\n        <!-- Header perfil -->\n        <div class="relative">\n            <div class="gradient-primary h-40 md:h-52"></div>\n            <div class="px-6 md:px-10 -mt-20 pb-5 relative">\n                <div class="flex flex-col md:flex-row md:items-end gap-5">\n                    <img src="${p.foto}" alt="${p.nome}" class="w-36 h-36 rounded-2xl border-4 border-white shadow-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">\n                    <div class="flex-1 md:pb-3">\n                        <div class="flex flex-wrap items-center gap-2 mb-2">\n                            <h3 class="text-2xl md:text-3xl font-extrabold text-gray-800">${p.nome}</h3>\n                            ${p.verificado ? '<span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"><i class="fas fa-check-circle"></i>Profissional Verificado</span>' : ''}\n                        </div>\n                        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">\n                            <span class="flex items-center gap-1"><i class="fas fa-briefcase text-blue-500"></i> ${p.categoria}</span>\n                            <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-red-500"></i> ${p.cidade}/${p.uf} - ${p.bairro}</span>\n                            <span class="flex items-center gap-1 star-filled"><i class="fas fa-star"></i> <strong>${media.toFixed(1)}</strong> (${p.numeroAvaliacoes} avaliações)</span>\n                        </div>\n                    </div>\n                    <div class="md:pb-3 text-left md:text-right">\n                        <div class="text-xs text-gray-500">Valor por hora</div>\n                        <div class="text-3xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}</div>\n                    </div>\n                </div>\n            </div>\n        </div>\n\n        <div class="px-6 md:px-10 pb-8 grid grid-cols-1 lg:grid-cols-5 gap-8">\n            <!-- Coluna Esquerda -->\n            <div class="lg:col-span-3 space-y-6">\n                <!-- Bio -->\n                <div>\n                    <h4 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-user text-blue-600 mr-2"></i>Sobre Mim</h4>\n                    <p class="text-gray-600 leading-relaxed">${p.bio}</p>\n                </div>\n\n                <!-- Região atendimento -->\n                <div class="bg-blue-50 rounded-xl p-5 border border-blue-100">\n                    <h4 class="font-bold text-blue-900 mb-2"><i class="fas fa-location-dot mr-2"></i>Região de Cobertura</h4>\n                    <p class="text-blue-800 text-sm">Atendo principalmente em <strong>${p.cidade}</strong>, bairro <strong>${p.bairro}</strong> e adjacências. Consulte disponibilidade para outras regiões via WhatsApp.</p>\n                </div>\n\n                <!-- Galeria -->\n                <div>\n                    <h4 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-images text-blue-600 mr-2"></i>Trabalhos Anteriores</h4>\n                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">\n                        ${trabalhos.map(url => `<img src="${url}" class="rounded-xl object-cover h-28 w-full hover:opacity-90 transition cursor-pointer" alt="Trabalho">`).join('')}\n                    </div>\n                </div>\n\n                <!-- Avaliações -->\n                <div>\n                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">\n                        <span><i class="fas fa-star text-yellow-500 mr-2"></i>Avaliações e Depoimentos</span>\n                        <span class="text-sm font-normal text-gray-500">${avaliacoes.length} de ${p.numeroAvaliacoes}</span>\n                    </h4>\n                    <div class="space-y-3 max-h-96 overflow-y-auto pr-2">\n                        ${avaliacoes.length === 0 ? '<p class="text-gray-400 text-sm text-center py-4">Sem avaliações ainda.</p>' :\n                        avaliacoes.map(a => `
-                            <div class="bg-gray-50 rounded-xl p-4">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-9 h-9 gradient-primary rounded-full flex items-center justify-center text-white text-sm font-bold">${a.nome.charAt(0)}</div>
+    document.getElementById('modalPerfilContent').innerHTML = `\n        <!-- Header perfil -->\n        <div class='relative'>\n            <div class='gradient-primary h-40 md:h-52'></div>\n            <div class='px-6 md:px-10 -mt-20 pb-5 relative'>\n                <div class='flex flex-col md:flex-row md:items-end gap-5'>\n                    <img src='${p.foto}' alt='${p.nome}' class='w-36 h-36 rounded-2xl border-4 border-white shadow-xl object-cover' onerror='this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400''>\n                    <div class='flex-1 md:pb-3'>\n                        <div class='flex flex-wrap items-center gap-2 mb-2'>\n                            <h3 class='text-2xl md:text-3xl font-extrabold text-gray-800'>${p.nome}</h3>\n                            ${p.verificado ? '<span class='bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1'><i class='fas fa-check-circle'></i>Profissional Verificado</span>' : ''}\n                        </div>\n                        <div class='flex flex-wrap items-center gap-3 text-sm text-gray-600'>\n                            <span class='flex items-center gap-1'><i class='fas fa-briefcase text-blue-500'></i> ${p.categoria}</span>\n                            <span class='flex items-center gap-1'><i class='fas fa-map-marker-alt text-red-500'></i> ${p.cidade}/${p.uf} - ${p.bairro}</span>\n                            <span class='flex items-center gap-1 star-filled'><i class='fas fa-star'></i> <strong>${media.toFixed(1)}</strong> (${p.numeroAvaliacoes} avaliações)</span>\n                        </div>\n                    </div>\n                    <div class='md:pb-3 text-left md:text-right'>\n                        <div class='text-xs text-gray-500'>Valor por hora</div>\n                        <div class='text-3xl font-extrabold text-orange-600'>R$ ${p.precoHora.toFixed(2)}</div>\n                    </div>\n                </div>\n            </div>\n        </div>\n\n        <div class='px-6 md:px-10 pb-8 grid grid-cols-1 lg:grid-cols-5 gap-8'>\n            <!-- Coluna Esquerda -->\n            <div class='lg:col-span-3 space-y-6'>\n                <!-- Bio -->\n                <div>\n                    <h4 class='text-lg font-bold text-gray-800 mb-3'><i class='fas fa-user text-blue-600 mr-2'></i>Sobre Mim</h4>\n                    <p class='text-gray-600 leading-relaxed'>${p.bio}</p>\n                </div>\n\n                <!-- Região atendimento -->\n                <div class='bg-blue-50 rounded-xl p-5 border border-blue-100'>\n                    <h4 class='font-bold text-blue-900 mb-2'><i class='fas fa-location-dot mr-2'></i>Região de Cobertura</h4>\n                    <p class='text-blue-800 text-sm'>Atendo principalmente em <strong>${p.cidade}</strong>, bairro <strong>${p.bairro}</strong> e adjacências. Consulte disponibilidade para outras regiões via WhatsApp.</p>\n                </div>\n\n                <!-- Galeria -->\n                <div>\n                    <h4 class='text-lg font-bold text-gray-800 mb-3'><i class='fas fa-images text-blue-600 mr-2'></i>Trabalhos Anteriores</h4>\n                    <div class='grid grid-cols-2 md:grid-cols-4 gap-3'>\n                        ${trabalhos.map(url => `<img src='${url}' class='rounded-xl object-cover h-28 w-full hover:opacity-90 transition cursor-pointer' alt='Trabalho'>`).join('')}\n                    </div>\n                </div>\n\n                <!-- Avaliações -->\n                <div>\n                    <h4 class='text-lg font-bold text-gray-800 mb-4 flex items-center justify-between'>\n                        <span><i class='fas fa-star text-yellow-500 mr-2'></i>Avaliações e Depoimentos</span>\n                        <span class='text-sm font-normal text-gray-500'>${avaliacoes.length} de ${p.numeroAvaliacoes}</span>\n                    </h4>\n                    <div class='space-y-3 max-h-96 overflow-y-auto pr-2'>\n                        ${avaliacoes.length === 0 ? '<p class='text-gray-400 text-sm text-center py-4'>Sem avaliações ainda.</p>' :\n                        avaliacoes.map(a => `
+                            <div class='bg-gray-50 rounded-xl p-4'>
+                                <div class='flex items-center justify-between mb-2'>
+                                    <div class='flex items-center gap-2'>
+                                        <div class='w-9 h-9 gradient-primary rounded-full flex items-center justify-center text-white text-sm font-bold'>${a.nome.charAt(0)}</div>
                                         <div>
-                                            <div class="font-semibold text-gray-800 text-sm">${a.nome}</div>
-                                            <div class="text-xs text-gray-500">${formatarData(a.data)}</div>
+                                            <div class='font-semibold text-gray-800 text-sm'>${a.nome}</div>
+                                            <div class='text-xs text-gray-500'>${formatarData(a.data)}</div>
                                         </div>
                                     </div>
-                                    <div class="flex star-filled text-sm">${estrelasDisplay(a.nota)}</div>
+                                    <div class='flex star-filled text-sm'>${estrelasDisplay(a.nota)}</div>
                                 </div>
-                                <p class="text-sm text-gray-600">${a.comentario}</p>
+                                <p class='text-sm text-gray-600'>${a.comentario}</p>
                             </div>
-                        `).join('')}\n                    </div>\n                </div>\n            </div>\n\n            <!-- Coluna Direita: Form orçamento -->\n            <div class="lg:col-span-2">\n                <div class="bg-gradient-to-b from-blue-50 to-white border border-blue-100 rounded-2xl p-6 sticky top-28">\n                    <h4 class="text-xl font-bold text-gray-800 mb-1"><i class="fas fa-paper-plane text-blue-600 mr-2"></i>Solicitar Orçamento</h4>\n                    <p class="text-sm text-gray-500 mb-5">Preencha e envie direto para o WhatsApp!</p>\n\n                    <form id="formOrcamento" data-proid="${p.id}" class="space-y-3">\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Seu Nome *</label>\n                            <input required type="text" id="orcNome" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nome completo">\n                        </div>\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Telefone/WhatsApp *</label>\n                            <input required type="tel" id="orcTelefone" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="(00) 90000-0000">\n                        </div>\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Endereço/Bairro *</label>\n                            <input required type="text" id="orcEndereco" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Rua, Nº - Bairro">\n                        </div>\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Descreva o problema *</label>\n                            <textarea required id="orcDescricao" rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Ex: Chuveiro queimou, precisa trocar resistência..."></textarea>\n                        </div>\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Data desejada</label>\n                            <input type="date" id="orcData" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">\n                        </div>\n                        <button type="submit" class="w-full gradient-accent hover:opacity-90 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2">\n                            <i class="fab fa-whatsapp mr-2"></i>Enviar via WhatsApp\n                        </button>\n                        <p class="text-xs text-center text-gray-500">\n                            <i class="fas fa-lock mr-1"></i>Seus dados estarão seguros e visíveis apenas ao profissional.\n                        </p>\n                    </form>\n                </div>\n            </div>\n        </div>\n    `;
+                        `).join('')}\n                    </div>\n                </div>\n            </div>\n\n            <!-- Coluna Direita: Form orçamento -->\n            <div class='lg:col-span-2'>\n                <div class='bg-gradient-to-b from-blue-50 to-white border border-blue-100 rounded-2xl p-6 sticky top-28'>\n                    <h4 class='text-xl font-bold text-gray-800 mb-1'><i class='fas fa-paper-plane text-blue-600 mr-2'></i>Solicitar Orçamento</h4>\n                    <p class='text-sm text-gray-500 mb-5'>Preencha e envie direto para o WhatsApp!</p>\n\n                    <form id='formOrcamento' data-proid='${p.id}' class='space-y-3'>\n                        <div>\n                            <label class='block text-xs font-semibold text-gray-700 mb-1'>Seu Nome *</label>\n                            <input required type='text' id='orcNome' class='w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none' placeholder='Nome completo'>\n                        </div>\n                        <div>\n                            <label class='block text-xs font-semibold text-gray-700 mb-1'>Telefone/WhatsApp *</label>\n                            <input required type='tel' id='orcTelefone' class='w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none' placeholder='(00) 90000-0000'>\n                        </div>\n                        <div>\n                            <label class='block text-xs font-semibold text-gray-700 mb-1'>Endereço/Bairro *</label>\n                            <input required type='text' id='orcEndereco' class='w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none' placeholder='Rua, Nº - Bairro'>\n                        </div>\n                        <div>\n                            <label class='block text-xs font-semibold text-gray-700 mb-1'>Descreva o problema *</label>\n                            <textarea required id='orcDescricao' rows='3' class='w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none' placeholder='Ex: Chuveiro queimou, precisa trocar resistência...'></textarea>\n                        </div>\n                        <div>\n                            <label class='block text-xs font-semibold text-gray-700 mb-1'>Data desejada</label>\n                            <input type='date' id='orcData' class='w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none'>\n                        </div>\n                        <button type='submit' class='w-full gradient-accent hover:opacity-90 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2'>\n                            <i class='fab fa-whatsapp mr-2'></i>Enviar via WhatsApp\n                        </button>\n                        <p class='text-xs text-center text-gray-500'>\n                            <i class='fas fa-lock mr-1'></i>Seus dados estarão seguros e visíveis apenas ao profissional.\n                        </p>\n                    </form>\n                </div>\n            </div>\n        </div>\n    `;
 
     // Hook submit form orçamento
     document.getElementById('formOrcamento').addEventListener('submit', (e) => {
@@ -5119,7 +5119,7 @@ function enviarOrcamento(proId) {
     window.open(url, '_blank');
 
     closeModal('modalPerfil');
-    toast('success', 'Solicitação Enviada! 🎉', 'Orçamento salvo e WhatsApp aberto. Acompanhe em "Solicitações".');
+    toast('success', 'Solicitação Enviada! 🎉', 'Orçamento salvo e WhatsApp aberto. Acompanhe em ´Solicitações´.');
     setTimeout(() => navigateTo('solicitacoes'), 1500);
 }
 
@@ -5171,20 +5171,20 @@ function renderSolicitacoes() {
 function solicitacaoCardCliente(s) {
     const statusColor = { 'Pendente': 'bg-yellow-100 text-yellow-800', 'Concluído': 'bg-green-100 text-green-800', 'Atendido': 'bg-blue-100 text-blue-800' };
     const pro = profissionais.find(p => p.id === s.profissionalId);
-    return `\n        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">\n            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">\n                <img src="${s.profissionalFoto || (pro ? pro.foto : '')}" class="w-16 h-16 rounded-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(s.profissionalNome)}&background=3b82f6&color=fff'">\n                <div class="flex-1">\n                    <div class="flex flex-wrap items-center gap-2 mb-1">\n                        <h5 class="font-bold text-gray-800">${s.profissionalNome}</h5>\n                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">${s.categoria}</span>\n                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}">${s.status}</span>\n                    </div>\n                    <div class="text-sm text-gray-600 mb-2 truncate">\n                        <i class="fas fa-map-marker-alt text-red-400 mr-1"></i>${s.clienteEndereco}\n                        <span class="mx-2">•</span>\n                        <i class="fas fa-calendar text-blue-400 mr-1"></i>${formatarData(s.dataSolicitacao)}\n                    </div>\n                    <p class="text-sm text-gray-500 truncate"><i class="fas fa-quote-left text-blue-300 mr-1"></i>${s.descricao}</p>\n                </div>\n                <div class="flex gap-2">\n                    ${(s.status === 'Concluído' || s.status === 'Atendido') && !s.avaliado ? `
-                        <button onclick="abrirAvaliacao('${s.id}')" class="gradient-accent text-white font-semibold py-2.5 px-4 rounded-xl shadow text-sm hover:opacity-90">
-                            <i class="fas fa-star mr-1"></i>Avaliar
+    return `\n        <div class='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>\n            <div class='p-5 flex flex-col md:flex-row md:items-center gap-4'>\n                <img src='${s.profissionalFoto || (pro ? pro.foto : '')}' class='w-16 h-16 rounded-xl object-cover' onerror='this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(s.profissionalNome)}&background=3b82f6&color=fff''>\n                <div class='flex-1'>\n                    <div class='flex flex-wrap items-center gap-2 mb-1'>\n                        <h5 class='font-bold text-gray-800'>${s.profissionalNome}</h5>\n                        <span class='text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold'>${s.categoria}</span>\n                        <span class='text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}'>${s.status}</span>\n                    </div>\n                    <div class='text-sm text-gray-600 mb-2 truncate'>\n                        <i class='fas fa-map-marker-alt text-red-400 mr-1'></i>${s.clienteEndereco}\n                        <span class='mx-2'>•</span>\n                        <i class='fas fa-calendar text-blue-400 mr-1'></i>${formatarData(s.dataSolicitacao)}\n                    </div>\n                    <p class='text-sm text-gray-500 truncate'><i class='fas fa-quote-left text-blue-300 mr-1'></i>${s.descricao}</p>\n                </div>\n                <div class='flex gap-2'>\n                    ${(s.status === 'Concluído' || s.status === 'Atendido') && !s.avaliado ? `
+                        <button onclick='abrirAvaliacao(´${s.id}´)' class='gradient-accent text-white font-semibold py-2.5 px-4 rounded-xl shadow text-sm hover:opacity-90'>
+                            <i class='fas fa-star mr-1'></i>Avaliar
                         </button>
                     ` : s.avaliado ? `
-                        <span class="bg-green-50 text-green-700 font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center gap-1"><i class="fas fa-check-circle"></i>Avaliado</span>
-                    ` : ''}\n                    <button onclick="mudarStatusSolicitacao('${s.id}', 'Concluído')" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm">\n                        <i class="fas fa-check mr-1"></i>Concluir\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
+                        <span class='bg-green-50 text-green-700 font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center gap-1'><i class='fas fa-check-circle'></i>Avaliado</span>
+                    ` : ''}\n                    <button onclick='mudarStatusSolicitacao('${s.id}', 'Concluído')' class='bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm'>\n                        <i class='fas fa-check mr-1'></i>Concluir\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
 }
 
 function solicitacaoCardProfissional(s) {
     const statusColor = { 'Pendente': 'bg-yellow-100 text-yellow-800', 'Concluído': 'bg-green-100 text-green-800', 'Atendido': 'bg-blue-100 text-blue-800' };
     const pro = profissionais.find(p => p.id === s.profissionalId);
     const tel = pro ? pro.telefone : '';
-    return `\n        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">\n            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">\n                <div class="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center text-white text-2xl font-bold shadow">\n                    ${s.clienteNome.charAt(0).toUpperCase()}\n                </div>\n                <div class="flex-1">\n                    <div class="flex flex-wrap items-center gap-2 mb-1">\n                        <h5 class="font-bold text-gray-800">${s.clienteNome}</h5>\n                        <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-semibold">${s.categoria}</span>\n                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}">${s.status}</span>\n                    </div>\n                    <div class="text-sm text-gray-600 mb-1">\n                        <i class="fab fa-whatsapp text-green-500 mr-1"></i>${s.clienteTelefone}\n                        <span class="mx-2">•</span>\n                        <i class="fas fa-map-marker-alt text-red-400 mr-1"></i>${s.clienteEndereco}\n                    </div>\n                    <p class="text-sm text-gray-500 truncate"><i class="fas fa-quote-left text-blue-300 mr-1"></i>${s.descricao}</p>\n                </div>\n                <div class="flex gap-2">\n                    <a href="https://wa.me/55${s.clienteTelefone.replace(/\D/g,'')}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm">\n                        <i class="fab fa-whatsapp mr-1"></i>Zap\n                    </a>\n                    <button onclick="mudarStatusSolicitacao('${s.id}', 'Atendido')" class="gradient-primary text-white font-semibold py-2.5 px-4 rounded-xl text-sm hover:opacity-90">\n                        <i class="fas fa-check mr-1"></i>Atender\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
+    return `\n        <div class='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>\n            <div class='p-5 flex flex-col md:flex-row md:items-center gap-4'>\n                <div class='w-16 h-16 rounded-xl gradient-primary flex items-center justify-center text-white text-2xl font-bold shadow'>\n                    ${s.clienteNome.charAt(0).toUpperCase()}\n                </div>\n                <div class='flex-1'>\n                    <div class='flex flex-wrap items-center gap-2 mb-1'>\n                        <h5 class='font-bold text-gray-800'>${s.clienteNome}</h5>\n                        <span class='text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-semibold'>${s.categoria}</span>\n                        <span class='text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}'>${s.status}</span>\n                    </div>\n                    <div class='text-sm text-gray-600 mb-1'>\n                        <i class='fab fa-whatsapp text-green-500 mr-1'></i>${s.clienteTelefone}\n                        <span class='mx-2'>•</span>\n                        <i class='fas fa-map-marker-alt text-red-400 mr-1'></i>${s.clienteEndereco}\n                    </div>\n                    <p class='text-sm text-gray-500 truncate'><i class='fas fa-quote-left text-blue-300 mr-1'></i>${s.descricao}</p>\n                </div>\n                <div class='flex gap-2'>\n                    <a href='https://wa.me/55${s.clienteTelefone.replace(/\D/g,'')}' target='_blank' class='bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm'>\n                        <i class='fab fa-whatsapp mr-1'></i>Zap\n                    </a>\n                    <button onclick='mudarStatusSolicitacao('${s.id}', 'Atendido')' class='gradient-primary text-white font-semibold py-2.5 px-4 rounded-xl text-sm hover:opacity-90'>\n                        <i class='fas fa-check mr-1'></i>Atender\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
 }
 
 function mudarStatusSolicitacao(id, status) {
@@ -5316,9 +5316,9 @@ function atualizarEstrelas(v) {
 function estrelasDisplay(nota) {
     let r = '';
     for (let i = 1; i <= 5; i++) {
-        if (nota >= i) r += '<i class="fas fa-star star-filled"></i>';
-        else if (nota >= i - 0.5) r += '<i class="fas fa-star-half-alt star-filled"></i>';
-        else r += '<i class="far fa-star text-gray-300"></i>';
+        if (nota >= i) r += '<i class=´fas fa-star star-filled´></i>';
+        else if (nota >= i - 0.5) r += '<i class=´fas fa-star-half-alt star-filled´></i>';
+        else r += '<i class=´far fa-star text-gray-300´></i>';
     }
     return r;
 }
@@ -5442,7 +5442,7 @@ function renderAdminProfissionais() {
     }
     empty.classList.add('hidden');
 
-    tbody.innerHTML = lista.map(p => `\n        <tr class="hover:bg-gray-50">\n            <td class="px-6 py-4">\n                <div class="flex items-center gap-3">\n                    <img src="${p.foto}" class="w-11 h-11 rounded-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff'">\n                    <div>\n                        <div class="font-semibold text-gray-800">${p.nome}</div>\n                        <div class="text-xs text-gray-500">${p.telefone} ${p.email ? '• ' + p.email : ''}</div>\n                    </div>\n                </div>\n            </td>\n            <td class="px-6 py-4">\n                <div class="text-gray-700">${p.cidade}/${p.uf}</div>\n                <div class="text-xs text-gray-500">📍 ${p.bairro}</div>\n            </td>\n            <td class="px-6 py-4">\n                <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold">${categoriaIcone(p.categoria)} ${p.categoria}</span>\n            </td>\n            <td class="px-6 py-4">\n                <div class="flex items-center gap-1 star-filled"><i class="fas fa-star"></i><span class="font-bold text-gray-800 ml-1">${calcularMedia(p).toFixed(1)}</span></div>\n                <div class="text-xs text-gray-500">${p.numeroAvaliacoes} avaliações</div>\n            </td>\n            <td class="px-6 py-4 font-bold text-orange-600">R$ ${p.precoHora.toFixed(2)}/h</td>\n            <td class="px-6 py-4">\n                ${p.assinaturaAtiva\n                    ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><i class="fas fa-check"></i>Ativo</span>'\n                    : '<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><i class="fas fa-ban"></i>Inativo</span>'\n                }\n            </td>\n            <td class="px-6 py-4">\n                <div class="flex gap-2">\n                    ${p.assinaturaAtiva\n                        ? `<button onclick="toggleAssinatura('${p.id}')" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 p-2 rounded-lg transition" title="Desativar"><i class="fas fa-toggle-on"></i></button>`\n                        : `<button onclick="toggleAssinatura('${p.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 p-2 rounded-lg transition" title="Ativar"><i class="fas fa-toggle-off"></i></button>`\n                    }\n                    <button onclick="verificarPro('${p.id}')" class="bg-green-100 hover:bg-green-200 text-green-800 p-2 rounded-lg transition" title="Verificar"><i class="fas fa-check-circle"></i></button>\n                    <button onclick="excluirPro('${p.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition" title="Excluir"><i class="fas fa-trash"></i></button>\n                </div>\n            </td>\n        </tr>\n    `).join('');
+    tbody.innerHTML = lista.map(p => `\n        <tr class='hover:bg-gray-50'>\n            <td class='px-6 py-4'>\n                <div class='flex items-center gap-3'>\n                    <img src='${p.foto}' class='w-11 h-11 rounded-xl object-cover' onerror='this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff''>\n                    <div>\n                        <div class='font-semibold text-gray-800'>${p.nome}</div>\n                        <div class='text-xs text-gray-500'>${p.telefone} ${p.email ? '• ' + p.email : ''}</div>\n                    </div>\n                </div>\n            </td>\n            <td class='px-6 py-4'>\n                <div class='text-gray-700'>${p.cidade}/${p.uf}</div>\n                <div class='text-xs text-gray-500'>📍 ${p.bairro}</div>\n            </td>\n            <td class='px-6 py-4'>\n                <span class='bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold'>${categoriaIcone(p.categoria)} ${p.categoria}</span>\n            </td>\n            <td class='px-6 py-4'>\n                <div class='flex items-center gap-1 star-filled'><i class='fas fa-star'></i><span class='font-bold text-gray-800 ml-1'>${calcularMedia(p).toFixed(1)}</span></div>\n                <div class='text-xs text-gray-500'>${p.numeroAvaliacoes} avaliações</div>\n            </td>\n            <td class='px-6 py-4 font-bold text-orange-600'>R$ ${p.precoHora.toFixed(2)}/h</td>\n            <td class='px-6 py-4'>\n                ${p.assinaturaAtiva\n                    ? '<span class='bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit'><i class='fas fa-check'></i>Ativo</span>'\n                    : '<span class='bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit'><i class='fas fa-ban'></i>Inativo</span>'\n                }\n            </td>\n            <td class='px-6 py-4'>\n                <div class='flex gap-2'>\n                    ${p.assinaturaAtiva\n                        ? `<button onclick='toggleAssinatura(´${p.id}´)' class='bg-yellow-100 hover:bg-yellow-200 text-yellow-800 p-2 rounded-lg transition' title='Desativar'><i class='fas fa-toggle-on'></i></button>`\n                        : `<button onclick='toggleAssinatura(´${p.id}´)' class='bg-blue-100 hover:bg-blue-200 text-blue-800 p-2 rounded-lg transition' title='Ativar'><i class='fas fa-toggle-off'></i></button>`\n                    }\n                    <button onclick='verificarPro('${p.id}')' class='bg-green-100 hover:bg-green-200 text-green-800 p-2 rounded-lg transition' title='Verificar'><i class='fas fa-check-circle'></i></button>\n                    <button onclick='excluirPro('${p.id}')' class='bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition' title='Excluir'><i class='fas fa-trash'></i></button>\n                </div>\n            </td>\n        </tr>\n    `).join('');
 }
 
 function toggleAssinatura(id) {
