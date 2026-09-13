@@ -2202,11 +2202,36 @@ let authUsuarioRole = null;
 // 🔥🔥 NUCLEAR SAFE MODE (erro NÃO trava tela!)
 // window.onerror + unhandledrejection captura QUALQUER erro
 // de JS global e força render da UI + lista local.
+//
+// MELHORIA 2026-09-13:
+//  - Timeout 15s AGORA SÓ DISPARA se FALTA CONEXÃO (não deixa
+//    badge cair para 🔴 Local quando Firebase já conectou em 🟢/☁️)
+//  - unhandledrejection IGNORA erros esperados do Firestore:
+//    permission-denied, unauthenticated, network, timeout,
+//    cancelled, aborted (esses NÃO devem quebrar a UI!)
 // ============================================================
+let _fireStoreConectouSucesso = false;
+function _ajeitaMarcarFirestoreConectou() { try { _fireStoreConectouSucesso = true; } catch(_) {} }
+
 (function _ajeitaNuclearSafeMode() {
     try {
+        function _ajeitaErroFirestoreEsperado(msgErro) {
+            try {
+                if (!msgErro) return false;
+                const s = String(msgErro || '').toLowerCase();
+                return (s.includes('permission') || s.includes('unauthenticated') || s.includes('unauthorized')
+                    || s.includes('network') || s.includes('offline') || s.includes('timeout')
+                    || s.includes('cancelled') || s.includes('aborted') || s.includes('insufficient permissions')
+                    || s.includes('deadline-exceeded') || s.includes('unavailable'));
+            } catch (_) { return false; }
+        }
         function _ajeitaForcarUiNaoTravar(motivo, detalhe) {
             try {
+                // MELHORIA: Se Firestore já conectou com sucesso, NÃO sobrepõe badge 🔴
+                if (_fireStoreConectouSucesso && motivo && motivo.startsWith('fallback-absoluto')) {
+                    console.log('[Safe Mode] Ignorado (Firestore conectou em ' + Date.now() + '):', motivo);
+                    return;
+                }
                 console.error('🔥 AJEITA SAFE MODE ACIONADO (' + motivo + '):', detalhe);
                 // 1) Carrega local
                 try {
@@ -2254,20 +2279,34 @@ let authUsuarioRole = null;
         }
 
         window.onerror = function ajeitaOnError(msg, url, linha, col, err) {
-            try { _ajeitaForcarUiNaoTravar('onerror-linha-' + linha, (err ? (err.message || err) : String(msg))); } catch (_) {}
-            // Não retorna true para não suprimir o log no console
+            const detalhe = err ? (err.message || err) : String(msg);
+            if (_ajeitaErroFirestoreEsperado(detalhe)) {
+                console.warn('[Safe Mode] Ignora erro esperado (onerror):', detalhe);
+                return false;
+            }
+            try { _ajeitaForcarUiNaoTravar('onerror-linha-' + linha, detalhe); } catch (_) {}
             return false;
         };
         window.addEventListener('unhandledrejection', function ajeitaUnhandled(e) {
             try {
-                const reason = e && e.reason ? (e.reason.message || e.reason) : 'promessa rejeitada sem motivo';
+                const reason = e && e.reason ? (e.reason.message || e.reason.code || String(e.reason)) : 'promessa rejeitada sem motivo';
+                if (_ajeitaErroFirestoreEsperado(reason) || (e.reason && _ajeitaErroFirestoreEsperado(e.reason.code))) {
+                    console.warn('[Safe Mode] Ignora promise rejeitada esperada (Firestore):', String(reason).slice(0, 120));
+                    return;
+                }
                 _ajeitaForcarUiNaoTravar('unhandled-promise', String(reason).slice(0, 120));
             } catch (_) {}
         });
 
-        // Fallback absoluto: 15 segundos após abrir a página, força UI
+        // Fallback absoluto: 15 segundos após abrir a página, SÓ FORÇA UI se ainda NÃO conectou
         setTimeout(function () {
-            try { _ajeitaForcarUiNaoTravar('fallback-absoluto-15s', ''); } catch (_) {}
+            try {
+                if (!_fireStoreConectouSucesso) {
+                    _ajeitaForcarUiNaoTravar('fallback-absoluto-15s', '');
+                } else {
+                    console.log('[Safe Mode] Fallback 15s IGNORADO: Firestore conectou com sucesso.');
+                }
+            } catch (_) {}
         }, 15000);
     } catch (eSafeBoot) { console.warn('safe mode boot falhou:', eSafeBoot); }
 })();
@@ -2771,6 +2810,10 @@ async function carregarDadosFirestore() {
     // 🔥 LISTENER em tempo real (onSnapshot) — atualiza automaticamente quando
     //    qualquer profissional é criado/editado/apagado por QUALQUER usuário.
     try { if (USAR_FIREBASE && firebaseDb && modoBadgeFim !== 'local-erro' && modoBadgeFim !== 'local-offline') iniciarListenerProfissionais(); } catch (_) {}
+    // 🔥 MARCA SUCESSO FIRESTORE (Safe Mode ignorado se chegou aqui)
+    if (USAR_FIREBASE && firebaseInicializado && modoBadgeFim !== 'local-erro' && modoBadgeFim !== 'local-offline' && modoBadgeFim !== 'sem-firebase') {
+        try { _ajeitaMarcarFirestoreConectou(); } catch(_) {}
+    }
     // 🔥 O FINALLY do carregarDados() não precisa mais salvar se atualizarBadgeFirestore aqui
     atualizarBadgeFirebase(modoBadgeFim, detalheErro);
 }
@@ -3420,6 +3463,7 @@ async function forcarRodarSeedFirestore() {
         try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
 
         atualizarBadgeFirebase('firebase', 'seed importado com sucesso');
+        try { _ajeitaMarcarFirestoreConectou(); } catch(_) {}
         toast('success', '✅ Dados demo importados!', `${profissionais.length} profissionais + config/admin gravados no Firestore (nuvem)!\n\n✅ Agora abre em QUALQUER celular do mundo!\n\n📱 Recarregue em outros dispositivos para confirmar que a lista aparece lá também.`, 16000);
         console.log(`🔥 Seed forçado importou ${profissionais.length} profissionais no Firestore. IDs:`, [...seedIds]);
         if (btn && textoBtnOriginal) { btn.disabled = false; btn.innerHTML = textoBtnOriginal; }
