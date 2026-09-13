@@ -41,21 +41,32 @@
 
     <!-- ================ BANNER REGAS FIRESTORE NÃO PUBLICADAS (aparece só quando badge = local-erro) ================ -->
     <div id="bannerRegrasFirestore" class="hidden sticky top-0 z-[60] w-full">
-        <div class="bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 px-4 md:px-6 shadow-2xl">
-            <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center gap-3 md:gap-5">
-                <div class="flex items-start gap-3 flex-1">
+        <div class="bg-gradient-to-r from-red-600 to-rose-600 text-white py-3 px-3 md:px-5 shadow-2xl">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center gap-2.5 md:gap-4">
+                <div class="flex items-start gap-2.5 flex-1">
                     <i class="fas fa-exclamation-triangle text-yellow-300 text-xl mt-0.5 shrink-0"></i>
                     <div class="flex-1 min-w-0">
-                        <div class="font-black text-base md:text-lg leading-tight">⚠️ Regras do Firestore NÃO PUBLICADAS!</div>
-                        <div class="text-white/90 text-xs md:text-sm mt-0.5">
-                            Sem publicar, os dados <b class="text-yellow-200">só aparecem no SEU celular</b>. Clique no botão abaixo → cola → Publicar.
+                        <div class="font-black text-sm md:text-lg leading-tight">⚠️ Dados SÓ neste aparelho!</div>
+                        <div class="text-white/92 text-[11px] md:text-sm mt-0.5">
+                            Badge 🔴 = <b class="text-yellow-200">Firestore falhando</b>. Clique nos botões abaixo para ver o motivo e arrumar em 1 minuto.
                         </div>
                     </div>
                 </div>
-                <button onclick="copiarRegrasFirestoreEAbrirConsole()" class="shrink-0 flex items-center justify-center gap-2 bg-white text-red-700 hover:bg-yellow-50 font-black text-sm md:text-base px-4 md:px-5 py-2.5 md:py-3 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition">
-                    <i class="fas fa-copy"></i>
-                    Copiar regras + Abrir Console
-                </button>
+                <div class="flex flex-wrap gap-2 shrink-0">
+                    <button onclick="diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
+                        <i class="fas fa-stethoscope"></i>
+                        <span class="hidden sm:inline">Diagnóstico</span>
+                        <span class="sm:hidden">Testar</span>
+                    </button>
+                    <button onclick="verUltimoErroFirestore()" class="flex items-center justify-center gap-1.5 bg-white/95 hover:bg-white text-red-700 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
+                        <i class="fas fa-eye"></i>
+                        Ver erro
+                    </button>
+                    <button onclick="copiarRegrasFirestoreEAbrirConsole()" class="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
+                        <i class="fas fa-copy"></i>
+                        Regras + Console
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -2167,6 +2178,8 @@ const MERCADO_PAGO = {
 let firebaseApp, firebaseAuth, firebaseDb;
 let firebaseInicializado = false;
 let USAR_FIREBASE = false;
+// Último erro Firestore detalhado (code + message + horário) para diagnóstico
+let ULTIMO_ERRO_FIRESTORE = null;
 
 let profissionais = [];
 let solicitacoes = [];
@@ -2564,20 +2577,31 @@ async function forcarRecarregarFirestore() {
 }
 
 // Helper de toast genérico para erros Firestore (instrui usuário a publicar regras)
+function registrarErroFirestore(acao, err) {
+    try {
+        ULTIMO_ERRO_FIRESTORE = {
+            acao: acao || '?',
+            code: err?.code || (err?.name ? String(err.name) : ''),
+            message: err?.message || String(err || 'Erro desconhecido'),
+            horario: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        };
+        console.error('[FIRESTORE ERRO] Ação:', ULTIMO_ERRO_FIRESTORE.acao, 'Code:', ULTIMO_ERRO_FIRESTORE.code, 'Msg:', ULTIMO_ERRO_FIRESTORE.message, 'Horário:', ULTIMO_ERRO_FIRESTORE.horario);
+    } catch (e) { console.warn('registrarErroFirestore falhou:', e); }
+}
 function toastErroFirestore(acao, err) {
-    const cod = err?.code || '';
-    const msg = err?.message || String(err || '');
+    registrarErroFirestore(acao, err);
+    const cod = ULTIMO_ERRO_FIRESTORE?.code || '';
+    const msg = ULTIMO_ERRO_FIRESTORE?.message || String(err || '');
     let titulo = 'Erro no Firestore';
-    let corpo = 'Tente novamente em alguns segundos.';
+    let corpo = 'Tente novamente em alguns segundos. Clique no botão "Ver erro detalhado" no banner vermelho.';
     if (cod.includes('permission') || cod.includes('unauthenticated') || msg.includes('insufficient permissions') || msg.includes('permission')) {
         titulo = '⚠️ REGRAS FIRESTORE NÃO PUBLICADAS!';
-        corpo = 'Abra o Console Firebase → Firestore → Rules → Cole o conteúdo de firestore.rules e clique em PUBLICAR. SÓ ASSIM os dados aparecem em outros celulares. Use o botão vermelho no topo da página para copiar regras e abrir direto.';
-    } else if (cod.includes('deadline') || msg.includes('timeout') || msg.includes('Timeout') || msg.includes('network')) {
+        corpo = 'Abra o Console Firebase → Firestore → Rules → Cole o conteúdo de firestore.rules e clique em PUBLICAR. SÓ ASSIM os dados aparecem em outros celulares. Use os botões no banner vermelho no topo para copiar regras e abrir direto.';
+    } else if (cod.includes('deadline') || msg.includes('timeout') || msg.includes('Timeout') || msg.includes('network') || cod.includes('unavailable')) {
         titulo = 'Sem conexão com Firestore';
         corpo = 'Verifique sua internet. Dados estão sendo salvos apenas neste aparelho por enquanto.';
     }
-    try { toast('error', titulo, corpo, 8000); } catch (_) { alert(titulo + '\n\n' + corpo); }
-    console.error('[FIRESTORE ERRO] Ação: ', acao, 'Code:', cod, 'Msg:', msg);
+    try { toast('error', titulo, corpo, 9000); } catch (_) { alert(titulo + '\n\n' + corpo); }
 }
 
 // ============================================================
@@ -2656,6 +2680,175 @@ async function copiarRegrasFirestoreEAbrirConsole() {
         console.error('copiarRegrasFirestoreEAbrirConsole erro:', e);
         toast('error', 'Erro', 'Tente novamente ou acesse manualmente: console.firebase.google.com → projeto ajeita-app-c9fc2 → Firestore → Rules');
     }
+}
+
+// ============================================================
+// DIAGNÓSTICO FIRESTORE (botão amarelo no banner vermelho)
+// ============================================================
+function verUltimoErroFirestore() {
+    try {
+        if (!ULTIMO_ERRO_FIRESTORE) {
+            toast('info', 'Nenhum erro registrado ainda', 'Clique no botão "Diagnóstico" amarelo para rodar 4 testes e descobrir o problema.', 8000);
+            return;
+        }
+        const e = ULTIMO_ERRO_FIRESTORE;
+        let titulo, corpo;
+        const temCode = !!e.code;
+        const codeBaixo = String(e.code || '').toLowerCase();
+        const msgBaixo = String(e.message || '').toLowerCase();
+        if (temCode && (codeBaixo.includes('permission') || codeBaixo.includes('unauthenticated') || msgBaixo.includes('permission') || msgBaixo.includes('insufficient permissions'))) {
+            titulo = '🔒 ERRO DE PERMISSÃO (Regras Firestore NÃO PUBLICADAS)';
+            corpo = `Problema: ${e.code} — ${e.message}\n\nComo resolver (2 cliques, 30s):\n1) Clique no botão azul "Regras + Console"\n2) Cole as regras (já vem copiadas) → CLIQUE EM PUBLICAR\n3) Atualize a página. O badge ficará 🟢 Nuvem.\n\nAção que falhou: ${e.acao}\nHorário: ${e.horario}`;
+        } else if (temCode && (codeBaixo.includes('network') || codeBaixo.includes('unavailable') || codeBaixo.includes('deadline') || msgBaixo.includes('timeout'))) {
+            titulo = '📶 ERRO DE CONEXÃO (Sem internet / Firestore offline)';
+            corpo = `Problema: ${e.code} — ${e.message}\n\nComo resolver:\n• Verifique se tem internet (Wi-Fi ou 4G)\n• Ative/desative o modo avião para resetar\n• Clique no badge vermelho ao lado do logo para recarregar\n• Tente novamente em 30 segundos\n\nAção: ${e.acao}\nHorário: ${e.horario}`;
+        } else if (temCode && codeBaixo.includes('not-found')) {
+            titulo = '🧱 Firestore NÃO CRIADO no projeto!';
+            corpo = `Problema: ${e.code} — ${e.message}\n\nComo resolver (1 clique no Console):\nAcesse Console → Firestore Database → Criar banco → Modo Produção → Região: southamerica-east1 (São Paulo).\nDepois volte e clique em "Regras + Console".\n\nAção: ${e.acao}\nHorário: ${e.horario}`;
+        } else {
+            titulo = `❌ Erro (${e.code || 'código nulo'}): ${e.acao}`;
+            corpo = `Mensagem completa: ${e.message}\n\nAção: ${e.acao}\nHorário: ${e.horario}\n\nTente clicar em "Diagnóstico" (botão amarelo) para rodar 4 testes separados.`;
+        }
+        toast('error', titulo, corpo, 14000);
+        try { console.table(e); } catch (_) {}
+    } catch (errCritico) {
+        console.error('verUltimoErroFirestore:', errCritico);
+        alert('Erro: ' + errCritico);
+    }
+}
+
+async function diagnosticarFirestore() {
+    const resultados = [];
+    let totalOk = 0;
+    atualizarBadgeFirebase('carregando');
+    toast('info', '🔬 Rodando diagnóstico...', '4 testes em ~5 segundos. Por favor aguarde.', 5000);
+
+    // ================================================================
+    // TESTE 1: Firebase SDK INICIALIZADO?
+    // ================================================================
+    try {
+        if (firebaseInicializado && firebaseDb && firebaseAuth) {
+            resultados.push({ ok: true, nome: '1. Firebase SDK', msg: 'SDKs app/auth/firestore inicializados corretamente.' });
+            totalOk++;
+        } else if (!firebaseInicializado) {
+            resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Firebase NÃO inicializado (inicializarFirebase() não rodou). Verifique conexão com CDN.' });
+        } else if (!firebaseDb) {
+            resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Firestore (firebaseDb) NÃO criado. Reinstale os SDKs.' });
+        } else {
+            resultados.push({ ok: false, nome: '1. Firebase SDK', msg: 'Auth (firebaseAuth) NÃO criado. Verifique a URL do SDK auth-compat.js.' });
+        }
+    } catch (e) { resultados.push({ ok: false, nome: '1. Firebase SDK', msg: String(e) }); }
+
+    // ================================================================
+    // TESTE 2: CONECTIVIDADE com servidor Firestore (network)
+    // ================================================================
+    let conectividadeOk = false;
+    try {
+        if (!USAR_FIREBASE) {
+            resultados.push({ ok: false, nome: '2. Conectividade', msg: 'MODO LOCAL (USAR_FIREBASE = false). Verifique as chaves do firebaseConfig_REAL no topo do código JS. Devem ser reais, não placeholders.' });
+        } else {
+            const netCheck = await Promise.race([
+                (async () => {
+                    const col = firebaseDb.collection('config').limit(1);
+                    await col.get(); // se der permission denied aqui também, cai no catch interno abaixo
+                    return true;
+                })(),
+                new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), 7000))
+            ]);
+            conectividadeOk = !!netCheck;
+            resultados.push({ ok: true, nome: '2. Conectividade', msg: 'Rede OK — seu celular consegue conversar com os servidores do Firebase.' });
+            totalOk++;
+        }
+    } catch (eNet) {
+        const m = (eNet?.message || String(eNet)).toLowerCase();
+        const c = String(eNet?.code || '').toLowerCase();
+        if (m.includes('timeout')) {
+            resultados.push({ ok: false, nome: '2. Conectividade', msg: 'TIMEOUT em 7s — Firestore não respondeu. Causa mais comum: SEM INTERNET ou firewall bloqueando porta 443.' });
+        } else if (m.includes('network') || c.includes('unavailable')) {
+            resultados.push({ ok: false, nome: '2. Conectividade', msg: 'SEM CONEXÃO REDE (Erro network/unavailable). Ative/desative o modo avião e tente novamente.' });
+        } else {
+            conectividadeOk = true; // mesmo com permission, não é network
+            resultados.push({ ok: true, nome: '2. Conectividade', msg: 'Rede OK (respondeu com erro não-rede). Vamos testar regras no passo 3.' });
+            totalOk++;
+        }
+    }
+
+    // ================================================================
+    // TESTE 3: LEITURA DADOS (profissionais) → testa se regra allow read publicada
+    // ================================================================
+    let leituraOk = false;
+    if (resultados[0].ok && USAR_FIREBASE) {
+        try {
+            const snap = await Promise.race([
+                firebaseDb.collection('profissionais').limit(3).get(),
+                new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_LEITURA')), 12000))
+            ]);
+            resultados.push({ ok: true, nome: '3. Regras LEITURA (profissionais)', msg: `✅ Leitura LIBERADA! Encontrados ${snap?.docs?.length || 0} docs no /profissionais. Regra allow read publicada corretamente.` });
+            leituraOk = true; totalOk++;
+        } catch (eLer) {
+            const mLer = (eLer?.message || String(eLer)).toLowerCase();
+            const cLer = String(eLer?.code || '').toLowerCase();
+            registrarErroFirestore('Diagnóstico ler profissionais', eLer);
+            if (cLer.includes('permission') || cLer.includes('unauthenticated') || mLer.includes('insufficient')) {
+                resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: '🔒 BLOCKED (permission-denied). REGRAS NÃO PUBLICADAS! Clique no botão AZUL "Regras + Console" → cole → PUBLICAR.' });
+            } else if (mLer.includes('timeout_leitura') || mLer.includes('timeout')) {
+                resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: 'TIMEOUT (12s). Provavelmente regras estão publicadas mas Firestore ainda propagando. Aguarde 1 minuto e clique no badge para recarregar.' });
+            } else if (cLer.includes('not-found')) {
+                resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: '🧱 FIRESTORE NÃO CRIADO! Vá Console → Firestore Database → Criar banco → Modo Produção → Região São Paulo (southamerica-east1).' });
+            } else {
+                resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: `Erro ${cLer || 'desconhecido'}: ${mLer}. Clique no botão VER ERRO para mais detalhes.` });
+            }
+        }
+    } else {
+        resultados.push({ ok: false, nome: '3. Regras LEITURA', msg: 'Pulado (ver passo 1 ou 2).' });
+    }
+
+    // ================================================================
+    // TESTE 4: ESCRITA DADOS (SÓ se usuário logado) → testa allow write regra
+    // ================================================================
+    if (authUsuarioAtual && authUsuarioRole && (authUsuarioRole === 'profissional' || authUsuarioRole === 'cliente')) {
+        try {
+            const uid = authUsuarioAtual.uid;
+            const colecao = authUsuarioRole === 'profissional' ? 'profissionais' : 'clientes';
+            const docRef = firebaseDb.collection(colecao).doc(uid);
+            await Promise.race([
+                docRef.set({ _diagWrite: new Date().toISOString() }, { merge: true }),
+                new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_ESCRITA')), 12000))
+            ]);
+            resultados.push({ ok: true, nome: `4. Regras ESCRITA (${colecao}/${uid.substring(0,6)}...)`, msg: `✅ Escrita LIBERADA! Regra allow write (uid dono do documento) publicada.` });
+            totalOk++;
+        } catch (eEscrever) {
+            const mEs = (eEscrever?.message || String(eEscrever)).toLowerCase();
+            const cEs = String(eEscrever?.code || '').toLowerCase();
+            registrarErroFirestore('Diagnóstico escrever perfil', eEscrever);
+            if (cEs.includes('permission') || cEs.includes('unauthenticated') || mEs.includes('insufficient')) {
+                resultados.push({ ok: false, nome: '4. Regras ESCRITA', msg: '🔒 BLOCKED (permission-denied). REGRAS NÃO PUBLICADAS! Botão AZUL "Regras + Console" → cole → PUBLICAR.' });
+            } else {
+                resultados.push({ ok: false, nome: '4. Regras ESCRITA', msg: `Erro ${cEs || 'desconhecido'}: ${mEs}. Ver botão VER ERRO.` });
+            }
+        }
+    } else {
+        resultados.push({ ok: false, nome: '4. Regras ESCRITA (precisa logar)', msg: 'Pulado (não há usuário cliente/profissional logado). Logue-se para testar também a escrita.' });
+    }
+
+    // ================================================================
+    // EXIBE RESUMO FINAL
+    // ================================================================
+    const ok = resultados.filter(r => r.ok).length;
+    const total = resultados.length;
+    const titulo = (ok === total) ? `🎉 DIAGNÓSTICO APROVADO (${ok}/${total})` : (ok === 0) ? `❌ TUDO FALHOU (${ok}/${total})` : `⚠️ PARCIAL (${ok}/${total} OK)`;
+    const corpoStr = resultados.map(r => `${r.ok ? '✅' : '❌'} ${r.nome}\n   ${r.msg}`).join('\n\n');
+    let rodape;
+    if (ok === total) {
+        rodape = '\n\n🔥 Tudo certo! Clique no badge vermelho para recarregar → deve ficar VERDE 🟢 agora. Se ainda ficar vermelho, recarregue a página.';
+        atualizarBadgeFirebase('firebase');
+    } else {
+        const temPerm = resultados.some(r => String(r.msg).toLowerCase().includes('permission') || String(r.msg).toLowerCase().includes('regras') || String(r.msg).toLowerCase().includes('publicada'));
+        rodape = (temPerm) ? '\n\n👉 RESOLUÇÃO IMEDIATA (95% dos casos): clique no botão AZUL "Regras + Console" no banner → cole → PUBLICAR. É ISSO QUE FALTA!' : '\n👉 Clique no botão VER ERRO (branco) para detalhes ou envie esta mensagem para o suporte.';
+    }
+    toast((ok === total) ? 'success' : 'error', titulo, corpoStr + rodape, 18000);
+    // Se ainda falhou: volta para local-erro (não muda), se tudo ok: permanece firebase
+    if (ok < total) atualizarBadgeFirebase('local-erro', 'diagnostico_falhou');
 }
 
 // ============================================================
