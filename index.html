@@ -76,14 +76,55 @@
                     </a>
                 </nav>
 
-                <!-- CTA Buttons Desktop (Cliente + Profissional lado a lado) -->
+                <!-- CTA Buttons Desktop (Cliente + Profissional lado a lado) → OU Menu Usuário Logado -->
                 <div class="hidden md:flex items-center gap-3">
-                    <button id="headerBtnEntrar" onclick="authMudarPerfil('cliente');navigateTo('auth');" class="gradient-primary hover:opacity-90 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg transition transform hover:scale-105">
-                        <i class="fas fa-user mr-2"></i>Entrar
-                    </button>
-                    <button onclick="authMudarPerfil('profissional');navigateTo('auth');" class="gradient-accent hover:opacity-90 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg transition transform hover:scale-105">
-                        <i class="fas fa-user-plus mr-2"></i>Cadastrar como Profissional
-                    </button>
+                    <!-- Botões quando DESLOGADO -->
+                    <div id="headerBotoesDeslogado" class="flex items-center gap-3">
+                        <button id="headerBtnEntrar" onclick="authMudarPerfil('cliente');navigateTo('auth');" class="gradient-primary hover:opacity-90 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg transition transform hover:scale-105">
+                            <i class="fas fa-user mr-2"></i>Entrar
+                        </button>
+                        <button onclick="authMudarPerfil('profissional');navigateTo('auth');" class="gradient-accent hover:opacity-90 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg transition transform hover:scale-105">
+                            <i class="fas fa-user-plus mr-2"></i>Cadastrar como Profissional
+                        </button>
+                    </div>
+                    <!-- Menu quando LOGADO (avatar + nome + dropdown) -->
+                    <div id="headerMenuLogado" class="hidden relative">
+                        <button onclick="toggleMenuUsuario()" class="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full hover:bg-blue-50 border border-gray-200 shadow-sm transition group">
+                            <img id="headerAvatar" src="https://ui-avatars.com/api/?name=Usuario&background=3b82f6&color=fff&size=200&bold=true" alt="Foto perfil" class="w-9 h-9 rounded-full object-cover border-2 border-blue-500">
+                            <div class="flex flex-col items-start text-left leading-tight">
+                                <span id="headerNomeUsuario" class="text-sm font-bold text-gray-800 max-w-[140px] truncate">Usuário</span>
+                                <span id="headerRoleUsuario" class="text-xs text-blue-600 font-semibold">Cliente</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                        </button>
+                        <!-- Dropdown menu -->
+                        <div id="headerMenuDropdown" class="hidden absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 slide-up">
+                            <div class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-b border-gray-100">
+                                <div class="flex items-center gap-3">
+                                    <img id="headerAvatarDropdown" src="https://ui-avatars.com/api/?name=Usuario&background=3b82f6&color=fff&size=200" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow">
+                                    <div class="min-w-0">
+                                        <div id="headerNomeDropdown" class="font-black text-gray-900 truncate">Usuário</div>
+                                        <div id="headerEmailDropdown" class="text-xs text-gray-500 truncate">sem email</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="py-1.5">
+                                <button id="menuAbrirPerfil" onclick="headerMenuAbrirPerfil()" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium">
+                                    <i class="fas fa-user-edit w-5 text-blue-600"></i> Meu perfil
+                                </button>
+                                <button id="menuAbrirPagamento" onclick="navigateTo('pagamento');toggleMenuUsuario(false);" class="hidden w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium">
+                                    <i class="fas fa-credit-card w-5 text-amber-500"></i> Assinatura / Pagamento
+                                </button>
+                                <button onclick="navigateTo('solicitacoes');toggleMenuUsuario(false);" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium">
+                                    <i class="fas fa-clipboard-list w-5 text-green-600"></i> Meus pedidos
+                                </button>
+                                <div class="h-px bg-gray-100 my-1"></div>
+                                <button onclick="authLogout();toggleMenuUsuario(false);" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-bold">
+                                    <i class="fas fa-sign-out-alt w-5"></i> Sair da conta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -94,6 +135,26 @@
 
             <!-- Mobile Menu -->
             <div id="mobileMenu" class="hidden lg:hidden pb-4 space-y-2">
+                <!-- BLOCO USUÁRIO LOGADO (TOPO) -->
+                <div id="mobileBlocoUsuarioLogado" class="hidden px-3 pt-3 pb-2">
+                    <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 shadow-lg text-white">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img id="mobileAvatar" src="https://ui-avatars.com/api/?name=Usuario&background=ffffff&color=1d4ed8&size=200&bold=true" class="w-14 h-14 rounded-full object-cover border-2 border-white/50">
+                            <div class="min-w-0 flex-1">
+                                <div id="mobileNomeUsuario" class="font-black text-lg truncate">Usuário</div>
+                                <div id="mobileRoleUsuario" class="text-xs text-blue-100 font-semibold uppercase tracking-wide">Cliente</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="headerMenuAbrirPerfil();toggleMobileMenu();" class="flex items-center justify-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur rounded-xl py-2.5 text-sm font-bold transition">
+                                <i class="fas fa-user-edit"></i> Meu perfil
+                            </button>
+                            <button onclick="authLogout();toggleMobileMenu();" class="flex items-center justify-center gap-1.5 bg-red-500/90 hover:bg-red-500 rounded-xl py-2.5 text-sm font-bold transition">
+                                <i class="fas fa-sign-out-alt"></i> Sair
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <a href="#" onclick="authMudarPerfil('cliente');navigateTo('auth');toggleMobileMenu();return false;" class="block px-4 py-3 rounded-lg bg-blue-50 text-blue-700 font-bold border border-blue-100">
                     <i class="fas fa-sign-in-alt mr-2 text-blue-600"></i> Entrar como Cliente
                 </a>
@@ -899,14 +960,79 @@
             </div>
         </section>
 
-        <!-- ================= VIEW: PAGAMENTO PROFISSIONAL (R$ 0,10 TESTE PIX + CARTÃO) ================= -->
+        <!-- ================= VIEW: ESCOLHA DE PERFIL (pós-login, quando ainda não tem perfil definido) ================= -->
+        <section id="view-escolha-perfil" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10 pb-28">
+            <div class="max-w-2xl mx-auto px-4 md:px-8">
+                <div class="text-center mb-10">
+                    <div class="inline-flex items-center justify-center w-20 h-20 gradient-primary rounded-3xl shadow-xl mb-5">
+                        <i class="fas fa-user-circle text-white text-4xl"></i>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-3">Bem-vindo! 👋</h2>
+                    <p class="text-gray-600 text-lg max-w-md mx-auto">Você já está autenticado. Agora escolha como quer usar a plataforma:</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-5 mb-8">
+                    <!-- Card CLIENTE (AZUL) -->
+                    <div onclick="escolherPerfil('cliente')" class="cursor-pointer group bg-white rounded-3xl p-7 md:p-8 shadow-lg hover:shadow-2xl border-2 border-transparent hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="flex items-start justify-between mb-5">
+                            <div class="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                                <i class="fas fa-user text-white text-2xl"></i>
+                            </div>
+                            <i class="fas fa-arrow-right text-gray-300 text-2xl group-hover:text-blue-600 group-hover:translate-x-2 transition-all"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-900 mb-2">Sou Cliente</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">
+                            Quero <b class="text-blue-700">contratar profissionais</b> para serviços domésticos, maridos de aluguel, diaristas, eletricistas e mais.
+                        </p>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-600"></i> Agendar serviços na hora</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-600"></i> Avaliar profissionais</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-600"></i> Contato direto por WhatsApp</li>
+                        </ul>
+                        <button class="mt-6 w-full gradient-primary text-white font-bold py-3.5 rounded-2xl shadow-lg group-hover:shadow-xl transition">
+                            Continuar como Cliente
+                        </button>
+                    </div>
+
+                    <!-- Card PROFISSIONAL (AMARELO/LARANJA) -->
+                    <div onclick="escolherPerfil('profissional')" class="cursor-pointer group bg-white rounded-3xl p-7 md:p-8 shadow-lg hover:shadow-2xl border-2 border-transparent hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="flex items-start justify-between mb-5">
+                            <div class="w-16 h-16 gradient-accent rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                                <i class="fas fa-user-tie text-white text-2xl"></i>
+                            </div>
+                            <i class="fas fa-arrow-right text-gray-300 text-2xl group-hover:text-amber-600 group-hover:translate-x-2 transition-all"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-900 mb-2">Sou Profissional</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">
+                            Quero <b class="text-amber-700">oferecer meus serviços</b> e ser encontrado por milhares de clientes da minha região.
+                        </p>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-500"></i> Perfil destaque na lista</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-500"></i> Receber solicitações diretas</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-500"></i> Assinatura R$0,10 teste (1 ano)</li>
+                        </ul>
+                        <button class="mt-6 w-full gradient-accent text-white font-bold py-3.5 rounded-2xl shadow-lg group-hover:shadow-xl transition">
+                            Continuar como Profissional
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button onclick="authLogout();" class="text-gray-500 hover:text-red-600 text-sm font-medium underline underline-offset-4">
+                        <i class="fas fa-sign-out-alt mr-1.5"></i> Sair e usar outra conta
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW: PAGAMENTO PROFISSIONAL (R$ 0,10 TESTE PIX + CARTÃO → OU PAGAMENTO REAL MERCADO PAGO) ================= -->
         <section id="view-pagamento" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10 pb-28">
             <div class="max-w-2xl mx-auto px-4 md:px-8">
-                <!-- Header amarelo -->
-                <div class="bg-gradient-to-r from-amber-400 to-orange-500 rounded-3xl p-6 md:p-8 shadow-lg text-white mb-8">
+                <!-- Header amarelo (MODO TESTE quando MERCADO_PAGO sem chaves) / Verde Produção (quando chaves preenchidas) -->
+                <div id="pagHeaderContainer" class="bg-gradient-to-r from-amber-400 to-orange-500 rounded-3xl p-6 md:p-8 shadow-lg text-white mb-8">
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <div class="inline-block bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-bold mb-3">
+                            <div id="pagModoLabel" class="inline-block bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-bold mb-3">
                                 💎 MODO TESTE — R$ 0,10
                             </div>
                             <h2 class="text-2xl md:text-3xl font-black leading-tight mb-2">
@@ -915,12 +1041,12 @@
                             <p class="text-white/90 font-medium mb-1">Libere seu perfil na plataforma agora mesmo</p>
                             <p class="text-4xl md:text-5xl font-black mt-3 tracking-tight">
                                 <span class="text-sm align-top mr-1 opacity-90">R$</span>
-                                <span>0,10</span>
+                                <span id="pagValorLabel">0,10</span>
                             </p>
                             <p class="text-xs mt-2 text-white/80">Assinatura de 30 dias — após pagamento, seu perfil aparece em TODAS as buscas</p>
                         </div>
                         <div class="hidden sm:block">
-                            <div class="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center text-5xl backdrop-blur">
+                            <div id="pagIconContainer" class="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center text-5xl backdrop-blur">
                                 🔒
                             </div>
                         </div>
@@ -1029,7 +1155,7 @@
 
                     <hr class="my-6 border-gray-100">
 
-                    <button type="button" onclick="pagamentoSimularAprovado('pix')" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2">
+                    <button type="button" id="pagBtnSimularPagamentoPix" onclick="pagamentoSimularAprovado('pix')" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2">
                         <i class="fas fa-check-circle"></i> Já efetuei o pagamento (simular)
                     </button>
                 </div>
@@ -1092,7 +1218,7 @@
                             <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">CPF do titular</label>
                             <input type="tel" id="cartaoCpf" maxlength="14" placeholder="000.000.000-00" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">
                         </div>
-                        <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2 mt-4">
+                        <button type="submit" id="pagBtnCartaoSubmit" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2 mt-4">
                             🔒 Pagar R$ 0,10 agora
                         </button>
                     </form>
@@ -1717,9 +1843,12 @@
                 <i class="fas fa-briefcase text-2xl"></i>
                 <span class="text-xs font-semibold">Pedidos</span>
             </button>
-            <button onclick="navigateTo('auth')" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600" data-view="auth">
-                <i class="fas fa-user text-2xl"></i>
-                <span class="text-xs font-semibold">Entrar</span>
+            <button onclick="navigateTo('auth')" id="btnNavEntrar" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600" data-view="auth">
+                <div class="relative">
+                    <i id="btnNavEntrarIcone" class="fas fa-user text-2xl"></i>
+                    <img id="btnNavEntrarAvatar" src="" alt="Avatar" class="hidden w-7 h-7 rounded-full object-cover border-2 border-blue-500 -mt-0.5">
+                </div>
+                <span id="btnNavEntrarLabel" class="text-xs font-semibold truncate max-w-full px-1">Entrar</span>
             </button>
         </div>
     </nav>
@@ -1991,6 +2120,22 @@ const firebaseConfig_PLACEHOLDER = {
 // ============================================================
 
 // ============================================================
+// MERCADO PAGO (Pagamentos Reais: PIX + Cartão)
+// ============================================================
+// 👇👇👇 COLE SUAS CHAVES DO MERCADO PAGO AQUI (https://www.mercadopago.com.br/settings/credentials)
+// - Public Key (client-side): começa com "APP_USR-" (ou "APP_TEST-" para sandbox)
+// - Access Token (server-side) - NÃO coloque em produção sem backend! Para teste inicial OK.
+const MERCADO_PAGO = {
+    PUBLIC_KEY: "",       // 👉 Cole aqui sua PUBLIC KEY do Mercado Pago (ex: APP_USR-1234...)
+    ACCESS_TOKEN: "",     // 👉 Cole aqui seu ACCESS TOKEN (produção ou sandbox). SANDOX: TEST-123...
+    VALOR_ASSINATURA: 0.10,  // VALOR EM REAIS (R$ 0,10 teste). Altere para o valor real (ex: 29.90)
+    MODO_SANDBOX: true,   // 👉 true = sandbox (teste, não cobra de verdade); false = produção (cobrança real)
+    NOTIFICACAO_WEBHOOK: "https://ajeita-app.onrender.com/webhook-mp" // Opcional: receber notificações de pagamento aprovado
+};
+// 👆👆👆 Para obter credenciais: Painel Mercado Pago → Sua conta → Credenciais → Criar aplicação / Gerenciar
+// ============================================================
+
+// ============================================================
 // VARIÁVEIS GLOBAIS
 // ============================================================
 let firebaseApp, firebaseAuth, firebaseDb;
@@ -2072,44 +2217,129 @@ function inicializarFirebase() {
     }
 }
 
-async function fbAtualizarNavBotaoEntrar() {
-    // 1) Bottom Navigation Bar (label Entrar / Sair / Perfil)
-    const botoes = document.querySelectorAll('.bottom-nav-btn');
-    botoes.forEach(b => {
-        const span = b.querySelector('span');
-        if (span && span.textContent.trim() === 'Entrar' || (span && (span.textContent.trim() === 'Sair' || span.textContent.trim() === 'Perfil'))) {
-            if (authUsuarioAtual && authUsuarioRole) {
-                const label = authUsuarioRole === 'profissional' ? 'Perfil' : 'Sair';
-                span.textContent = label;
-            } else {
-                span.textContent = 'Entrar';
-            }
-        }
-    });
-
-    // 2) Header Desktop: botão "Entrar" (gradiente azul) vira "Sair / Minha Conta"
-    const headerBtnEntrar = document.querySelector('#headerBtnEntrar');
-    if (headerBtnEntrar) {
-        const icon = headerBtnEntrar.querySelector('i');
-        if (authUsuarioAtual && authUsuarioRole) {
-            headerBtnEntrar.setAttribute('onclick',
-                authUsuarioRole === 'profissional'
-                    ? "navigateTo('cadastro');"
-                    : "authLogout();"
-            );
-            const label = authUsuarioRole === 'profissional' ? 'Meu Perfil' : 'Sair';
-            const iconCls = authUsuarioRole === 'profissional' ? 'fas fa-user-cog' : 'fas fa-sign-out-alt';
-            headerBtnEntrar.innerHTML = `<i class="${iconCls} mr-2"></i>${label}`;
-        } else {
-            headerBtnEntrar.setAttribute('onclick', "authMudarPerfil('cliente');navigateTo('auth');");
-            headerBtnEntrar.innerHTML = '<i class="fas fa-user mr-2"></i>Entrar';
-        }
-    }
+function toggleMenuUsuario(force) {
+    try {
+        const dd = document.getElementById('headerMenuDropdown');
+        if (!dd) return;
+        if (typeof force === 'boolean') { if (force) dd.classList.remove('hidden'); else dd.classList.add('hidden'); return; }
+        dd.classList.toggle('hidden');
+    } catch (e) { console.error('toggleMenuUsuario erro:', e); }
+}
+function headerMenuAbrirPerfil() {
+    try { toggleMenuUsuario(false); } catch (_) {}
+    if (authUsuarioRole === 'profissional') navigateTo('cadastro');
+    else navigateTo('solicitacoes');
 }
 
-// ============================================================
-// INICIALIZAÇÃO
-// ============================================================
+async function fbAtualizarNavBotaoEntrar() {
+    // 1) Bottom Navigation Bar: ícone avatar + primeiro nome do usuário
+    try {
+        const icone = document.getElementById('btnNavEntrarIcone');
+        const avatar = document.getElementById('btnNavEntrarAvatar');
+        const label = document.getElementById('btnNavEntrarLabel');
+
+        if (authUsuarioAtual && authUsuarioRole) {
+            const perfilDados = await buscarDadosPerfilLogado();
+            const primeiroNome = (perfilDados.nome || 'Usuário').split(' ')[0];
+            const foto = perfilDados.foto || authUsuarioAtual?.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(primeiroNome) + '&background=3b82f6&color=fff&size=128&bold=true';
+            if (icone) icone.classList.add('hidden');
+            if (avatar) { avatar.src = foto; avatar.classList.remove('hidden'); avatar.onerror = () => { avatar.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(primeiroNome) + '&background=3b82f6&color=fff&size=128&bold=true'; }; }
+            if (label) label.textContent = primeiroNome;
+        } else {
+            if (icone) icone.classList.remove('hidden');
+            if (avatar) avatar.classList.add('hidden');
+            if (label) label.textContent = 'Entrar';
+        }
+    } catch (e) { console.error('bottom nav erro:', e); }
+
+    // 2) Header Desktop: botões deslogado vs menu usuário avatar logado
+    try {
+        const blocoDeslogado = document.getElementById('headerBotoesDeslogado');
+        const blocoLogado = document.getElementById('headerMenuLogado');
+        const headerBtnEntrar = document.querySelector('#headerBtnEntrar');
+
+        if (authUsuarioAtual && authUsuarioRole) {
+            // LOGADO: esconder botões, mostrar menu avatar
+            if (blocoDeslogado) blocoDeslogado.classList.add('hidden');
+            if (blocoLogado) blocoLogado.classList.remove('hidden');
+            const perfilDados = await buscarDadosPerfilLogado();
+            const primeiroNome = (perfilDados.nome || 'Usuário').split(' ')[0] || 'Usuário';
+            const nomeCompleto = perfilDados.nome || authUsuarioAtual.displayName || 'Usuário';
+            const foto = perfilDados.foto || authUsuarioAtual?.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nomeCompleto) + '&background=3b82f6&color=fff&size=400&bold=true';
+            const email = perfilDados.email || authUsuarioAtual?.email || 'sem email';
+            const role = authUsuarioRole === 'profissional' ? 'Profissional' : 'Cliente';
+            const corRole = authUsuarioRole === 'profissional' ? 'text-amber-600' : 'text-blue-600';
+
+            const hAv = document.getElementById('headerAvatar'); if (hAv) { hAv.src = foto; hAv.onerror = () => hAv.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nomeCompleto) + '&background=3b82f6&color=fff&size=200&bold=true'; }
+            const hNo = document.getElementById('headerNomeUsuario'); if (hNo) hNo.textContent = primeiroNome;
+            const hR = document.getElementById('headerRoleUsuario'); if (hR) { hR.textContent = role; hR.className = 'text-xs font-semibold ' + corRole; }
+            const hAvD = document.getElementById('headerAvatarDropdown'); if (hAvD) hAvD.src = foto;
+            const hNoD = document.getElementById('headerNomeDropdown'); if (hNoD) hNoD.textContent = nomeCompleto;
+            const hEmD = document.getElementById('headerEmailDropdown'); if (hEmD) hEmD.textContent = email;
+            const menuPg = document.getElementById('menuAbrirPagamento'); if (menuPg) { if (authUsuarioRole === 'profissional') menuPg.classList.remove('hidden'); else menuPg.classList.add('hidden'); }
+        } else {
+            if (blocoDeslogado) blocoDeslogado.classList.remove('hidden');
+            if (blocoLogado) blocoLogado.classList.add('hidden');
+            if (headerBtnEntrar) {
+                headerBtnEntrar.setAttribute('onclick', "authMudarPerfil('cliente');navigateTo('auth');");
+                headerBtnEntrar.innerHTML = '<i class="fas fa-user mr-2"></i>Entrar';
+            }
+        }
+    } catch (e) { console.error('header menu erro:', e); }
+
+    // 3) Mobile menu: bloco usuário logado topo
+    try {
+        const mb = document.getElementById('mobileBlocoUsuarioLogado');
+        if (mb) {
+            if (authUsuarioAtual && authUsuarioRole) {
+                mb.classList.remove('hidden');
+                const perfilDados = await buscarDadosPerfilLogado();
+                const primeiroNome = (perfilDados.nome || 'Usuário').split(' ')[0] || 'Usuário';
+                const foto = perfilDados.foto || authUsuarioAtual?.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(primeiroNome) + '&background=ffffff&color=1d4ed8&size=200&bold=true';
+                const role = authUsuarioRole === 'profissional' ? 'Profissional' : 'Cliente';
+                const mAv = document.getElementById('mobileAvatar'); if (mAv) mAv.src = foto;
+                const mNo = document.getElementById('mobileNomeUsuario'); if (mNo) mNo.textContent = primeiroNome;
+                const mRo = document.getElementById('mobileRoleUsuario'); if (mRo) mRo.textContent = role;
+            } else {
+                mb.classList.add('hidden');
+            }
+        }
+    } catch (e) { console.error('mobile menu bloco usuário erro:', e); }
+}
+
+// Helper: busca dados completos do perfil logado (localStorage/Firestore)
+async function buscarDadosPerfilLogado() {
+    const padrao = { nome: authUsuarioAtual?.displayName || 'Usuário', foto: authUsuarioAtual?.photoURL || '', email: authUsuarioAtual?.email || '', role: authUsuarioRole };
+    if (!authUsuarioAtual || !authUsuarioAtual.uid || !authUsuarioRole) return padrao;
+    try {
+        const uid = authUsuarioAtual.uid;
+        if (authUsuarioRole === 'profissional') {
+            let p = profissionais.find(x => (x.uid === uid || x.id === uid));
+            if (!p && USAR_FIREBASE) { try { p = await fbBuscarPerfil(uid, 'profissional'); } catch (_) {} }
+            return {
+                nome: p?.nome || padrao.nome,
+                foto: p?.foto || padrao.foto,
+                email: p?.email || padrao.email,
+                role: 'profissional'
+            };
+        } else {
+            let c = (clientes || []).find(x => (x.uid === uid || x.id === uid));
+            if (!c && USAR_FIREBASE) { try { c = await fbBuscarPerfil(uid, 'cliente'); } catch (_) {} }
+            return {
+                nome: c?.nome || padrao.nome,
+                foto: c?.foto || padrao.foto,
+                email: c?.email || padrao.email,
+                role: 'cliente'
+            };
+        }
+    } catch (e) { console.warn('buscarDadosPerfilLogado fallback:', e); return padrao; }
+}
+
+function atualizarHeaderUsuario() {
+    // helper para atualizar nome/avatar no header + bottom nav + mobile menu
+    console.log('✅ atualizarHeaderUsuario logado:', authUsuarioRole, authUsuarioAtual?.uid);
+    try { fbAtualizarNavBotaoEntrar(); } catch (_) {}
+}
 document.addEventListener('DOMContentLoaded', () => {
     inicializarFirebase();
     carregarDados();
@@ -2376,11 +2606,48 @@ async function fbAtualizarMensalidade(valor) {
 // ============================================================
 let pagTimerInterval = null;
 let pagUltimosDadosPro = null;
+let pagMercadoPagoPreferencia = null; // Armazena preferencia criada
+
+// Helper: detecta se Mercado Pago está configurado para pagamento REAL
+function pagamentoTemMercadoPagoReal() {
+    return !!(MERCADO_PAGO &&
+        typeof MERCADO_PAGO.PUBLIC_KEY === 'string' &&
+        MERCADO_PAGO.PUBLIC_KEY.length > 10 &&
+        typeof MERCADO_PAGO.ACCESS_TOKEN === 'string' &&
+        MERCADO_PAGO.ACCESS_TOKEN.length > 10);
+}
 
 function pagamentoAbrirTela(dadosPro) {
     try {
         pagUltimosDadosPro = {...(dadosPro || {})};
         console.log('[pagamentoAbrirTela] dadosPro:', pagUltimosDadosPro);
+
+        // 🔥 Atualiza HEADER dinamicamente conforme tem chaves Mercado Pago
+        const temMPReal = pagamentoTemMercadoPagoReal();
+        const header = document.getElementById('pagHeaderContainer');
+        const modoLbl = document.getElementById('pagModoLabel');
+        const valorLbl = document.getElementById('pagValorLabel');
+        const iconContainer = document.getElementById('pagIconContainer');
+        if (header) {
+            header.classList.remove('from-amber-400','to-orange-500','from-green-500','to-emerald-600');
+            header.classList.add(temMPReal ? 'from-green-500' : 'from-amber-400', temMPReal ? 'to-emerald-600' : 'to-orange-500');
+        }
+        const valorAssinaturaVal = MERCADO_PAGO?.VALOR_ASSINATURA ?? 0.10;
+        const valorBR = valorAssinaturaVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        if (modoLbl) {
+            if (temMPReal) {
+                modoLbl.textContent = (MERCADO_PAGO.MODO_SANDBOX ? '🧪 SANDBOX (TESTE) — R$ ' : '💳 PAGAMENTO REAL — R$ ') + valorBR;
+                modoLbl.classList.remove('bg-white/20');
+                modoLbl.classList.add('bg-white/25');
+            } else {
+                modoLbl.textContent = '💎 MODO SIMULAÇÃO LOCAL — R$ ' + valorBR;
+                modoLbl.classList.remove('bg-white/25');
+                modoLbl.classList.add('bg-white/20');
+            }
+        }
+        if (valorLbl) valorLbl.textContent = valorBR;
+        if (iconContainer) iconContainer.textContent = temMPReal ? '💳' : '🔒';
+
         const foto = dadosPro.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(dadosPro.nome || 'Profissional') + '&background=3b82f6&color=fff&size=400';
         const imgFoto = document.getElementById('pagFotoPro');
         if (imgFoto) {
@@ -2390,6 +2657,16 @@ function pagamentoAbrirTela(dadosPro) {
         document.getElementById('pagNomePro').textContent = dadosPro.nome || 'Seu perfil';
         document.getElementById('pagCategoriaPro').textContent = (dadosPro.categoria || 'Categoria') + ' • R$ ' + (typeof dadosPro.precoHora === 'number' ? dadosPro.precoHora.toFixed(2) : '0,00') + '/h';
         document.getElementById('pagCidadePro').textContent = (dadosPro.cidade || 'Cidade') + ' / ' + (dadosPro.bairro || 'Bairro');
+
+        // Se tiver chaves do Mercado Pago → cria preferência real
+        if (temMPReal) {
+            try {
+                pagamentoCriarPreferenciaMercadoPago(dadosPro, valorAssinaturaVal);
+            } catch (_) {
+                // Se Mercado Pago der erro (chave errada, etc), fallback para simulação local
+                console.warn('Erro ao criar preferencia Mercado Pago, usando simulação local.');
+            }
+        }
 
         const codPix = '00020126580014br.gov.bcb.pix0136ajeita-' + (dadosPro.uid || Date.now()) + '-0105202652040000000010REAUMERCADO PAGO5802BR5913AJEITA SERVICOS LTDA6009SAO PAULO62070503***6304ABCD';
         document.getElementById('pagCodigoPix').value = codPix;
@@ -2419,6 +2696,112 @@ function pagamentoAbrirTela(dadosPro) {
         } catch (_) {}
     } catch (e) {
         console.error('[pagamentoAbrirTela] erro:', e);
+    }
+}
+
+// 💰 Cria Preferência de Pagamento REAL via API Mercado Pago (Create Preference)
+async function pagamentoCriarPreferenciaMercadoPago(dadosPro, valor) {
+    try {
+        const urlBase = MERCADO_PAGO.MODO_SANDBOX
+            ? 'https://api.mercadopago.com'
+            : 'https://api.mercadopago.com'; // ambos são o mesmo endpoint em MP v1
+        const body = {
+            "items": [{
+                "title": "Assinatura Profissional Ajeita - " + (dadosPro.categoria || 'Serviços'),
+                "quantity": 1,
+                "unit_price": valor,
+                "currency_id": "BRL",
+                "description": "Liberação do perfil: " + (dadosPro.nome || 'Profissional') + " - UID " + (dadosPro.uid || '')
+            }],
+            "payer": {
+                "email": (dadosPro.email || 'cliente@ajeita.com.br'),
+                "first_name": (dadosPro.nome || '').split(' ')[0] || 'Profissional',
+                "last_name": (dadosPro.nome || '').split(' ').slice(1).join(' ') || 'Ajeita'
+            },
+            "metadata": {
+                "app": "ajeita",
+                "uid": dadosPro.uid || '',
+                "tipo": "assinatura_profissional",
+                "categoria": dadosPro.categoria || '',
+                "cidade": dadosPro.cidade || ''
+            },
+            "payment_methods": {
+                "excluded_payment_types": [
+                    { "id": "ticket" },
+                    { "id": "atm" }
+                ],
+                "installments": 1
+            },
+            "binary_mode": true,
+            "back_urls": {
+                "success": window.location.origin + window.location.pathname + "?pagamento=aprovado",
+                "failure": window.location.origin + window.location.pathname + "?pagamento=falhou",
+                "pending": window.location.origin + window.location.pathname + "?pagamento=pendente"
+            },
+            "auto_return": "approved",
+            "notification_url": MERCADO_PAGO.NOTIFICACAO_WEBHOOK || ''
+        };
+        const res = await Promise.race([
+            fetch(`${urlBase}/checkout/preferences`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${MERCADO_PAGO.ACCESS_TOKEN}`,
+                    'x-product-id': 'ajeita-assinatura'
+                },
+                body: JSON.stringify(body)
+            }),
+            timeoutPromise(18000, 'Tempo limite criando pagamento Mercado Pago')
+        ]);
+        if (!res.ok) {
+            const txt = await res.text();
+            throw new Error('Mercado Pago ' + res.status + ' ' + (txt || res.statusText));
+        }
+        const pref = await res.json();
+        pagMercadoPagoPreferencia = pref;
+        console.log('[Mercado Pago] Preferencia criada:', pref);
+        // Atualiza botões: PIX copia e cola usa init_point
+        const btnSimularPix = document.getElementById('pagBtnSimularPagamentoPix');
+        const btnPagCartao = document.getElementById('pagBtnCartaoSubmit');
+        if (btnSimularPix) {
+            btnSimularPix.innerHTML = `<i class="fas fa-external-link-alt mr-2"></i>Pagar no Mercado Pago (PIX / Cartão)`;
+            btnSimularPix.onclick = (e) => {
+                e.preventDefault();
+                if (pref.init_point) window.open(pref.init_point, '_blank');
+                else window.open(pref.sandbox_init_point || pref.init_point, '_blank');
+                toast('info', 'Abrindo Mercado Pago...', 'Após aprovado, volte para liberar seu perfil.');
+                // Após 15s, abre automaticamente confirmação (só sandbox simula)
+                if (MERCADO_PAGO.MODO_SANDBOX) {
+                    setTimeout(() => pagamentoSimularAprovado('mercado-pago'), 15000);
+                }
+            };
+        }
+        if (btnPagCartao) {
+            btnPagCartao.innerHTML = `<i class="fas fa-external-link-alt mr-2"></i>Pagar no Mercado Pago (R$ ${valor.toFixed(2)})`;
+            btnPagCartao.onclick = (e) => {
+                e.preventDefault();
+                if (pref.init_point) window.open(pref.init_point, '_blank');
+                else window.open(pref.sandbox_init_point || pref.init_point, '_blank');
+                toast('info', 'Abrindo Mercado Pago...', 'Após aprovado, volte para liberar seu perfil.');
+                if (MERCADO_PAGO.MODO_SANDBOX) {
+                    setTimeout(() => pagamentoSimularAprovado('mercado-pago'), 15000);
+                }
+            };
+        }
+    } catch (e) {
+        console.warn('[Mercado Pago] NÃO foi possível criar preferência → usando SIMULAÇÃO LOCAL:', e);
+        toast('info', 'Pagamento: Simulação local', 'Chave do Mercado Pago não configurada ou inválida; usando simulação (não cobra).');
+        // Volta os botões originais
+        const btnSimularPix = document.getElementById('pagBtnSimularPagamentoPix');
+        const btnPagCartao = document.getElementById('pagBtnCartaoSubmit');
+        if (btnSimularPix) {
+            btnSimularPix.innerHTML = `<i class="fas fa-check-circle mr-2"></i>Já efetuei o pagamento (simular)`;
+            btnSimularPix.onclick = (e) => { e.preventDefault(); pagamentoSimularAprovado('pix'); };
+        }
+        if (btnPagCartao) {
+            btnPagCartao.innerHTML = `<i class="fas fa-lock mr-2"></i>Pagar R$ ${(MERCADO_PAGO?.VALOR_ASSINATURA ?? 0.10).toFixed(2)} agora`;
+            btnPagCartao.onclick = (e) => pagamentoCartaoSubmit(e);
+        }
     }
 }
 
@@ -2981,36 +3364,64 @@ async function authPosLoginVerificarPerfil() {
     }
     try {
         const uid = authUsuarioAtual.uid;
+        // 1) PRIMEIRO: checar se já tem perfil COMPLETO em QUALQUER role (cliente OU profissional)
         let perfil = null;
+        let perfilRole = authPerfilSelecionado;
         if (USAR_FIREBASE) {
             perfil = await Promise.race([
                 fbBuscarPerfil(uid, authPerfilSelecionado),
                 timeoutPromise(15000, 'Timeout ao buscar perfil existente')
             ]);
+            // Se não encontrou no role selecionado → tenta o outro (deixa usuário escolher novamente)
+            if (!perfil) {
+                try {
+                    const outroRole = authPerfilSelecionado === 'profissional' ? 'cliente' : 'profissional';
+                    const outroPerfil = await fbBuscarPerfil(uid, outroRole);
+                    if (outroPerfil) { perfil = outroPerfil; perfilRole = outroRole; }
+                } catch (_) {}
+            }
         } else {
-            // Fallback local
-            const todos = authPerfilSelecionado === 'profissional' ? profissionais : (clientes || []);
-            perfil = todos.find(p => (p.uid === uid || p.telefone === authTelefoneCompleto?.replace('+55', ''))) || null;
+            const arrPro = profissionais || [];
+            const arrCli = clientes || [];
+            const fPro = arrPro.find(p => (p.uid === uid || p.telefone === authTelefoneCompleto?.replace('+55', '')));
+            const fCli = arrCli.find(p => (p.uid === uid || p.telefone === authTelefoneCompleto?.replace('+55', '')));
+            if (fPro) { perfil = fPro; perfilRole = 'profissional'; }
+            else if (fCli) { perfil = fCli; perfilRole = 'cliente'; }
         }
 
         if (perfil) {
             console.log('[authPosLoginVerificarPerfil] perfil ENCONTRADO → HOME', perfil);
-            // Usuário já tem perfil completo → só navega
             toast('success', 'Bem-vindo(a) de volta!', perfil.nome || perfil.telefone);
-            authUsuarioRole = authPerfilSelecionado;
+            authUsuarioRole = perfilRole;
+            authPerfilSelecionado = perfilRole;
             atualizarHeaderUsuario();
             fbAtualizarNavBotaoEntrar();
             navigateTo('home');
         } else {
-            console.log('[authPosLoginVerificarPerfil] perfil NÃO ENCONTRADO → TELA COMPLEMENTAR (uid=', uid, 'role=', authPerfilSelecionado, ')');
-            abrirTelaComplemento();
+            // 2) NÃO TEM PERFIL NENHUM AINDA → DEIXA USUÁRIO ESCOLHER Cliente vs Profissional
+            console.log('[authPosLoginVerificarPerfil] NÃO TEM perfil → TELA ESCOLHA DE PERFIL (uid=', uid, ')');
+            authUsuarioRole = null; // limpa para forçar escolha
+            atualizarHeaderUsuario();
+            fbAtualizarNavBotaoEntrar();
+            navigateTo('escolha-perfil');
         }
     } catch (err) {
-        console.error('[authPosLoginVerificarPerfil] ERRO GERAL → fallback para tela complementar:', err?.message || err);
-        toast('info', 'Continuando seu cadastro...', 'Não conseguimos verificar seu perfil, vamos completar os dados agora.');
-        // 🔥 GARANTIA ABSOLUTA DE NÃO TRAVAR: sempre abre a complementar
-        abrirTelaComplemento();
+        console.error('[authPosLoginVerificarPerfil] ERRO GERAL → fallback para tela escolha de perfil:', err?.message || err);
+        try { toast('info', 'Quase lá!', 'Escolha como você quer usar a plataforma.'); } catch (_) {}
+        navigateTo('escolha-perfil');
     }
+}
+
+// Escolhe perfil (botão card Cliente / Profissional) e vai para complementar
+function escolherPerfil(role) {
+    authUsuarioRole = role;
+    authPerfilSelecionado = role;
+    atualizarHeaderUsuario();
+    fbAtualizarNavBotaoEntrar();
+    toast('success', role === 'profissional' ? 'Perfil Profissional selecionado ✨' : 'Perfil Cliente selecionado ✨',
+                    role === 'profissional' ? 'Agora complete seus dados profissionais!' : 'Complete seus dados para começar!');
+    abrirTelaComplemento();
+    setTimeout(() => navigateTo('auth-completar'), 350);
 }
 
 function abrirTelaComplemento() {
@@ -3511,7 +3922,7 @@ function navigateTo(view) {
         btn.classList.add('text-gray-500');
     });
     let botaoAtivarView = view;
-    if (['auth', 'auth-otp', 'auth-completar', 'pagamento'].includes(view)) botaoAtivarView = 'auth';
+    if (['auth', 'auth-otp', 'auth-completar', 'pagamento', 'escolha-perfil'].includes(view)) botaoAtivarView = 'auth';
     if (view === 'cadastro') botaoAtivarView = 'auth';
     const activeBtn = document.querySelector(`.bottom-nav-btn[data-view="${botaoAtivarView}"]`);
     if (activeBtn) {
