@@ -1920,21 +1920,7 @@ const CATEGORIA_META = {
 };
 function svgCategoria(nomeCategoria, w = 800, h = 600) {
     const meta = CATEGORIA_META[nomeCategoria] || { cor1: '#1e3a8a', cor2: '#f59e0b', emoji: '🛠️' };
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>
-        <defs>
-            <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-                <stop offset='0%' stop-color='${meta.cor1}'/>
-                <stop offset='100%' stop-color='${meta.cor2}'/>
-            </linearGradient>
-            <radialGradient id='b' cx='30%' cy='20%' r='60%'>
-                <stop offset='0%' stop-color='#ffffff' stop-opacity='0.25'/>
-                <stop offset='100%' stop-color='#ffffff' stop-opacity='0'/>
-            </radialGradient>
-        </defs>
-        <rect width='${w}' height='${h}' fill='url(%23g)'/>
-        <rect width='${w}' height='${h}' fill='url(%23b)'/>
-        <text x='50%' y='54%' font-family='Arial, sans-serif' font-size='${Math.round(w * 0.3)}' text-anchor='middle' dominant-baseline='middle'>${meta.emoji}</text>
-    </svg>`;
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>\n        <defs>\n            <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>\n                <stop offset='0%' stop-color='${meta.cor1}'/>\n                <stop offset='100%' stop-color='${meta.cor2}'/>\n            </linearGradient>\n            <radialGradient id='b' cx='30%' cy='20%' r='60%'>\n                <stop offset='0%' stop-color='#ffffff' stop-opacity='0.25'/>\n                <stop offset='100%' stop-color='#ffffff' stop-opacity='0'/>\n            </radialGradient>\n        </defs>\n        <rect width='${w}' height='${h}' fill='url(%23g)'/>\n        <rect width='${w}' height='${h}' fill='url(%23b)'/>\n        <text x='50%' y='54%' font-family='Arial, sans-serif' font-size='${Math.round(w * 0.3)}' text-anchor='middle' dominant-baseline='middle'>${meta.emoji}</text>\n    </svg>`;
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 // Fallback IMG global: qualquer img que quebre, troca por SVG categoria via atributo data-cat (se existir) ou azul padrão
@@ -2809,21 +2795,7 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 bannerIcone.className = 'fas fa-exclamation-triangle text-yellow-300 text-xl mt-0.5 shrink-0';
                 bannerTitulo.textContent = '⚠️ Dados SÓ neste aparelho!';
                 bannerSub.innerHTML = 'Badge 🔴 = <b class="text-yellow-200">Firestore com erro (provavelmente regras não publicadas)</b>. Clique nos botões abaixo para arrumar.';
-                bannerBotoes.innerHTML = `
-                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-header-diag', 28); diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
-                        <i class="fas fa-stethoscope"></i>
-                        <span class="hidden sm:inline">Diagnóstico</span>
-                        <span class="sm:hidden">Testar</span>
-                    </button>
-                    <button onclick="verUltimoErroFirestore()" class="flex items-center justify-center gap-1.5 bg-white/95 hover:bg-white text-red-700 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
-                        <i class="fas fa-eye"></i>
-                        Ver erro
-                    </button>
-                    <button onclick="copiarRegrasFirestoreEAbrirConsole()" class="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">
-                        <i class="fas fa-copy"></i>
-                        Regras + Console
-                    </button>
-                `;
+                bannerBotoes.innerHTML = `\n                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-header-diag', 28); diagnosticarFirestore()" class="flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-red-900 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">\n                        <i class="fas fa-stethoscope"></i>\n                        <span class="hidden sm:inline">Diagnóstico</span>\n                        <span class="sm:hidden">Testar</span>\n                    </button>\n                    <button onclick="verUltimoErroFirestore()" class="flex items-center justify-center gap-1.5 bg-white/95 hover:bg-white text-red-700 font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">\n                        <i class="fas fa-eye"></i>\n                        Ver erro\n                    </button>\n                    <button onclick="copiarRegrasFirestoreEAbrirConsole()" class="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-[11px] md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition">\n                        <i class="fas fa-copy"></i>\n                        Regras + Console\n                    </button>\n                `;
             } else if (modo === 'firebase-vazio') {
                 // MODO FIRESTORE OK MAS SEM DADOS (verde-amarelo) - precisa importar seed
                 banner.classList.remove('hidden');
@@ -2831,12 +2803,7 @@ function atualizarBadgeFirebase(modo, detalheErro) {
                 bannerIcone.className = 'fas fa-database text-white text-xl mt-0.5 shrink-0';
                 bannerTitulo.textContent = '⚠️ Banco Firestore VAZIO (0 documentos!)';
                 bannerSub.innerHTML = 'Regras publicadas ✅ mas <b>banco Firestore ainda não tem profissionais</b>. Clique abaixo para importar os 8 dados demo iniciais e a lista funcionar em TODOS os celulares.';
-                bannerBotoes.innerHTML = `
-                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-importar-demo', 23); forcarRodarSeedFirestore()" class="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black text-[11px] md:text-sm px-4 md:px-6 py-2.5 md:py-3 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition animate-pulse">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        ⬆️ Importar dados demo (8 profissionais)
-                    </button>
-                `;
+                bannerBotoes.innerHTML = `\n                    <button onclick="window._ajeitaRegistrarFallbackAposAcao && window._ajeitaRegistrarFallbackAposAcao('btn-importar-demo', 23); forcarRodarSeedFirestore()" class="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black text-[11px] md:text-sm px-4 md:px-6 py-2.5 md:py-3 rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition animate-pulse">\n                        <i class="fas fa-cloud-upload-alt"></i>\n                        ⬆️ Importar dados demo (8 profissionais)\n                    </button>\n                `;
             } else if (modo === 'firebase') {
                 // MODO SUCESSO (verde) - remove banner
                 banner.classList.add('hidden');
@@ -2939,38 +2906,7 @@ function toastErroFirestore(acao, err) {
 // ============================================================
 // REGRAS FIRESTORE (copia automaticamente e abre Console em 1 clique!)
 // ============================================================
-const REGRAS_FIRESTORE_TEXTO = `rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    match /profissionais/{uid} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-
-    match /clientes/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
-    }
-
-    match /solicitacoes/{id} {
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.clienteId;
-      allow read, update: if request.auth != null && (
-        request.auth.uid == resource.data.clienteId ||
-        request.auth.uid == resource.data.profissionalId
-      );
-    }
-
-    match /avaliacoes/{id} {
-      allow read: if true;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.clienteId;
-    }
-
-    match /config/admin {
-      allow read: if true;
-      allow write: if false;
-    }
-  }
-}`;
+const REGRAS_FIRESTORE_TEXTO = `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n\n    match /profissionais/{uid} {\n      allow read: if true;\n      allow write: if request.auth != null && request.auth.uid == uid;\n    }\n\n    match /clientes/{uid} {\n      allow read, write: if request.auth != null && request.auth.uid == uid;\n    }\n\n    match /solicitacoes/{id} {\n      allow create: if request.auth != null && request.auth.uid == request.resource.data.clienteId;\n      allow read, update: if request.auth != null && (\n        request.auth.uid == resource.data.clienteId ||\n        request.auth.uid == resource.data.profissionalId\n      );\n    }\n\n    match /avaliacoes/{id} {\n      allow read: if true;\n      allow create: if request.auth != null && request.auth.uid == request.resource.data.clienteId;\n    }\n\n    match /config/admin {\n      allow read: if true;\n      allow write: if false;\n    }\n  }\n}`;
 
 const URL_CONSOLE_FIRESTORE_RULES = 'https://console.firebase.google.com/project/ajeita-app-c9fc2/firestore/rules';
 
@@ -3173,8 +3109,7 @@ async function diagnosticarFirestore() {
         const ok = resultados.filter(r => r.ok).length;
         const total = resultados.length;
         const titulo = (ok === total) ? `🎉 DIAGNÓSTICO APROVADO (${ok}/${total})` : (ok === 0) ? `❌ TUDO FALHOU (${ok}/${total})` : `⚠️ PARCIAL (${ok}/${total} OK)`;
-        const corpoStr = resultados.map(r => `${r.ok ? '✅' : '❌'} ${r.nome}
-   ${r.msg}`).join('
+        const corpoStr = resultados.map(r => `${r.ok ? '✅' : '❌'} ${r.nome}\n   ${r.msg}`).join('
 
 ');
         const bancoVazio = (leituraOk && qtdDocsLidos === 0);
@@ -4956,47 +4891,7 @@ function scrollToBusca() {
 
 function cardProfissional(p) {
     const media = calcularMedia(p);
-    return `
-        <div class="card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="relative">
-                <img src="${p.foto}" alt="${p.nome}" class="w-full h-48 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">
-                <div class="absolute top-3 left-3 flex gap-2">
-                    ${p.verificado ? '<span class="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fas fa-check-circle"></i>Verificado</span>' : ''}
-                    <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">${categoriaIcone(p.categoria)} ${p.categoria}</span>
-                </div>
-                <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg">
-                    <div class="text-center">
-                        <div class="text-yellow-500 font-bold text-sm leading-none">${media.toFixed(1)}</div>
-                        <div class="flex justify-center text-yellow-400 text-xs"><i class="fas fa-star"></i></div>
-                    </div>
-                </div>
-            </div>
-            <div class="p-5">
-                <h4 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.nome}</h4>
-                <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
-                    <i class="fas fa-map-marker-alt text-red-400"></i>
-                    <span class="truncate">${p.cidade} - ${p.bairro}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm mb-4">
-                    <span class="text-gray-600">
-                        <i class="fas fa-comments text-blue-500 mr-1"></i> ${p.numeroAvaliacoes} avaliações
-                    </span>
-                    <span class="text-gray-600">
-                        <i class="fas fa-toolbox text-blue-500 mr-1"></i> ${p.totalServicos} serviços
-                    </span>
-                </div>
-                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div>
-                        <span class="text-xs text-gray-500">A partir de</span>
-                        <div class="text-xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}<span class="text-sm font-normal text-gray-500">/hora</span></div>
-                    </div>
-                    <button onclick="abrirPerfil('${p.id}')" class="gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm">
-                        <i class="fas fa-eye mr-1"></i>Ver Perfil
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+    return `\n        <div class="card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">\n            <div class="relative">\n                <img src="${p.foto}" alt="${p.nome}" class="w-full h-48 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">\n                <div class="absolute top-3 left-3 flex gap-2">\n                    ${p.verificado ? '<span class="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fas fa-check-circle"></i>Verificado</span>' : ''}\n                    <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">${categoriaIcone(p.categoria)} ${p.categoria}</span>\n                </div>\n                <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg">\n                    <div class="text-center">\n                        <div class="text-yellow-500 font-bold text-sm leading-none">${media.toFixed(1)}</div>\n                        <div class="flex justify-center text-yellow-400 text-xs"><i class="fas fa-star"></i></div>\n                    </div>\n                </div>\n            </div>\n            <div class="p-5">\n                <h4 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.nome}</h4>\n                <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">\n                    <i class="fas fa-map-marker-alt text-red-400"></i>\n                    <span class="truncate">${p.cidade} - ${p.bairro}</span>\n                </div>\n                <div class="flex items-center justify-between text-sm mb-4">\n                    <span class="text-gray-600">\n                        <i class="fas fa-comments text-blue-500 mr-1"></i> ${p.numeroAvaliacoes} avaliações\n                    </span>\n                    <span class="text-gray-600">\n                        <i class="fas fa-toolbox text-blue-500 mr-1"></i> ${p.totalServicos} serviços\n                    </span>\n                </div>\n                <div class="flex items-center justify-between pt-4 border-t border-gray-100">\n                    <div>\n                        <span class="text-xs text-gray-500">A partir de</span>\n                        <div class="text-xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}<span class="text-sm font-normal text-gray-500">/hora</span></div>\n                    </div>\n                    <button onclick="abrirPerfil('${p.id}')" class="gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm">\n                        <i class="fas fa-eye mr-1"></i>Ver Perfil\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
 }
 
 function toggleMobileMenu() {
@@ -5068,47 +4963,7 @@ function renderProfissionais() {
     }
     empty.classList.add('hidden');
 
-    grid.innerHTML = lista.map(p => `
-        <div class="card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="relative">
-                <img src="${p.foto}" alt="${p.nome}" class="w-full h-48 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">
-                <div class="absolute top-3 left-3 flex gap-2">
-                    ${p.verificado ? '<span class="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fas fa-check-circle"></i>Verificado</span>' : ''}
-                    <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">${categoriaIcone(p.categoria)} ${p.categoria}</span>
-                </div>
-                <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg">
-                    <div class="text-center">
-                        <div class="text-yellow-500 font-bold text-sm leading-none">${calcularMedia(p).toFixed(1)}</div>
-                        <div class="flex justify-center text-yellow-400 text-xs"><i class="fas fa-star"></i></div>
-                    </div>
-                </div>
-            </div>
-            <div class="p-5">
-                <h4 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.nome}</h4>
-                <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
-                    <i class="fas fa-map-marker-alt text-red-400"></i>
-                    <span class="truncate">${p.cidade} - ${p.bairro}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm mb-4">
-                    <span class="text-gray-600">
-                        <i class="fas fa-comments text-blue-500 mr-1"></i> ${p.numeroAvaliacoes} avaliações
-                    </span>
-                    <span class="text-gray-600">
-                        <i class="fas fa-toolbox text-blue-500 mr-1"></i> ${p.totalServicos} serviços
-                    </span>
-                </div>
-                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div>
-                        <span class="text-xs text-gray-500">A partir de</span>
-                        <div class="text-xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}<span class="text-sm font-normal text-gray-500">/hora</span></div>
-                    </div>
-                    <button onclick="abrirPerfil('${p.id}')" class="gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm">
-                        <i class="fas fa-eye mr-1"></i>Ver Perfil
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
+    grid.innerHTML = lista.map(p => `\n        <div class="card-hover bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">\n            <div class="relative">\n                <img src="${p.foto}" alt="${p.nome}" class="w-full h-48 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">\n                <div class="absolute top-3 left-3 flex gap-2">\n                    ${p.verificado ? '<span class="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fas fa-check-circle"></i>Verificado</span>' : ''}\n                    <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">${categoriaIcone(p.categoria)} ${p.categoria}</span>\n                </div>\n                <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center shadow-lg">\n                    <div class="text-center">\n                        <div class="text-yellow-500 font-bold text-sm leading-none">${calcularMedia(p).toFixed(1)}</div>\n                        <div class="flex justify-center text-yellow-400 text-xs"><i class="fas fa-star"></i></div>\n                    </div>\n                </div>\n            </div>\n            <div class="p-5">\n                <h4 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.nome}</h4>\n                <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">\n                    <i class="fas fa-map-marker-alt text-red-400"></i>\n                    <span class="truncate">${p.cidade} - ${p.bairro}</span>\n                </div>\n                <div class="flex items-center justify-between text-sm mb-4">\n                    <span class="text-gray-600">\n                        <i class="fas fa-comments text-blue-500 mr-1"></i> ${p.numeroAvaliacoes} avaliações\n                    </span>\n                    <span class="text-gray-600">\n                        <i class="fas fa-toolbox text-blue-500 mr-1"></i> ${p.totalServicos} serviços\n                    </span>\n                </div>\n                <div class="flex items-center justify-between pt-4 border-t border-gray-100">\n                    <div>\n                        <span class="text-xs text-gray-500">A partir de</span>\n                        <div class="text-xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}<span class="text-sm font-normal text-gray-500">/hora</span></div>\n                    </div>\n                    <button onclick="abrirPerfil('${p.id}')" class="gradient-primary hover:opacity-90 text-white font-semibold py-2.5 px-4 rounded-xl shadow transition text-sm">\n                        <i class="fas fa-eye mr-1"></i>Ver Perfil\n                    </button>\n                </div>\n            </div>\n        </div>\n    `).join('');
 }
 
 function applyFilters() {
@@ -5196,63 +5051,7 @@ function abrirPerfil(id) {
     const emojisTrab = ['🛠️', '🔧', '🧰', '⚡', '🪛', '🏗️', '🎨', '🧽', '💡'];
     const trabalhos = Array.from({length: 4}, (_, i) => svgTrabalho(bgTrabalhos[p.categoria] || bgTrabalhos.default, emojisTrab[i % emojisTrab.length]));
 
-    document.getElementById('modalPerfilContent').innerHTML = `
-        <!-- Header perfil -->
-        <div class="relative">
-            <div class="gradient-primary h-40 md:h-52"></div>
-            <div class="px-6 md:px-10 -mt-20 pb-5 relative">
-                <div class="flex flex-col md:flex-row md:items-end gap-5">
-                    <img src="${p.foto}" alt="${p.nome}" class="w-36 h-36 rounded-2xl border-4 border-white shadow-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">
-                    <div class="flex-1 md:pb-3">
-                        <div class="flex flex-wrap items-center gap-2 mb-2">
-                            <h3 class="text-2xl md:text-3xl font-extrabold text-gray-800">${p.nome}</h3>
-                            ${p.verificado ? '<span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"><i class="fas fa-check-circle"></i>Profissional Verificado</span>' : ''}
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                            <span class="flex items-center gap-1"><i class="fas fa-briefcase text-blue-500"></i> ${p.categoria}</span>
-                            <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-red-500"></i> ${p.cidade}/${p.uf} - ${p.bairro}</span>
-                            <span class="flex items-center gap-1 star-filled"><i class="fas fa-star"></i> <strong>${media.toFixed(1)}</strong> (${p.numeroAvaliacoes} avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="md:pb-3 text-left md:text-right">
-                        <div class="text-xs text-gray-500">Valor por hora</div>
-                        <div class="text-3xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="px-6 md:px-10 pb-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
-            <!-- Coluna Esquerda -->
-            <div class="lg:col-span-3 space-y-6">
-                <!-- Bio -->
-                <div>
-                    <h4 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-user text-blue-600 mr-2"></i>Sobre Mim</h4>
-                    <p class="text-gray-600 leading-relaxed">${p.bio}</p>
-                </div>
-
-                <!-- Região atendimento -->
-                <div class="bg-blue-50 rounded-xl p-5 border border-blue-100">
-                    <h4 class="font-bold text-blue-900 mb-2"><i class="fas fa-location-dot mr-2"></i>Região de Cobertura</h4>
-                    <p class="text-blue-800 text-sm">Atendo principalmente em <strong>${p.cidade}</strong>, bairro <strong>${p.bairro}</strong> e adjacências. Consulte disponibilidade para outras regiões via WhatsApp.</p>
-                </div>
-
-                <!-- Galeria -->
-                <div>
-                    <h4 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-images text-blue-600 mr-2"></i>Trabalhos Anteriores</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        ${trabalhos.map(url => `<img src="${url}" class="rounded-xl object-cover h-28 w-full hover:opacity-90 transition cursor-pointer" alt="Trabalho">`).join('')}
-                    </div>
-                </div>
-
-                <!-- Avaliações -->
-                <div>
-                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">
-                        <span><i class="fas fa-star text-yellow-500 mr-2"></i>Avaliações e Depoimentos</span>
-                        <span class="text-sm font-normal text-gray-500">${avaliacoes.length} de ${p.numeroAvaliacoes}</span>
-                    </h4>
-                    <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                        ${avaliacoes.length === 0 ? '<p class="text-gray-400 text-sm text-center py-4">Sem avaliações ainda.</p>' :
+    document.getElementById('modalPerfilContent').innerHTML = `\n        <!-- Header perfil -->\n        <div class="relative">\n            <div class="gradient-primary h-40 md:h-52"></div>\n            <div class="px-6 md:px-10 -mt-20 pb-5 relative">\n                <div class="flex flex-col md:flex-row md:items-end gap-5">\n                    <img src="${p.foto}" alt="${p.nome}" class="w-36 h-36 rounded-2xl border-4 border-white shadow-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff&size=400'">\n                    <div class="flex-1 md:pb-3">\n                        <div class="flex flex-wrap items-center gap-2 mb-2">\n                            <h3 class="text-2xl md:text-3xl font-extrabold text-gray-800">${p.nome}</h3>\n                            ${p.verificado ? '<span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"><i class="fas fa-check-circle"></i>Profissional Verificado</span>' : ''}\n                        </div>\n                        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">\n                            <span class="flex items-center gap-1"><i class="fas fa-briefcase text-blue-500"></i> ${p.categoria}</span>\n                            <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-red-500"></i> ${p.cidade}/${p.uf} - ${p.bairro}</span>\n                            <span class="flex items-center gap-1 star-filled"><i class="fas fa-star"></i> <strong>${media.toFixed(1)}</strong> (${p.numeroAvaliacoes} avaliações)</span>\n                        </div>\n                    </div>\n                    <div class="md:pb-3 text-left md:text-right">\n                        <div class="text-xs text-gray-500">Valor por hora</div>\n                        <div class="text-3xl font-extrabold text-orange-600">R$ ${p.precoHora.toFixed(2)}</div>\n                    </div>\n                </div>\n            </div>\n        </div>\n\n        <div class="px-6 md:px-10 pb-8 grid grid-cols-1 lg:grid-cols-5 gap-8">\n            <!-- Coluna Esquerda -->\n            <div class="lg:col-span-3 space-y-6">\n                <!-- Bio -->\n                <div>\n                    <h4 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-user text-blue-600 mr-2"></i>Sobre Mim</h4>\n                    <p class="text-gray-600 leading-relaxed">${p.bio}</p>\n                </div>\n\n                <!-- Região atendimento -->\n                <div class="bg-blue-50 rounded-xl p-5 border border-blue-100">\n                    <h4 class="font-bold text-blue-900 mb-2"><i class="fas fa-location-dot mr-2"></i>Região de Cobertura</h4>\n                    <p class="text-blue-800 text-sm">Atendo principalmente em <strong>${p.cidade}</strong>, bairro <strong>${p.bairro}</strong> e adjacências. Consulte disponibilidade para outras regiões via WhatsApp.</p>\n                </div>\n\n                <!-- Galeria -->\n                <div>\n                    <h4 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-images text-blue-600 mr-2"></i>Trabalhos Anteriores</h4>\n                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">\n                        ${trabalhos.map(url => `<img src="${url}" class="rounded-xl object-cover h-28 w-full hover:opacity-90 transition cursor-pointer" alt="Trabalho">`).join('')}\n                    </div>\n                </div>\n\n                <!-- Avaliações -->\n                <div>\n                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">\n                        <span><i class="fas fa-star text-yellow-500 mr-2"></i>Avaliações e Depoimentos</span>\n                        <span class="text-sm font-normal text-gray-500">${avaliacoes.length} de ${p.numeroAvaliacoes}</span>\n                    </h4>\n                    <div class="space-y-3 max-h-96 overflow-y-auto pr-2">\n                        ${avaliacoes.length === 0 ? '<p class="text-gray-400 text-sm text-center py-4">Sem avaliações ainda.</p>' :
                         avaliacoes.map(a => `
                             <div class="bg-gray-50 rounded-xl p-4">
                                 <div class="flex items-center justify-between mb-2">
@@ -5267,49 +5066,7 @@ function abrirPerfil(id) {
                                 </div>
                                 <p class="text-sm text-gray-600">${a.comentario}</p>
                             </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Coluna Direita: Form orçamento -->
-            <div class="lg:col-span-2">
-                <div class="bg-gradient-to-b from-blue-50 to-white border border-blue-100 rounded-2xl p-6 sticky top-28">
-                    <h4 class="text-xl font-bold text-gray-800 mb-1"><i class="fas fa-paper-plane text-blue-600 mr-2"></i>Solicitar Orçamento</h4>
-                    <p class="text-sm text-gray-500 mb-5">Preencha e envie direto para o WhatsApp!</p>
-
-                    <form id="formOrcamento" data-proid="${p.id}" class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Seu Nome *</label>
-                            <input required type="text" id="orcNome" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nome completo">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Telefone/WhatsApp *</label>
-                            <input required type="tel" id="orcTelefone" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="(00) 90000-0000">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Endereço/Bairro *</label>
-                            <input required type="text" id="orcEndereco" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Rua, Nº - Bairro">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Descreva o problema *</label>
-                            <textarea required id="orcDescricao" rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Ex: Chuveiro queimou, precisa trocar resistência..."></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Data desejada</label>
-                            <input type="date" id="orcData" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <button type="submit" class="w-full gradient-accent hover:opacity-90 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2">
-                            <i class="fab fa-whatsapp mr-2"></i>Enviar via WhatsApp
-                        </button>
-                        <p class="text-xs text-center text-gray-500">
-                            <i class="fas fa-lock mr-1"></i>Seus dados estarão seguros e visíveis apenas ao profissional.
-                        </p>
-                    </form>
-                </div>
-            </div>
-        </div>
-    `;
+                        `).join('')}\n                    </div>\n                </div>\n            </div>\n\n            <!-- Coluna Direita: Form orçamento -->\n            <div class="lg:col-span-2">\n                <div class="bg-gradient-to-b from-blue-50 to-white border border-blue-100 rounded-2xl p-6 sticky top-28">\n                    <h4 class="text-xl font-bold text-gray-800 mb-1"><i class="fas fa-paper-plane text-blue-600 mr-2"></i>Solicitar Orçamento</h4>\n                    <p class="text-sm text-gray-500 mb-5">Preencha e envie direto para o WhatsApp!</p>\n\n                    <form id="formOrcamento" data-proid="${p.id}" class="space-y-3">\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Seu Nome *</label>\n                            <input required type="text" id="orcNome" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nome completo">\n                        </div>\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Telefone/WhatsApp *</label>\n                            <input required type="tel" id="orcTelefone" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="(00) 90000-0000">\n                        </div>\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Endereço/Bairro *</label>\n                            <input required type="text" id="orcEndereco" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Rua, Nº - Bairro">\n                        </div>\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Descreva o problema *</label>\n                            <textarea required id="orcDescricao" rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Ex: Chuveiro queimou, precisa trocar resistência..."></textarea>\n                        </div>\n                        <div>\n                            <label class="block text-xs font-semibold text-gray-700 mb-1">Data desejada</label>\n                            <input type="date" id="orcData" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">\n                        </div>\n                        <button type="submit" class="w-full gradient-accent hover:opacity-90 text-white font-bold py-3 rounded-xl shadow-lg transition mt-2">\n                            <i class="fab fa-whatsapp mr-2"></i>Enviar via WhatsApp\n                        </button>\n                        <p class="text-xs text-center text-gray-500">\n                            <i class="fas fa-lock mr-1"></i>Seus dados estarão seguros e visíveis apenas ao profissional.\n                        </p>\n                    </form>\n                </div>\n            </div>\n        </div>\n    `;
 
     // Hook submit form orçamento
     document.getElementById('formOrcamento').addEventListener('submit', (e) => {
@@ -5415,74 +5172,20 @@ function renderSolicitacoes() {
 function solicitacaoCardCliente(s) {
     const statusColor = { 'Pendente': 'bg-yellow-100 text-yellow-800', 'Concluído': 'bg-green-100 text-green-800', 'Atendido': 'bg-blue-100 text-blue-800' };
     const pro = profissionais.find(p => p.id === s.profissionalId);
-    return `
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">
-                <img src="${s.profissionalFoto || (pro ? pro.foto : '')}" class="w-16 h-16 rounded-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(s.profissionalNome)}&background=3b82f6&color=fff'">
-                <div class="flex-1">
-                    <div class="flex flex-wrap items-center gap-2 mb-1">
-                        <h5 class="font-bold text-gray-800">${s.profissionalNome}</h5>
-                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">${s.categoria}</span>
-                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}">${s.status}</span>
-                    </div>
-                    <div class="text-sm text-gray-600 mb-2 truncate">
-                        <i class="fas fa-map-marker-alt text-red-400 mr-1"></i>${s.clienteEndereco}
-                        <span class="mx-2">•</span>
-                        <i class="fas fa-calendar text-blue-400 mr-1"></i>${formatarData(s.dataSolicitacao)}
-                    </div>
-                    <p class="text-sm text-gray-500 truncate"><i class="fas fa-quote-left text-blue-300 mr-1"></i>${s.descricao}</p>
-                </div>
-                <div class="flex gap-2">
-                    ${(s.status === 'Concluído' || s.status === 'Atendido') && !s.avaliado ? `
+    return `\n        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">\n            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">\n                <img src="${s.profissionalFoto || (pro ? pro.foto : '')}" class="w-16 h-16 rounded-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(s.profissionalNome)}&background=3b82f6&color=fff'">\n                <div class="flex-1">\n                    <div class="flex flex-wrap items-center gap-2 mb-1">\n                        <h5 class="font-bold text-gray-800">${s.profissionalNome}</h5>\n                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">${s.categoria}</span>\n                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}">${s.status}</span>\n                    </div>\n                    <div class="text-sm text-gray-600 mb-2 truncate">\n                        <i class="fas fa-map-marker-alt text-red-400 mr-1"></i>${s.clienteEndereco}\n                        <span class="mx-2">•</span>\n                        <i class="fas fa-calendar text-blue-400 mr-1"></i>${formatarData(s.dataSolicitacao)}\n                    </div>\n                    <p class="text-sm text-gray-500 truncate"><i class="fas fa-quote-left text-blue-300 mr-1"></i>${s.descricao}</p>\n                </div>\n                <div class="flex gap-2">\n                    ${(s.status === 'Concluído' || s.status === 'Atendido') && !s.avaliado ? `
                         <button onclick="abrirAvaliacao('${s.id}')" class="gradient-accent text-white font-semibold py-2.5 px-4 rounded-xl shadow text-sm hover:opacity-90">
                             <i class="fas fa-star mr-1"></i>Avaliar
                         </button>
                     ` : s.avaliado ? `
                         <span class="bg-green-50 text-green-700 font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center gap-1"><i class="fas fa-check-circle"></i>Avaliado</span>
-                    ` : ''}
-                    <button onclick="mudarStatusSolicitacao('${s.id}', 'Concluído')" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm">
-                        <i class="fas fa-check mr-1"></i>Concluir
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+                    ` : ''}\n                    <button onclick="mudarStatusSolicitacao('${s.id}', 'Concluído')" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm">\n                        <i class="fas fa-check mr-1"></i>Concluir\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
 }
 
 function solicitacaoCardProfissional(s) {
     const statusColor = { 'Pendente': 'bg-yellow-100 text-yellow-800', 'Concluído': 'bg-green-100 text-green-800', 'Atendido': 'bg-blue-100 text-blue-800' };
     const pro = profissionais.find(p => p.id === s.profissionalId);
     const tel = pro ? pro.telefone : '';
-    return `
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">
-                <div class="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center text-white text-2xl font-bold shadow">
-                    ${s.clienteNome.charAt(0).toUpperCase()}
-                </div>
-                <div class="flex-1">
-                    <div class="flex flex-wrap items-center gap-2 mb-1">
-                        <h5 class="font-bold text-gray-800">${s.clienteNome}</h5>
-                        <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-semibold">${s.categoria}</span>
-                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}">${s.status}</span>
-                    </div>
-                    <div class="text-sm text-gray-600 mb-1">
-                        <i class="fab fa-whatsapp text-green-500 mr-1"></i>${s.clienteTelefone}
-                        <span class="mx-2">•</span>
-                        <i class="fas fa-map-marker-alt text-red-400 mr-1"></i>${s.clienteEndereco}
-                    </div>
-                    <p class="text-sm text-gray-500 truncate"><i class="fas fa-quote-left text-blue-300 mr-1"></i>${s.descricao}</p>
-                </div>
-                <div class="flex gap-2">
-                    <a href="https://wa.me/55${s.clienteTelefone.replace(/\D/g,'')}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm">
-                        <i class="fab fa-whatsapp mr-1"></i>Zap
-                    </a>
-                    <button onclick="mudarStatusSolicitacao('${s.id}', 'Atendido')" class="gradient-primary text-white font-semibold py-2.5 px-4 rounded-xl text-sm hover:opacity-90">
-                        <i class="fas fa-check mr-1"></i>Atender
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+    return `\n        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">\n            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">\n                <div class="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center text-white text-2xl font-bold shadow">\n                    ${s.clienteNome.charAt(0).toUpperCase()}\n                </div>\n                <div class="flex-1">\n                    <div class="flex flex-wrap items-center gap-2 mb-1">\n                        <h5 class="font-bold text-gray-800">${s.clienteNome}</h5>\n                        <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-semibold">${s.categoria}</span>\n                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusColor[s.status] || 'bg-gray-100 text-gray-700'}">${s.status}</span>\n                    </div>\n                    <div class="text-sm text-gray-600 mb-1">\n                        <i class="fab fa-whatsapp text-green-500 mr-1"></i>${s.clienteTelefone}\n                        <span class="mx-2">•</span>\n                        <i class="fas fa-map-marker-alt text-red-400 mr-1"></i>${s.clienteEndereco}\n                    </div>\n                    <p class="text-sm text-gray-500 truncate"><i class="fas fa-quote-left text-blue-300 mr-1"></i>${s.descricao}</p>\n                </div>\n                <div class="flex gap-2">\n                    <a href="https://wa.me/55${s.clienteTelefone.replace(/\D/g,'')}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm">\n                        <i class="fab fa-whatsapp mr-1"></i>Zap\n                    </a>\n                    <button onclick="mudarStatusSolicitacao('${s.id}', 'Atendido')" class="gradient-primary text-white font-semibold py-2.5 px-4 rounded-xl text-sm hover:opacity-90">\n                        <i class="fas fa-check mr-1"></i>Atender\n                    </button>\n                </div>\n            </div>\n        </div>\n    `;
 }
 
 function mudarStatusSolicitacao(id, status) {
@@ -5740,47 +5443,13 @@ function renderAdminProfissionais() {
     }
     empty.classList.add('hidden');
 
-    tbody.innerHTML = lista.map(p => `
-        <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                    <img src="${p.foto}" class="w-11 h-11 rounded-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff'">
-                    <div>
-                        <div class="font-semibold text-gray-800">${p.nome}</div>
-                        <div class="text-xs text-gray-500">${p.telefone} ${p.email ? '• ' + p.email : ''}</div>
-                    </div>
-                </div>
-            </td>
-            <td class="px-6 py-4">
-                <div class="text-gray-700">${p.cidade}/${p.uf}</div>
-                <div class="text-xs text-gray-500">📍 ${p.bairro}</div>
-            </td>
-            <td class="px-6 py-4">
-                <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold">${categoriaIcone(p.categoria)} ${p.categoria}</span>
-            </td>
-            <td class="px-6 py-4">
-                <div class="flex items-center gap-1 star-filled"><i class="fas fa-star"></i><span class="font-bold text-gray-800 ml-1">${calcularMedia(p).toFixed(1)}</span></div>
-                <div class="text-xs text-gray-500">${p.numeroAvaliacoes} avaliações</div>
-            </td>
-            <td class="px-6 py-4 font-bold text-orange-600">R$ ${p.precoHora.toFixed(2)}/h</td>
-            <td class="px-6 py-4">
-                ${p.assinaturaAtiva
+    tbody.innerHTML = lista.map(p => `\n        <tr class="hover:bg-gray-50">\n            <td class="px-6 py-4">\n                <div class="flex items-center gap-3">\n                    <img src="${p.foto}" class="w-11 h-11 rounded-xl object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome)}&background=3b82f6&color=fff'">\n                    <div>\n                        <div class="font-semibold text-gray-800">${p.nome}</div>\n                        <div class="text-xs text-gray-500">${p.telefone} ${p.email ? '• ' + p.email : ''}</div>\n                    </div>\n                </div>\n            </td>\n            <td class="px-6 py-4">\n                <div class="text-gray-700">${p.cidade}/${p.uf}</div>\n                <div class="text-xs text-gray-500">📍 ${p.bairro}</div>\n            </td>\n            <td class="px-6 py-4">\n                <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold">${categoriaIcone(p.categoria)} ${p.categoria}</span>\n            </td>\n            <td class="px-6 py-4">\n                <div class="flex items-center gap-1 star-filled"><i class="fas fa-star"></i><span class="font-bold text-gray-800 ml-1">${calcularMedia(p).toFixed(1)}</span></div>\n                <div class="text-xs text-gray-500">${p.numeroAvaliacoes} avaliações</div>\n            </td>\n            <td class="px-6 py-4 font-bold text-orange-600">R$ ${p.precoHora.toFixed(2)}/h</td>\n            <td class="px-6 py-4">\n                ${p.assinaturaAtiva
                     ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><i class="fas fa-check"></i>Ativo</span>'
                     : '<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><i class="fas fa-ban"></i>Inativo</span>'
-                }
-            </td>
-            <td class="px-6 py-4">
-                <div class="flex gap-2">
-                    ${p.assinaturaAtiva
+                }\n            </td>\n            <td class="px-6 py-4">\n                <div class="flex gap-2">\n                    ${p.assinaturaAtiva
                         ? `<button onclick="toggleAssinatura('${p.id}')" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 p-2 rounded-lg transition" title="Desativar"><i class="fas fa-toggle-on"></i></button>`
                         : `<button onclick="toggleAssinatura('${p.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 p-2 rounded-lg transition" title="Ativar"><i class="fas fa-toggle-off"></i></button>`
-                    }
-                    <button onclick="verificarPro('${p.id}')" class="bg-green-100 hover:bg-green-200 text-green-800 p-2 rounded-lg transition" title="Verificar"><i class="fas fa-check-circle"></i></button>
-                    <button onclick="excluirPro('${p.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition" title="Excluir"><i class="fas fa-trash"></i></button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+                    }\n                    <button onclick="verificarPro('${p.id}')" class="bg-green-100 hover:bg-green-200 text-green-800 p-2 rounded-lg transition" title="Verificar"><i class="fas fa-check-circle"></i></button>\n                    <button onclick="excluirPro('${p.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition" title="Excluir"><i class="fas fa-trash"></i></button>\n                </div>\n            </td>\n        </tr>\n    `).join('');
 }
 
 function toggleAssinatura(id) {
