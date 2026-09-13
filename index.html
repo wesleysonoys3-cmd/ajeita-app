@@ -2178,7 +2178,6 @@ const MERCADO_PAGO = {
 let firebaseApp, firebaseAuth, firebaseDb;
 let firebaseInicializado = false;
 let USAR_FIREBASE = false;
-// Último erro Firestore detalhado (code + message + horário) para diagnóstico
 let ULTIMO_ERRO_FIRESTORE = null;
 
 let profissionais = [];
@@ -2189,12 +2188,85 @@ let currentView = 'home';
 let adminAutenticado = false;
 let valorMensalidadeAtual = 29.90;
 
-// Variáveis de auth por telefone
-let authPerfilSelecionado = 'cliente';   // 'cliente' ou 'profissional'
-let authTelefoneCompleto = null;       // ex: +5561999999999
-let authConfirmationResult = null;        // objeto de signInWithPhoneNumber
-let authUsuarioAtual = null;           // user Firebase logado
-let authUsuarioRole = null;             // 'cliente' | 'profissional' | 'admin'
+let authPerfilSelecionado = 'cliente';
+let authTelefoneCompleto = null;
+let authConfirmationResult = null;
+let authUsuarioAtual = null;
+let authUsuarioRole = null;
+
+// ============================================================
+// 🔥🔥 NUCLEAR SAFE MODE (erro NÃO trava tela!)
+// window.onerror + unhandledrejection captura QUALQUER erro
+// de JS global e força render da UI + lista local.
+// ============================================================
+(function _ajeitaNuclearSafeMode() {
+    try {
+        function _ajeitaForcarUiNaoTravar(motivo, detalhe) {
+            try {
+                console.error('🔥 AJEITA SAFE MODE ACIONADO (' + motivo + '):', detalhe);
+                // 1) Carrega local
+                try {
+                    const savedPro = localStorage.getItem('ajeita_profissionais');
+                    if (savedPro) profissionais = JSON.parse(savedPro);
+                    else if (typeof profissionaisMock !== 'undefined') {
+                        profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
+                        try { localStorage.setItem('ajeita_profissionais', JSON.stringify(profissionais)); } catch (_) {}
+                    }
+                } catch (_) {}
+                try {
+                    const savedSol = localStorage.getItem('ajeita_solicitacoes');
+                    solicitacoes = savedSol ? JSON.parse(savedSol) : [];
+                } catch (_) {}
+                try {
+                    const savedMen = localStorage.getItem('ajeita_mensalidade');
+                    valorMensalidadeAtual = savedMen ? parseFloat(savedMen) : 29.90;
+                } catch (_) {}
+                try { adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true'; } catch (_) {}
+                // 2) Render
+                try { if (typeof renderProfissionais === 'function') renderProfissionais(); } catch (_) {}
+                try { if (typeof renderGridProfissionais === 'function') renderGridProfissionais(); } catch (_) {}
+                // 3) Troca badge para não ficar azul
+                try {
+                    if (typeof atualizarBadgeFirestore === 'function') {
+                        atualizarBadgeFirestore('local-erro', 'safe-mode-' + motivo);
+                    } else {
+                        const el = document.getElementById('badgeFirebaseTexto');
+                        if (el) el.textContent = '🔴 Local (erro!)';
+                        const bar = document.getElementById('badgeFirebaseBar');
+                        if (bar) {
+                            bar.className = 'inline-flex items-center gap-1.5 px-2 md:px-3 py-1 rounded-full text-[11px] md:text-xs font-black shadow-md ring-2 ring-red-500 bg-red-50 text-red-700 border border-red-300 cursor-pointer';
+                        }
+                    }
+                } catch (_) {}
+                // 4) Esconde toast de "carregando" se estiver aberto
+                try {
+                    const tEl = document.getElementById('globalToast');
+                    if (tEl) {
+                        try { tEl.classList.add('opacity-0'); } catch (_) {}
+                        setTimeout(() => { try { tEl.classList.add('hidden'); } catch (_) {} }, 350);
+                    }
+                } catch (_) {}
+            } catch (eCatch) { console.warn('safe mode catch:', eCatch); }
+        }
+
+        window.onerror = function ajeitaOnError(msg, url, linha, col, err) {
+            try { _ajeitaForcarUiNaoTravar('onerror-linha-' + linha, (err ? (err.message || err) : String(msg))); } catch (_) {}
+            // Não retorna true para não suprimir o log no console
+            return false;
+        };
+        window.addEventListener('unhandledrejection', function ajeitaUnhandled(e) {
+            try {
+                const reason = e && e.reason ? (e.reason.message || e.reason) : 'promessa rejeitada sem motivo';
+                _ajeitaForcarUiNaoTravar('unhandled-promise', String(reason).slice(0, 120));
+            } catch (_) {}
+        });
+
+        // Fallback absoluto: 15 segundos após abrir a página, força UI
+        setTimeout(function () {
+            try { _ajeitaForcarUiNaoTravar('fallback-absoluto-15s', ''); } catch (_) {}
+        }, 15000);
+    } catch (eSafeBoot) { console.warn('safe mode boot falhou:', eSafeBoot); }
+})();
 
 // ============================================================
 // INICIALIZAÇÃO FIREBASE
@@ -2382,7 +2454,50 @@ function atualizarHeaderUsuario() {
     console.log('✅ atualizarHeaderUsuario logado:', authUsuarioRole, authUsuarioAtual?.uid);
     try { fbAtualizarNavBotaoEntrar(); } catch (_) {}
 }
-let FIRESTORE_CARREGAMENTO_INICIADO_EM = 0; // fallback global anti-carregando-infinito
+let FIRESTORE_CARREGAMENTO_INICIADO_EM = 0;
+
+// ============================================================
+// 🚀 UI PRIMEIRO SÍNCRONO (SÓ DADOS LOCAIS — NÃO TRAVA NUNCA!)
+// RODA ANTES de QUALQUER async/Firebase. Garante que a lista
+// de 8 profissionais aparece NA TELA em <100ms.
+// ============================================================
+(function _ajeitaUiPrimeiroSincrono() {
+    try {
+        try {
+            const savedPro = localStorage.getItem('ajeita_profissionais');
+            if (savedPro) profissionais = JSON.parse(savedPro);
+            else if (typeof profissionaisMock !== 'undefined') {
+                profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
+                try { localStorage.setItem('ajeita_profissionais', JSON.stringify(profissionais)); } catch (_) {}
+            }
+        } catch (_) {}
+        try {
+            const savedSol = localStorage.getItem('ajeita_solicitacoes');
+            solicitacoes = savedSol ? JSON.parse(savedSol) : [];
+        } catch (_) {}
+        try {
+            const savedMen = localStorage.getItem('ajeita_mensalidade');
+            valorMensalidadeAtual = savedMen ? parseFloat(savedMen) : 29.90;
+        } catch (_) {}
+        try { adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true'; } catch (_) {}
+        document.addEventListener('DOMContentLoaded', function _ajeitaRenderListasPrimeiro() {
+            try { if (typeof renderProfissionais === 'function') renderProfissionais(); } catch (_) {}
+            try { if (typeof renderGridProfissionais === 'function') renderGridProfissionais(); } catch (_) {}
+            try {
+                const el = document.getElementById('badgeFirebaseTexto');
+                const bar = document.getElementById('badgeFirebaseBar');
+                if (el && bar) {
+                    el.textContent = '🔴 Local (erro!)';
+                    bar.className = 'inline-flex items-center gap-1.5 px-2 md:px-3 py-1 rounded-full text-[11px] md:text-xs font-black shadow-md ring-2 ring-red-500 bg-red-50 text-red-700 border border-red-300 cursor-pointer';
+                    bar.title = 'Carregando nuvem em 2s... Clique para recarregar.';
+                }
+            } catch (_) {}
+            try { if (typeof fbAtualizarNavBotaoEntrar === 'function') fbAtualizarNavBotaoEntrar(); } catch (_) {}
+            try { if (typeof atualizarHeaderUsuario === 'function') atualizarHeaderUsuario(); } catch (_) {}
+        });
+    } catch (eUiBoot) { console.warn('UI primeiro sincrono falhou:', eUiBoot); }
+})();
+
 
 document.addEventListener('DOMContentLoaded', () => {
     let finalizouOnload = false;
@@ -2390,16 +2505,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!finalizouOnload) {
             try {
                 console.warn('🔥 FALLBACK onload em 18s: inicializarFirestore ou carregarDados ainda em progresso → força UI carregar.');
-                // Força renderizar lista com mocks/localStorage para não ficar tela branca
                 const savedPro = localStorage.getItem('ajeita_profissionais');
                 if (savedPro) profissionais = JSON.parse(savedPro);
-                else profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
+                else if (typeof profissionaisMock !== 'undefined') profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
                 try { renderProfissionais && renderProfissionais(); } catch (_) {}
                 try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
                 try {
                     const txt = document.getElementById('badgeFirebaseTexto');
                     if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
-                        atualizarBadgeFirebase('local-erro', 'onload-fallback-18s');
+                        atualizarBadgeFirebase && atualizarBadgeFirestore('local-erro', 'onload-fallback-18s');
                     }
                 } catch (_) {}
             } catch (eFb) { console.warn('Fallback onload 18s:', eFb); }
@@ -2407,46 +2521,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 18000);
 
     try {
-        // CARREGA A INTERFACE RÁPIDO (local) ANTES — para nunca ficar com tela branca/travada
-        try {
-            const savedPro = localStorage.getItem('ajeita_profissionais');
-            if (savedPro) profissionais = JSON.parse(savedPro);
-            else { profissionais = JSON.parse(JSON.stringify(profissionaisMock || [])); salvarProfissionais && salvarProfissionais(); }
-        } catch (_) {}
-        try {
-            const savedSol = localStorage.getItem('ajeita_solicitacoes'); solicitacoes = savedSol ? JSON.parse(savedSol) : [];
-        } catch (_) {}
-        try {
-            const savedMen = localStorage.getItem('ajeita_mensalidade');
-            valorMensalidadeAtual = savedMen ? parseFloat(savedMen) : 29.90;
-        } catch (_) {}
-        adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true';
-        try { renderProfissionais && renderProfissionais(); } catch (_) {}
-        try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
-
-        // AGORA CHAMA FIREBASE, MAS SEMPRE COM TRY/CATCH
-        try { inicializarFirebase && inicializarFirebase(); } catch (e) { console.warn('inicializarFirebase onload erro:', e); }
-
-        // FIREBASE Carregamento: AGENDA para 2 segundos DEPOIS (não trava UI!)
-        try {
-            setTimeout(() => {
-                try {
-                    if (typeof carregarDados === 'function') carregarDados();
-                } catch (eLoad) { console.warn('carregarDados scheduled onload erro:', eLoad); }
-            }, 2000);
-        } catch (_) {}
-
+        // Inits rápidos (síncronos, não trave)
         try { inicializarCidadeOptions && inicializarCidadeOptions(); } catch (_) {}
         try { atualizarValoresMensalidade && atualizarValoresMensalidade(); } catch (_) {}
         try { inicializarEventosGlobais && inicializarEventosGlobais(); } catch (_) {}
         try { inicializarOtpInputs && inicializarOtpInputs(); } catch (_) {}
         try { setTimeout(() => { try { inicializarOnboarding && inicializarOnboarding(); } catch (_) {} }, 400); } catch (_) {}
-        console.log('✅ Ajeita carregado com sucesso! Firebase OK:', firebaseInicializado);
+        console.log('✅ Ajeita UI (local) carregada em 0ms. Firebase inicializará em background em 3 segundos.');
 
         // ============================================================
-        // FALLBACK GLOBAL 35 SEGUNDOS: SE AINDA ESTIVER "Carregando..."
-        // FORÇA SAIR (evita badge azul infinito!)
+        // 🔥 FIREBASE (TUDO ISSO RODA EM BACKGROUND 3s DEPOIS!)
+        // NÃO TRAVA A INTERFACE. Se falhar, usuário nem percebe.
         // ============================================================
+        try {
+            setTimeout(function _ajeitaIniciarFirebaseDepois() {
+                try {
+                    inicializarFirebase && inicializarFirebase();
+                } catch (eFire) { console.warn('Firebase inicialização (3s delay):', eFire); }
+                try {
+                    setTimeout(function _ajeitaCarregarDadosDepois() {
+                        try {
+                            if (typeof carregarDados === 'function') carregarDados();
+                        } catch (eLoad) { console.warn('carregarDados scheduled 5s delay:', eLoad); }
+                    }, 2000);
+                } catch (_) {}
+            }, 3000);
+        } catch (_) {}
+
         FIRESTORE_CARREGAMENTO_INICIADO_EM = Date.now();
 
         function fallbackSairCarregando(motivoFallback) {
@@ -2456,14 +2557,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.warn('🔥 FALLBACK GLOBAL (' + motivoFallback + '): badge ainda carregando → forçando sair!');
                     const savedPro = localStorage.getItem('ajeita_profissionais');
                     if (savedPro) profissionais = JSON.parse(savedPro);
-                    else profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
+                    else if (typeof profissionaisMock !== 'undefined') profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
                     try { renderProfissionais && renderProfissionais(); } catch (_) {}
                     try { renderGridProfissionais && renderGridProfissionais(); } catch (_) {}
-                    atualizarBadgeFirebase('local-erro', 'fallback-global-' + motivoFallback);
-                    toast('warning',
-                        '⚠️ Operação demorou muito para responder',
-                        'Mostrando dados locais (salvos no seu navegador).\n\nCausas prováveis:\n• Internet ruim (3G/Wi-Fi fraco)\n• Firestore em manutenção\n• Seu país bloqueou conexão com Google Cloud\n\nSolução: Clique no badge 🔴 ou no botão correspondente para recarregar manualmente, ou espere 1 minuto e recarregue a página.',
-                        16000);
+                    try { atualizarBadgeFirestore && atualizarBadgeFirestore('local-erro', 'fallback-global-' + motivoFallback); } catch (_) {}
+                    try {
+                        toast && toast('warning',
+                            '⚠️ Operação demorou muito para responder',
+                            'Mostrando dados locais (salvos no seu navegador).\n\nCausas prováveis:\n• Internet ruim (3G/Wi-Fi fraco)\n• Firestore em manutenção\n• Seu país bloqueou conexão com Google Cloud\n\nSolução: Clique no badge 🔴 ou no botão correspondente para recarregar manualmente, ou espere 1 minuto e recarregue a página.',
+                            16000);
+                    } catch (_) {}
                     return true;
                 }
             } catch (eFb) { console.warn('Fallback global (' + motivoFallback + '):', eFb); }
@@ -2493,6 +2596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try { clearTimeout(tmrOnload); } catch (_) {}
     }
 });
+
 
 function carregarDados() {
     // MODO LOCAL (fallback se Firebase não estiver configurado)
