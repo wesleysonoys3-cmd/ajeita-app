@@ -2382,16 +2382,44 @@ function atualizarHeaderUsuario() {
     console.log('✅ atualizarHeaderUsuario logado:', authUsuarioRole, authUsuarioAtual?.uid);
     try { fbAtualizarNavBotaoEntrar(); } catch (_) {}
 }
+let FIRESTORE_CARREGAMENTO_INICIADO_EM = 0; // fallback global anti-carregando-infinito
+
 document.addEventListener('DOMContentLoaded', () => {
     inicializarFirebase();
-    carregarDados();
-    inicializarCidadeOptions();
-    renderProfissionais();
-    atualizarValoresMensalidade();
-    inicializarEventosGlobais();
-    inicializarOtpInputs();
-    setTimeout(inicializarOnboarding, 400);
+    // Garante que mesmo que inicializarFirebase demore/ficar pendente,
+    // carregarDados é chamado com atraso e depois o fallback global ativa.
+    try { carregarDados(); } catch (e) { console.warn('carregarDados onload:', e); }
+    try { inicializarCidadeOptions(); } catch (_) {}
+    try { renderProfissionais(); } catch (_) {}
+    try { atualizarValoresMensalidade(); } catch (_) {}
+    try { inicializarEventosGlobais(); } catch (_) {}
+    try { inicializarOtpInputs(); } catch (_) {}
+    try { setTimeout(inicializarOnboarding, 400); } catch (_) {}
     console.log('✅ Ajeita carregado com sucesso! Firebase OK:', firebaseInicializado);
+
+    // ============================================================
+    // FALLBACK GLOBAL 35 SEGUNDOS: SE AINDA ESTIVER "Carregando..."
+    // FORÇA SAIR (evita badge azul infinito!)
+    // ============================================================
+    FIRESTORE_CARREGAMENTO_INICIADO_EM = Date.now();
+    setTimeout(() => {
+        try {
+            const txt = document.getElementById('badgeFirebaseTexto');
+            if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                console.warn('🔥 FALLBACK GLOBAL 35s: badge ainda carregando → forçando sair!');
+                // Carrega local para o usuário não ficar sem lista
+                const savedPro = localStorage.getItem('ajeita_profissionais');
+                if (savedPro) profissionais = JSON.parse(savedPro);
+                else profissionais = JSON.parse(JSON.stringify(profissionaisMock || []));
+                try { renderProfissionais && renderProfissionais(); } catch (_) {}
+                atualizarBadgeFirebase('local-erro', 'fallback-global-35s-timeout');
+                toast('warning',
+                    '⚠️ Firestore demorou muito para responder',
+                    'Mostrando dados locais (salvos no seu navegador).\n\nCausas prováveis:\n• Internet ruim (3G/Wi-Fi fraco)\n• Firestore em manutenção\n• Seu país bloqueou conexão com Google Cloud\n\nSolução: Clique no badge azul para recarregar manualmente, ou espere 1 minuto e recarregue a página.',
+                    16000);
+            }
+        } catch (eFb) { console.warn('Fallback global 35s:', eFb); }
+    }, 35000);
 });
 
 function carregarDados() {
@@ -2411,7 +2439,27 @@ function carregarDados() {
     // 🔥 MODO FIREBASE (Firestore)
     console.log('🔥 Carregando dados do Firestore...');
     atualizarBadgeFirebase('carregando');
-    carregarDadosFirestore().catch(e => console.warn('Firestore carregamento (usando localStorage fallback...', e.message));
+    // .finally() GARANTE que não fica carregando infinito mesmo se exceção não pega
+    carregarDadosFirestore()
+        .catch(e => console.warn('carregarDados erro (usando localStorage fallback...', e?.message || e))
+        .finally(() => {
+            // Roda depois de carregarDadosFirestore, SEMPRE (sucesso OU erro!)
+            // Evita "fica só carregando..."
+            try {
+                const txt = document.getElementById('badgeFirebaseTexto');
+                if (txt && (txt.textContent || '').toLowerCase().includes('carregando')) {
+                    // Se NÃO mudou por algum motivo, força um modo final:
+                    if (profissionais && profissionais.length > 0) {
+                        // Se tem pelo menos localStorage/mocks carregados:
+                        // Não sabe se foi Firestore? Mas para usuário não ficar azul:
+                        // Verifica se USAR_FIREBASE e firebaseDb existe → tenta firebase-vazio se necessário
+                        atualizarBadgeFirebase(USAR_FIREBASE && firebaseDb ? 'firebase' : 'sem-firebase');
+                    } else {
+                        atualizarBadgeFirebase('local-erro', 'finally-fallback-carregando-infinito');
+                    }
+                }
+            } catch (_) {}
+        });
 }
 
 async function carregarDadosFirestore() {
@@ -2419,20 +2467,26 @@ async function carregarDadosFirestore() {
     let modoBadgeFim = 'firebase';
     let detalheErro = null;
     try {
-        // Timeout geral (evita Promise pending infinita se rede/Firestore travado)
+        // Timeout geral MAIS LONGO (30s agora, era 20s) para redes 3G fracas brasileiras!
         await Promise.race([
             (async () => {
                 // 1) BUSCA TODOS os profissionais no Firestore (ORDENADO por criação, últimos 100)
                 let snapPro;
                 try {
-                    snapPro = await firebaseDb.collection('profissionais')
-                        .orderBy('createdAt', 'desc')
-                        .limit(100)
-                        .get();
+                    snapPro = await Promise.race([
+                        firebaseDb.collection('profissionais')
+                            .orderBy('createdAt', 'desc')
+                            .limit(100)
+                            .get(),
+                        new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_ORDERBY')), 14000))
+                    ]);
                 } catch (errOrder) {
-                    // Fallback se índice não tiver criado ainda (orderBy precisa de índice composto)
-                    console.warn('🔥 [carregarDadosFirestore] Sem índice para orderBy → buscando sem ordem:', errOrder?.message);
-                    snapPro = await firebaseDb.collection('profissionais').limit(100).get();
+                    // Fallback se índice não tiver criado OU timeout orderBy
+                    console.warn('🔥 [carregarDadosFirestore] Sem índice/timeout orderBy → buscando sem ordem:', errOrder?.message);
+                    snapPro = await Promise.race([
+                        firebaseDb.collection('profissionais').limit(100).get(),
+                        new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_SEM_ORDEM')), 14000))
+                    ]);
                 }
                 profissionais = snapPro.docs.map(d => {
                     const dados = d.data();
@@ -2467,7 +2521,7 @@ async function carregarDadosFirestore() {
                     try {
                         await Promise.race([
                             batch.commit(),
-                            new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_SEED_AUTO')), 18000))
+                            new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_SEED_AUTO')), 15000))
                         ]);
                         profissionais = profissionaisMock.map(p => ({...p}));
                         console.log(`🔥 Seed auto injetado com sucesso (${profissionais.length}).`);
@@ -2485,7 +2539,7 @@ async function carregarDadosFirestore() {
                     salvarProfissionais();
                 }
             })(),
-            timeoutPromise(20000, 'Timeout ao carregar profissionais do Firestore')
+            timeoutPromise(30000, 'Timeout geral 30s carregar profissionais do Firestore')
         ]);
     } catch (errFire) {
         console.warn('🔥 [carregarDadosFirestore] FALHOU → carregando localStorage/mocks:', errFire?.message || errFire);
@@ -2497,12 +2551,14 @@ async function carregarDadosFirestore() {
         if (savedPro) profissionais = JSON.parse(savedPro);
         else { profissionais = JSON.parse(JSON.stringify(profissionaisMock)); salvarProfissionais(); }
         toastErroFirestore('carregar profissionais', errFire);
+    } finally {
+        // 🔥🔥 FINALLY GARANTIDO — NUNCA MAIS FICA CARREGANDO INFINITO!
+        console.log('🔥 carregarDadosFirestore FINALLY executado. modoFinal:', modoBadgeFim, 'detalhe:', detalheErro);
     }
 
     // ============== DETECÇÃO EXTRA: Se carregou do Firestore mas docs=0 → seed não rodou
     if (USAR_FIREBASE && firebaseInicializado && modoBadgeFim !== 'local-erro' && modoBadgeFim !== 'local-offline' && modoBadgeFim !== 'sem-firebase') {
         if (profissionais.length === 0) {
-            // (A) Se caiu aqui direto, carregou do Firestore e veio 0 docs → seed não rodou
             if (detalheErro && detalheErro.startsWith('seed-auto-falhou')) {
                 modoBadgeFim = 'firebase-vazio';
             } else if (!detalheErro) {
@@ -2510,16 +2566,18 @@ async function carregarDadosFirestore() {
                 detalheErro = 'banco vazio 0 documentos (seed não executou ainda)';
             }
         } else if (modoBadgeFim === 'carregando' || !modoBadgeFim) {
-            // Se chegou aqui sem erro e tem profissionais = tudo ok
             modoBadgeFim = 'firebase';
         }
     }
 
     // 2) Config admin / mensalidade
     try {
-        const snapCfg = await firebaseDb.collection('config').doc('admin').get();
-        if (snapCfg.exists) {
-            const cfg = snapCfg.data();
+        const cfgSnap = await Promise.race([
+            firebaseDb.collection('config').doc('admin').get(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_CONFIG')), 8000))
+        ]);
+        if (cfgSnap.exists) {
+            const cfg = cfgSnap.data();
             valorMensalidadeAtual = cfg.valorMensalidade || 29.90;
             localStorage.setItem('ajeita_mensalidade', String(valorMensalidadeAtual));
         }
@@ -2531,6 +2589,7 @@ async function carregarDadosFirestore() {
     adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true';
     // 🔥 SEMPRE re-renderiza a lista de profissionais no final do carregamento
     try { renderProfissionais(); } catch (_) {}
+    // 🔥 O FINALLY do carregarDados() não precisa mais salvar se atualizarBadgeFirestore aqui
     atualizarBadgeFirebase(modoBadgeFim, detalheErro);
 }
 
@@ -2659,9 +2718,13 @@ async function forcarRecarregarFirestore() {
         }
         atualizarBadgeFirebase('carregando');
         toast('info', 'Recarregando do Firestore...', 'Buscando dados mais recentes da nuvem 🔄');
-        await carregarDadosFirestore();
+        await Promise.race([
+            carregarDadosFirestore(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT_RECARREGAR')), 32000))
+        ]);
     } catch (e) {
-        console.error(e);
+        console.error('forcarRecarregarFirestore erro:', e);
+        atualizarBadgeFirebase('local-erro', 'recarregar-falhou: ' + (e?.code || e?.message || String(e)));
     }
 }
 
