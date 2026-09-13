@@ -3106,9 +3106,7 @@ async function diagnosticarFirestore() {
         const ok = resultados.filter(r => r.ok).length;
         const total = resultados.length;
         const titulo = (ok === total) ? `🎉 DIAGNÓSTICO APROVADO (${ok}/${total})` : (ok === 0) ? `❌ TUDO FALHOU (${ok}/${total})` : `⚠️ PARCIAL (${ok}/${total} OK)`;
-        const corpoStr = resultados.map(r => `${r.ok ? '✅' : '❌'} ${r.nome}\n   ${r.msg}`).join('
-
-');
+        const corpoStr = resultados.map(r => `${r.ok ? '✅' : '❌'} ${r.nome}\\n   ${r.msg}`).join('\\n\\n');
         const bancoVazio = (leituraOk && qtdDocsLidos === 0);
         let rodape;
         if (ok === total) {
