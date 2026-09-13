@@ -6,6 +6,14 @@
     <title>Ajeita - Marido de Aluguel e Serviços Domésticos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- ============================================================
+         FIREBASE SDKs (Authentication + Firestore) - via CDN v10
+         ============================================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
     <style>
         * { scroll-behavior: smooth; }
         .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
@@ -54,7 +62,7 @@
                     <a href="#como-funciona" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
                         <i class="fas fa-info-circle"></i> Como Funciona
                     </a>
-                    <a href="#" onclick="navigateTo('cadastro'); return false;" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
+                    <a href="#" onclick="authMudarPerfil('profissional');navigateTo('auth');return false;" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
                         <i class="fas fa-user-tie"></i> Sou Profissional
                     </a>
                     <a href="#" onclick="navigateTo('solicitacoes'); return false;" class="nav-link text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2">
@@ -84,7 +92,7 @@
                 <a href="#como-funciona" onclick="toggleMobileMenu();" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
                     <i class="fas fa-info-circle mr-2 text-blue-600"></i> Como Funciona
                 </a>
-                <a href="#" onclick="navigateTo('cadastro'); toggleMobileMenu(); return false;" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
+                <a href="#" onclick="authMudarPerfil('profissional');navigateTo('auth');toggleMobileMenu();return false;" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
                     <i class="fas fa-user-tie mr-2 text-blue-600"></i> Sou Profissional
                 </a>
                 <a href="#" onclick="navigateTo('solicitacoes'); toggleMobileMenu(); return false;" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
@@ -93,7 +101,7 @@
                 <a href="#" onclick="openAdminLogin(); toggleMobileMenu(); return false;" class="block px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 font-medium">
                     <i class="fas fa-shield-alt mr-2 text-blue-600"></i> Área do Admin
                 </a>
-                <button onclick="navigateTo('cadastro'); toggleMobileMenu();" class="w-full gradient-accent text-white font-bold py-3 px-5 rounded-xl shadow-lg mt-2">
+                <button onclick="authMudarPerfil('profissional'); navigateTo('auth'); toggleMobileMenu();" class="w-full gradient-accent text-white font-bold py-3 px-5 rounded-xl shadow-lg mt-2">
                     <i class="fas fa-user-plus mr-2"></i>Cadastrar como Profissional
                 </button>
             </div>
@@ -616,7 +624,7 @@
                             <h5 class="font-bold text-white mb-4">Acesso Rápido</h5>
                             <ul class="space-y-2 text-sm">
                                 <li><a href="#" onclick="navigateTo('home');return false;" class="hover:text-yellow-400">Buscar Profissionais</a></li>
-                                <li><a href="#" onclick="navigateTo('cadastro');return false;" class="hover:text-yellow-400">Sou Profissional</a></li>
+                                <li><a href="#" onclick="authMudarPerfil('profissional');navigateTo('auth');return false;" class="hover:text-yellow-400">Sou Profissional</a></li>
                                 <li><a href="#" onclick="navigateTo('solicitacoes');return false;" class="hover:text-yellow-400">Minhas Solicitações</a></li>
                                 <li><a href="#" onclick="openAdminLogin();return false;" class="hover:text-yellow-400">Área do Admin</a></li>
                             </ul>
@@ -641,12 +649,221 @@
             </footer>
         </section>
 
-        <!-- ================= VIEW: CADASTRO PROFISSIONAL ================= -->
+        <!-- ================= VIEW: LOGIN / CADASTRO POR TELEFONE (FIREBASE PHONE AUTH) ================= -->
+        <section id="view-auth" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <button onclick="navigateTo('home')" class="mb-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+
+                <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border-t-4 border-blue-600">
+                    <!-- HEADER LOGO -->
+                    <div class="gradient-primary p-8 md:p-10 text-white text-center">
+                        <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-lg mx-auto mb-5">
+                            <i class="fas fa-tools text-blue-700 text-4xl"></i>
+                        </div>
+                        <h2 class="text-3xl md:text-4xl font-extrabold mb-2">Acesse sua conta</h2>
+                        <p class="text-blue-100">Entre com seu celular, é rápido e seguro! 📱</p>
+                    </div>
+
+                    <!-- TABS: CLIENTE vs PROFISSIONAL -->
+                    <div class="grid grid-cols-2 gap-0 border-b border-gray-200">
+                        <button onclick="authMudarPerfil('cliente')" id="authTabCliente" type="button" class="py-4 font-bold text-lg transition bg-blue-600 text-white">
+                            <i class="fas fa-user mr-2"></i> Sou Cliente
+                        </button>
+                        <button onclick="authMudarPerfil('profissional')" id="authTabProfissional" type="button" class="py-4 font-bold text-lg transition text-gray-600 hover:bg-gray-50">
+                            <i class="fas fa-user-tie mr-2"></i> Sou Profissional
+                        </button>
+                    </div>
+
+                    <!-- FORM TELEFONE -->
+                    <form id="formAuthTelefone" class="p-6 md:p-8 space-y-5" onsubmit="return authSolicitarCodigo(event)">
+                        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong id="authInfoPerfil">Para clientes:</strong> Enviaremos um código por SMS para confirmar seu número de telefone.
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="col-span-1">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">DDD *</label>
+                                <input type="tel" id="authDDD" maxlength="2" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg font-bold" placeholder="61">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Celular *</label>
+                                <input type="tel" id="authTelefone" maxlength="9" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg" placeholder="99999-9999">
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-gray-500 italic bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+                            <i class="fas fa-lightbulb mr-2 text-yellow-600"></i>
+                            <strong>Dica de teste (grátis):</strong> Use DDD <b>61</b> + Celular <b>99999-9999</b> e código <b>123456</b> (configurado no Firebase). Não gasta cota de SMS real!
+                        </div>
+
+                        <!-- Recaptcha invisível container (OBRIGATÓRIO para Phone Auth) -->
+                        <div id="recaptcha-container"></div>
+
+                        <button type="submit" id="authBtnEnviarCodigo" class="w-full gradient-primary text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2">
+                            <i class="fas fa-paper-plane"></i> Enviar código por SMS
+                        </button>
+
+                        <p class="text-center text-sm text-gray-500 pt-2 border-t border-gray-100">
+                            Ao continuar, você concorda com nossos Termos de Uso e Política de Privacidade.
+                        </p>
+                    </form>
+                </div>
+
+                <!-- MINI TELA ADMIN RÁPIDO -->
+                <div class="mt-8 text-center">
+                    <button onclick="openAdminLogin()" class="text-sm text-gray-400 hover:text-gray-600 font-medium">
+                        <i class="fas fa-shield-alt mr-1"></i> Acesso Administrativo
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW: OTP VERIFICAÇÃO CÓDIGO 6 DÍGITOS ================= -->
+        <section id="view-auth-otp" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <button onclick="voltarParaAuth()" class="mb-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Voltar para o telefone
+                </button>
+
+                <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border-t-4 border-yellow-500">
+                    <div class="gradient-accent p-8 md:p-10 text-white text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg mx-auto mb-5">
+                            <i class="fas fa-comment-sms text-yellow-600 text-4xl"></i>
+                        </div>
+                        <h2 class="text-3xl md:text-4xl font-extrabold mb-2">Digite o código</h2>
+                        <p class="text-yellow-50">Enviamos um SMS de 6 dígitos para <strong id="otpNumeroMostrado">(61) 99999-9999</strong></p>
+                    </div>
+
+                    <form id="formAuthOTP" class="p-6 md:p-8 space-y-6" onsubmit="return authVerificarCodigo(event)">
+                        <div class="grid grid-cols-6 gap-3" id="otpInputs">
+                            <input type="text" maxlength="1" class="otp-digit w-full aspect-square text-center text-2xl font-extrabold border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" inputmode="numeric" required>
+                            <input type="text" maxlength="1" class="otp-digit w-full aspect-square text-center text-2xl font-extrabold border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" inputmode="numeric" required>
+                            <input type="text" maxlength="1" class="otp-digit w-full aspect-square text-center text-2xl font-extrabold border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" inputmode="numeric" required>
+                            <input type="text" maxlength="1" class="otp-digit w-full aspect-square text-center text-2xl font-extrabold border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" inputmode="numeric" required>
+                            <input type="text" maxlength="1" class="otp-digit w-full aspect-square text-center text-2xl font-extrabold border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" inputmode="numeric" required>
+                            <input type="text" maxlength="1" class="otp-digit w-full aspect-square text-center text-2xl font-extrabold border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" inputmode="numeric" required>
+                        </div>
+
+                        <button type="submit" id="authBtnVerificar" class="w-full gradient-primary text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2">
+                            <i class="fas fa-check-circle"></i> Verificar e entrar
+                        </button>
+
+                        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                            <button type="button" onclick="authReenviarCodigo()" id="authBtnReenviar" class="py-3 rounded-xl border border-blue-200 text-blue-600 font-semibold hover:bg-blue-50 transition text-sm">
+                                <i class="fas fa-redo mr-1"></i> Reenviar código
+                            </button>
+                            <div class="py-3 text-center text-sm text-gray-500 flex items-center justify-center">
+                                <i class="fas fa-shield-alt text-green-500 mr-2"></i> 100% seguro
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW: COMPLEMENTO DE CADASTRO (após 1o login) ================= -->
+        <section id="view-auth-completar" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border-t-4 border-green-500">
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-8 text-white">
+                        <h2 class="text-3xl font-extrabold mb-2"><i class="fas fa-user-plus mr-3"></i>Finalize seu cadastro</h2>
+                        <p id="completarSubtitulo" class="text-green-50">Só mais alguns dados para personalizar sua experiência!</p>
+                    </div>
+                    <form id="formCompletarCadastro" class="p-6 md:p-8 space-y-6" onsubmit="return authSalvarComplemento(event)">
+                        <!-- Campos comuns -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nome completo *</label>
+                            <input type="text" id="compNome" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-lg">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Cidade *</label>
+                                <input type="text" id="compCidade" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Bairro / Região *</label>
+                                <input type="text" id="compBairro" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Campos EXCLUSIVOS de PROFISSIONAL -->
+                        <div id="compCamposProfissional" class="hidden space-y-6 border-t-2 border-dashed border-green-200 pt-6">
+                            <h3 class="text-xl font-bold text-green-700 flex items-center gap-2">
+                                <i class="fas fa-user-tie"></i> Dados Profissionais
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Especialidade/Categoria principal *</label>
+                                    <select id="compCategoria" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                                        <option value="">Selecione...</option>
+                                        <option>⚡ Eletricista</option>
+                                        <option>🔧 Encanador</option>
+                                        <option>🧱 Pedreiro</option>
+                                        <option>🧹 Diarista</option>
+                                        <option>🎨 Pintor</option>
+                                        <option>🛠️ Montador de Móveis</option>
+                                        <option>🔑 Chaveiro</option>
+                                        <option>🔨 Marido de Aluguel</option>
+                                        <option>❄️ Ar Condicionado</option>
+                                        <option>📱 Celular</option>
+                                        <option>🧊 Geladeira/Freezer</option>
+                                        <option>👶 Babá</option>
+                                        <option>👨‍🍳 Cozinheira</option>
+                                        <option>👚 Passadeira</option>
+                                        <option>🚗 Motorista</option>
+                                        <option>👵 Cuidador de Idosos</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Preço por hora (R$) *</label>
+                                    <input type="number" id="compPreco" min="10" step="5" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="80">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Área de atendimento *</label>
+                                    <input type="text" id="compArea" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="Brasília inteira / Taguatinga e Ceilândia">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Bio / Apresentação profissional *</label>
+                                    <textarea id="compBio" rows="3" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="Conte um pouco sobre você, seu tempo de experiência, etc."></textarea>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Foto do perfil (URL)</label>
+                                    <input type="url" id="compFoto" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="https://... (opcional, usaremos avatares se vazio)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:opacity-90 transition text-lg flex items-center justify-center gap-2">
+                            <i class="fas fa-check-double"></i> Finalizar cadastro e entrar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW: CADASTRO PROFISSIONAL (ACESSÍVEL APENAS APÓS LOGIN PHONE AUTH) ================= -->
         <section id="view-cadastro" class="view-section hidden fade-in bg-gray-50 min-h-screen py-10">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <button onclick="navigateTo('home')" class="mb-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
                     <i class="fas fa-arrow-left"></i> Voltar para busca
                 </button>
+
+                <!-- Aviso caso não esteja logado -->
+                <div id="cadAvisoNaoLogado" class="hidden bg-yellow-50 border border-yellow-300 rounded-2xl p-6 mb-8 text-yellow-800 shadow-sm">
+                    <div class="flex items-start gap-4">
+                        <i class="fas fa-user-lock text-3xl text-yellow-600 mt-1"></i>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">É necessário fazer login primeiro</h3>
+                            <p class="mb-4">Por segurança, todo cadastro profissional é feito com autenticação por telefone (SMS). É rápido e grátis!</p>
+                            <button onclick="authMudarPerfil('profissional');navigateTo('auth')" class="gradient-primary text-white px-5 py-3 rounded-xl font-bold shadow-md hover:opacity-90">
+                                <i class="fas fa-comment-sms mr-2"></i> Entrar com meu celular
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div class="gradient-primary p-8 text-white">
@@ -1079,7 +1296,7 @@
                 <button onclick="fecharOnboarding()" class="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center transition">
                     <i class="fas fa-times text-gray-700 text-xl"></i>
                 </button>
-                <button onclick="navigateTo('cadastro'); fecharOnboarding();" class="text-blue-600 font-semibold text-base hover:text-blue-700">
+                <button onclick="fecharOnboarding(); setTimeout(()=>{authMudarPerfil('profissional');navigateTo('auth');}, 50);" class="text-blue-600 font-semibold text-base hover:text-blue-700">
                     Sou profissional
                 </button>
             </div>
@@ -1228,15 +1445,15 @@
                 <i class="fas fa-home text-2xl"></i>
                 <span class="text-xs font-semibold">Início</span>
             </button>
-            <button onclick="scrollToBusca()" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600">
+            <button onclick="scrollToBusca()" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600" data-view="buscar">
                 <i class="fas fa-search text-2xl"></i>
                 <span class="text-xs font-semibold">Buscar</span>
             </button>
-            <button onclick="navigateTo('solicitacoes')" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600">
+            <button onclick="navigateTo('solicitacoes')" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600" data-view="solicitacoes">
                 <i class="fas fa-briefcase text-2xl"></i>
                 <span class="text-xs font-semibold">Pedidos</span>
             </button>
-            <button onclick="navigateTo('solicitacoes'); setTimeout(()=>setTabSolicitacoes('recebidas'), 100);" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600">
+            <button onclick="navigateTo('auth')" class="bottom-nav-btn flex flex-col items-center gap-1 py-3 text-gray-500 hover:text-blue-600" data-view="auth">
                 <i class="fas fa-user text-2xl"></i>
                 <span class="text-xs font-semibold">Entrar</span>
             </button>
@@ -1429,66 +1646,554 @@ const profissionaisMock = [
 ];
 
 // ============================================================
+// FIREBASE CONFIG + INIT
+// ============================================================
+// 👇👇👇 COLE AQUI O SEU firebaseConfig REAL (Firebase Console → Project settings → App Web)
+// Para obter: https://console.firebase.google.com → seu projeto → ⚙️ Project settings → rolar até apps → clicar app Web ou criar novo (</>)
+const firebaseConfig_REAL = {
+  apiKey: "AIzaSyAr98KGfdrPe81NRfUHBmh25Jxf4cCl8dM",
+  authDomain: "ajeita-app-c9fc2.firebaseapp.com",
+  projectId: "ajeita-app-c9fc2",
+  storageBucket: "ajeita-app-c9fc2.firebasestorage.app",
+  messagingSenderId: "709414286122",
+  appId: "1:709414286122:web:238ea0d985907d5acb6453"
+};
+// 👆👆👆 Configuração do projeto ajeita-app-c9fc2 aplicada automaticamente!
+
+// Placeholder fallback (não mexa):
+const firebaseConfig_PLACEHOLDER = {
+    apiKey: "SUA_API_KEY_AQUI",
+    authDomain: "SEU_PROJETO.firebaseapp.com",
+    projectId: "SEU_PROJETO",
+    storageBucket: "SEU_PROJETO.appspot.com",
+    messagingSenderId: "SEU_SENDER_ID",
+    appId: "SEU_APP_ID"
+};
+
+// ============================================================
+
+// ============================================================
 // VARIÁVEIS GLOBAIS
 // ============================================================
+let firebaseApp, firebaseAuth, firebaseDb;
+let firebaseInicializado = false;
+let USAR_FIREBASE = false;
+
 let profissionais = [];
 let solicitacoes = [];
-let currentUserLocation = null; // { cidade, bairro }
+let clientes = [];
+let currentUserLocation = null;
 let currentView = 'home';
 let adminAutenticado = false;
 let valorMensalidadeAtual = 29.90;
+
+// Variáveis de auth por telefone
+let authPerfilSelecionado = 'cliente';   // 'cliente' ou 'profissional'
+let authTelefoneCompleto = null;       // ex: +5561999999999
+let authConfirmationResult = null;        // objeto de signInWithPhoneNumber
+let authUsuarioAtual = null;           // user Firebase logado
+let authUsuarioRole = null;             // 'cliente' | 'profissional' | 'admin'
+
+// ============================================================
+// INICIALIZAÇÃO FIREBASE
+// ============================================================
+function inicializarFirebase() {
+    try {
+        const cfg = (typeof firebaseConfig_REAL !== 'undefined') ? firebaseConfig_REAL : firebaseConfig_PLACEHOLDER;
+        const isPlaceholder = (cfg.apiKey === 'SUA_API_KEY_AQUI');
+
+        if (isPlaceholder) {
+            console.warn('🔥 Firebase não inicializado: use Firebase');
+            return;
+        }
+
+        if (typeof firebase === 'undefined') {
+            console.warn('🔥 Firebase SDK não carregado. Verifique conexão com internet!');
+            return;
+        }
+
+        firebaseApp = firebase.initializeApp(cfg);
+        firebaseAuth = firebase.auth();
+        firebaseDb = firebase.firestore();
+
+        // Settings de persistência Auth
+        firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+        // Listener global Auth
+        firebaseAuth.onAuthStateChanged((user) => {
+            authUsuarioAtual = user || null;
+            if (authUsuarioAtual) {
+                // Logged in — carregar dados complementares do perfil logado
+                console.log('🔥 Firebase Auth: usuario logado', user?.uid);
+            } else {
+                authUsuarioAtual = null;
+                authUsuarioRole = null;
+            }
+        });
+
+        firebaseInicializado = true;
+        USAR_FIREBASE = true;
+        console.log('🔥 Firebase inicializado com sucesso! (Phone Auth + Firestore)');
+    } catch (e) {
+        console.error('❌ Erro ao iniciar Firebase:', e);
+    }
+}
+
+async function fbAtualizarNavBotaoEntrar() {
+    const botoes = document.querySelectorAll('.bottom-nav-btn');
+    botoes.forEach(b => {
+        const span = b.querySelector('span');
+        if (span && span.textContent.trim() === 'Entrar') {
+            if (authUsuarioAtual && authUsuarioRole) {
+                const label = authUsuarioRole === 'profissional' ? 'Perfil' : 'Sair';
+                span.textContent = label;
+            } else {
+                span.textContent = 'Entrar';
+            }
+        }
+    });
+}
 
 // ============================================================
 // INICIALIZAÇÃO
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+    inicializarFirebase();
     carregarDados();
     inicializarCidadeOptions();
     renderProfissionais();
     atualizarValoresMensalidade();
     inicializarEventosGlobais();
+    inicializarOtpInputs();
     setTimeout(inicializarOnboarding, 400);
-    console.log('✅ Ajeita carregado com sucesso!');
+    console.log('✅ Ajeita carregado com sucesso! Firebase OK:', firebaseInicializado);
 });
 
 function carregarDados() {
-    // Profissionais
-    const savedPro = localStorage.getItem('ajeita_profissionais');
-    if (savedPro) {
-        profissionais = JSON.parse(savedPro);
-    } else {
-        profissionais = JSON.parse(JSON.stringify(profissionaisMock));
-        salvarProfissionais();
+    // MODO LOCAL (fallback se Firebase não estiver configurado)
+    if (!USAR_FIREBASE) {
+        const savedPro = localStorage.getItem('ajeita_profissionais');
+        if (savedPro) { profissionais = JSON.parse(savedPro); }
+        else { profissionais = JSON.parse(JSON.stringify(profissionaisMock)); salvarProfissionais(); }
+        const savedSol = localStorage.getItem('ajeita_solicitacoes'); solicitacoes = savedSol ? JSON.parse(savedSol) : [];
+        const savedMen = localStorage.getItem('ajeita_mensalidade');
+        valorMensalidadeAtual = savedMen ? parseFloat(savedMen) : 29.90;
+        adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true';
+        return;
     }
 
-    // Solicitações
-    const savedSol = localStorage.getItem('ajeita_solicitacoes');
-    solicitacoes = savedSol ? JSON.parse(savedSol) : [];
+    // 🔥 MODO FIREBASE (Firestore
+    console.log('🔥 Carregando dados do Firestore...');
+    carregarDadosFirestore().catch(e => console.warn('Firestore carregamento (usando localStorage fallback...', e.message));
+}
 
-    // Mensalidade
-    const savedMen = localStorage.getItem('ajeita_mensalidade');
-    valorMensalidadeAtual = savedMen ? parseFloat(savedMen) : 29.90;
+async function carregarDadosFirestore() {
+    if (!USAR_FIREBASE) return;
 
-    // Admin autenticado (apenas em sessão)
-    adminAutenticado = sessionStorage.getItem('ajeita_admin') === 'true';
+    // 1) Profissionais ativos (assinatura ativa)
+    const snapPro = await firebaseDb.collection('profissionais').where('assinaturaAtiva', '==', true).get();
+    profissionais = snapPro.docs.map(d => ({ id: d.id, ...d.data() }));
+    console.log(`🔥 ${profissionais.length} profissionais carregados do Firestore`);
+
+    // Se for o primeiro acesso sem nenhum profissional, inicializa os MOCKs
+    if (profissionais.length === 0) {
+        console.log('🔥 Injetando seed inicial (vazio)...');
+        const batch = firebaseDb.batch();
+        profissionaisMock.forEach(p => {
+            const id = p.id;
+            delete p.id;
+            batch.set(firebaseDb.collection('profissionais').doc(id), p);
+        });
+        await batch.commit();
+        profissionais = profissionaisMock.map(p => ({...p}));
+    }
+
+    // 2) Config admin / mensalidade
+    try {
+        const snapCfg = await firebaseDb.collection('config').doc('admin').get();
+        if (snapCfg.exists) {
+            const cfg = snapCfg.data();
+            if (cfg.mensalidade) valorMensalidadeAtual = parseFloat(cfg.mensalidade);
+        }
+    } catch(e) {}
 }
 
 function salvarProfissionais() {
+    if (USAR_FIREBASE) return; // Firestore salva on the fly
     localStorage.setItem('ajeita_profissionais', JSON.stringify(profissionais));
 }
 function salvarSolicitacoes() {
+    if (USAR_FIREBASE) return;
     localStorage.setItem('ajeita_solicitacoes', JSON.stringify(solicitacoes));
+}
+
+// ============================================================
+// FIRESTORE WRAPPERS
+// ============================================================
+async function fbCriarColecaoVazia() {
+    // helper placeholder para coleções vazias
+}
+
+async function fbSalvarCliente(uid, data) {
+    if (!USAR_FIREBASE) {
+        // fallback localStorage
+        clientes = clientes || [];
+        clientes.push({ uid, ...data });
+        localStorage.setItem('ajeita_clientes', JSON.stringify(clientes));
+        return;
+    }
+    await firebaseDb.collection('clientes').doc(uid).set({
+        ...data,
+        uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        role: 'cliente'
+    }, { merge: true });
+}
+
+async function fbSalvarProfissional(uid, data) {
+    if (!USAR_FIREBASE) {
+        let pro = { id: uid, uid, ...data };
+        const idx = profissionais.findIndex(p => p.uid === uid || p.id === uid);
+        if (idx >= 0) profissionais[idx] = {...profissionais[idx], ...pro};
+        else profissionais.push(pro);
+        salvarProfissionais();
+        return;
+    }
+    await firebaseDb.collection('profissionais').doc(uid).set({
+        ...data,
+        uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        role: 'profissional'
+    }, { merge: true });
+}
+
+async function fbBuscarPerfil(uid, role) {
+    if (!USAR_FIREBASE) return null;
+    const col = role === 'profissional' ? 'profissionais' : 'clientes';
+    const snap = await firebaseDb.collection(col).doc(uid).get();
+    return snap.exists ? { id: snap.id, ...snap.data() } : null;
+}
+
+async function fbCriarSolicitacao(data) {
+    if (!USAR_FIREBASE) {
+        solicitacoes.push({ id: 's'+Date.now(), ...data, data: new Date().toISOString(), status: 'Pendente' });
+        salvarSolicitacoes();
+        return true;
+    }
+    const ref = await firebaseDb.collection('solicitacoes').add({
+        ...data,
+        status: 'Pendente',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return ref.id;
+}
+
+async function fbCriarAvaliacao(data) {
+    if (!USAR_FIREBASE) return true;
+    await firebaseDb.collection('avaliacoes').add({
+        ...data,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return true;
+}
+
+async function fbAtualizarMensalidade(valor) {
+    if (!USAR_FIREBASE) {
+        localStorage.setItem('ajeita_mensalidade', String(valor));
+        return;
+    }
+    await firebaseDb.collection('config').doc('admin').set({
+        mensalidade: valor,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+}
+
+// ============================================================
+// AUTH: TABS / PERFIL
+// ============================================================
+function authMudarPerfil(perfil) {
+    authPerfilSelecionado = perfil;
+    const tCliente = document.getElementById('authTabCliente');
+    const tPro = document.getElementById('authTabProfissional');
+    const info = document.getElementById('authInfoPerfil');
+    if (perfil === 'cliente') {
+        tCliente.className = 'py-4 font-bold text-lg transition bg-blue-600 text-white';
+        tPro.className = 'py-4 font-bold text-lg transition text-gray-600 hover:bg-gray-50';
+        info.innerHTML = '<strong>Para clientes:</strong> Enviaremos um código por SMS para contratar profissionais e acompanhar seus pedidos.';
+    } else {
+        tPro.className = 'py-4 font-bold text-lg transition bg-blue-600 text-white';
+        tCliente.className = 'py-4 font-bold text-lg transition text-gray-600 hover:bg-gray-50';
+        info.innerHTML = '<strong>Para profissionais:</strong> Cadastre seus serviços e receba solicitações de clientes na sua região.';
+    }
+}
+
+// ============================================================
+// AUTH: SOLICITAR CÓDIGO SMS (Recaptcha + signInWithPhoneNumber
+// ============================================================
+function authSolicitarCodigo(e) {
+    if (e) e.preventDefault();
+    const ddd = document.getElementById('authDDD').value.replace(/\D/g, '');
+    const tel = document.getElementById('authTelefone').value.replace(/\D/g, '');
+    if (ddd.length !== 2 || tel.length < 8) {
+        toast('error', 'Telefone inválido', 'Informe DDD (2 dígitos) e celular com 8 ou 9 dígitos.');
+        return false;
+    }
+    authTelefoneCompleto = '+55' + ddd + tel;
+    document.getElementById('otpNumeroMostrado').textContent = '(' + ddd + ') ' + tel.replace(/^(\d{4,5})(\d{4})$/, '$1-$2');
+
+    if (!USAR_FIREBASE) {
+        // 🔥 Fallback modo LOCAL: pula SMS fake
+        console.warn('Firebase não configurado. Modo teste local: aceita código 123456 para qualquer telefone.');
+        toast('info', 'Modo teste (sem Firebase)', 'Código de teste: 123456');
+        authConfirmationResult = {
+            confirm: async (code) => {
+                if (code !== '123456') throw new Error('Código inválido');
+                return { user: { uid: 'local-' + authTelefoneCompleto, phoneNumber: authTelefoneCompleto } };
+            }
+        };
+        navigateTo('auth-otp');
+        return false;
+    }
+
+    // 🔥 MODO FIREBASE REAL
+    try {
+        const btn = document.getElementById('authBtnEnviarCodigo');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Enviando...';
+
+        // Garante que exista apenas um RecaptchaVerifier
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                size: 'invisible',
+                badge: 'bottomright',
+                callback: () => {}
+            });
+        }
+
+        firebaseAuth.signInWithPhoneNumber(authTelefoneCompleto, window.recaptchaVerifier)
+            .then(confirm => {
+                authConfirmationResult = confirm;
+                toast('success', 'Código enviado!', 'SMS chegou, digite os 6 dígitos.');
+                navigateTo('auth-otp');
+            })
+            .catch(err => {
+                console.error(err);
+                toast('error', 'Erro ao enviar SMS', err.message || 'Tente novamente.');
+                if (window.recaptchaVerifier) {
+                    window.recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId));
+                }
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar código por SMS';
+            });
+    } catch (err) {
+        console.error(err);
+        toast('error', 'Erro', err.message);
+    }
+    return false;
+}
+
+function authReenviarCodigo() {
+    if (!authTelefoneCompleto) { navigateTo('auth'); return; }
+    toast('info', 'Reenviando código...', 'Aguarde um instante.');
+    const fakeEvt = document.getElementById('formAuthTelefone');
+    authSolicitarCodigo(fakeEvt);
+}
+
+function voltarParaAuth() {
+    navigateTo('auth');
+}
+
+// ============================================================
+// AUTH: VERIFICAR OTP 6 DÍGITOS
+// ============================================================
+function inicializarOtpInputs() {
+    const digits = document.querySelectorAll('.otp-digit');
+    digits.forEach((input, idx) => {
+        input.addEventListener('input', (e) => {
+            input.value = input.value.replace(/\D/g, '');
+            if (input.value && idx < digits.length - 1) digits[idx + 1].focus();
+            if (digits.length === 6 && [...digits].every(d => d.value) ) {
+                // auto-submit quando todos preenchidos
+                setTimeout(() => document.getElementById('formAuthOTP')?.requestSubmit(), 200);
+            }
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !input.value && idx > 0) digits[idx - 1].focus();
+        });
+    });
+}
+
+function authVerificarCodigo(e) {
+    if (e) e.preventDefault();
+    const digits = [...document.querySelectorAll('.otp-digit')];
+    const codigo = digits.map(d => d.value).join('');
+    if (codigo.length !== 6) { toast('error', 'Código incompleto', 'Digite os 6 dígitos.'); return false; }
+    if (!authConfirmationResult) { toast('error', 'Sessão expirou', 'Volte e envie o código novamente.'); return false; }
+
+    const btn = document.getElementById('authBtnVerificar');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Verificando...';
+
+    authConfirmationResult.confirm(codigo)
+        .then(async (result) => {
+            authUsuarioAtual = result.user;
+            authUsuarioRole = authPerfilSelecionado;
+            toast('success', 'Autenticado!', 'Telefone verificado com sucesso!');
+            // Verifica se perfil já existe na coleção
+            await authPosLoginVerificarPerfil();
+        })
+        .catch(err => {
+            console.error(err);
+            toast('error', 'Código inválido', err.message || 'Verifique e tente novamente.');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Verificar e entrar';
+        });
+    return false;
+}
+
+async function authPosLoginVerificarPerfil() {
+    if (!authUsuarioAtual) return;
+    const uid = authUsuarioAtual.uid;
+    let perfil = null;
+    if (USAR_FIREBASE) {
+        perfil = await fbBuscarPerfil(uid, authPerfilSelecionado);
+    } else {
+        // Fallback local
+        const todos = authPerfilSelecionado === 'profissional' ? profissionais : (clientes || []);
+        perfil = todos.find(p => (p.uid === uid || p.telefone === authTelefoneCompleto?.replace('+55', ''))) || null;
+    }
+
+    if (perfil) {
+        // Usuário já tem perfil completo → só navega
+        toast('success', 'Bem-vindo(a) de volta!', perfil.nome || perfil.telefone);
+        authUsuarioRole = authPerfilSelecionado;
+        atualizarHeaderUsuario();
+        fbAtualizarNavBotaoEntrar();
+        navigateTo('home');
+    } else {
+        // 1º login → abre tela complementar
+        abrirTelaComplemento();
+    }
+}
+
+function abrirTelaComplemento() {
+    // Carrega pré preenche telefone
+    const camposPro = document.getElementById('compCamposProfissional');
+    const sub = document.getElementById('completarSubtitulo');
+    if (authPerfilSelecionado === 'profissional') {
+        camposPro.classList.remove('hidden');
+        sub.textContent = 'Complete seus dados profissionais para aparecer nas buscas!';
+    } else {
+        camposPro.classList.add('hidden');
+        sub.textContent = 'Só mais alguns dados para você começar a contratar!';
+    }
+    navigateTo('auth-completar');
+}
+
+async function authSalvarComplemento(e) {
+    if (e) e.preventDefault();
+    if (!authUsuarioAtual) { toast('error', 'Usuário não logado', 'Volte e autentique-se novamente.'); return false; }
+    const uid = authUsuarioAtual.uid;
+    const nome = document.getElementById('compNome').value.trim();
+    const cidade = document.getElementById('compCidade').value.trim();
+    const bairro = document.getElementById('compBairro').value.trim();
+    if (!nome || !cidade || !bairro) return false;
+
+    if (authPerfilSelecionado === 'cliente') {
+        await fbSalvarCliente(uid, {
+            nome, cidade, bairro,
+            telefone: authTelefoneCompleto ? authTelefoneCompleto.replace('+55', '') : ''
+        });
+        authUsuarioRole = 'cliente';
+        toast('success', 'Cadastro finalizado!', 'Bem-vindo(a), ' + nome.split(' ')[0] + '!');
+    } else {
+        // Profissional
+        const catRaw = document.getElementById('compCategoria').value;
+        const preco = parseFloat(document.getElementById('compPreco').value || '0');
+        const area = document.getElementById('compArea').value.trim();
+        const bio = document.getElementById('compBio').value.trim();
+        const foto = document.getElementById('compFoto').value.trim();
+        const catSemEmoji = (catRaw || '').replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\s]+/u, '').trim();
+        const categoriaLimpa = catSemEmoji || 'Marido de Aluguel';
+        if (!catRaw || !preco || !area || !bio) {
+            toast('error', 'Preencha todos os dados', 'Campos profissional são obrigatórios'); return false;
+        }
+        const proData = {
+            nome, telefone: authTelefoneCompleto ? authTelefoneCompleto.replace('+55', '') : '',
+            foto: foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nome) + '&background=3b82f6&color=fff&size=400',
+            categoria: categoriaLimpa, categorias: [categoriaLimpa], cidade, bairro,
+            precoHora: preco, areaAtendimento: area, bio,
+            avaliacoes: [], numeroAvaliacoes: 0, totalServicos: 0,
+            verificado: false, assinaturaAtiva: true
+        };
+        await fbSalvarProfissional(uid, proData);
+        authUsuarioRole = 'profissional';
+        toast('success', 'Perfil profissional criado!', nome.split(' ')[0] + ', seu perfil já está nas buscas! 🎉');
+        // Atualiza lista
+        if (!USAR_FIREBASE) {
+            // já salvou no array
+        } else {
+            // recarrega
+            const pro = await fbBuscarPerfil(uid, 'profissional');
+            if (pro && !profissionais.find(p => p.id === pro.id)) profissionais.push(pro);
+        }
+        renderProfissionais();
+    }
+    atualizarHeaderUsuario();
+    navigateTo('home');
+    return false;
+}
+
+function atualizarHeaderUsuario() {
+    // helper para atualizar nome/avatar no header
+    console.log('Usuário logado:', authUsuarioRole, authUsuarioAtual?.uid);
+}
+
+// ============================================================
+// LOGOUT
+// ============================================================
+function authLogout() {
+    if (USAR_FIREBASE && firebaseAuth) {
+        firebaseAuth.signOut().catch(() => {});
+    }
+    authUsuarioAtual = null;
+    authUsuarioRole = null;
+    sessionStorage.removeItem('ajeita_admin');
+    adminAutenticado = false;
+    toast('info', 'Sessão encerrada', 'Volte sempre!');
+    navigateTo('home');
 }
 
 // ============================================================
 // NAVEGAÇÃO SPA
 // ============================================================
 function navigateTo(view) {
+    // CASO ESPECIAL: view === 'auth' e usuário já logado → abrir tela correta
+    if (view === 'auth' && authUsuarioAtual) {
+        if (authUsuarioRole === 'cliente') {
+            // cliente clicou em Entrar/Sair → logout
+            authLogout();
+            return;
+        }
+        if (authUsuarioRole === 'profissional') {
+            // profissional clicou Entrar → abrir cadastro (perfil profissional)
+            view = 'cadastro';
+        }
+    }
+
     document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
     const target = document.getElementById('view-' + view);
     if (target) {
         target.classList.remove('hidden');
         target.classList.add('fade-in');
+    } else {
+        // Fallback: view não encontrada (ex: view-auth-otp ou auth-completar)
+        document.getElementById('view-home').classList.remove('hidden');
+        currentView = 'home';
     }
     currentView = view;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1498,7 +2203,10 @@ function navigateTo(view) {
         btn.classList.remove('text-blue-600');
         btn.classList.add('text-gray-500');
     });
-    const activeBtn = document.querySelector(`.bottom-nav-btn[data-view="${view}"]`);
+    let botaoAtivarView = view;
+    if (['auth', 'auth-otp', 'auth-completar'].includes(view)) botaoAtivarView = 'auth';
+    if (view === 'cadastro') botaoAtivarView = 'auth';
+    const activeBtn = document.querySelector(`.bottom-nav-btn[data-view="${botaoAtivarView}"]`);
     if (activeBtn) {
         activeBtn.classList.remove('text-gray-500');
         activeBtn.classList.add('text-blue-600');
@@ -1513,6 +2221,7 @@ function navigateTo(view) {
         }
         atualizarDashboardAdmin();
     }
+    fbAtualizarNavBotaoEntrar();
 }
 
 // ============================================================
