@@ -3982,7 +3982,8 @@ function submitAdminLogin(e) {
   if (login === 'admin10' && senha === 'bolo2024') {
     adminLogado = true;
     salvarTodosGlobaisNoStorage();
-    toast('success','✅ Login admin efetuado!','Bem-vindo(a) ao painel administrativo.');
+    try { atualizarHeaderPorSessao(); } catch(eAH){}
+    toast('success','✅ Login admin efetuado!','Bem-vindo(a) ao painel administrativo. Agora aparece a ABA ADMIN no bottom nav e no header.');
     document.getElementById('formAdminLogin').reset();
     navigateTo('view-admin-dashboard');
   } else {
@@ -3992,6 +3993,7 @@ function submitAdminLogin(e) {
 function fazerLogoutAdmin() {
   adminLogado = false;
   salvarTodosGlobaisNoStorage();
+  try { atualizarHeaderPorSessao(); } catch(eAH){}
   toast('info','Logout efetuado','Você saiu do painel administrativo.');
   navigateTo('view-admin-login');
 }
