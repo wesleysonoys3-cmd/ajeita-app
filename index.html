@@ -243,101 +243,230 @@ tailwind.config = {
 </header>
 
 <!-- =============== MAIN (SPA VIEWS) =============== -->
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 pb-32 sm:pb-36">
 
-  <!-- VIEW HOME: CATÁLOGO -->
+  <!-- VIEW HOME: CATÁLOGO (LAYOUT TIPO APP GETNINJAS) -->
   <section id="view-home" class="view-section active">
-    <!-- Hero -->
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 shadow-pop mb-10 sm:mb-14">
-      <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px); background-size: 40px 40px;"></div>
-      <div class="relative px-5 sm:px-10 py-10 sm:py-16 lg:py-20">
-        <div class="max-w-3xl">
-          <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-full border border-white/20 mb-5">
-            <i class="fa-solid fa-location-dot text-accent-400"></i>
-            Profissionais verificados em todo o DF
-          </div>
-          <h1 class="text-3xl sm:text-4xl lg:text-6xl font-black text-white leading-tight mb-5">
-            Encontre os melhores <span class="text-accent-400">profissionais</span><br class="hidden sm:block"> bem perto de você.
-          </h1>
-          <p class="text-base sm:text-lg text-primary-100 mb-8 max-w-2xl">
-            Pedreiros, eletricistas, pintores, diaristas, encanadores e muito mais.
-            Solicite orçamentos grátis e contrate com confiança.
-          </p>
 
-          <!-- Pesquisa Avançada -->
-          <div class="bg-white rounded-2xl shadow-pop p-4 sm:p-6">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4">
-              <div class="md:col-span-3">
-                <label class="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Categoria</label>
-                <div class="relative">
-                  <i class="fa-solid fa-list-check absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-400 text-sm"></i>
-                  <select id="filtroCategoria" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                    <option value="">Todas as categorias</option>
-                    <option value="Pedreiro">Pedreiro</option>
-                    <option value="Eletricista">Eletricista</option>
-                    <option value="Encanador">Encanador</option>
-                    <option value="Pintor">Pintor</option>
-                    <option value="Diarista">Diarista</option>
-                    <option value="Marceneiro">Marceneiro</option>
-                    <option value="Chaveiro">Chaveiro</option>
-                    <option value="Técnico de Ar Condicionado">Ar Condicionado</option>
-                  </select>
-                </div>
-              </div>
-              <div class="md:col-span-3">
-                <label class="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Cidade</label>
-                <div class="relative">
-                  <i class="fa-solid fa-city absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-400 text-sm"></i>
-                  <select id="filtroCidade" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                    <option value="">Todas as cidades</option>
-                    <option value="Brasília">Brasília (DF)</option>
-                    <option value="Taguatinga">Taguatinga</option>
-                    <option value="Samambaia">Samambaia</option>
-                    <option value="Ceilândia">Ceilândia</option>
-                  </select>
-                </div>
-              </div>
-              <div class="md:col-span-4">
-                <label class="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Bairro / Região</label>
-                <div class="relative">
-                  <i class="fa-solid fa-map-location-dot absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-400 text-sm"></i>
-                  <input id="filtroBairro" type="text" placeholder="Ex: Asa Sul, Setor O, QNM..." class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                </div>
-              </div>
-              <div class="md:col-span-2 flex flex-col gap-2">
-                <label class="text-xs text-transparent select-none mb-1.5 ml-1">Ação</label>
-                <button onclick="aplicarFiltrosCatalogo()" class="flex-1 bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-bold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2 text-sm">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  Procurar
-                </button>
-              </div>
-            </div>
-            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <button onclick="usarLocalizacaoAtual()" class="inline-flex items-center gap-2 text-primary-600 hover:text-primary-800 text-sm font-semibold bg-primary-50 hover:bg-primary-100 px-4 py-2 rounded-xl transition border border-primary-100">
-                <i class="fa-solid fa-location-crosshairs"></i>
-                Usar minha localização atual
-              </button>
-              <button onclick="navigateTo('view-mural-pedidos')" class="inline-flex items-center gap-2 text-accent-600 hover:text-accent-700 text-sm font-semibold bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl transition border border-amber-200">
-                <i class="fa-solid fa-bullhorn"></i>
-                Quero pedir um orçamento
-              </button>
-            </div>
+    <!-- 1) TÍTULO DINÂMICO BOAS-VINDAS + SAUDAÇÃO POR HORA / NOME -->
+    <div class="mb-5 sm:mb-6">
+      <h1 id="homeTituloBoasVindas" class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Boas-vindas</h1>
+    </div>
+
+    <!-- 2) BARRA DE PESQUISA GRANDE "O que você precisa?" -->
+    <div class="mb-6 sm:mb-8">
+      <div class="relative group">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-primary-500 transition"></i>
+        <input id="homeBarraPesquisa" type="text" placeholder="O que você precisa?"
+          onclick="document.getElementById('filtroBairro')?.focus(); window.scrollTo({top: document.getElementById('catalogoProfissionais')?.offsetTop || 500, behavior:'smooth'});"
+          class="w-full pl-14 sm:pl-16 pr-5 py-4.5 sm:py-5 bg-slate-100 hover:bg-slate-50 border-2 border-transparent focus:border-primary-400 focus:bg-white rounded-2xl sm:rounded-3xl text-base sm:text-lg font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+      </div>
+    </div>
+
+    <!-- 3) CATEGORIAS RÁPIDAS — HORIZONTAL SCROLL (ÍCONES QUADRADOS) -->
+    <div class="mb-8 sm:mb-10 -mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto pb-3 hide-scrollbar">
+      <div class="flex gap-3 sm:gap-4 min-w-max sm:grid sm:grid-cols-6 sm:gap-4 sm:min-w-0">
+        <button onclick="setCategoria('Técnico de Ar Condicionado')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
+          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
+            <i class="fa-solid fa-screwdriver-wrench text-2xl sm:text-3xl text-yellow-500" style="color: #eab308;"></i>
           </div>
+          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Assistência Técnica</span>
+        </button>
+        <button onclick="setCategoria('Pedreiro')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
+          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
+            <i class="fa-solid fa-hammer text-2xl sm:text-3xl text-blue-600"></i>
+          </div>
+          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Reformas e Reparos</span>
+        </button>
+        <button onclick="abrirModalSolicitarOrcamento()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
+          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
+            <i class="fa-solid fa-champagne-glasses text-2xl sm:text-3xl text-yellow-500" style="color: #eab308;"></i>
+          </div>
+          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Eventos</span>
+        </button>
+        <button onclick="setCategoria('Diarista')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
+          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
+            <i class="fa-solid fa-house text-2xl sm:text-3xl text-blue-600"></i>
+          </div>
+          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Serviços Domésticos</span>
+        </button>
+        <button onclick="abrirModalSolicitarOrcamento()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
+          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
+            <i class="fa-solid fa-trophy text-2xl sm:text-3xl text-yellow-500" style="color: #eab308;"></i>
+          </div>
+          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Aulas</span>
+        </button>
+        <button onclick="aplicarFiltrosCatalogo()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
+          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
+            <i class="fa-solid fa-ellipsis text-2xl sm:text-3xl text-blue-600"></i>
+          </div>
+          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Mais</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4) BANNER AMARELO — CADASTRAR COMO PROFISSIONAL (igual referência!) -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-yellow-300 via-yellow-400 to-amber-400 rounded-3xl shadow-lg mb-8 sm:mb-10 group cursor-pointer" onclick="navigateTo('view-profissional-cadastro')">
+      <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-yellow-500/40 mix-blend-multiply blur-2xl group-hover:bg-yellow-500/50 transition"></div>
+      <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-amber-500/30 mix-blend-multiply blur-3xl group-hover:bg-amber-500/40 transition"></div>
+      <div class="absolute right-6 top-6 opacity-60 rotate-12 group-hover:rotate-3 transition duration-500">
+        <i class="fa-solid fa-user-tie text-white text-7xl"></i>
+      </div>
+      <div class="relative px-6 sm:px-10 py-8 sm:py-10 text-center sm:text-left">
+        <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Cadastrar serviços</h3>
+        <p class="text-base sm:text-lg text-slate-800/80 font-medium mb-5 sm:mb-6 max-w-lg mx-auto sm:mx-0">Confira todas as opções disponíveis para você!</p>
+        <button onclick="event.stopPropagation(); navigateTo('view-profissional-cadastro');" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black text-base sm:text-lg px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition group-hover:-translate-y-0.5">
+          Seja profissional
+        </button>
+      </div>
+    </div>
+
+    <!-- 5) BANNER AZUL — ACOMPANHE SEUS PEDIDOS (mostra SÓ se logado!) -->
+    <div id="homeBannerAcompanharPedidos" class="hidden relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-blue-800 rounded-3xl shadow-lg mb-8 sm:mb-10 group cursor-pointer" onclick="navigateTo('view-meus-pedidos')">
+      <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-blue-400/30 mix-blend-overlay blur-2xl group-hover:bg-blue-400/40 transition"></div>
+      <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-indigo-500/30 mix-blend-overlay blur-3xl transition"></div>
+      <div class="relative flex items-center justify-between px-6 sm:px-10 py-8 sm:py-9">
+        <div>
+          <h3 class="text-2xl sm:text-3xl font-black text-white mb-1.5">Acessar</h3>
+          <p class="text-base sm:text-lg text-blue-100 font-medium">Acompanhe seus pedidos</p>
+        </div>
+        <button onclick="event.stopPropagation(); navigateTo('view-meus-pedidos');" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-blue-500 hover:bg-white text-white hover:text-blue-700 flex items-center justify-center shadow-xl border-4 border-white/20 transition group-hover:scale-110 group-active:scale-95">
+          <i class="fa-solid fa-arrow-right text-xl sm:text-2xl ml-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 6) SEÇÃO: REFORMAS E REPAROS + Ver Tudo + grid 3 colunas FOTOS -->
+    <div class="mb-10 sm:mb-12">
+      <div class="flex items-center justify-between mb-5 sm:mb-6 px-1">
+        <h2 class="text-2xl sm:text-2.5xl font-black text-slate-900 tracking-tight">Reformas e Reparos</h2>
+        <button onclick="document.getElementById('filtroCategoria').value='Pedreiro'; aplicarFiltrosCatalogo();" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 sm:gap-5">
+        <button onclick="setCategoria('Eletricista')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Brazilian%20black%20male%20electrician%20yellow%20helmet%20working%20on%20residential%20electrical%20wires%20closeup%20photorealistic&image_size=square_hd" alt="Eletricista" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Eletricista</h4>
+          </div>
+        </button>
+        <button onclick="setCategoria('Pedreiro')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Handyman%20blue%20overalls%20tool%20belt%20construction%20tools%20leather%20gloves%20home%20repair%20photorealistic&image_size=square_hd" alt="Marido de aluguel" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Marido de aluguel</h4>
+          </div>
+        </button>
+        <button onclick="setCategoria('Marceneiro')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Professional%20mover%20uniform%20carrying%20cardboard%20boxes%20moving%20truck%20residential%20photorealistic&image_size=square_hd" alt="Mudanças e Carretos" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Mudanças e Carretos</h4>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- 7) CARD DESTAQUE HORIZONTAL (Diarista, igual referência imagem 3!) -->
+    <div class="mb-10 sm:mb-12 group cursor-pointer" onclick="setCategoria('Diarista')">
+      <div class="overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-lg hover:shadow-2xl transition group-hover:-translate-y-0.5 duration-300">
+        <div class="relative aspect-[16/9] sm:aspect-[21/9] overflow-hidden bg-slate-100">
+          <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Happy%20female%20house%20cleaner%20blue%20apron%20rubber%20gloves%20cleaning%20supplies%20in%20modern%20living%20room%20professional%20photorealistic&image_size=landscape_16_9" alt="Diarista Profissional" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+        </div>
+        <div class="flex items-center justify-between gap-5 p-5 sm:p-7">
+          <div class="flex-1 min-w-0">
+            <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Diarista</h3>
+            <p class="text-base sm:text-lg text-slate-600 leading-relaxed line-clamp-2 sm:line-clamp-none">Contratar diarista, faxineira, empregada mensal ou semanal para residências e empresas.</p>
+          </div>
+          <button onclick="event.stopPropagation(); setCategoria('Diarista');" class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white flex items-center justify-center shadow-xl hover:shadow-2xl transition group-hover:scale-110 group-active:scale-95">
+            <i class="fa-solid fa-arrow-right text-xl sm:text-2xl ml-0.5"></i>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Catálogo Profissionais -->
-    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <!-- 8) SEÇÃO: ASSISTÊNCIA TÉCNICA + Ver Tudo + grid 3 colunas FOTOS -->
+    <div class="mb-10 sm:mb-12">
+      <div class="flex items-center justify-between mb-5 sm:mb-6 px-1">
+        <h2 class="text-2xl sm:text-2.5xl font-black text-slate-900 tracking-tight">Assistência Técnica</h2>
+        <button onclick="document.getElementById('filtroCategoria').value='Técnico de Ar Condicionado'; aplicarFiltrosCatalogo();" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 sm:gap-5">
+        <button onclick="setCategoria('Técnico de Ar Condicionado')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=HVAC%20technician%20yellow%20hardhat%20blue%20overalls%20installing%20air%20conditioner%20unit%20residential%20wall%20photorealistic&image_size=square_hd" alt="Ar condicionado" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Ar condicionado</h4>
+          </div>
+        </button>
+        <button onclick="abrirModalSolicitarOrcamento()" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Technician%20repairing%20broken%20smartphone%20cracked%20screen%20workbench%20tools%20white%20gloves%20close%20up%20photorealistic&image_size=square_hd" alt="Celular" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Celular</h4>
+          </div>
+        </button>
+        <button onclick="abrirModalSolicitarOrcamento()" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Repairman%20working%20on%20refrigerator%20freezer%20appliance%20kitchen%20uniform%20tools%20professional%20photorealistic&image_size=square_hd" alt="Geladeira e freezer" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg leading-tight">Geladeira e freezer</h4>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- 9) SEÇÃO: SERVIÇOS DOMÉSTICOS + Ver Tudo + grid 3 colunas FOTOS -->
+    <div class="mb-10 sm:mb-12">
+      <div class="flex items-center justify-between mb-5 sm:mb-6 px-1">
+        <h2 class="text-2xl sm:text-2.5xl font-black text-slate-900 tracking-tight">Serviços Domésticos</h2>
+        <button onclick="setCategoria('Diarista')" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 sm:gap-5">
+        <button onclick="abrirModalSolicitarOrcamento()" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Smiling%20female%20babysitter%20nanny%20helping%20little%20girl%20with%20homework%20living%20room%20yellow%20sweater%20photorealistic&image_size=square_hd" alt="Babá" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Babá</h4>
+          </div>
+        </button>
+        <button onclick="abrirModalSolicitarOrcamento()" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Professional%20female%20cook%20chef%20blue%20apron%20cooking%20in%20kitchen%20stainless%20steel%20pots%20photorealistic&image_size=square_hd" alt="Cozinheira" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Cozinheira</h4>
+          </div>
+        </button>
+        <button onclick="setCategoria('Diarista')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+          <div class="aspect-square overflow-hidden bg-slate-100">
+            <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Housekeeper%20cleaning%20lady%20blue%20apron%20yellow%20gloves%20cleaning%20products%20spray%20modern%20home%20professional%20photorealistic&image_size=square_hd" alt="Diarista" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          </div>
+          <div class="p-3 sm:p-4">
+            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Diarista</h4>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- 10) CATÁLOGO DE PROFISSIONAIS (final da página) -->
+    <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <h2 class="text-2xl sm:text-3xl font-black text-slate-800 mb-1">Profissionais em destaque</h2>
         <p class="text-slate-500 text-sm sm:text-base">
-          <span id="qtdProfissionais" class="font-bold text-primary-600">0</span> profissionais prontos para atender você.
+          <span id="qtdProfissionais" class="font-bold text-blue-600">0</span> profissionais prontos para atender você.
         </p>
       </div>
       <div class="flex items-center gap-2 text-xs sm:text-sm">
         <span class="text-slate-400">Ordenar por:</span>
-        <select onchange="aplicarFiltrosCatalogo()" id="filtroOrdem" class="bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-400">
+        <select onchange="aplicarFiltrosCatalogo()" id="filtroOrdem" class="bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
           <option value="avaliacao">Maior avaliação</option>
           <option value="qtdAvaliacoes">Mais avaliados</option>
           <option value="nome">Nome (A-Z)</option>
@@ -346,6 +475,29 @@ tailwind.config = {
     </div>
 
     <div id="catalogoProfissionais" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+    </div>
+
+    <!-- 11) Filtros avançados escondidos (usados pelas categorias) - mantidos para compatibilidade -->
+    <div class="hidden">
+      <select id="filtroCategoria">
+        <option value="">Todas as categorias</option>
+        <option value="Pedreiro">Pedreiro</option>
+        <option value="Eletricista">Eletricista</option>
+        <option value="Encanador">Encanador</option>
+        <option value="Pintor">Pintor</option>
+        <option value="Diarista">Diarista</option>
+        <option value="Marceneiro">Marceneiro</option>
+        <option value="Chaveiro">Chaveiro</option>
+        <option value="Técnico de Ar Condicionado">Ar Condicionado</option>
+      </select>
+      <select id="filtroCidade">
+        <option value="">Todas as cidades</option>
+        <option value="Brasília">Brasília (DF)</option>
+        <option value="Taguatinga">Taguatinga</option>
+        <option value="Samambaia">Samambaia</option>
+        <option value="Ceilândia">Ceilândia</option>
+      </select>
+      <input id="filtroBairro" type="text">
     </div>
   </section>
 
@@ -829,6 +981,11 @@ tailwind.config = {
   </section>
 
 </main>
+
+<!-- =============== BOTTOM NAVIGATION BAR FIXA =============== -->
+<nav id="bottomNav" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 pb-safe sm:pb-2 pt-2 shadow-[0_-4px_20px_rgba(15,23,42,0.05)] sm:max-w-2xl sm:left-1/2 sm:-translate-x-1/2 sm:bottom-4 sm:rounded-3xl sm:border sm:shadow-2xl">
+  <!-- Conteúdo preenchido por JS (renderBottomNav) -->
+</nav>
 
 <!-- =============== MODAIS GLOBAIS =============== -->
 
@@ -1822,7 +1979,166 @@ function navigateTo(viewId) {
   }
   if (viewId === 'view-mural-pedidos') renderMuralPedidos();
 
+  // ===== BOTTOM NAV: RENDERIZA SEMPRE QUE NAVEGA =====
+  try { renderBottomNav(viewId); } catch(e) { console.error('[renderBottomNav erro]', e); }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/**
+ * Atalho para clicar em categoria: seleciona no filtro, aplica e rola até o catálogo
+ */
+function setCategoria(valorCategoria) {
+  try {
+    const sel = document.getElementById('filtroCategoria');
+    if (sel) { sel.value = valorCategoria || ''; }
+    aplicarFiltrosCatalogo();
+    // Rola até o grid de profissionais (suave)
+    setTimeout(() => {
+      const grid = document.getElementById('catalogoProfissionais');
+      if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  } catch(e) { console.error('[setCategoria erro]', e); toast('error','Ops','Falha ao aplicar filtro, tente novamente.'); }
+}
+
+/**
+ * Atualiza a HOME conforme sessão (título, banner azul de pedidos)
+ */
+function atualizarHomeSessao() {
+  try {
+    // 1) Título dinâmico: saudação por hora + nome se logado
+    const h = new Date().getHours();
+    let saud = 'Bom dia';
+    if (h >= 12 && h < 18) saud = 'Boa tarde';
+    if (h >= 18 || h < 5) saud = 'Boa noite';
+
+    let nomeUsuario = null;
+    if (profissionalLogado && profissionalLogado.nome) {
+      // Pega primeiro nome
+      nomeUsuario = profissionalLogado.nome.split(' ')[0];
+    } else if (clienteGoogleLogado) {
+      var nomeCli = clienteGoogleLogado.primeiroNome || clienteGoogleLogado.nome || clienteGoogleLogado.name || '';
+      nomeUsuario = (nomeCli.split(' ')[0]) || null;
+    }
+
+    const elTit = document.getElementById('homeTituloBoasVindas');
+    if (elTit) {
+      if (nomeUsuario && nomeUsuario.length > 0) {
+        elTit.textContent = saud + ', ' + nomeUsuario + '! 👋';
+      } else {
+        elTit.textContent = 'Boas-vindas';
+      }
+    }
+
+    // 2) Banner azul "Acompanhe seus pedidos" só aparece se usuário ESTIVER LOGADO
+    const bannerPed = document.getElementById('homeBannerAcompanharPedidos');
+    if (bannerPed) {
+      if (profissionalLogado || clienteGoogleLogado) {
+        bannerPed.classList.remove('hidden');
+      } else {
+        bannerPed.classList.add('hidden');
+      }
+    }
+  } catch(e) { console.error('[atualizarHomeSessao erro]', e); }
+}
+
+/**
+ * Helpers Bottom Nav (evitam conflito de aspas em templates strings inline)
+ */
+function bottomNavClickPedidos() {
+  if (clienteGoogleLogado || profissionalLogado) { navigateTo('view-meus-pedidos'); return; }
+  abrirLoginGoogle('cliente');
+  setTimeout(function(){ toast('info','Faça login','Entre com Google para ver seus pedidos.',4000); }, 300);
+}
+function bottomNavClickBuscaHome() {
+  try {
+    var barra = document.getElementById('homeBarraPesquisa');
+    if (barra) {
+      if (!document.getElementById('view-home').classList.contains('active')) navigateTo('view-home');
+      setTimeout(function(){ barra.focus(); window.scrollTo({top:0,behavior:'smooth'}); }, 50);
+    } else { navigateTo('view-home'); }
+  } catch(e) { navigateTo('view-home'); }
+}
+function bottomNavClickPerfilCliente() {
+  if (clienteGoogleLogado) navigateTo('view-meus-pedidos');
+  else abrirLoginGoogle('cliente');
+}
+
+/**
+ * RENDERIZAÇÃO BOTTOM NAV DINÂMICA
+ * - 4 abas para CLIENTE / NÃO LOGADO: Início, Buscar, Pedidos, Entrar/Perfil
+ * - 4 abas para PROFISSIONAL LOGADO: Painel, Mural, Loja, Perfil
+ */
+function renderBottomNav(viewIdAtual) {
+  const nav = document.getElementById('bottomNav');
+  if (!nav) return;
+
+  // Determina view atual (se não veio por parâmetro, detecta pela view ativa)
+  let viewAtiva = viewIdAtual;
+  if (!viewAtiva) {
+    const ativa = document.querySelector('.view-section.active');
+    viewAtiva = ativa ? ativa.id : 'view-home';
+  }
+
+  // ===== CASO 1: PROFISSIONAL LOGADO =====
+  if (profissionalLogado) {
+    const abaAtiva = (id) => id === viewAtiva ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600';
+    const ativaBg = (id) => id === viewAtiva ? 'bg-blue-50' : 'bg-transparent';
+    nav.innerHTML = `
+      <div class="grid grid-cols-4 gap-1 px-2 sm:px-3">
+        <button onclick="navigateTo('view-home')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-home')} ${abaAtiva('view-home')}">
+          <i class="fa-solid fa-house text-xl sm:text-2xl ${viewAtiva==='view-home' ? 'text-blue-600' : ''}"></i>
+          <span class="text-[11px] sm:text-xs font-bold tracking-tight">Painel</span>
+        </button>
+        <button onclick="navigateTo('view-mural-pedidos')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-mural-pedidos')} ${abaAtiva('view-mural-pedidos')}">
+          <i class="fa-solid fa-map-location-dot text-xl sm:text-2xl ${viewAtiva==='view-mural-pedidos' ? 'text-blue-600' : ''}"></i>
+          <span class="text-[11px] sm:text-xs font-bold tracking-tight">Mural</span>
+        </button>
+        <button onclick="abrirLojaMoedas()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-profissional-loja')} ${abaAtiva('view-profissional-loja')}">
+          <i class="fa-solid fa-coins text-xl sm:text-2xl ${viewAtiva==='view-profissional-loja' ? 'text-blue-600' : 'text-amber-500'}"></i>
+          <span class="text-[11px] sm:text-xs font-bold tracking-tight">Moedas</span>
+        </button>
+        <button onclick="navigateTo('view-profissional-perfil')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-profissional-perfil')} ${abaAtiva('view-profissional-perfil')}">
+          <i class="fa-solid fa-user text-xl sm:text-2xl ${viewAtiva==='view-profissional-perfil' ? 'text-blue-600' : ''}"></i>
+          <span class="text-[11px] sm:text-xs font-bold tracking-tight">Perfil</span>
+        </button>
+      </div>`;
+    return;
+  }
+
+  // ===== CASO 2: CLIENTE (logado Google ou não logado) =====
+  const temClienteLogado = !!clienteGoogleLogado;
+  const abaAtiva = (id) => id === viewAtiva ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600';
+  const ativaBg = (id) => id === viewAtiva ? 'bg-blue-50' : 'bg-transparent';
+  let aba4;
+  if (temClienteLogado) {
+    aba4 = `<button onclick="bottomNavClickPerfilCliente()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-meus-pedidos')} ${abaAtiva('view-meus-pedidos')}">
+      <i class="fa-solid fa-circle-user text-xl sm:text-2xl ${viewAtiva==='view-meus-pedidos' ? 'text-blue-600' : ''}"></i>
+      <span class="text-[11px] sm:text-xs font-bold tracking-tight">Perfil</span>
+    </button>`;
+  } else {
+    aba4 = `<button onclick="abrirLoginGoogle('cliente')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition text-slate-400 hover:text-slate-600">
+      <i class="fa-regular fa-user text-xl sm:text-2xl"></i>
+      <span class="text-[11px] sm:text-xs font-bold tracking-tight">Entrar</span>
+    </button>`;
+  }
+
+  nav.innerHTML = `
+    <div class="grid grid-cols-4 gap-1 px-2 sm:px-3">
+      <button onclick="navigateTo('view-home')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-home')} ${abaAtiva('view-home')}">
+        <i class="fa-solid fa-house text-xl sm:text-2xl ${viewAtiva==='view-home' ? 'text-blue-600' : ''}"></i>
+        <span class="text-[11px] sm:text-xs font-bold tracking-tight">Início</span>
+      </button>
+      <button onclick="bottomNavClickBuscaHome()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition text-slate-400 hover:text-slate-600">
+        <i class="fa-solid fa-magnifying-glass text-xl sm:text-2xl"></i>
+        <span class="text-[11px] sm:text-xs font-bold tracking-tight">Buscar</span>
+      </button>
+      <button onclick="bottomNavClickPedidos()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-meus-pedidos')} ${abaAtiva('view-meus-pedidos')}">
+        <i class="fa-solid fa-briefcase text-xl sm:text-2xl ${viewAtiva==='view-meus-pedidos' ? 'text-blue-600' : ''}"></i>
+        <span class="text-[11px] sm:text-xs font-bold tracking-tight">Pedidos</span>
+      </button>
+      ${aba4}
+    </div>`;
 }
 
 function abrirHistoricoLeadsProfissional() {
@@ -1935,6 +2251,10 @@ function atualizarHeaderPorSessao() {
     if (mobileCadastro) mobileCadastro.classList.remove('hidden');
     if (mobileLogout) { mobileLogout.classList.add('hidden'); mobileLogout.classList.remove('block'); }
   }
+
+  // ===== V4: ATUALIZAÇÕES HOME + BOTTOM NAV =====
+  try { atualizarHomeSessao(); } catch(e){}
+  try { renderBottomNav(); } catch(e){ console.error('[header renderBottomNav]',e); }
 }
 function fazerLogoutProfissional() {
   profissionalLogado = null;
