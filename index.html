@@ -238,23 +238,9 @@ tailwind.config = {
         </div>
       </nav>
       <div class="p-4 border-t border-slate-100 space-y-2">
-        <button onclick="abrirLoginGoogle('cliente'); toggleMobileMenu()" id="mobileBtnEntrarGoogleCliente" class="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 rounded-xl shadow-sm transition">
-          <svg width="16" height="16" viewBox="0 0 48 48">
-            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-          </svg>
-          Entrar com Google (Cliente)
-        </button>
-        <button onclick="abrirLoginGoogle('profissional'); toggleMobileMenu()" id="mobileBtnEntrarGoogleProfissional" class="w-full flex items-center justify-center gap-2 bg-primary-50 hover:bg-primary-100 border border-primary-200 text-primary-700 font-bold py-3 rounded-xl shadow-sm transition">
-          <svg width="16" height="16" viewBox="0 0 48 48">
-            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-          </svg>
-          Entrar com Google (Profissional)
+        <button onclick="navigateTo('view-login'); toggleMobileMenu()" id="mobileBtnEntrarUnificado" class="w-full flex items-center justify-center gap-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3.5 rounded-xl shadow-sm transition">
+          <i class="fa-solid fa-right-to-bracket text-primary-700 text-base"></i>
+          Entrar / Sua Conta
         </button>
         <button onclick="navigateTo('view-profissional-cadastro'); toggleMobileMenu()" id="mobileBtnCadastrar" class="w-full bg-gradient-to-r from-primary-500 to-primary-700 text-white font-semibold py-3 rounded-xl shadow-card">
           <i class="fa-solid fa-user-plus mr-2"></i>Cadastrar como Profissional
@@ -811,6 +797,94 @@ tailwind.config = {
     </div>
 
     <div id="meusPedidosContainer" class="space-y-4">
+    </div>
+  </section>
+
+  <!-- =============== VIEW LOGIN DEDICADA (Cliente / Profissionais) =============== -->
+  <section id="view-login" class="view-section">
+    <div class="max-w-md mx-auto">
+      <!-- ===== HEADER LIMPO (tela login dedicada) ===== -->
+      <div class="flex items-center justify-between mb-10">
+        <button onclick="navigateTo('view-home')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition">
+          <i class="fa-solid fa-arrow-left text-lg"></i>
+        </button>
+        <button onclick="navigateTo('view-home')" class="flex items-center gap-2.5 group">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-card group-hover:shadow-pop transition">
+            <i class="fa-solid fa-screwdriver-wrench text-white text-lg"></i>
+          </div>
+          <div class="text-left">
+            <div class="text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">Ajeita</div>
+            <div class="text-[11px] text-slate-500 font-medium -mt-0.5">Serviços domésticos</div>
+          </div>
+        </button>
+        <button onclick="navigateTo('view-admin-login')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-primary-50 hover:bg-primary-100 border-2 border-primary-200 text-primary-700 shadow-sm transition" title="Área do Admin">
+          <i class="fa-solid fa-shield-halved text-base"></i>
+        </button>
+      </div>
+
+      <!-- ===== ABAS CLIENTE / PROFISSIONAIS (container cinza claro) ===== -->
+      <div id="loginAbasContainer" class="inline-flex w-full bg-slate-100 rounded-2xl p-1.5 shadow-sm mb-8">
+        <button type="button" id="loginAbaClienteBtn" onclick="trocarAbaLogin('cliente')" class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition">
+          <i class="fa-solid fa-user text-xs sm:text-sm"></i> Cliente
+        </button>
+        <button type="button" id="loginAbaProfissionalBtn" onclick="trocarAbaLogin('profissional')" class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition">
+          <i class="fa-solid fa-screwdriver-wrench text-xs sm:text-sm"></i> Profissionais
+        </button>
+      </div>
+
+      <!-- ===== CARD FORMULARIO CENTRALIZADO ===== -->
+      <form id="formLoginGeral" onsubmit="submitLoginGeral(event)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="bg-white rounded-3xl shadow-card border border-slate-100 p-7 space-y-6">
+        <!-- Titulo dinamico -->
+        <div class="text-center mb-2">
+          <h2 id="loginCardTitulo" class="text-2xl sm:text-3xl font-black text-slate-800 leading-tight">Sua Conta Ajeita (Cliente)</h2>
+          <p id="loginCardSubtitulo" class="text-slate-500 text-sm mt-1.5">Acesse para pedir serviços e acompanhar seus pedidos.</p>
+        </div>
+
+        <!-- Campo Email -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">E-mail</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input required id="loginEmailInput" type="email" placeholder="seuemail@exemplo.com" autocomplete="off" class="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+          </div>
+        </div>
+
+        <!-- Campo Senha -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-bold text-slate-700">Senha</label>
+            <button type="button" onclick="toast('info','Redefinir senha','Em breve: link para recuperar sua senha por e-mail. Enquanto isso, use o botão Google abaixo (login sem senha!).','4500');" class="text-[12px] font-bold text-primary-700 hover:text-primary-800 transition">Esqueceu a senha?</button>
+          </div>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input required id="loginSenhaInput" type="password" placeholder="Digite sua senha" autocomplete="new-password" class="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+          </div>
+        </div>
+
+        <!-- Botao principal "Acessar Painel" -->
+        <button type="submit" class="w-full bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-700 hover:to-primary-900 text-white font-extrabold py-3.5 rounded-xl shadow-card hover:shadow-pop transition text-base">
+          <i class="fa-solid fa-right-to-bracket mr-2"></i>Acessar Painel
+        </button>
+
+        <!-- Separador "ou acesse com" -->
+        <div class="relative flex items-center gap-3 py-0.5">
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <span class="text-[11px] uppercase font-black tracking-widest text-slate-400">ou acesse com</span>
+          <div class="flex-1 h-px bg-slate-200"></div>
+        </div>
+
+        <!-- Botao Google (wrapper JS injeta htmlBotaoContinuarComGoogle) -->
+        <div id="loginBtnGoogleContainer"></div>
+
+        <!-- Separador "ou cadastre-se" -->
+        <div class="pt-4 mt-2 border-t border-slate-100 space-y-3">
+          <div class="text-xs text-slate-500 text-center">Ainda não tem conta?</div>
+          <button type="button" id="loginBtnCadastrar" onclick="navigateTo('view-home')" class="w-full flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 text-slate-700 font-bold py-3 rounded-xl shadow-sm hover:shadow transition text-sm">
+            <i class="fa-solid fa-user-plus"></i>
+            <span id="loginBtnCadastrarLabel">Começar a pedir serviços (Cliente)</span>
+          </button>
+        </div>
+      </form>
     </div>
   </section>
 
@@ -2569,6 +2643,54 @@ function toggleMobileMenu() {
 }
 
 // SPA Navigation
+// =============== NOVO: LOGIN DEDICADO (Clientes e Profissionais) ===============
+var _loginAbaAtual = 'cliente';
+function trocarAbaLogin(aba) {
+  _loginAbaAtual = (aba === 'profissional') ? 'profissional' : 'cliente';
+  const btnCliente = document.getElementById('loginAbaClienteBtn');
+  const btnProf = document.getElementById('loginAbaProfissionalBtn');
+  const titulo = document.getElementById('loginCardTitulo');
+  const sub = document.getElementById('loginCardSubtitulo');
+  const btnCad = document.getElementById('loginBtnCadastrar');
+  const btnCadLabel = document.getElementById('loginBtnCadastrarLabel');
+  const gWrap = document.getElementById('loginBtnGoogleContainer');
+
+  // classes abas
+  if (_loginAbaAtual === 'cliente') {
+    btnCliente.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition bg-white shadow-sm text-primary-700';
+    btnProf.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition text-slate-500 hover:text-slate-700';
+    if (titulo) titulo.textContent = 'Sua Conta Ajeita (Cliente)';
+    if (sub) sub.textContent = 'Acesse para pedir serviços e acompanhar seus pedidos.';
+    if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-home')");
+    if (btnCadLabel) btnCadLabel.textContent = 'Começar a pedir serviços (Cliente)';
+    if (gWrap) gWrap.innerHTML = htmlBotaoContinuarComGoogle('cliente', 'Sua Conta');
+  } else {
+    btnProf.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition bg-white shadow-sm text-primary-700';
+    btnCliente.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition text-slate-500 hover:text-slate-700';
+    if (titulo) titulo.textContent = 'Sua Conta Ajeita (Profissionais)';
+    if (sub) sub.textContent = 'Acesse para ver pedidos, histórico e sua carteira de moedas.';
+    if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-profissional-cadastro')");
+    if (btnCadLabel) btnCadLabel.textContent = 'Cadastrar-se como Profissional';
+    if (gWrap) gWrap.innerHTML = htmlBotaoContinuarComGoogle('profissional', 'Sua Conta');
+  }
+  const email = document.getElementById('loginEmailInput');
+  if (email) email.focus();
+}
+function submitLoginGeral(e) {
+  if (e) e.preventDefault();
+  toast('info','Login com senha','Atualmente o login por e-mail e senha estará disponível em breve. Use o botão "Continuar com o Google" para entrar SEM SENHA na sua conta Ajeita.','5500');
+}
+function renderLoginDedicado() {
+  // garante que a view-login abra com o estado correto e botao google preenchido
+  try { trocarAbaLogin(_loginAbaAtual); } catch(eTroca){}
+  // reseta campos
+  try {
+    document.getElementById('loginEmailInput').value = '';
+    document.getElementById('loginSenhaInput').value = '';
+  } catch(eRst){}
+}
+// =============== FIM LOGIN DEDICADO ===============
+
 function navigateTo(viewId) {
   // ===== GUARDS VIEWS PROFISSIONAL PROTEGIDAS =====
   const VIEWS_PROFISSIONAL_PROTEGIDAS = [
@@ -2599,6 +2721,7 @@ function navigateTo(viewId) {
   if (viewId === 'view-profissional-loja') renderLojaPacotes();
   if (viewId === 'view-meus-pedidos') renderMeusPedidos();
   if (viewId === 'view-admin-dashboard') renderAdminDashboard();
+  if (viewId === 'view-login') renderLoginDedicado();
   if (viewId === 'view-profissional-perfil') {
     setTimeout(() => {
       renderCidadesSelectPerfil();
@@ -2771,16 +2894,16 @@ function renderBottomNav(viewIdAtual) {
   const temClienteLogado = !!clienteGoogleLogado;
   const abaAtiva = (id) => id === viewAtiva ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600';
   const ativaBg = (id) => id === viewAtiva ? 'bg-blue-50' : 'bg-transparent';
-  let aba4;
+  let aba5;
   if (temClienteLogado) {
-    aba4 = `<button onclick="bottomNavClickPerfilCliente()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-meus-pedidos')} ${abaAtiva('view-meus-pedidos')}">
+    aba5 = `<button onclick="bottomNavClickPerfilCliente()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-meus-pedidos')} ${abaAtiva('view-meus-pedidos')}">
       <i class="fa-solid fa-circle-user text-xl sm:text-2xl ${viewAtiva==='view-meus-pedidos' ? 'text-blue-600' : ''}"></i>
-      <span class="text-[11px] sm:text-xs font-bold tracking-tight">Perfil</span>
+      <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Perfil</span>
     </button>`;
   } else {
-    aba4 = `<button onclick="abrirLoginGoogle('cliente')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition text-slate-400 hover:text-slate-600">
+    aba5 = `<button onclick="navigateTo('view-login')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition text-slate-400 hover:text-slate-600">
       <i class="fa-regular fa-user text-xl sm:text-2xl"></i>
-      <span class="text-[11px] sm:text-xs font-bold tracking-tight">Entrar</span>
+      <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Entrar</span>
     </button>`;
   }
 
@@ -2802,7 +2925,7 @@ function renderBottomNav(viewIdAtual) {
         <i class="fa-solid fa-shield-halved text-xl sm:text-2xl"></i>
         <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Admin</span>
       </button>
-      ${aba4}
+      ${aba5}
     </div>`;
 }
 
@@ -2850,16 +2973,21 @@ function atualizarHeaderPorSessao() {
   const btnEntrarGoogle = document.getElementById('headerBtnEntrarGoogle');
   const avatarFoto = document.getElementById('headerAvatarFotoGoogle');
   const avatarNome = document.getElementById('headerAvatarNomeGoogle');
-  const mobileBtnEntrarGoogleCliente = document.getElementById('mobileBtnEntrarGoogleCliente');
-  const mobileBtnEntrarGoogleProfissional = document.getElementById('mobileBtnEntrarGoogleProfissional');
   const mobileBtnLogoutGoogleCliente = document.getElementById('mobileBtnLogoutGoogleCliente');
-  // NOVO V6d: botao Admin visivel no header (mobile/tablet)
+  // NOVO V6d e V7 (Login Dedicado Unificado)
   const btnAdminMobile = document.getElementById('headerBtnAdminMobile');
+  const mobileBtnEntrarUnificado = document.getElementById('mobileBtnEntrarUnificado');
   // ===== V3: GRUPOS DE NAVEGAÇÃO SEPARADOS CLIENTE vs PROFISSIONAL =====
   const headerGroupCliente = document.getElementById('headerNavGroupCliente');
   const headerGroupProfissional = document.getElementById('headerNavGroupProfissional');
   const mobileGroupCliente = document.getElementById('mobileNavGroupCliente');
   const mobileGroupProfissional = document.getElementById('mobileNavGroupProfissional');
+
+  // ====== (NOVO V7: REGRAS FIXAS HEADER) =====
+  // Usuário pediu: REMOVER botao Entrar Google e Cadastrar Profissional do HEADER GLOBAL.
+  // Só aparecem no Menu Hambúrguer (mobile) ou na Tela Login dedicada.
+  if (btnCadastrar) { btnCadastrar.classList.add('hidden'); btnCadastrar.classList.remove('sm:flex'); }
+  if (btnEntrarGoogle) { btnEntrarGoogle.classList.add('hidden'); btnEntrarGoogle.classList.remove('lg:flex'); }
 
   // ====== V3: SEPARAÇÃO DE VISÕES ======
   if (profissionalLogado) {
@@ -2887,25 +3015,17 @@ function atualizarHeaderPorSessao() {
     if (avatarNome) avatarNome.textContent = clienteGoogleLogado.primeiroNome || clienteGoogleLogado.nome || 'Cliente Google';
     if (avatarFoto && clienteGoogleLogado.foto) { avatarFoto.src = clienteGoogleLogado.foto; avatarFoto.style.display='block'; }
     else if (avatarFoto) { avatarFoto.src=''; avatarFoto.style.display='none'; }
-    btnEntrarGoogle?.classList.add('hidden'); btnEntrarGoogle?.classList.remove('lg:flex');
-    if (mobileBtnEntrarGoogleCliente) mobileBtnEntrarGoogleCliente.classList.add('hidden');
-    if (mobileBtnEntrarGoogleProfissional) mobileBtnEntrarGoogleProfissional.classList.remove('hidden');
+    // novo mobile: esconder botao Entrar (ja esta logado)
+    if (mobileBtnEntrarUnificado) mobileBtnEntrarUnificado.classList.add('hidden');
     if (mobileBtnLogoutGoogleCliente) { mobileBtnLogoutGoogleCliente.classList.remove('hidden'); mobileBtnLogoutGoogleCliente.classList.add('block'); }
   } else {
     avatarContainer?.classList.add('hidden'); avatarContainer?.classList.remove('flex');
-    // Se NAO logou Google cliente, mostra botão "Entrar com Google" no desktop
-    if (!profissionalLogado) {
-      btnEntrarGoogle?.classList.remove('hidden'); btnEntrarGoogle?.classList.add('lg:flex');
-    } else {
-      btnEntrarGoogle?.classList.add('hidden'); btnEntrarGoogle?.classList.remove('lg:flex');
-    }
     if (mobileBtnLogoutGoogleCliente) mobileBtnLogoutGoogleCliente.classList.add('hidden');
-    if (!profissionalLogado) {
-      if (mobileBtnEntrarGoogleCliente) mobileBtnEntrarGoogleCliente.classList.remove('hidden');
-      if (mobileBtnEntrarGoogleProfissional) mobileBtnEntrarGoogleProfissional.classList.remove('hidden');
-    } else {
-      if (mobileBtnEntrarGoogleCliente) mobileBtnEntrarGoogleCliente.classList.add('hidden');
-      if (mobileBtnEntrarGoogleProfissional) mobileBtnEntrarGoogleProfissional.classList.add('hidden');
+    // novo mobile: MOSTRAR botao Entrar Unificado se NAO logou profissional nem admin
+    if (mobileBtnEntrarUnificado && !profissionalLogado && !adminLogado) {
+      mobileBtnEntrarUnificado.classList.remove('hidden');
+    } else if (mobileBtnEntrarUnificado) {
+      mobileBtnEntrarUnificado.classList.add('hidden');
     }
   }
 
