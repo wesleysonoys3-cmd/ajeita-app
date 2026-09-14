@@ -91,11 +91,22 @@ tailwind.config = {
           <span id="headerBoasVindasTexto">Bom dia</span>!
         </div>
         <nav class="flex items-center gap-1">
-          <button onclick="navigateTo('view-home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-magnifying-glass mr-1.5 text-primary-500"></i>Buscar Profissionais</button>
-          <button onclick="navigateTo('view-mural-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-clipboard-list mr-1.5 text-accent-500"></i>Mural de Pedidos</button>
-          <button onclick="navigateTo('view-profissional-cadastro')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie mr-1.5 text-primary-500"></i>Sou Profissional</button>
-          <button onclick="navigateTo('view-meus-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase mr-1.5 text-accent-500"></i>Meus Pedidos</button>
-          <button onclick="navigateTo('view-admin-login')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-shield-halved mr-1.5 text-primary-700"></i>Admin</button>
+          <!-- ===== GRUPO CLIENTE / ANÔNIMO (mostra se profissional NÃO logado) ===== -->
+          <div id="headerNavGroupCliente" class="flex items-center gap-1">
+            <button onclick="navigateTo('view-home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-magnifying-glass mr-1.5 text-primary-500"></i>Catálogo de Profissionais</button>
+            <button onclick="abrirModalSolicitarOrcamento()" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 shadow-sm transition"><i class="fa-solid fa-bullhorn mr-1.5"></i>Pedir Serviço</button>
+            <button onclick="navigateTo('view-meus-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase mr-1.5 text-accent-500"></i>Meus Pedidos</button>
+            <button onclick="navigateTo('view-profissional-cadastro')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie mr-1.5 text-primary-500"></i>Sou Profissional</button>
+            <button onclick="navigateTo('view-admin-login')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-shield-halved mr-1.5 text-primary-700"></i>Admin</button>
+          </div>
+          <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
+          <div id="headerNavGroupProfissional" class="hidden items-center gap-1">
+            <button onclick="navigateTo('view-home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-house mr-1.5 text-slate-500"></i>Home</button>
+            <button onclick="navigateTo('view-mural-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-map-location-dot mr-1.5 text-primary-500"></i>Mural da Sua Região</button>
+            <button onclick="abrirLojaMoedas()" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:from-amber-100 hover:to-orange-100 transition"><i class="fa-solid fa-coins mr-1.5 text-amber-600"></i>Minhas Moedas</button>
+            <button onclick="abrirHistoricoLeadsProfissional()" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-book-open mr-1.5 text-primary-500"></i>Histórico Leads</button>
+            <button onclick="abrirMeuPerfil()" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-sm transition"><i class="fa-solid fa-user-gear mr-1.5"></i>Meu Perfil</button>
+          </div>
         </nav>
       </div>
 
@@ -177,11 +188,23 @@ tailwind.config = {
         </button>
       </div>
       <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
-        <button onclick="navigateTo('view-home'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-magnifying-glass text-primary-500 w-5"></i>Buscar Profissionais</button>
-        <button onclick="navigateTo('view-mural-pedidos'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-clipboard-list text-accent-500 w-5"></i>Mural de Pedidos</button>
-        <button onclick="navigateTo('view-profissional-cadastro'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie text-primary-500 w-5"></i>Sou Profissional</button>
-        <button onclick="navigateTo('view-meus-pedidos'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase text-accent-500 w-5"></i>Meus Pedidos</button>
-        <button onclick="navigateTo('view-admin-login'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-shield-halved text-primary-700 w-5"></i>Área do Admin</button>
+        <!-- ===== GRUPO CLIENTE / ANÔNIMO (mostra se profissional NÃO logado) ===== -->
+        <div id="mobileNavGroupCliente" class="space-y-1.5">
+          <button onclick="navigateTo('view-home'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-magnifying-glass text-primary-500 w-5"></i>Catálogo de Profissionais</button>
+          <button onclick="abrirModalSolicitarOrcamento(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 shadow-sm transition"><i class="fa-solid fa-bullhorn w-5"></i>Pedir Serviço / Orçamento</button>
+          <button onclick="navigateTo('view-meus-pedidos'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase text-accent-500 w-5"></i>Meus Pedidos</button>
+          <button onclick="navigateTo('view-profissional-cadastro'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie text-primary-500 w-5"></i>Quero ser Profissional</button>
+          <button onclick="navigateTo('view-admin-login'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-shield-halved text-primary-700 w-5"></i>Área do Admin</button>
+        </div>
+        <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
+        <div id="mobileNavGroupProfissional" class="hidden space-y-1.5">
+          <div class="text-[10px] uppercase font-black tracking-wider text-primary-600 px-4 pt-3 pb-1 border-b border-primary-100 mb-1">Área do Profissional</div>
+          <button onclick="navigateTo('view-home'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-house text-slate-500 w-5"></i>Home / Catálogo</button>
+          <button onclick="navigateTo('view-mural-pedidos'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-primary-700 bg-primary-50 border border-primary-100 hover:bg-primary-100 transition"><i class="fa-solid fa-map-location-dot text-primary-500 w-5"></i>Mural de Pedidos (Sua Região)</button>
+          <button onclick="abrirLojaMoedas(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:from-amber-100 hover:to-orange-100 transition"><i class="fa-solid fa-coins text-amber-600 w-5"></i>Loja / Saldo de Moedas</button>
+          <button onclick="abrirHistoricoLeadsProfissional(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-book-open text-primary-500 w-5"></i>Histórico Leads Desbloqueados</button>
+          <button onclick="abrirMeuPerfil(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-sm transition"><i class="fa-solid fa-user-gear w-5"></i>Meu Perfil Profissional</button>
+        </div>
       </nav>
       <div class="p-4 border-t border-slate-100 space-y-2">
         <button onclick="abrirLoginGoogle('cliente'); toggleMobileMenu()" id="mobileBtnEntrarGoogleCliente" class="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 rounded-xl shadow-sm transition">
@@ -443,6 +466,147 @@ tailwind.config = {
         </div>
       </div>
       <div id="lojaPacotesContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW MEU PERFIL (PROFISSIONAL) -->
+  <section id="view-profissional-perfil" class="view-section">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+        <div>
+          <div class="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-bold px-3 py-1.5 rounded-full border border-primary-200 mb-3">
+            👤 MEU PERFIL PROFISSIONAL
+          </div>
+          <h2 id="perfilTituloNome" class="text-3xl sm:text-4xl font-black text-slate-800 mb-2">Meu Perfil</h2>
+          <p class="text-slate-500 text-lg">Atualize seus dados, especialidades e valores. Alterações refletem imediatamente no catálogo público.</p>
+        </div>
+      </div>
+
+      <!-- CARDS ESTATÍSTICAS -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center text-2xl">🪙</div>
+            <div>
+              <div class="text-xs text-slate-500 font-bold uppercase tracking-wide">Saldo de Moedas</div>
+              <div id="perfilCardSaldo" class="text-2xl font-black text-amber-700 leading-tight">0</div>
+            </div>
+          </div>
+          <div class="text-xs text-slate-500 mt-1">Use para desbloquear leads de clientes</div>
+        </div>
+        <div class="bg-gradient-to-br from-primary-50 to-white border border-primary-200 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-11 h-11 bg-primary-100 rounded-xl flex items-center justify-center text-2xl">📋</div>
+            <div>
+              <div class="text-xs text-slate-500 font-bold uppercase tracking-wide">Leads Desbloqueados</div>
+              <div id="perfilCardLeads" class="text-2xl font-black text-primary-700 leading-tight">0</div>
+            </div>
+          </div>
+          <div class="text-xs text-slate-500 mt-1">Total de contatos de clientes já comprados</div>
+        </div>
+        <div class="bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center text-2xl">⭐</div>
+            <div>
+              <div class="text-xs text-slate-500 font-bold uppercase tracking-wide">Nota Média Avaliações</div>
+              <div id="perfilCardNota" class="text-2xl font-black text-emerald-700 leading-tight">0.0</div>
+            </div>
+          </div>
+          <div id="perfilCardQtdAval" class="text-xs text-slate-500 mt-1">0 avaliações recebidas</div>
+        </div>
+      </div>
+
+      <!-- FORMULÁRIO DE EDIÇÃO -->
+      <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-50 to-white px-6 sm:px-8 py-5 border-b border-slate-100">
+          <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square text-primary-600"></i> Editar Dados Cadastrais
+          </h3>
+          <p class="text-sm text-slate-500 mt-1">Mantenha suas informações atualizadas para os clientes te encontrarem melhor.</p>
+        </div>
+        <div class="p-6 sm:p-8 space-y-6">
+
+          <!-- Linha 1: Foto preview + Nome + WhatsApp -->
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+            <div class="md:col-span-3">
+              <label class="block text-sm font-bold text-slate-700 mb-2">Foto de Perfil</label>
+              <div class="flex flex-col items-center">
+                <div class="relative w-32 h-32 rounded-2xl overflow-hidden border-4 border-white shadow-lg ring-2 ring-slate-200 bg-slate-100">
+                  <img id="perfilFotoPreview" src="https://ui-avatars.com/api/?name=Pro&background=random&color=fff&size=512&bold=true" alt="Foto perfil" class="w-full h-full object-cover">
+                </div>
+                <p class="text-xs text-slate-500 mt-2 text-center">Preview ao vivo</p>
+              </div>
+            </div>
+            <div class="md:col-span-9 space-y-5">
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Nome Completo *</label>
+                <input id="perfilNome" type="text" placeholder="João Silva dos Santos" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 mb-2">WhatsApp / Telefone *</label>
+                  <input id="perfilWhatsapp" type="text" placeholder="(61) 99999-9999" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 mb-2">Valor taxa/hora (R$)</label>
+                  <input id="perfilTaxaHora" type="number" min="0" step="5" placeholder="80" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campo URL Foto -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">URL da Foto de Perfil</label>
+            <input id="perfilFotoUrl" type="text" placeholder="https://exemplo.com/sua-foto.jpg" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            <p class="text-xs text-slate-500 mt-1">Cole a URL direto de uma imagem hospedada (ex: Unsplash, Imgur, drive).</p>
+          </div>
+
+          <!-- Linha Cidade + Bairros -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">Cidade de Atendimento *</label>
+              <select id="perfilCidade" onchange="atualizarBairrosPerfil(this.value)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <!-- Populado por JS -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">Bairros que atende (selecione pelo menos 1) *</label>
+              <div id="perfilBairrosContainer" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <p class="col-span-2 text-xs text-slate-400 italic">Selecione uma cidade primeiro</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Especialidades -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">Especialidades / Serviços oferecidos *</label>
+            <div id="perfilCategoriasContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <!-- Populado por JS -->
+            </div>
+          </div>
+
+          <!-- Sobre mim -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">Descrição "Sobre Mim" (aparece no seu perfil público)</label>
+            <textarea id="perfilSobre" rows="4" maxlength="600" placeholder="Conte um pouco sobre sua experiência, especialidades, diferenciais e como você trabalha..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"></textarea>
+            <p class="text-xs text-slate-500 mt-1 text-right"><span id="perfilSobreCount">0</span>/600 caracteres</p>
+          </div>
+
+          <!-- Botão Salvar -->
+          <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+              Dados salvos localmente e atualizados no catálogo imediatamente.
+            </p>
+            <button onclick="salvarAlteracoesPerfil()" id="btnSalvarPerfil" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-black rounded-xl shadow-lg shadow-primary-600/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i>
+              Salvar Alterações
+            </button>
+          </div>
+
+        </div>
       </div>
     </div>
   </section>
@@ -819,37 +983,120 @@ tailwind.config = {
       <div id="pixValor" class="text-4xl font-black">R$ 0,00</div>
     </div>
     <div class="p-6 sm:p-8">
-      <div class="bg-primary-50 border border-primary-200 rounded-2xl p-4 mb-5 flex items-start gap-3 text-sm text-primary-800">
-        <i class="fa-solid fa-user-tie text-primary-600 mt-0.5 text-lg flex-shrink-0"></i>
-        <div>
-          <div class="font-black uppercase tracking-wider text-xs text-primary-600 mb-0.5">Beneficiário</div>
-          <div class="font-extrabold" id="pixBeneficiario">Wesley - Ajeita Serviços Domésticos</div>
-          <div class="text-xs text-primary-700 mt-1">Chave Pix (telefone): <span id="pixChaveLabel" class="font-mono font-bold">+55 61 99251-8130</span></div>
+      <!-- ESTADO 1: QR CODE EXIBIDO (PADRÃO) -->
+      <div id="pixEstadoQr" class="space-y-5">
+        <div class="bg-primary-50 border border-primary-200 rounded-2xl p-4 flex items-start gap-3 text-sm text-primary-800">
+          <i class="fa-solid fa-user-tie text-primary-600 mt-0.5 text-lg flex-shrink-0"></i>
+          <div>
+            <div class="font-black uppercase tracking-wider text-xs text-primary-600 mb-0.5">Beneficiário</div>
+            <div class="font-extrabold" id="pixBeneficiario">Wesley - Ajeita Serviços Domésticos</div>
+            <div class="text-xs text-primary-700 mt-1">Chave Pix (telefone): <span id="pixChaveLabel" class="font-mono font-bold">+55 61 99251-8130</span></div>
+          </div>
         </div>
+        <div class="text-center">
+          <div class="text-sm font-bold text-slate-700 mb-3">Escaneie o QR Code no seu app do banco</div>
+          <div id="pixQrCode" class="inline-block bg-white border-4 border-slate-100 p-4 rounded-2xl shadow-inner"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Chave Pix (Copia e Cola)</label>
+          <div class="flex gap-2">
+            <input id="pixChaveCopiaCola" readonly type="text" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs sm:text-sm font-mono text-slate-700 focus:outline-none">
+            <button onclick="copiarChavePix()" id="btnCopiarPix" class="px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm transition flex items-center gap-1.5">
+              <i class="fa-solid fa-copy"></i>
+              <span class="hidden sm:inline">Copiar</span>
+            </button>
+          </div>
+        </div>
+        <div class="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex items-start gap-3 text-sm text-sky-800">
+          <i class="fa-solid fa-circle-info text-sky-600 mt-0.5 text-lg flex-shrink-0"></i>
+          <div>
+            <strong>Passo a passo:</strong> abra o app do seu banco → escolha "PIX Pagar" → escaneie o QR Code ou cole a chave → confirme o pagamento no app do banco.
+          </div>
+        </div>
+        <button onclick="confirmarPagamentoPix()" id="btnConfirmarPix" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-extrabold py-4 rounded-xl shadow-card hover:shadow-pop transition text-base">
+          <i class="fa-solid fa-circle-check mr-2"></i>Já efetuei o pagamento
+        </button>
       </div>
-      <div class="text-center mb-5">
-        <div class="text-sm font-bold text-slate-700 mb-3">Escaneie o QR Code no seu app do banco</div>
-        <div id="pixQrCode" class="inline-block bg-white border-4 border-slate-100 p-4 rounded-2xl shadow-inner"></div>
-      </div>
-      <div class="mb-5">
-        <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Chave Pix Telefone (Copia e Cola)</label>
-        <div class="flex gap-2">
-          <input id="pixChaveCopiaCola" readonly type="text" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs sm:text-sm font-mono text-slate-700 focus:outline-none">
-          <button onclick="copiarChavePix()" id="btnCopiarPix" class="px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm transition flex items-center gap-1.5">
-            <i class="fa-solid fa-copy"></i>
-            <span class="hidden sm:inline">Copiar</span>
+
+      <!-- ESTADO 2: VERIFICANDO PAGAMENTO (PROCESSANDO) -->
+      <div id="pixEstadoProcessando" class="hidden space-y-6 py-4">
+        <div class="text-center">
+          <div class="relative inline-block mb-5">
+            <div class="w-28 h-28 rounded-full border-8 border-slate-100"></div>
+            <div class="w-28 h-28 rounded-full border-8 border-transparent border-t-primary-600 border-r-primary-600 absolute top-0 left-0 animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center text-3xl">🏦</div>
+          </div>
+          <h4 class="text-xl font-black text-slate-800 mb-1">Verificando pagamento junto ao banco...</h4>
+          <p class="text-slate-500 text-sm">Aguardando confirmação da transferência PIX.</p>
+        </div>
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-xs sm:text-sm text-indigo-900 space-y-2">
+          <div class="flex items-start gap-2">
+            <i class="fa-solid fa-robot text-indigo-600 mt-0.5"></i>
+            <div><strong>ℹ️ Em produção (reald):</strong></div>
+          </div>
+          <p>As moedas são liberadas <strong>INSTANTANEAMENTE sem precisar clicar em nada</strong>, pois o gateway de pagamento (Mercado Pago / Asaas / Stripe) envia automaticamente um <strong>WEBHOOK POST</strong> para nossos servidores no momento exato que o banco confirma a transferência PIX.</p>
+          <p class="text-indigo-800 italic">Nesta demo: simulação de aprovação automática em <span id="pixContagemAuto" class="font-black underline">~5 segundos</span> — ou clique no botão abaixo.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button onclick="voltarParaQrCodePix()" class="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+            <i class="fa-solid fa-arrow-left mr-1.5"></i>Voltar ao QR Code
+          </button>
+          <button onclick="simularAprovacaoWebhook()" id="btnSimularWebhook" class="flex-1 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black rounded-xl shadow-lg shadow-indigo-600/20 transition">
+            🤖 Simular Webhook Aprovado (Demo)
           </button>
         </div>
       </div>
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5 flex items-start gap-3 text-sm text-amber-800">
-        <i class="fa-solid fa-clock text-amber-600 mt-0.5 text-lg flex-shrink-0"></i>
+
+      <!-- ESTADO 3: APROVADO / SUCESSO -->
+      <div id="pixEstadoAprovado" class="hidden space-y-5 py-4 text-center">
+        <div class="inline-flex items-center justify-center w-28 h-28 rounded-full bg-emerald-100 mb-3 border-4 border-emerald-200 animate-bounceSlow">
+          <i class="fa-solid fa-check text-5xl text-emerald-600"></i>
+        </div>
         <div>
-          <strong>Pagamento instantâneo:</strong> após confirmar no seu banco, clique no botão abaixo para liberar suas moedas automaticamente.
+          <h4 class="text-2xl font-black text-emerald-700 mb-1">Pagamento Aprovado! 🎉</h4>
+          <p class="text-slate-500 text-sm">Webhook recebido com sucesso — moedas creditadas.</p>
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
+          <div class="grid grid-cols-2 gap-4 text-left">
+            <div>
+              <div class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider mb-1">Pacote comprado</div>
+              <div id="pixAprovadoPacote" class="font-black text-slate-800">—</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider mb-1">Moedas creditadas</div>
+              <div id="pixAprovadoQtd" class="font-black text-amber-600 text-xl">🪙 0</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider mb-1">Valor pago</div>
+              <div id="pixAprovadoValor" class="font-black text-slate-800">R$ 0,00</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider mb-1">Confirmado em</div>
+              <div id="pixAprovadoHora" class="font-black text-slate-800">—</div>
+            </div>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500">Fechando automaticamente em instantes...</p>
+      </div>
+
+      <!-- ESTADO 4: FALHOU / REJEITADO -->
+      <div id="pixEstadoFalhou" class="hidden space-y-5 py-4 text-center">
+        <div class="inline-flex items-center justify-center w-28 h-28 rounded-full bg-rose-100 mb-3 border-4 border-rose-200">
+          <i class="fa-solid fa-xmark text-5xl text-rose-600"></i>
+        </div>
+        <div>
+          <h4 class="text-2xl font-black text-rose-700 mb-1">Pagamento não confirmado</h4>
+          <p id="pixFalhouMsg" class="text-slate-500 text-sm">O PIX ainda não foi reconhecido pelo sistema.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button onclick="voltarParaQrCodePix()" class="flex-1 px-5 py-3 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-xl transition">
+            <i class="fa-solid fa-qrcode mr-1.5"></i>Tentar novamente
+          </button>
+          <button onclick="fecharModal('modal-pix')" class="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+            Cancelar
+          </button>
         </div>
       </div>
-      <button onclick="confirmarPagamentoPix()" id="btnConfirmarPix" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-extrabold py-4 rounded-xl shadow-card hover:shadow-pop transition text-base">
-        <i class="fa-solid fa-circle-check mr-2"></i>Já paguei! Confirmar Pagamento PIX
-      </button>
     </div>
   </div>
 </div>
@@ -906,6 +1153,18 @@ const CATEGORIAS_ICONE = {
   'Pedreiro':'fa-trowel','Eletricista':'fa-bolt','Encanador':'fa-faucet','Pintor':'fa-paint-roller',
   'Diarista':'fa-broom','Marceneiro':'fa-hammer','Chaveiro':'fa-key','Técnico de Ar Condicionado':'fa-snowflake'
 };
+const BAIRROS_POR_CIDADE = {
+  'Brasília (DF)': ['Asa Sul', 'Asa Norte', 'Sudoeste', 'Noroeste', 'Lago Sul', 'Lago Norte', 'Guará', 'Vicente Pires'],
+  'Taguatinga': ['Setor O', 'Setor Central', 'Setor Norte', 'QNA', 'QNB', 'QNC', 'QND'],
+  'Samambaia': ['Samambaia Sul', 'Samambaia Norte', 'QNN', 'QNP', 'QNR', 'QNQ'],
+  'Ceilândia': ['Ceilândia Sul', 'Ceilândia Norte', 'QNM', 'QNO', 'QNQ', 'QNN 14']
+};
+const CIDADES_DISPONIVEIS = Object.keys(BAIRROS_POR_CIDADE);
+
+let estadoPagamentoPix = 'qr';
+let _intervalPixContagemRegressiva = null;
+let _timeoutPixAutoAprovacao = null;
+let _debounceFotoPerfilTimer = null;
 
 let profissionais = [];
 let pedidos = [];
@@ -935,6 +1194,8 @@ const PROFISSIONAIS_MOCK = [
   {
     id:'pro_mock_1', nome:'Carlos Eduardo Lima', whatsapp:'61991234501',
     cidade:'Brasília (DF)', bairro:'Asa Sul',
+    bairrosAtendimento: ['Asa Sul', 'Sudoeste', 'Lago Sul', 'Asa Norte'],
+    taxaHora: 80,
     categorias:['Pedreiro','Marceneiro'],
     foto: FOTO_UNSPLASH('1507003211169-0a1dd7228f2d'),
     sobre:'Pedreiro com 15 anos de experiência, especializado em reformas de banheiro, cozinha e alvenaria em geral. Cumpro prazos e trabalho limpo.',
@@ -956,6 +1217,8 @@ const PROFISSIONAIS_MOCK = [
   {
     id:'pro_mock_2', nome:'Rosângela Maria Dias', whatsapp:'61991234502',
     cidade:'Taguatinga', bairro:'Setor O',
+    bairrosAtendimento: ['Setor O', 'Setor Central', 'QNA', 'QNB'],
+    taxaHora: 50,
     categorias:['Diarista'],
     foto: FOTO_UNSPLASH('1544005313-94ddf0286df2'),
     sobre:'Diarista com mais de 10 anos de experiência. Limpeza pesada, pós-obra, organização de armários e lavanderia. Casa ou apartamento.',
@@ -974,6 +1237,8 @@ const PROFISSIONAIS_MOCK = [
   {
     id:'pro_mock_3', nome:'João Paulo Santos', whatsapp:'61991234503',
     cidade:'Brasília (DF)', bairro:'Asa Norte',
+    bairrosAtendimento: ['Asa Norte', 'Noroeste', 'Vicente Pires', 'Guará'],
+    taxaHora: 90,
     categorias:['Eletricista','Técnico de Ar Condicionado'],
     foto: FOTO_UNSPLASH('1500648767791-00dcc994a43e'),
     sobre:'Eletricista certificado. Instalações, manutenção, troca de disjuntores, chuveiros, tomadas e conserto de ar-condicionado split.',
@@ -993,6 +1258,8 @@ const PROFISSIONAIS_MOCK = [
   {
     id:'pro_mock_4', nome:'Antônio Carlos Pereira', whatsapp:'61991234504',
     cidade:'Samambaia', bairro:'Samambaia Sul',
+    bairrosAtendimento: ['Samambaia Sul', 'Samambaia Norte', 'QNN', 'QNP'],
+    taxaHora: 70,
     categorias:['Encanador','Chaveiro'],
     foto: FOTO_UNSPLASH('1472099645785-5658abf4ff4e'),
     sobre:'Encanador 24h para emergências. Vazamentos, entupimentos, troca de vaso, caixa d\'água. Também sou chaveiro automotivo e residencial.',
@@ -1011,6 +1278,8 @@ const PROFISSIONAIS_MOCK = [
   {
     id:'pro_mock_5', nome:'Wagner Nascimento', whatsapp:'61991234505',
     cidade:'Ceilândia', bairro:'QNN 14',
+    bairrosAtendimento: ['Ceilândia Sul', 'Ceilândia Norte', 'QNM', 'QNN 14'],
+    taxaHora: 60,
     categorias:['Pintor','Pedreiro'],
     foto: FOTO_UNSPLASH('1519081105003-bf31e3f0e626'),
     sobre:'Pintor residencial e comercial. Textura, grafiato, pintura epóxi para garagem, verniz em madeira. Acabamento de primeira linha.',
@@ -1031,6 +1300,8 @@ const PROFISSIONAIS_MOCK = [
   {
     id:'pro_mock_6', nome:'Ricardo Melo', whatsapp:'61991234506',
     cidade:'Taguatinga', bairro:'Setor Norte',
+    bairrosAtendimento: ['Setor Norte', 'Setor Central', 'QNC', 'QND'],
+    taxaHora: 85,
     categorias:['Marceneiro'],
     foto: FOTO_UNSPLASH('1506794778202-cad84cf45f1d'),
     sobre:'Marceneiro planejado MDF. Cozinhas, armários, closets, painel de TV, mesas. Projeto 3D antes de executar.',
@@ -1130,6 +1401,31 @@ function carregarDadosStorageBootstrap() {
   meusPedidosClienteIds = pegarDoStorage('meusPedidosClienteIds', []);
   clienteUltimosDados = pegarDoStorage('clienteUltimosDados', null);
   clienteGoogleLogado = pegarDoStorage('clienteGoogleLogado', null);
+
+  profissionais.forEach(p => {
+    if (!Array.isArray(p.bairrosAtendimento)) {
+      p.bairrosAtendimento = (p.bairro && typeof p.bairro === 'string') ? [p.bairro] : [];
+    }
+    if (typeof p.taxaHora !== 'number' || isNaN(p.taxaHora)) {
+      p.taxaHora = 0;
+    }
+  });
+
+  profissionais.forEach((p, i) => {
+    if (Array.isArray(PROFISSIONAIS_MOCK) && PROFISSIONAIS_MOCK[i] && PROFISSIONAIS_MOCK[i].id === p.id) {
+      if (!p.taxaHora || p.taxaHora === 0) p.taxaHora = PROFISSIONAIS_MOCK[i].taxaHora;
+      if (Array.isArray(p.bairrosAtendimento) && p.bairrosAtendimento.length <= 1 && Array.isArray(PROFISSIONAIS_MOCK[i].bairrosAtendimento)) {
+        p.bairrosAtendimento = [...PROFISSIONAIS_MOCK[i].bairrosAtendimento];
+      }
+    }
+  });
+
+  recargas.forEach(r => {
+    if (!r.status) r.status = 'aprovado';
+    if (!r.gateway) r.gateway = 'local_simulado';
+    if (!r.webhookTimestamp && r.status === 'aprovado') r.webhookTimestamp = r.timestamp || Date.now();
+  });
+
   salvarTodosGlobaisNoStorage();
 }
 
@@ -1451,14 +1747,20 @@ function toggleMobileMenu() {
 
 // SPA Navigation
 function navigateTo(viewId) {
-  // Guards
-  if (viewId === 'view-profissional-loja' && !profissionalLogado) {
-    toast('warning','Precisa estar logado','Crie sua conta de profissional grátis para acessar a loja de moedas.');
+  // ===== GUARDS VIEWS PROFISSIONAL PROTEGIDAS =====
+  const VIEWS_PROFISSIONAL_PROTEGIDAS = [
+    'view-profissional-perfil',
+    'view-profissional-loja',
+    'view-mural-pedidos'
+  ];
+  if (VIEWS_PROFISSIONAL_PROTEGIDAS.includes(viewId) && !profissionalLogado) {
+    let msgView = 'esta área';
+    if (viewId === 'view-profissional-perfil') msgView = 'seu perfil profissional';
+    else if (viewId === 'view-profissional-loja') msgView = 'a loja de moedas';
+    else if (viewId === 'view-mural-pedidos') msgView = 'o mural de pedidos';
+    toast('warning','Acesso restrito',`Faça login ou cadastre-se como profissional para acessar ${msgView}.`,5000);
     navigateTo('view-profissional-cadastro');
     return;
-  }
-  if (viewId === 'view-meus-pedidos' && !profissionalLogado && pedidos.length===0) {
-    // permite acesso mas avisa
   }
   if (viewId === 'view-admin-dashboard' && !adminLogado) {
     toast('error','Acesso negado','Faça login como administrador primeiro.');
@@ -1470,12 +1772,33 @@ function navigateTo(viewId) {
   const alvo = document.getElementById(viewId);
   if (alvo) alvo.classList.add('active');
 
-  // Re-renderiza views específicas
+  // ===== RE-RENDER VIEWS ESPECÍFICAS =====
   if (viewId === 'view-profissional-loja') renderLojaPacotes();
   if (viewId === 'view-meus-pedidos') renderMeusPedidos();
   if (viewId === 'view-admin-dashboard') renderAdminDashboard();
+  if (viewId === 'view-profissional-perfil') {
+    setTimeout(() => {
+      renderCidadesSelectPerfil();
+      renderCategoriasCheckboxPerfil();
+      renderFormPerfilComDadosAtuais();
+      atualizarCardsEstatisticasPerfil();
+      initPerfilEventListeners();
+    }, 30);
+  }
+  if (viewId === 'view-mural-pedidos') renderMuralPedidos();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function abrirHistoricoLeadsProfissional() {
+  if (!profissionalLogado) {
+    toast('warning','Acesso restrito','Faça login como profissional para ver seu histórico de leads.',4500);
+    navigateTo('view-profissional-cadastro');
+    return false;
+  }
+  navigateTo('view-meus-pedidos');
+  setTimeout(() => trocarTabMeusPedidos('profissional'), 50);
+  return true;
 }
 
 // --------------- HEADER: BOAS-VINDAS E SESSÃO ---------------
@@ -1505,6 +1828,24 @@ function atualizarHeaderPorSessao() {
   const mobileBtnEntrarGoogleCliente = document.getElementById('mobileBtnEntrarGoogleCliente');
   const mobileBtnEntrarGoogleProfissional = document.getElementById('mobileBtnEntrarGoogleProfissional');
   const mobileBtnLogoutGoogleCliente = document.getElementById('mobileBtnLogoutGoogleCliente');
+  // ===== V3: GRUPOS DE NAVEGAÇÃO SEPARADOS CLIENTE vs PROFISSIONAL =====
+  const headerGroupCliente = document.getElementById('headerNavGroupCliente');
+  const headerGroupProfissional = document.getElementById('headerNavGroupProfissional');
+  const mobileGroupCliente = document.getElementById('mobileNavGroupCliente');
+  const mobileGroupProfissional = document.getElementById('mobileNavGroupProfissional');
+
+  // ====== V3: SEPARAÇÃO DE VISÕES ======
+  if (profissionalLogado) {
+    if (headerGroupCliente) { headerGroupCliente.classList.add('hidden'); headerGroupCliente.classList.remove('flex'); }
+    if (headerGroupProfissional) { headerGroupProfissional.classList.remove('hidden'); headerGroupProfissional.classList.add('flex'); }
+    if (mobileGroupCliente) mobileGroupCliente.classList.add('hidden');
+    if (mobileGroupProfissional) mobileGroupProfissional.classList.remove('hidden');
+  } else {
+    if (headerGroupCliente) { headerGroupCliente.classList.remove('hidden'); headerGroupCliente.classList.add('flex'); }
+    if (headerGroupProfissional) { headerGroupProfissional.classList.add('hidden'); headerGroupProfissional.classList.remove('flex'); }
+    if (mobileGroupCliente) mobileGroupCliente.classList.remove('hidden');
+    if (mobileGroupProfissional) mobileGroupProfissional.classList.add('hidden');
+  }
 
   const clienteGoogleLogadoAtivo = !!clienteGoogleLogado;
 
@@ -2145,17 +2486,116 @@ function gerarQrCodeVisual(seedStr) {
 function abrirPixPagamento(pkgKey) {
   const pkg = configEconomia.pacotes[pkgKey];
   if (!pkg) return;
+  if (!profissionalLogado) {
+    toast('warning','Acesso restrito','Faça login como profissional para comprar moedas.',4500);
+    navigateTo('view-profissional-cadastro');
+    return;
+  }
   pacotePixAtual = pkg;
+  if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); _intervalPixContagemRegressiva = null; }
+  if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); _timeoutPixAutoAprovacao = null; }
+  estadoPagamentoPix = 'qr';
   document.getElementById('pixValor').textContent = formatarBRL(pkg.preco);
   const chave = CHAVE_PIX_PROPRIETARIO;
   document.getElementById('pixBeneficiario').textContent = NOME_BENEFICIARIO_PIX;
   document.getElementById('pixChaveLabel').textContent = chave;
   document.getElementById('pixChaveCopiaCola').value = chave;
   document.getElementById('pixQrCode').innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + chave.replace(/\D/g,''));
-  document.getElementById('btnConfirmarPix').disabled = false;
-  document.getElementById('btnConfirmarPix').textContent = '';
-  document.getElementById('btnConfirmarPix').innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>Já paguei! Confirmar Pagamento PIX';
+  const btn = document.getElementById('btnConfirmarPix');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>Já efetuei o pagamento';
+  }
+  renderEstadoModalPix('qr');
   abrirModal('modal-pix');
+}
+
+function renderEstadoModalPix(estado) {
+  estadoPagamentoPix = estado;
+  const mapa = { qr:'pixEstadoQr', processando:'pixEstadoProcessando', aprovado:'pixEstadoAprovado', falhou:'pixEstadoFalhou' };
+  Object.keys(mapa).forEach(k => {
+    const el = document.getElementById(mapa[k]);
+    if (!el) return;
+    if (k === estado) el.classList.remove('hidden'); else el.classList.add('hidden');
+  });
+}
+
+function voltarParaQrCodePix() {
+  if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); _intervalPixContagemRegressiva = null; }
+  if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); _timeoutPixAutoAprovacao = null; }
+  renderEstadoModalPix('qr');
+}
+
+function confirmarPagamentoPix() {
+  if (!pacotePixAtual || !profissionalLogado) {
+    toast('error','Ops','Faça login como profissional antes.');
+    return;
+  }
+  renderEstadoModalPix('processando');
+
+  let segRestantes = 5;
+  const elCont = document.getElementById('pixContagemAuto');
+  if (elCont) elCont.textContent = `~${segRestantes} segundos`;
+  if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); }
+  if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); }
+  _intervalPixContagemRegressiva = setInterval(() => {
+    segRestantes -= 1;
+    if (elCont) elCont.textContent = segRestantes > 0 ? `~${segRestantes} segundos` : `agora mesmo`;
+  }, 1000);
+
+  _timeoutPixAutoAprovacao = setTimeout(() => {
+    if (estadoPagamentoPix === 'processando') simularAprovacaoWebhook();
+  }, 5000);
+}
+
+function simularAprovacaoWebhook() {
+  if (!pacotePixAtual || !profissionalLogado) return;
+  if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); _intervalPixContagemRegressiva = null; }
+  if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); _timeoutPixAutoAprovacao = null; }
+
+  const pkg = pacotePixAtual;
+  const ts = Date.now();
+
+  profissionalLogado.saldoMoedas = (profissionalLogado.saldoMoedas||0) + pkg.qtd;
+  const proIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
+  if (proIdx >= 0) profissionais[proIdx].saldoMoedas = profissionalLogado.saldoMoedas;
+
+  const objRecarga = {
+    id: 'rec_' + ts,
+    profissionalId: profissionalLogado.id,
+    pacoteKey: pkg.key,
+    qtd: pkg.qtd,
+    preco: pkg.preco,
+    timestamp: ts,
+    data: new Date().toISOString(),
+    status: 'aprovado',
+    gateway: 'mercado_pago_simulado',
+    webhookTimestamp: ts,
+    metodoPagamento: 'pix'
+  };
+  recargas.push(objRecarga);
+
+  salvarTodosGlobaisNoStorage();
+  atualizarHeaderPorSessao();
+  renderLojaPacotes();
+  atualizarCardsEstatisticasPerfil();
+
+  if (document.getElementById('pixAprovadoPacote')) document.getElementById('pixAprovadoPacote').textContent = pkg.nome || (pkg.qtd + ' moedas');
+  if (document.getElementById('pixAprovadoQtd')) document.getElementById('pixAprovadoQtd').textContent = `🪙 ${pkg.qtd}`;
+  if (document.getElementById('pixAprovadoValor')) document.getElementById('pixAprovadoValor').textContent = formatarBRL(pkg.preco);
+  if (document.getElementById('pixAprovadoHora')) {
+    const d = new Date(ts);
+    document.getElementById('pixAprovadoHora').textContent = d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  renderEstadoModalPix('aprovado');
+  toast('success','💸 Pagamento aprovado!',`Foram adicionadas ${pkg.qtd} 🪙 moedas ao seu saldo. Total atual: ${profissionalLogado.saldoMoedas} 🪙`,7000);
+
+  setTimeout(() => {
+    fecharModal('modal-pix');
+    pacotePixAtual = null;
+    estadoPagamentoPix = 'qr';
+  }, 2500);
 }
 
 function copiarChavePix() {
@@ -2173,39 +2613,6 @@ function copiarChavePix() {
       ()=>toast('warning','Selecione e copie','Não foi possível copiar automaticamente, selecione a chave manualmente.')
     );
   }
-}
-
-function confirmarPagamentoPix() {
-  if (!pacotePixAtual || !profissionalLogado) {
-    toast('error','Ops','Faça login como profissional antes.');
-    return;
-  }
-  const btn = document.getElementById('btnConfirmarPix');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Confirmando pagamento...'; }
-
-  setTimeout(() => {
-    try {
-      const pkg = pacotePixAtual;
-      profissionalLogado.saldoMoedas = (profissionalLogado.saldoMoedas||0) + pkg.qtd;
-      const proIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
-      if (proIdx >= 0) profissionais[proIdx].saldoMoedas = profissionalLogado.saldoMoedas;
-      recargas.push({
-        id: 'rec_' + Date.now(), profissionalId: profissionalLogado.id,
-        pacoteKey: pkg.key, qtd: pkg.qtd, preco: pkg.preco,
-        timestamp: Date.now(), data: new Date().toISOString()
-      });
-      salvarTodosGlobaisNoStorage();
-      atualizarHeaderPorSessao();
-      renderLojaPacotes();
-      fecharModal('modal-pix');
-      pacotePixAtual = null;
-      toast('success','💸 Pagamento aprovado!',`Foram adicionadas ${pkg.qtd} 🪙 moedas ao seu saldo. Total atual: ${profissionalLogado.saldoMoedas} 🪙`,6500);
-    } catch(ePix) {
-      console.error(ePix);
-      toast('error','Falha','Erro ao confirmar pagamento. Tente novamente.');
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>Já paguei! Confirmar Pagamento PIX'; }
-    }
-  }, 900);
 }
 
 // --------------- MEUS PEDIDOS + AVALIAÇÃO ---------------
@@ -2654,6 +3061,207 @@ function renderAdminDashboard() {
           </div>
         </td>
       </tr>`).join('');
+  }
+}
+
+/* =========================================================
+   FUNÇÕES — V3: MEU PERFIL PROFISSIONAL
+   ========================================================= */
+function abrirMeuPerfil() {
+  if (!profissionalLogado) {
+    toast('warning','Acesso restrito','Faça login como profissional para acessar seu perfil.',4500);
+    navigateTo('view-profissional-cadastro');
+    return false;
+  }
+  navigateTo('view-profissional-perfil');
+  setTimeout(() => {
+    renderCidadesSelectPerfil();
+    renderCategoriasCheckboxPerfil();
+    renderFormPerfilComDadosAtuais();
+    atualizarCardsEstatisticasPerfil();
+    initPerfilEventListeners();
+  }, 40);
+  return true;
+}
+
+function atualizarCardsEstatisticasPerfil() {
+  if (!profissionalLogado) return;
+  const pid = profissionalLogado.id;
+  const totLeads = desbloqueios.filter(d => d.profissionalId === pid).length;
+  if (document.getElementById('perfilCardSaldo')) {
+    document.getElementById('perfilCardSaldo').textContent = profissionalLogado.saldoMoedas||0;
+  }
+  if (document.getElementById('perfilCardLeads')) {
+    document.getElementById('perfilCardLeads').textContent = totLeads;
+  }
+  if (document.getElementById('perfilCardNota')) {
+    document.getElementById('perfilCardNota').textContent = (profissionalLogado.mediaAvaliacoes||0).toFixed(1);
+  }
+  if (document.getElementById('perfilCardQtdAval')) {
+    document.getElementById('perfilCardQtdAval').textContent = `${profissionalLogado.qtdAvaliacoes||0} avaliações recebidas`;
+  }
+  if (document.getElementById('perfilTituloNome')) {
+    document.getElementById('perfilTituloNome').textContent = `Olá, ${(profissionalLogado.nome||'').split(' ')[0]} 👋`;
+  }
+}
+
+function renderCidadesSelectPerfil() {
+  const sel = document.getElementById('perfilCidade');
+  if (!sel) return;
+  if (sel.options.length > 1) return;
+  sel.innerHTML = CIDADES_DISPONIVEIS.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function renderCategoriasCheckboxPerfil() {
+  const cont = document.getElementById('perfilCategoriasContainer');
+  if (!cont || cont.dataset.init === '1') return;
+  cont.innerHTML = CATEGORIAS_GLOBAIS.map(cat => `
+    <label class="inline-flex items-center gap-2 px-3 py-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer hover:bg-primary-50 hover:border-primary-300 transition">
+      <input type="checkbox" data-perfil-categoria value="${cat}" class="w-4 h-4 accent-primary-600">
+      <span class="text-xs font-bold text-slate-700">${cat}</span>
+    </label>
+  `).join('');
+  cont.dataset.init = '1';
+}
+
+function atualizarBairrosPerfil(cidade) {
+  const cont = document.getElementById('perfilBairrosContainer');
+  if (!cont) return;
+  const bairros = BAIRROS_POR_CIDADE[cidade] || [];
+  if (bairros.length === 0) {
+    cont.innerHTML = `<p class="col-span-2 text-xs text-slate-400 italic">Selecione uma cidade primeiro</p>`;
+    return;
+  }
+  cont.innerHTML = bairros.map(b => `
+    <label class="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200 cursor-pointer hover:bg-primary-50 hover:border-primary-300 transition">
+      <input type="checkbox" data-perfil-bairro value="${b}" class="w-4 h-4 accent-primary-600">
+      <span class="text-[11px] font-bold text-slate-700">${b}</span>
+    </label>
+  `).join('');
+  if (profissionalLogado && profissionalLogado.cidade === cidade && Array.isArray(profissionalLogado.bairrosAtendimento)) {
+    cont.querySelectorAll('[data-perfil-bairro]').forEach(cb => {
+      cb.checked = profissionalLogado.bairrosAtendimento.includes(cb.value);
+    });
+  }
+}
+
+function renderFormPerfilComDadosAtuais() {
+  if (!profissionalLogado) return;
+  const p = profissionalLogado;
+
+  if (document.getElementById('perfilNome')) document.getElementById('perfilNome').value = p.nome||'';
+  if (document.getElementById('perfilWhatsapp')) document.getElementById('perfilWhatsapp').value = p.whatsapp||'';
+  if (document.getElementById('perfilTaxaHora')) document.getElementById('perfilTaxaHora').value = typeof p.taxaHora==='number' ? p.taxaHora : 0;
+  if (document.getElementById('perfilFotoUrl')) document.getElementById('perfilFotoUrl').value = p.foto||'';
+  if (document.getElementById('perfilSobre')) document.getElementById('perfilSobre').value = p.sobre||'';
+
+  if (document.getElementById('perfilFotoPreview')) {
+    document.getElementById('perfilFotoPreview').src = p.foto || FOTO_UI_AVATAR(p.nome||'Pro');
+    document.getElementById('perfilFotoPreview').onerror = function(){ this.src = FOTO_UI_AVATAR((p.nome||'Pro')); };
+  }
+
+  if (document.getElementById('perfilCidade')) {
+    const selCid = document.getElementById('perfilCidade');
+    if (p.cidade && CIDADES_DISPONIVEIS.includes(p.cidade)) {
+      selCid.value = p.cidade;
+    } else {
+      selCid.value = CIDADES_DISPONIVEIS[0];
+    }
+    atualizarBairrosPerfil(selCid.value);
+  }
+
+  const catCbs = document.querySelectorAll('[data-perfil-categoria]');
+  if (catCbs.length > 0 && Array.isArray(p.categorias)) {
+    catCbs.forEach(cb => { cb.checked = p.categorias.includes(cb.value); });
+  }
+
+  if (document.getElementById('perfilSobreCount')) {
+    document.getElementById('perfilSobreCount').textContent = (p.sobre||'').length;
+  }
+}
+
+function initPerfilEventListeners() {
+  const inpFoto = document.getElementById('perfilFotoUrl');
+  const preview = document.getElementById('perfilFotoPreview');
+  if (inpFoto && preview && !inpFoto.dataset.perfilBindado) {
+    inpFoto.addEventListener('input', (e) => {
+      if (_debounceFotoPerfilTimer) clearTimeout(_debounceFotoPerfilTimer);
+      _debounceFotoPerfilTimer = setTimeout(() => {
+        const val = e.target.value.trim();
+        preview.src = val || FOTO_UI_AVATAR(profissionalLogado?.nome||'Pro');
+        preview.onerror = function(){ this.src = FOTO_UI_AVATAR(profissionalLogado?.nome||'Pro'); };
+      }, 100);
+    });
+    inpFoto.dataset.perfilBindado = '1';
+  }
+  const inpSobre = document.getElementById('perfilSobre');
+  if (inpSobre && !inpSobre.dataset.perfilBindado) {
+    inpSobre.addEventListener('input', (e) => {
+      const cnt = document.getElementById('perfilSobreCount');
+      if (cnt) cnt.textContent = (e.target.value||'').length;
+    });
+    inpSobre.dataset.perfilBindado = '1';
+  }
+}
+
+function salvarAlteracoesPerfil() {
+  if (!profissionalLogado) {
+    toast('error','Nenhum profissional logado','Faça login novamente para salvar alterações.',4500);
+    return;
+  }
+  const btn = document.getElementById('btnSalvarPerfil');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvando...`;
+  }
+
+  try {
+    const nome = (document.getElementById('perfilNome')?.value||'').trim();
+    const whatsapp = (document.getElementById('perfilWhatsapp')?.value||'').trim();
+    const taxaHora = Number(document.getElementById('perfilTaxaHora')?.value||0) || 0;
+    const foto = (document.getElementById('perfilFotoUrl')?.value||'').trim();
+    const cidade = document.getElementById('perfilCidade')?.value || '';
+    const sobre = (document.getElementById('perfilSobre')?.value||'').trim();
+
+    const bairrosSelecionados = Array.from(document.querySelectorAll('[data-perfil-bairro]:checked')).map(cb => cb.value);
+    const categoriasSelecionadas = Array.from(document.querySelectorAll('[data-perfil-categoria]:checked')).map(cb => cb.value);
+
+    if (nome.length < 3) throw new Error('Nome deve ter pelo menos 3 caracteres.');
+    if (whatsapp.length < 10) throw new Error('WhatsApp inválido (insira DDD + número).');
+    if (!cidade) throw new Error('Selecione uma cidade de atendimento.');
+    if (bairrosSelecionados.length === 0) throw new Error('Selecione pelo menos 1 bairro de atendimento.');
+    if (categoriasSelecionadas.length === 0) throw new Error('Selecione pelo menos 1 especialidade/serviço.');
+
+    const pid = profissionalLogado.id;
+    const idxGlobal = profissionais.findIndex(pp => pp.id === pid);
+
+    const atualiza = (alvo) => {
+      alvo.nome = nome;
+      alvo.whatsapp = whatsapp;
+      alvo.taxaHora = taxaHora;
+      alvo.cidade = cidade;
+      alvo.bairro = bairrosSelecionados[0];
+      alvo.bairrosAtendimento = bairrosSelecionados;
+      alvo.categorias = categoriasSelecionadas;
+      alvo.foto = foto;
+      alvo.sobre = sobre;
+    };
+    atualiza(profissionalLogado);
+    if (idxGlobal >= 0) atualiza(profissionais[idxGlobal]);
+
+    salvarTodosGlobaisNoStorage();
+    atualizarHeaderPorSessao();
+    renderProfissionais();
+    atualizarCardsEstatisticasPerfil();
+
+    toast('success','Perfil atualizado! ✅','Seus dados foram salvos e atualizados no catálogo público.',4500);
+  } catch(err) {
+    toast('error','Não foi possível salvar', err.message || 'Verifique os campos e tente novamente.', 5500);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações`;
+    }
   }
 }
 
