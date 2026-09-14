@@ -1308,7 +1308,7 @@ function DBG(hid, loc, msg, dataObj) {
   try {
     var payload = {
       sessionId: 'google-login-final-fix',
-      runId: 'post',
+      runId: 'post2',
       hypothesisId: hid,
       location: 'index.html:' + loc,
       msg: '[DEBUG] ' + msg,
@@ -1826,7 +1826,24 @@ function gsiFallbackRedirectOAuthAbrir() {
   // #endregion
   if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); _gsiFallbackTimer = null; }
   try {
-    var redirectAfter = encodeURIComponent(window.location.href.split('#')[0]);
+    // ============================================================
+    // ⚠️ FIX V5B GOOGLE LOGIN (bug fatal #2 → redirect_uri_mismatch):
+    // NÃO USAR window.location.href (contém ?query=params e #hash que
+    // NÃO correspondem 100% às URLs autorizadas cadastradas no
+    // Google Cloud Console). OAuth 2.0 exige match EXATO.
+    // Montamos redirect_uri SOMENTE com origin + pathname,
+    // SEM query params, SEM hash, SEM barra no final (se pathname="/").
+    // ============================================================
+    var rawOrigin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+    var rawPath = window.location.pathname || '/';
+    // Remover barra final se houver (exceto se for raiz "/" ou "/index.html")
+    if (rawPath.length > 1 && rawPath.charAt(rawPath.length - 1) === '/') {
+      rawPath = rawPath.substring(0, rawPath.length - 1);
+    }
+    // Se o pathname for raiz "/" OU "/index.html" → omitimos para ficar igual a URL autorizada "https://ajeita-app.onrender.com" (sem barra, sem /index.html)
+    if (rawPath === '/' || rawPath === '/index.html' || rawPath === '') rawPath = '';
+    var redirectAfterClean = rawOrigin + rawPath;
+    var redirectAfter = encodeURIComponent(redirectAfterClean);
     var intent = (googleLoginIntent && (googleLoginIntent === 'profissional' || googleLoginIntent === 'cliente')) ? googleLoginIntent : 'cliente';
     var authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
       'client_id=' + encodeURIComponent(GOOGLE_CLIENT_ID) +
@@ -1836,10 +1853,11 @@ function gsiFallbackRedirectOAuthAbrir() {
       '&state=' + encodeURIComponent('intent='+intent) +
       '&prompt=select_account';
     // #region debug-point H2:fallback-url
-    DBG('H2','1831','Fallback OAuth redirect URL montado (abrindo nova aba)', {
+    DBG('H2','1831','Fallback OAuth redirect URL montado (abrindo nova aba) FIX V5B', {
       intent: intent,
       authUrlPrimeiros150: authUrl.substring(0,150)+'...',
-      redirectAfterDecode: window.location.href.split('#')[0]
+      redirectAfterClean: redirectAfterClean,
+      oldLocationHref: window.location.href
     });
     // #endregion
     window.open(authUrl, '_blank', 'noopener,noreferrer,width=600,height=700');
