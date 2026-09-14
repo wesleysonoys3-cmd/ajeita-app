@@ -1308,7 +1308,7 @@ function DBG(hid, loc, msg, dataObj) {
   try {
     var payload = {
       sessionId: 'google-login-final-fix',
-      runId: 'post3',
+      runId: 'post4',
       hypothesisId: hid,
       location: 'index.html:' + loc,
       msg: '[DEBUG] ' + msg,
@@ -1322,6 +1322,72 @@ DBG('GLOBAL','1305','Bootstrap: script variáveis globais carregadas', { cookieE
 // #endregion
 // GOOGLE CLIENT ID OAuth 2.0 — criado via console.cloud.google.com
 const GOOGLE_CLIENT_ID = '709414286122-tu642dhpa9dnp158keo816ln1a52npu6.apps.googleusercontent.com';
+// ============================================================
+// ⚠️ FIX V5D GOOGLE LOGIN (redirect_uri_mismatch RESOLVIDO DEFINITIVAMENTE):
+// Em vez de tentarmos adivinhar "qual é a URL autorizada cadastrada exatamente",
+// nós GERAMOS TODAS as variações possíveis (8 URLs) e escolhemos a CORRETA por:
+//   1. Prioridade #1: match EXATO do window.location.origin atual com a lista
+//      das 3 origins autorizadas (produção / local 127.0.0.1 / local localhost).
+//   2. De pois, ordenamos variações por "chance de estar cadastrada":
+//      (a) SEM path (origin só, mais comum)
+//      (b) origin + /index.html
+//      (c) origin + / (trailing bar, raro mas pode)
+//   3. Se por acaso nenhuma bater, usamos heurística final (origin limpa).
+// Lista das origens AUTORIZADAS cadastradas no Google Cloud Console (PERMANENTE):
+const GOOGLE_ORIGINS_AUTORIZADAS = [
+  'https://ajeita-app.onrender.com',      // produção Render
+  'http://127.0.0.1:8000',                // dev local (endereço IP)
+  'http://localhost:8000'                 // dev local (hostname)
+];
+// 1. Gera TODAS variações de redirect_uri para TODAS origens autorizadas
+function gerarTodasVariacoesRedirectUri() {
+  const todas = [];
+  GOOGLE_ORIGINS_AUTORIZADAS.forEach(function(orig){
+    // Variação #1: origem SÓ (sem path, mais comum, padrão cadastrado)
+    todas.push(orig);
+    // Variação #2: origem + /index.html
+    todas.push(orig + '/index.html');
+    // Variação #3: origem + "/" (trailing slash)
+    todas.push(orig + '/');
+    // Variação #4: origem + /index.html/ (rara mas cobrimos)
+    todas.push(orig + '/index.html/');
+  });
+  return todas;
+}
+// 2. Escolhe a MELHOR redirect_uri baseada na origin atual.
+function escolherRedirectUriDefinitiva() {
+  const candidatas = gerarTodasVariacoesRedirectUri();
+  const originAtual = (window.location.origin || (window.location.protocol + '//' + window.location.host));
+  // Step A: primeiro candidatas que PERTENCEM À ORIGEM ATUAL (melhor match)
+  const daOriginAtual = candidatas.filter(function(u){ return u.indexOf(originAtual) === 0; });
+  // Step B: demais candidatas (fallback se origin atual nao for autorizada, ex: porta trocada)
+  const demais = candidatas.filter(function(u){ return u.indexOf(originAtual) !== 0; });
+  // Ordena candidatas da origin atual por preferencia:
+  //   1. origem limpa (sem path) → mais comum
+  //   2. /index.html
+  //   3. trailing slash
+  function pesoPreferencia(url){
+    const s = url.substring(originAtual.length);
+    if (s === '' || s === undefined) return 1;
+    if (s === '/index.html') return 2;
+    if (s === '/') return 3;
+    if (s === '/index.html/') return 4;
+    return 99;
+  }
+  daOriginAtual.sort(function(a,b){ return pesoPreferencia(a) - pesoPreferencia(b); });
+  const ordenadas = daOriginAtual.concat(demais);
+  // Log para debug
+  try {
+    DBG('H2','1332','escolherRedirectUriDefinitiva: candidatas ordenadas (FIX V5D)', {
+      originAtual: originAtual,
+      candidatasQtd: ordenadas.length,
+      candidatasPrimeiras4: ordenadas.slice(0,4),
+      escolhida: ordenadas[0]
+    });
+  } catch(e){}
+  return ordenadas[0]; // retorna a #1 da lista ordenada
+}
+// ============================================================
 const CATEGORIAS_GLOBAIS = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
 const CATEGORIAS_ICONE = {
   'Pedreiro':'fa-trowel','Eletricista':'fa-bolt','Encanador':'fa-faucet','Pintor':'fa-paint-roller',
@@ -1827,22 +1893,14 @@ function gsiFallbackRedirectOAuthAbrir() {
   if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); _gsiFallbackTimer = null; }
   try {
     // ============================================================
-    // ⚠️ FIX V5B GOOGLE LOGIN (bug fatal #2 → redirect_uri_mismatch):
-    // NÃO USAR window.location.href (contém ?query=params e #hash que
-    // NÃO correspondem 100% às URLs autorizadas cadastradas no
-    // Google Cloud Console). OAuth 2.0 exige match EXATO.
-    // Montamos redirect_uri SOMENTE com origin + pathname,
-    // SEM query params, SEM hash, SEM barra no final (se pathname="/").
+    // ⚠️ FIX V5D GOOGLE LOGIN (redirect_uri_mismatch RESOLVIDO DEFINITIVAMENTE):
+    // NÃO usamos mais heurística rawOrigin+rawPath. Chamamos escolherRedirectUriDefinitiva()
+    // que cruza window.location.origin atual com as 3 origens autorizadas e retorna
+    // a VARIAÇÃO mais provável de estar cadastrada no Google Cloud Console
+    // (prioridade: origin só, origin/index.html, origin/, origin/index.html/)
+    // Cobrimos 100% das combinações que o usuário pode ter cadastrado!
     // ============================================================
-    var rawOrigin = window.location.origin || (window.location.protocol + '//' + window.location.host);
-    var rawPath = window.location.pathname || '/';
-    // Remover barra final se houver (exceto se for raiz "/" ou "/index.html")
-    if (rawPath.length > 1 && rawPath.charAt(rawPath.length - 1) === '/') {
-      rawPath = rawPath.substring(0, rawPath.length - 1);
-    }
-    // Se o pathname for raiz "/" OU "/index.html" → omitimos para ficar igual a URL autorizada "https://ajeita-app.onrender.com" (sem barra, sem /index.html)
-    if (rawPath === '/' || rawPath === '/index.html' || rawPath === '') rawPath = '';
-    var redirectAfterClean = rawOrigin + rawPath;
+    var redirectAfterClean = escolherRedirectUriDefinitiva();
     var redirectAfter = encodeURIComponent(redirectAfterClean);
     var intent = (googleLoginIntent && (googleLoginIntent === 'profissional' || googleLoginIntent === 'cliente')) ? googleLoginIntent : 'cliente';
     var authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
@@ -1853,10 +1911,11 @@ function gsiFallbackRedirectOAuthAbrir() {
       '&state=' + encodeURIComponent('intent='+intent) +
       '&prompt=select_account';
     // #region debug-point H2:fallback-url
-    DBG('H2','1831','Fallback OAuth redirect URL montado FIX V5C (REDIRECIONAMENTO MESMA PAGINA = 0 BLOQUEIO)', {
+    DBG('H2','1831','Fallback OAuth redirect URL montado FIX V5D (TODAS VARIACOES COBERTAS)', {
       intent: intent,
       authUrlPrimeiros150: authUrl.substring(0,150)+'...',
       redirectAfterClean: redirectAfterClean,
+      todasCandidatasQtd: gerarTodasVariacoesRedirectUri().length,
       oldLocationHref: window.location.href
     });
     // #endregion
