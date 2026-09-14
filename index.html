@@ -824,7 +824,7 @@ tailwind.config = {
         <h2 class="text-3xl font-black text-slate-800 mb-2">Acesso Administrativo</h2>
         <p class="text-slate-500">Entre com suas credenciais de administrador.</p>
       </div>
-      <form id="formAdminLogin" onsubmit="submitAdminLogin(event)" class="bg-white rounded-3xl shadow-card p-8 border border-slate-100 space-y-5">
+      <form id="formAdminLogin" onsubmit="submitAdminLogin(event)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="bg-white rounded-3xl shadow-card p-8 border border-slate-100 space-y-5">
         <button type="button" onclick="document.getElementById('adminLoginInput').value='admin10'; document.getElementById('adminSenhaInput').value='bolo2024'; toast('success','Pronto!','Credenciais preenchidas. Agora clique em Entrar.','2500');" class="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 text-emerald-800 font-extrabold py-3 rounded-xl shadow-sm transition">
           <i class="fa-solid fa-bolt text-emerald-600"></i> Login Rápido (1 clique) — Admin Padrão
         </button>
@@ -837,14 +837,14 @@ tailwind.config = {
           <label class="block text-sm font-bold text-slate-700 mb-2">Login</label>
           <div class="relative">
             <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input required id="adminLoginInput" type="text" placeholder="Digite seu login" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <input required id="adminLoginInput" type="text" placeholder="Digite seu login" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
           </div>
         </div>
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">Senha</label>
           <div class="relative">
             <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input required id="adminSenhaInput" type="password" placeholder="Digite sua senha" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <input required id="adminSenhaInput" type="password" placeholder="Digite sua senha" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
           </div>
         </div>
         <button type="submit" class="w-full bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-700 hover:to-primary-900 text-white font-extrabold py-3.5 rounded-xl shadow-card hover:shadow-pop transition">
@@ -2785,18 +2785,22 @@ function renderBottomNav(viewIdAtual) {
   }
 
   nav.innerHTML = `
-    <div class="grid grid-cols-4 gap-1 px-2 sm:px-3">
+    <div class="grid grid-cols-5 gap-0.5 px-1.5 sm:px-2">
       <button onclick="navigateTo('view-home')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-home')} ${abaAtiva('view-home')}">
         <i class="fa-solid fa-house text-xl sm:text-2xl ${viewAtiva==='view-home' ? 'text-blue-600' : ''}"></i>
-        <span class="text-[11px] sm:text-xs font-bold tracking-tight">Início</span>
+        <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Início</span>
       </button>
       <button onclick="bottomNavClickBuscaHome()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition text-slate-400 hover:text-slate-600">
         <i class="fa-solid fa-magnifying-glass text-xl sm:text-2xl"></i>
-        <span class="text-[11px] sm:text-xs font-bold tracking-tight">Buscar</span>
+        <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Buscar</span>
       </button>
       <button onclick="bottomNavClickPedidos()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-meus-pedidos')} ${abaAtiva('view-meus-pedidos')}">
         <i class="fa-solid fa-briefcase text-xl sm:text-2xl ${viewAtiva==='view-meus-pedidos' ? 'text-blue-600' : ''}"></i>
-        <span class="text-[11px] sm:text-xs font-bold tracking-tight">Pedidos</span>
+        <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Pedidos</span>
+      </button>
+      <button onclick="navigateTo('view-admin-login')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-admin-login')} ${viewAtiva==='view-admin-login' ? 'text-primary-700' : 'text-primary-500 hover:text-primary-700'}">
+        <i class="fa-solid fa-shield-halved text-xl sm:text-2xl"></i>
+        <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Admin</span>
       </button>
       ${aba4}
     </div>`;
