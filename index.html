@@ -1303,6 +1303,23 @@ tailwind.config = {
 const PREFIXO_STORAGE = 'ajeita_moeda_app_';
 const CHAVE_PIX_PROPRIETARIO = '+55 61 99251-8130'; // Telefone formatado com DDI + DDD
 const NOME_BENEFICIARIO_PIX = 'Wesley - Ajeita Serviços Domésticos';
+// #region debug-point GLOBAL:dbg-helper (google-login-final-fix instrumentation)
+function DBG(hid, loc, msg, dataObj) {
+  try {
+    var payload = {
+      sessionId: 'google-login-final-fix',
+      runId: 'post',
+      hypothesisId: hid,
+      location: 'index.html:' + loc,
+      msg: '[DEBUG] ' + msg,
+      data: dataObj || {},
+      ts: Date.now()
+    };
+    fetch('http://127.0.0.1:7777/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(function(){});
+  } catch(e) {}
+}
+DBG('GLOBAL','1305','Bootstrap: script variáveis globais carregadas', { cookieEnabled: typeof navigator !== 'undefined' ? navigator.cookieEnabled : null });
+// #endregion
 // GOOGLE CLIENT ID OAuth 2.0 — criado via console.cloud.google.com
 const GOOGLE_CLIENT_ID = '709414286122-tu642dhpa9dnp158keo816ln1a52npu6.apps.googleusercontent.com';
 const CATEGORIAS_GLOBAIS = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
@@ -1542,6 +1559,9 @@ function salvarTodosGlobaisNoStorage() {
   salvarNoStorage('clienteGoogleLogado', clienteGoogleLogado);
 }
 function carregarDadosStorageBootstrap() {
+  // #region debug-point H4:storage-load-entry
+  DBG('H4','1561','carregarDadosStorageBootstrap: ENTRY (iniciando carga localStorage)', {});
+  // #endregion
   const profissionaisSalvos = pegarDoStorage('profissionais');
   const pedidosSalvos = pegarDoStorage('pedidos');
   const cfgSalva = pegarDoStorage('configEconomia');
@@ -1559,6 +1579,16 @@ function carregarDadosStorageBootstrap() {
   meusPedidosClienteIds = pegarDoStorage('meusPedidosClienteIds', []);
   clienteUltimosDados = pegarDoStorage('clienteUltimosDados', null);
   clienteGoogleLogado = pegarDoStorage('clienteGoogleLogado', null);
+
+  // #region debug-point H4:storage-load-apos-atribuir
+  DBG('H4','1578','carregarDadosStorageBootstrap: CARGA CONCLUIDA (sessao carregada)', {
+    clienteGoogleLogado_temValor: !!clienteGoogleLogado,
+    clienteGoogleLogado_nome: clienteGoogleLogado && (clienteGoogleLogado.nome || clienteGoogleLogado.name || clienteGoogleLogado.email || 'SEM_CAMPO_IDENTIFICADOR'),
+    clienteGoogleLogado_keys: clienteGoogleLogado ? Object.keys(clienteGoogleLogado).slice(0,15) : null,
+    profissionalLogado_temValor: !!profissionalLogado,
+    profissionalLogado_nome: profissionalLogado && profissionalLogado.nome || null
+  });
+  // #endregion
 
   profissionais.forEach(p => {
     if (!Array.isArray(p.bairrosAtendimento)) {
@@ -1615,13 +1645,45 @@ function decodeGoogleJwtPayload(jwt) {
  * @param {object} resp — credential response do GSI {credential, clientId, select_by}
  */
 function handleGoogleCredentialResponse(resp) {
-  if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); _gsiFallbackTimer = null; }
+  // #region debug-point H2:H3:handleGoogleCredEntry
+  DBG('H2','1647','handleGoogleCredentialResponse: CALLBACK DISPARADO PELO GOOGLE! (ponto crítico H2)', {
+    respExiste: !!resp,
+    temCredential: !!(resp && resp.credential),
+    credentialLen: resp && resp.credential ? resp.credential.length : 0,
+    respClientId: resp && resp.clientId ? resp.clientId : null,
+    respSelectBy: resp && resp.select_by ? resp.select_by : null,
+    fallbackTimerLimpo: false
+  });
+  // #endregion
+  if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); _gsiFallbackTimer = null; DBG('H2','1648','_gsiFallbackTimer LIMPO com sucesso', {}); }
   if (!resp || !resp.credential) {
+    // #region debug-point H2:handleGoogleCredInvalidResp
+    DBG('H2','1649','handleGoogleCredentialResponse: EARLY RETURN resp INVALIDA (sem credential)', {
+      respKeys: resp ? Object.keys(resp) : null
+    });
+    // #endregion
     toast('error','Falha login Google','Resposta inválida do Google. Tente novamente.');
     return;
   }
   const payload = decodeGoogleJwtPayload(resp.credential);
+  // #region debug-point H3:jwt-decode
+  DBG('H3','1653','decodeGoogleJwtPayload RESULTADO', {
+    decodeSucesso: !!payload,
+    temSub: payload && !!payload.sub,
+    temEmail: payload && !!payload.email,
+    temName: payload && !!payload.name,
+    temGivenName: payload && !!payload.given_name,
+    temPicture: payload && !!payload.picture,
+    payloadKeys: payload ? Object.keys(payload).slice(0,20) : null,
+    email_verified: payload && payload.email_verified
+  });
+  // #endregion
   if (!payload || !payload.sub || !payload.email) {
+    // #region debug-point H3:jwt-invalid
+    DBG('H3','1654','handleGoogleCredentialResponse: JWT INVALIDO (sem sub ou email). EARLY RETURN', {
+      erro: 'Campos obrigatórios ausentes: sub=' + ((payload && payload.sub) || 'NULL') + ', email='+ ((payload && payload.email) || 'NULL')
+    });
+    // #endregion
     toast('error','Falha login Google','Não foi possível ler dados da sua conta Google.');
     return;
   }
@@ -1636,11 +1698,25 @@ function handleGoogleCredentialResponse(resp) {
   };
   const intent = googleLoginIntent || 'cliente';
   googleLoginIntent = null;
+  // #region debug-point H3:dadosGoogleMontados
+  DBG('H3','1667','dadosGoogle MONTADOS + intent definida', {
+    intent: intent,
+    googleId: dadosGoogle.googleId ? String(dadosGoogle.googleId).substring(0,12)+'...' : null,
+    email: dadosGoogle.email,
+    nome: dadosGoogle.nome,
+    primeiroNome: dadosGoogle.primeiroNome,
+    temFoto: !!dadosGoogle.foto,
+    emailVerificado: dadosGoogle.emailVerificado
+  });
+  // #endregion
 
   if (intent === 'profissional') {
     // --- Profissional: verifica se já existe por googleId OU email ---
     let idxPro = profissionais.findIndex(p => (p.googleId && p.googleId === dadosGoogle.googleId));
     if (idxPro < 0) idxPro = profissionais.findIndex(p => p.whatsapp && p.emailGoogle && p.emailGoogle === dadosGoogle.email);
+    // #region debug-point H3:intentProfissional
+    DBG('H3','1670','INTENT=PROFISSIONAL → resultado busca profissional', { idxEncontrado: idxPro });
+    // #endregion
 
     if (idxPro >= 0) {
       // Já cadastrado: atualiza foto/nome se necessário, loga direto
@@ -1650,6 +1726,16 @@ function handleGoogleCredentialResponse(resp) {
       if (!profissionais[idxPro].nome || profissionais[idxPro].nome.includes('Profissional')) profissionais[idxPro].nome = dadosGoogle.nome;
       profissionalLogado = profissionais[idxPro];
       salvarTodosGlobaisNoStorage();
+      // #region debug-point H4:H3:salvoProfissional
+      DBG('H4','1681','PROFISSIONAL LOGADO E SALVO (já cadastrado)', {
+        profissionalLogado_nome: profissionalLogado && profissionalLogado.nome,
+        profissionalLogado_id: profissionalLogado && profissionalLogado.id,
+        salvouStorage: true,
+        chamaraAtualizarHeader: true,
+        toastSuccess: true,
+        navegarPara: 'view-profissional-loja'
+      });
+      // #endregion
       atualizarHeaderPorSessao();
       toast('success',`Olá, ${dadosGoogle.primeiroNome}!`, `Login Google realizado. Bem-vindo(a) de volta à Ajeita Profissional.`,5500);
       navigateTo('view-profissional-loja');
@@ -1657,6 +1743,9 @@ function handleGoogleCredentialResponse(resp) {
     }
     // --- NÃO CADASTRADO AINDA: preenche formulário e vai para tela Cadastrar Profissional ---
     profissionalGoogleLogadoDados = dadosGoogle;
+    // #region debug-point H3:naoCadastradoProf
+    DBG('H3','1688','PROFISSIONAL NAO CADASTRADO ainda: navegando para view-profissional-cadastro', { preencheuDadosTemp: true });
+    // #endregion
     toast('info','Quase lá!', `Preencha WhatsApp, cidade, categorias e outros detalhes para finalizar seu cadastro profissional.`,6000);
     navigateTo('view-profissional-cadastro');
     setTimeout(() => preencherFormCadastroProfissionalComGoogle(dadosGoogle), 120);
@@ -1669,6 +1758,18 @@ function handleGoogleCredentialResponse(resp) {
   if (!clienteUltimosDados) clienteUltimosDados = {};
   clienteUltimosDados.nome = clienteUltimosDados.nome || dadosGoogle.nome;
   salvarTodosGlobaisNoStorage();
+  // #region debug-point H4:salvoCliente
+  DBG('H4','1697','CLIENTE GOOGLE LOGADO E SALVO NO STORAGE', {
+    clienteGoogleLogado_nome: clienteGoogleLogado && clienteGoogleLogado.nome,
+    clienteGoogleLogado_email: clienteGoogleLogado && clienteGoogleLogado.email,
+    clienteGoogleLogado_primeiroNome: clienteGoogleLogado && clienteGoogleLogado.primeiroNome,
+    clienteGoogleLogado_tipo: clienteGoogleLogado && clienteGoogleLogado.tipo,
+    salvouStorage: true,
+    chamaraAtualizarHeader: true,
+    toastSuccess: true,
+    modalAberto: modalOrcamentoAberto()
+  });
+  // #endregion
   atualizarHeaderPorSessao();
   toast('success',`Olá, ${dadosGoogle.primeiroNome}! 👋`, `Login Google realizado como Cliente. Pode solicitar orçamentos e acompanhar seus pedidos.`,6000);
   if (modalOrcamentoAberto()) setTimeout(()=>preencherModalSolicitarComClienteGoogle(dadosGoogle), 150);
@@ -1717,6 +1818,12 @@ function modalOrcamentoAberto() {
  * Abre em nova aba oauth2/v2/auth id_token response type.
  */
 function gsiFallbackRedirectOAuthAbrir() {
+  // #region debug-point H2:fallback-entry
+  DBG('H2','1820','gsiFallbackRedirectOAuthAbrir CHAMADO (fallback acionado!)', {
+    jaExistiaTimer: !!_gsiFallbackTimer,
+    locationHref: window.location.href
+  });
+  // #endregion
   if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); _gsiFallbackTimer = null; }
   try {
     var redirectAfter = encodeURIComponent(window.location.href.split('#')[0]);
@@ -1728,9 +1835,19 @@ function gsiFallbackRedirectOAuthAbrir() {
       '&nonce=ajeita_' + Date.now() +
       '&state=' + encodeURIComponent('intent='+intent) +
       '&prompt=select_account';
+    // #region debug-point H2:fallback-url
+    DBG('H2','1831','Fallback OAuth redirect URL montado (abrindo nova aba)', {
+      intent: intent,
+      authUrlPrimeiros150: authUrl.substring(0,150)+'...',
+      redirectAfterDecode: window.location.href.split('#')[0]
+    });
+    // #endregion
     window.open(authUrl, '_blank', 'noopener,noreferrer,width=600,height=700');
     toast('warning','Abrindo Google em nova aba...','Pop-up foi bloqueado ou FedCM falhou. Se não abrir automaticamente, permita pop-ups para este site e tente novamente.',6500);
   } catch(eFallback){
+    // #region debug-point H2:fallback-catch
+    DBG('H2','1834','Fallback CATCH ERROR', { error: eFallback && eFallback.message ? eFallback.message : String(eFallback) });
+    // #endregion
     console.error('[Google Fallback erro]', eFallback);
     toast('error','Ops, falha Google','Tente novamente ou permita pop-ups para este site.');
   }
@@ -1741,7 +1858,18 @@ function gsiFallbackRedirectOAuthAbrir() {
  * @param {'cliente'|'profissional'} tipoIntent 
  */
 function abrirLoginGoogle(tipoIntent) {
+  // #region debug-point H1:H2:abrirLoginEntry
+  DBG('H2','1844','abrirLoginGoogle CHAMADO (usuário clicou botão)', {
+    tipoIntent: tipoIntent,
+    gsiObjetoExiste: !!(window.google && window.google.accounts && window.google.accounts.id)
+  });
+  // #endregion
   if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+    // #region debug-point H5:gsi-objeto-nao-existe
+    DBG('H5','1845','abrirLoginGoogle: GSI NAO CARREGADO AINDA → setTimeout retry 400ms', {
+      windowGoogle: !!window.google
+    });
+    // #endregion
     setTimeout(()=>abrirLoginGoogle(tipoIntent), 400);
     toast('info','Carregando Google...','Aguarde um instante e a janela do Google vai abrir.');
     return;
@@ -1760,45 +1888,109 @@ function abrirLoginGoogle(tipoIntent) {
         ux_mode: 'popup'
       });
       _gsiInicializado = true;
+      // #region debug-point H1:lazy-init
+      DBG('H1','1855','abrirLoginGoogle: inicializou GSI LAZY (pois _gsiInicializado era false)', { sucesso: true });
+      // #endregion
     }
     // Safety: se em 3.5s o user NAO clicou em nenhuma conta (popup bloqueado / FedCM erro mobile)
     // rodamos fallback REDIRECT em nova aba. Se o popup já abriu e callback handleGoogleCredentialResponse
     // rodou, handleGoogleCredentialResponse limpa _gsiFallbackTimer antes de disparar.
     if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); }
     _gsiFallbackTimer = setTimeout(gsiFallbackRedirectOAuthAbrir, 3500);
+    // #region debug-point H2:fallbackTimer-set
+    DBG('H2','1869','_gsiFallbackTimer programado (3500ms → dispara gsiFallbackRedirectOAuthAbrir se NENHUM callback rodar)', { timerAtivo: true, duracaoMs: 3500 });
+    // #endregion
 
     var tentativas = 0;
     function chamarPromptSeguro() {
       tentativas++;
+      // #region debug-point H2:chamarPromptSeguro
+      DBG('H2','1872','chamarPromptSeguro: gsi.prompt() INVOCADO (tentativa '+tentativas+')', { tentativa: tentativas });
+      // #endregion
       try {
         gsi.prompt(function(notification) {
           if (!notification) return;
+          // #region debug-point H2:H5:gsi-notification
+          DBG('H5','1875','GSI PROMPT NOTIFICATION CALLBACK RECEBIDO (ponto crítico FedCM)', {
+            notification_temIsNotDisplayed: !!(notification && typeof notification.isNotDisplayed === 'function'),
+            notification_temGetMomentType: !!(notification && typeof notification.getMomentType === 'function'),
+            notification_isNotDisplayedValor: (notification && typeof notification.isNotDisplayed === 'function') ? notification.isNotDisplayed() : null,
+            notification_momentTypeString: (notification && typeof notification.getMomentType === 'function') ? String(notification.getMomentType()) : (typeof notification === 'string' ? notification : 'OBJ_SEM_METODO'),
+            notification_tipoConstrutor: notification && notification.constructor ? notification.constructor.name : typeof notification,
+            notification_keys: notification && typeof notification === 'object' ? Object.keys(notification).slice(0,15) : null,
+            tentativaAtual: tentativas
+          });
+          // #endregion
           // Tipos de notification do GSI/OneTap que significam: prompt NAO apareceu / usuario cancelou / popup bloqueado
           // = acionar fallback imediatamente (sem esperar 3.5s)
           try {
             if (typeof notification.isNotDisplayed === 'function' && notification.isNotDisplayed()) {
               if (tentativas < 2) {
+                // #region debug-point H2:prompt-novamente
+                DBG('H2','1880','isNotDisplayed() → vai tentar chamarPromptSeguro NOVAMENTE (tentativa '+tentativas+' < 2)', {});
+                // #endregion
                 chamarPromptSeguro();
                 return;
               }
               // 2 tentativas One Tap nao exibiu: rodar fallback redirect AGORA
+              // #region debug-point H2:prompt-fallback-2tentativas
+              DBG('H2','1885','isNotDisplayed() NAO exibiu após 2 tentativas → DISPARAR FALLBACK AGORA', {});
+              // #endregion
               gsiFallbackRedirectOAuthAbrir();
               return;
             }
             // FedCM / Skipped notification reasons (string "skipped", "credential_returned", "canceled", "flow_restarted", etc)
+            // ============================================================
+            // ⚠️ FIX V5 GOOGLE LOGIN (bug fatal #1):
+            // "skipped" NÃO É ERRO! É o caso PADRÃO quando FedCM não encontra credencial
+            // para auto-login e o Google VAI MOSTRAR o prompt OneTap para o usuário
+            // CLICAR para escolher conta. Retiramos "skip" do array de motivos ruins
+            // para NÃO matar o prompt em loop infinito!
+            // ============================================================
             var motivo = notification && notification.getMomentType ? notification.getMomentType() : (typeof notification === 'string' ? notification : '');
-            if ((typeof motivo === 'string') && ((motivo.indexOf('skip') >= 0) || (motivo.indexOf('fail') >= 0) || (motivo.indexOf('cancel') >= 0) || (motivo.indexOf('block') >= 0) || (motivo.indexOf('error') >= 0) || (motivo.indexOf('network') >= 0))) {
-              if (tentativas < 2) { tentativas = 99; chamarPromptSeguro(); return; }
+            var eNotDisplayed = (typeof notification.isNotDisplayed === 'function') ? !!notification.isNotDisplayed() : false;
+            // Motivos que REALMENTE indicam falha: (sem "skip"!)
+            var motivoEhFalha = (typeof motivo === 'string') && (
+              motivo.indexOf('fail') >= 0 || motivo.indexOf('cancel') >= 0 || motivo.indexOf('block') >= 0 ||
+              motivo.indexOf('error') >= 0 || motivo.indexOf('network') >= 0
+            );
+            // Só re-chamamos prompt se:
+            // - isNotDisplayed() === true (prompt realmente NÃO apareceu na tela) E tentativas < 2
+            // - OU motivoEhFalha E tentativas < 2
+            if ((eNotDisplayed || motivoEhFalha) && tentativas < 2) {
+              tentativas = 99;
+              // #region debug-point H2:prompt-retry-fix-v5
+              DBG('H2','1891','FIX V5: prompt retry → isNotDisplayed='+eNotDisplayed+' / motivoFalha='+motivoEhFalha+' / motivo='+motivo, { motivo: motivo, eNotDisplayed: eNotDisplayed, motivoEhFalha: motivoEhFalha });
+              // #endregion
+              chamarPromptSeguro(); return;
             }
-          } catch(eNotif){}
+            // Se chegou aqui: SKIPPED (caso normal) = NÃO RETRY.
+            // Deixe o prompt Google aparecer para o usuário clicar!
+            // O fallback timer de 3.5s vai cuidar se nada acontecer.
+            if (typeof motivo === 'string') {
+              // #region debug-point H2:prompt-skipped-ok-fix-v5
+              DBG('H2','1891','FIX V5: notification "'+motivo+'" → SEM RETRY (esperando user clicar no prompt Google ou fallback 3.5s)', { motivo: motivo, eNotDisplayed: eNotDisplayed, motivoEhFalha: motivoEhFalha });
+              // #endregion
+            }
+          } catch(eNotif){
+            // #region debug-point H2:prompt-notif-catch
+            DBG('H2','1894','gsi.prompt notification callback CATCH ERROR', { erro: eNotif && eNotif.message ? eNotif.message : String(eNotif) });
+            // #endregion
+          }
         });
       } catch(e) {
         // catch sincrono (raro GSI throw)
+        // #region debug-point H2:prompt-sync-catch
+        DBG('H2','1897','gsi.prompt() CATCH SINCRONO → DISPARAR FALLBACK AGORA', { erro: e && e.message ? e.message : String(e) });
+        // #endregion
         gsiFallbackRedirectOAuthAbrir();
       }
     }
     chamarPromptSeguro();
   } catch(e) {
+    // #region debug-point H1:H2:abrirLogin-catch-geral
+    DBG('H2','1902','abrirLoginGoogle CATCH GERAL → disparar fallback', { erro: e && e.message ? e.message : String(e), stack: e && e.stack ? String(e.stack).substring(0,300) : null });
+    // #endregion
     console.error('[Google Login erro init]', e);
     gsiFallbackRedirectOAuthAbrir();
   }
@@ -1850,18 +2042,36 @@ function logoutGoogleTotal() {
  */
 let _gsiInicializado = false;
 function inicializarGoogleIdentityBootstrap() {
+  // #region debug-point H1:H5:inicializarGSI
+  DBG('H1','1869','inicializarGoogleIdentityBootstrap: ENTRY', { gsiJaInicializado: _gsiInicializado, gsiObjetoExiste: !!(window.google && window.google.accounts && window.google.accounts.id) });
+  // #endregion
   if (_gsiInicializado) return;
-  if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+  if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+    // #region debug-point H5:gsi-fail
+    DBG('H5','1871','inicializarGoogleIdentityBootstrap: EARLY_RETURN (google.accounts.id NAO EXISTE → FedCM/third-party/carregamento bloqueado?)', { windowGoogle: !!window.google, accounts: !!(window.google && window.google.accounts), id: !!(window.google && window.google.accounts && window.google.accounts.id) });
+    // #endregion
+    return;
+  }
   try {
-    window.google.accounts.id.initialize({
+    var gsiParams = {
       client_id: GOOGLE_CLIENT_ID,
       callback: handleGoogleCredentialResponse,
       auto_select: false,
       cancel_on_tap_outside: true,
       ux_mode: 'popup'
-    });
+    };
+    // #region debug-point H1:gsi-initialize-call
+    DBG('H1','1873','window.google.accounts.id.initialize ANTES', { clientId: gsiParams.client_id, clientIdMatchConst: gsiParams.client_id === GOOGLE_CLIENT_ID, callbackNome: 'handleGoogleCredentialResponse' });
+    // #endregion
+    window.google.accounts.id.initialize(gsiParams);
     _gsiInicializado = true;
+    // #region debug-point H1:gsi-initialize-success
+    DBG('H1','1879','GSI INICIALIZADO COM SUCESSO', { _gsiInicializado: true });
+    // #endregion
   } catch(e){
+    // #region debug-point H1:H5:gsi-initialize-catch
+    DBG('H1','1881','GSI INICIALIZE CATCH ERROR', { errorMensagem: e && e.message ? e.message : String(e), errorStack: e && e.stack ? String(e.stack).substring(0,300) : null });
+    // #endregion
     console.warn('[Google bootstrap aviso]', e);
   }
 }
@@ -2164,6 +2374,14 @@ function atualizarHeaderBoasVindasPorHora() {
   if (elT) elT.textContent = texto;
 }
 function atualizarHeaderPorSessao() {
+  // #region debug-point H3:H4:header-entry
+  DBG('H3','2352','atualizarHeaderPorSessao: ENTRY (chamado após atribuição sessão)', {
+    profissionalLogado_booleano: !!profissionalLogado,
+    clienteGoogleLogado_booleano: !!clienteGoogleLogado,
+    clienteNome: clienteGoogleLogado && (clienteGoogleLogado.primeiroNome || clienteGoogleLogado.nome || clienteGoogleLogado.email || null),
+    profissionalNome: profissionalLogado && profissionalLogado.nome || null
+  });
+  // #endregion
   const saldoContainer = document.getElementById('headerSaldoContainer');
   const btnCadastrar = document.getElementById('headerBtnCadastrar');
   const btnLogout = document.getElementById('headerBtnLogout');
@@ -2255,6 +2473,12 @@ function atualizarHeaderPorSessao() {
   // ===== V4: ATUALIZAÇÕES HOME + BOTTOM NAV =====
   try { atualizarHomeSessao(); } catch(e){}
   try { renderBottomNav(); } catch(e){ console.error('[header renderBottomNav]',e); }
+  // #region debug-point H3:H4:header-exit
+  DBG('H3','2444','atualizarHeaderPorSessao: EXIT (header + bottom nav atualizados)', {
+    finalProfissionalLogado: !!profissionalLogado,
+    finalClienteGoogleLogado: !!clienteGoogleLogado
+  });
+  // #endregion
 }
 function fazerLogoutProfissional() {
   profissionalLogado = null;
