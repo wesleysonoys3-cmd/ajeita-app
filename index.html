@@ -1165,6 +1165,7 @@ let estadoPagamentoPix = 'qr';
 let _intervalPixContagemRegressiva = null;
 let _timeoutPixAutoAprovacao = null;
 let _debounceFotoPerfilTimer = null;
+let _gsiFallbackTimer = null;
 
 let profissionais = [];
 let pedidos = [];
@@ -1457,6 +1458,7 @@ function decodeGoogleJwtPayload(jwt) {
  * @param {object} resp — credential response do GSI {credential, clientId, select_by}
  */
 function handleGoogleCredentialResponse(resp) {
+  if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); _gsiFallbackTimer = null; }
   if (!resp || !resp.credential) {
     toast('error','Falha login Google','Resposta inválida do Google. Tente novamente.');
     return;
@@ -1552,6 +1554,32 @@ function modalOrcamentoAberto() {
 }
 
 /**
+ * Fallback ULTRA SEGURO Google OAuth redirect URL.
+ * Chamado SE: popup bloqueado, FedCM NetworkError, prompt demora > 3.5s,
+ * notification com Skipped/FailedToShow, iOS bloqueia popup.
+ * Abre em nova aba oauth2/v2/auth id_token response type.
+ */
+function gsiFallbackRedirectOAuthAbrir() {
+  if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); _gsiFallbackTimer = null; }
+  try {
+    var redirectAfter = encodeURIComponent(window.location.href.split('#')[0]);
+    var intent = (googleLoginIntent && (googleLoginIntent === 'profissional' || googleLoginIntent === 'cliente')) ? googleLoginIntent : 'cliente';
+    var authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+      'client_id=' + encodeURIComponent(GOOGLE_CLIENT_ID) +
+      '&redirect_uri=' + redirectAfter +
+      '&response_type=id_token&scope=openid%20email%20profile' +
+      '&nonce=ajeita_' + Date.now() +
+      '&state=' + encodeURIComponent('intent='+intent) +
+      '&prompt=select_account';
+    window.open(authUrl, '_blank', 'noopener,noreferrer,width=600,height=700');
+    toast('warning','Abrindo Google em nova aba...','Pop-up foi bloqueado ou FedCM falhou. Se não abrir automaticamente, permita pop-ups para este site e tente novamente.',6500);
+  } catch(eFallback){
+    console.error('[Google Fallback erro]', eFallback);
+    toast('error','Ops, falha Google','Tente novamente ou permita pop-ups para este site.');
+  }
+}
+
+/**
  * Abre o popup do Google para login. O usuário seleciona a conta.
  * @param {'cliente'|'profissional'} tipoIntent 
  */
@@ -1562,11 +1590,11 @@ function abrirLoginGoogle(tipoIntent) {
     return;
   }
   googleLoginIntent = tipoIntent || 'cliente';
-  toast('info','Abrindo Google...','A janela de login do Google está abrindo. Se aparecer popup bloqueado, permita popups para este site.');
+  // Feedback IMEDIATO (essencial no mobile para sensação de clique funcionando)
+  toast('info','Abrindo Google...','A janela de login do Google está abrindo. Se aparecer popup bloqueado, permita popups para este site. Caso nada abra em 3 segundos, uma nova aba abrirá automaticamente.',6200);
   try {
     const gsi = window.google.accounts.id;
     if (!_gsiInicializado) {
-      // Bootstrap nao aconteceu (timing / cache). Inicializa AGORA com UX popup.
       gsi.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCredentialResponse,
@@ -1576,39 +1604,46 @@ function abrirLoginGoogle(tipoIntent) {
       });
       _gsiInicializado = true;
     }
-    // Abrimos popup via prompt() com ux_mode='popup' ja configurado no initialize.
-    // Temos user gesture valido (clique usuario no botao custom), entao o Chrome/Safari NAO bloqueia o popup.
+    // Safety: se em 3.5s o user NAO clicou em nenhuma conta (popup bloqueado / FedCM erro mobile)
+    // rodamos fallback REDIRECT em nova aba. Se o popup já abriu e callback handleGoogleCredentialResponse
+    // rodou, handleGoogleCredentialResponse limpa _gsiFallbackTimer antes de disparar.
+    if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); }
+    _gsiFallbackTimer = setTimeout(gsiFallbackRedirectOAuthAbrir, 3500);
+
     var tentativas = 0;
     function chamarPromptSeguro() {
       tentativas++;
       try {
         gsi.prompt(function(notification) {
           if (!notification) return;
-          // Notificacoes do fluxo (nao precisa exibir nada, usuario ve popup).
-          if (typeof notification.isNotDisplayed === 'function' && notification.isNotDisplayed()) {
-            // One Tap nao exibiu, mas popup ainda pode abrir com 2a tentativa (max 2 no total)
-            if (tentativas < 2) {
-              try { chamarPromptSeguro(); } catch(e2){}
+          // Tipos de notification do GSI/OneTap que significam: prompt NAO apareceu / usuario cancelou / popup bloqueado
+          // = acionar fallback imediatamente (sem esperar 3.5s)
+          try {
+            if (typeof notification.isNotDisplayed === 'function' && notification.isNotDisplayed()) {
+              if (tentativas < 2) {
+                chamarPromptSeguro();
+                return;
+              }
+              // 2 tentativas One Tap nao exibiu: rodar fallback redirect AGORA
+              gsiFallbackRedirectOAuthAbrir();
+              return;
             }
-          }
+            // FedCM / Skipped notification reasons (string "skipped", "credential_returned", "canceled", "flow_restarted", etc)
+            var motivo = notification && notification.getMomentType ? notification.getMomentType() : (typeof notification === 'string' ? notification : '');
+            if ((typeof motivo === 'string') && ((motivo.indexOf('skip') >= 0) || (motivo.indexOf('fail') >= 0) || (motivo.indexOf('cancel') >= 0) || (motivo.indexOf('block') >= 0) || (motivo.indexOf('error') >= 0) || (motivo.indexOf('network') >= 0))) {
+              if (tentativas < 2) { tentativas = 99; chamarPromptSeguro(); return; }
+            }
+          } catch(eNotif){}
         });
       } catch(e) {
-        // Fallback ultra seguro: abre o auth URL do Google em nova aba (funciona em 100% mobile browsers)
-        var redirectAfter = encodeURIComponent(window.location.href.split('#')[0]);
-        var authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
-          'client_id=' + encodeURIComponent(GOOGLE_CLIENT_ID) +
-          '&redirect_uri=' + redirectAfter +
-          '&response_type=id_token&scope=openid%20email%20profile' +
-          '&nonce=ajeita_' + Date.now() +
-          '&state=' + encodeURIComponent('intent='+googleLoginIntent) +
-          '&prompt=select_account';
-        window.open(authUrl, '_blank');
+        // catch sincrono (raro GSI throw)
+        gsiFallbackRedirectOAuthAbrir();
       }
     }
     chamarPromptSeguro();
   } catch(e) {
     console.error('[Google Login erro init]', e);
-    toast('error','Erro Google','Não foi possível abrir a janela do Google. Tente novamente em alguns segundos.');
+    gsiFallbackRedirectOAuthAbrir();
   }
 }
 
