@@ -179,6 +179,13 @@ tailwind.config = {
           Cadastrar como Profissional
         </button>
 
+        <!-- ===== BOTAO ADMIN HEADER MOBILE/TABLET (VISIVEL SEMPRE, NAO PRECISA ABRIR MENU) ===== -->
+        <button onclick="navigateTo('view-admin-login')" id="headerBtnAdminMobile" class="flex sm:flex items-center gap-1.5 bg-white hover:bg-primary-50 border-2 border-primary-200 text-primary-800 font-black px-3 py-2 rounded-xl shadow-sm hover:shadow transition text-xs sm:text-sm xl:hidden" title="Acesso Administrador">
+          <i class="fa-solid fa-shield-halved text-primary-700 text-sm sm:text-base"></i>
+          <span class="sm:hidden">Admin</span>
+          <span class="hidden sm:inline">Painel Admin</span>
+        </button>
+
         <!-- Logout (profissional) -->
         <button onclick="fazerLogoutProfissional()" id="headerBtnLogout" class="hidden items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-2 rounded-xl transition text-sm">
           <i class="fa-solid fa-right-from-bracket"></i>
@@ -2842,6 +2849,8 @@ function atualizarHeaderPorSessao() {
   const mobileBtnEntrarGoogleCliente = document.getElementById('mobileBtnEntrarGoogleCliente');
   const mobileBtnEntrarGoogleProfissional = document.getElementById('mobileBtnEntrarGoogleProfissional');
   const mobileBtnLogoutGoogleCliente = document.getElementById('mobileBtnLogoutGoogleCliente');
+  // NOVO V6d: botao Admin visivel no header (mobile/tablet)
+  const btnAdminMobile = document.getElementById('headerBtnAdminMobile');
   // ===== V3: GRUPOS DE NAVEGAÇÃO SEPARADOS CLIENTE vs PROFISSIONAL =====
   const headerGroupCliente = document.getElementById('headerNavGroupCliente');
   const headerGroupProfissional = document.getElementById('headerNavGroupProfissional');
@@ -2930,9 +2939,18 @@ function atualizarHeaderPorSessao() {
     btnEntrarGoogle?.classList.remove('lg:flex');
     avatarContainer?.classList.add('hidden');
     avatarContainer?.classList.remove('flex');
+    // V6d: se admin logado, ESCONDE botao admin mobile do header (ja aparece o Badge Admin Logado maior)
+    if (btnAdminMobile) { btnAdminMobile.classList.add('hidden'); btnAdminMobile.classList.remove('flex','sm:flex'); }
   } else if (headerBadgeAdmin) {
     headerBadgeAdmin.classList.add('hidden');
     headerBadgeAdmin.classList.remove('flex');
+    // V6d: se admin NAO logado, MOSTRA botao admin mobile no header (se NAO for profissional logado)
+    if (btnAdminMobile && !profissionalLogado) { btnAdminMobile.classList.remove('hidden'); btnAdminMobile.classList.add('flex','sm:flex'); }
+    else if (btnAdminMobile) { btnAdminMobile.classList.add('hidden'); btnAdminMobile.classList.remove('flex','sm:flex'); }
+  } else {
+    // fallback caso headerBadgeAdmin nao exista
+    if (btnAdminMobile && !profissionalLogado) { btnAdminMobile.classList.remove('hidden'); btnAdminMobile.classList.add('flex','sm:flex'); }
+    else if (btnAdminMobile) { btnAdminMobile.classList.add('hidden'); btnAdminMobile.classList.remove('flex','sm:flex'); }
   }
   try { atualizarHomeSessao(); } catch(e){}
   try { renderBottomNav(); } catch(e){ console.error('[header renderBottomNav]',e); }
