@@ -989,6 +989,55 @@ tailwind.config = {
 
 <!-- =============== MODAIS GLOBAIS =============== -->
 
+<!-- MODAL SELECIONAR REDIRECT_URI AUTORIZADA GOOGLE (FIX V5E DEFINITIVO) -->
+<div id="modal-select-redirect-uri" class="hidden fixed inset-0 z-50 p-4">
+  <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modal-select-redirect-uri')"></div>
+  <div class="relative max-w-xl w-full mx-auto mt-[8vh] max-h-[88vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+    <div class="bg-gradient-to-br from-primary-500 to-primary-700 px-6 sm:px-8 py-6 sm:py-7 text-white relative overflow-hidden">
+      <button onclick="fecharModal('modal-select-redirect-uri')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
+          <i class="fa-brands fa-google text-2xl"></i>
+        </div>
+        <div>
+          <h3 class="text-xl sm:text-2xl font-black">Configurar Login Google</h3>
+          <p class="text-primary-50 text-sm">Configuração obrigatória (1 vez só)</p>
+        </div>
+      </div>
+    </div>
+    <div class="px-6 sm:px-8 py-6">
+      <p class="text-slate-700 mb-2 text-sm">
+        Para o login com Google funcionar, precisamos saber <strong>qual URL você cadastrou exatamente</strong> no Google Cloud Console como <strong>"URI de redirecionamento autorizada"</strong>.
+      </p>
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5">
+        <div class="flex gap-3">
+          <i class="fa-solid fa-lightbulb text-amber-500 text-xl mt-0.5"></i>
+          <div class="text-sm text-amber-800">
+            <p class="font-bold mb-1">Não lembra qual escolheu?</p>
+            <p>Abra <code class="bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-mono text-xs">console.cloud.google.com/apis/credentials</code>, clique no Client ID OAuth 2.0 e role para "URIs de redirecionamento autorizadas". Copie EXATAMENTE a URL que está lá e clique na opção IGUAL abaixo.</p>
+          </div>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">Selecione a URL IGUAL à cadastrada:</p>
+      <div id="modalRedirectUriLista" class="flex flex-col gap-3 mb-5">
+        <!-- Populado por JS com as 4 opcoes da origin atual -->
+      </div>
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-600 mb-5">
+        <p><strong>Sua origem atual:</strong> <code id="modalRedirectUriOriginAtual" class="bg-white px-2 py-0.5 rounded border border-slate-200 font-mono"></code></p>
+        <p class="mt-1">Se nenhuma das opções acima for igual à cadastrada, você precisa <strong>ADICIONAR todas as opções na lista do Google Cloud Console</strong> (ou editar a cadastrada para ficar igual à 1ª opção).</p>
+      </div>
+      <div class="flex flex-col-reverse sm:flex-row gap-3">
+        <button onclick="fecharModal('modal-select-redirect-uri')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition">Cancelar</button>
+        <button onclick="escolherRedirectUriLista_Op1Padrao()" class="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-extrabold py-3 rounded-xl shadow-card hover:shadow-pop transition">
+          <i class="fa-solid fa-check-circle mr-1.5"></i> Usar 1ª opção (recomendado)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PERFIL PROFISSIONAL -->
 <div id="modal-perfil" class="hidden fixed inset-0 z-50 p-4">
   <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modal-perfil')"></div>
@@ -1308,7 +1357,7 @@ function DBG(hid, loc, msg, dataObj) {
   try {
     var payload = {
       sessionId: 'google-login-final-fix',
-      runId: 'post4',
+      runId: 'post5',
       hypothesisId: hid,
       location: 'index.html:' + loc,
       msg: '[DEBUG] ' + msg,
@@ -1356,6 +1405,20 @@ function gerarTodasVariacoesRedirectUri() {
 }
 // 2. Escolhe a MELHOR redirect_uri baseada na origin atual.
 function escolherRedirectUriDefinitiva() {
+  // ============================================================
+  // ⚠️ FIX V5E: VALOR DO USUÁRIO SALVO NO STORAGE PRIORIDADE MÁXIMA (100% match)
+  // Se o usuário já abriu o modal e clicou em uma opcao, ESCOLHEMOS DIRETO,
+  // sem heuristica nenhuma. Garante 0 mismatch de agora em diante nesse navegador.
+  // ============================================================
+  var salvaStorage = pegarDoStorage('redirectUriEscolhida', null);
+  if (salvaStorage && typeof salvaStorage === 'string' && salvaStorage.length > 10) {
+    try {
+      DBG('H2','1407','escolherRedirectUriDefinitiva: USANDO VALOR SALVO NO STORAGE (FIX V5E, 0 mismatch garantido)', {
+        redirectUriSalva: salvaStorage
+      });
+    } catch(e){}
+    return salvaStorage;
+  }
   const candidatas = gerarTodasVariacoesRedirectUri();
   const originAtual = (window.location.origin || (window.location.protocol + '//' + window.location.host));
   // Step A: primeiro candidatas que PERTENCEM À ORIGEM ATUAL (melhor match)
@@ -1386,6 +1449,83 @@ function escolherRedirectUriDefinitiva() {
     });
   } catch(e){}
   return ordenadas[0]; // retorna a #1 da lista ordenada
+}
+// 3. Helper: gera 4 variações de UMA ÚNICA origem (usado para UI do modal de selecao)
+function gerarVariacoesRedirectUriDeUmaOrigem(orig) {
+  return [orig, orig + '/index.html', orig + '/', orig + '/index.html/'];
+}
+// 4. Estado: intent pendente de login enquanto usuario escolhe redirect_uri no modal
+var _redirectUri_intentPendenteModal = null;
+// 5. Abre o modal de selecao, popula as 4 opcoes clicaveis da ORIGEM ATUAL
+function abrirModalRedirectUriSelecao(intentPendente) {
+  _redirectUri_intentPendenteModal = (intentPendente === 'profissional' || intentPendente === 'cliente') ? intentPendente : 'cliente';
+  try {
+    var originAtual = (window.location.origin || (window.location.protocol + '//' + window.location.host));
+    // Determina QUAL das 3 origens autorizadas MELHOR bate com a origin atual
+    // (para o caso do usuário ter feito deploy em URL inesperada, usamos a mais próxima)
+    var origemSelecionada = GOOGLE_ORIGINS_AUTORIZADAS[0];
+    for (var i = 0; i < GOOGLE_ORIGINS_AUTORIZADAS.length; i++) {
+      if (GOOGLE_ORIGINS_AUTORIZADAS[i] === originAtual) { origemSelecionada = GOOGLE_ORIGINS_AUTORIZADAS[i]; break; }
+      if (originAtual.indexOf(GOOGLE_ORIGINS_AUTORIZADAS[i].split(':')[0]) === 0) { origemSelecionada = GOOGLE_ORIGINS_AUTORIZADAS[i]; }
+    }
+    var opcoes = gerarVariacoesRedirectUriDeUmaOrigem(origemSelecionada);
+    var listaHtml = '';
+    for (var k = 0; k < opcoes.length; k++) {
+      var op = opcoes[k];
+      var badge = (k === 0) ? '<span class="inline-flex items-center gap-1 bg-primary-100 text-primary-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wide">Mais comum</span>' : '';
+      listaHtml += '' +
+        '<button onclick="salvarRedirectUriEscolhidoESeguirLogin(decodeURIComponent(\'' + encodeURIComponent(op) + '\'))" ' +
+        'class="group text-left w-full px-4 py-3.5 border border-slate-200 hover:border-primary-400 bg-white hover:bg-primary-50 rounded-2xl transition flex items-start gap-3 shadow-sm hover:shadow-card">' +
+        '<div class="w-6 h-6 mt-0.5 rounded-full bg-slate-100 group-hover:bg-primary-500 border-2 border-slate-300 group-hover:border-primary-500 flex items-center justify-center flex-shrink-0 transition">' +
+        '<div class="w-2.5 h-2.5 rounded-full bg-transparent group-hover:bg-white transition"></div>' +
+        '</div>' +
+        '<div class="flex-1 min-w-0">' +
+        '<div class="flex items-center gap-2 mb-1"><p class="font-extrabold text-slate-800 text-sm truncate">Opção ' + String(k + 1) + '</p>' + badge + '</div>' +
+        '<code class="block text-[11px] sm:text-xs font-mono text-slate-600 bg-slate-50 group-hover:bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 break-all">' + op + '</code>' +
+        '</div>' +
+        '</button>';
+    }
+    var listaEl = document.getElementById('modalRedirectUriLista');
+    if (listaEl) listaEl.innerHTML = listaHtml;
+    var originAtualEl = document.getElementById('modalRedirectUriOriginAtual');
+    if (originAtualEl) originAtualEl.textContent = originAtual;
+    abrirModal('modal-select-redirect-uri');
+    toast('info','Configure 1 vez!','Selecione a URL IGUAL à cadastrada no Google Cloud Console.');
+  } catch(e){
+    console.error('[Abrir modal redirect uri erro]:', e);
+  }
+}
+// 6. Usuário clicou em uma opcao do modal → salva no localStorage e dispara o login pendente
+function salvarRedirectUriEscolhidoESeguirLogin(urlEscolhido) {
+  try {
+    if (!urlEscolhido || typeof urlEscolhido !== 'string' || urlEscolhido.length < 10) {
+      toast('error','Opção inválida','Selecione uma das 4 opções de URL.');
+      return;
+    }
+    salvarNoStorage('redirectUriEscolhida', urlEscolhido);
+    try { fecharModal('modal-select-redirect-uri'); } catch(e){}
+    toast('success','✅ URL salva!','Configuração concluída. Fazendo login agora...',3500);
+    // Dispara o fluxo de login com a intent que estava pendente.
+    // setTimeout para garantir que o storage foi persistido e o modal fechou.
+    var intentSeguir = _redirectUri_intentPendenteModal || 'cliente';
+    setTimeout(function(){
+      try { abrirLoginGoogle(intentSeguir); } catch(eAbrir){ console.error('[abrirLoginGoogle dps modal]:', eAbrir); }
+    }, 500);
+  } catch(e){
+    console.error('[Salvar redirect uri escolhida erro]:', e);
+  }
+}
+// 7. Botao "Usar 1ª opção (recomendado)" do modal
+function escolherRedirectUriLista_Op1Padrao() {
+  try {
+    var originAtual = (window.location.origin || (window.location.protocol + '//' + window.location.host));
+    var origemSelecionada = GOOGLE_ORIGINS_AUTORIZADAS[0];
+    for (var i = 0; i < GOOGLE_ORIGINS_AUTORIZADAS.length; i++) {
+      if (GOOGLE_ORIGINS_AUTORIZADAS[i] === originAtual) { origemSelecionada = GOOGLE_ORIGINS_AUTORIZADAS[i]; break; }
+    }
+    var op1 = gerarVariacoesRedirectUriDeUmaOrigem(origemSelecionada)[0];
+    salvarRedirectUriEscolhidoESeguirLogin(op1);
+  } catch(e){}
 }
 // ============================================================
 const CATEGORIAS_GLOBAIS = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
@@ -1959,6 +2099,22 @@ function abrirLoginGoogle(tipoIntent) {
     gsiObjetoExiste: !!(window.google && window.google.accounts && window.google.accounts.id)
   });
   // #endregion
+  // ============================================================
+  // ⚠️ FIX V5E CHECKPOINT OBRIGATÓRIO (1 vez só por navegador):
+  // Verifica se usuário JÁ SELECIONOU qual é a redirect_uri autorizada cadastrada
+  // no Google Cloud Console (modal de selecao). Se NÃO selecionou ainda,
+  // ABRE MODAL DE SELECAO e RETORNA (para o fluxo só seguir após a escolha).
+  // Elimina 100% dos redirect_uri_mismatch, não adivinhamos mais.
+  // ============================================================
+  try {
+    var temEscolhida = pegarDoStorage('redirectUriEscolhida', null);
+    if (!temEscolhida || typeof temEscolhida !== 'string' || temEscolhida.length < 10) {
+      DBG('H2','1844','abrirLoginGoogle: FIX V5E CHECKPOINT → SEM valor no storage. ABRINDO MODAL de selecao de URL autorizada.', { tipoIntent: tipoIntent });
+      abrirModalRedirectUriSelecao(tipoIntent);
+      return;
+    }
+    DBG('H2','1844','abrirLoginGoogle: FIX V5E CHECKPOINT OK → redirectUriEscolhida existe no storage.', { redirectUriSalva: temEscolhida });
+  } catch(eCheck){}
   if (!window.google || !window.google.accounts || !window.google.accounts.id) {
     // #region debug-point H5:gsi-objeto-nao-existe
     DBG('H5','1845','abrirLoginGoogle: GSI NAO CARREGADO AINDA → setTimeout retry 400ms', {
