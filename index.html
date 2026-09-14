@@ -13,6 +13,19 @@
 <!-- GOOGLE IDENTITY SERVICES (Login com Google) -->
 <meta name="google-signin-client_id" content="709414286122-tu642dhpa9dnp158keo816ln1a52npu6.apps.googleusercontent.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- =============== FIREBASE SDK V9+ (compatibilidade browser ES modules) =============== -->
+<script type="module">
+  window.__firebaseLoaded = false;
+  import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+  import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, setDoc, query, where, orderBy, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+  import { getAuth, GoogleAuthProvider, signInWithCredential, signInWithCustomToken, onAuthStateChanged, OAuthProvider } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+  window.__fbModules = { initializeApp, getApp, getApps, getFirestore, collection, addDoc, getDocs, onSnapshot, doc, setDoc, query, where, orderBy, deleteDoc, serverTimestamp, getAuth, GoogleAuthProvider, signInWithCredential, OAuthProvider, onAuthStateChanged };
+  window.__firebaseLoaded = true;
+  window.dispatchEvent(new CustomEvent('firebase:loaded', { detail: { ok: true } }));
+  try {
+    if (typeof window.__fbInit === 'function') setTimeout(window.__fbInit, 0);
+  } catch(e){}
+</script>
 <script>
 tailwind.config = {
   theme: {
@@ -1352,6 +1365,136 @@ tailwind.config = {
 const PREFIXO_STORAGE = 'ajeita_moeda_app_';
 const CHAVE_PIX_PROPRIETARIO = '+55 61 99251-8130'; // Telefone formatado com DDI + DDD
 const NOME_BENEFICIARIO_PIX = 'Wesley - Ajeita Serviços Domésticos';
+
+/* =============== FIREBASE CONFIG + INIT (V6 Firestore Sync) ===============
+   Documentação: pegar valor EXATO em console.firebase.google.com → Configurações Gerais
+   → "Seus aplicativos" → app Web 🌐 → "Configuração do SDK" → const firebaseConfig = { ... }
+   Copia COLA TUDO AQUI. Os placeholders abaixo são a estrutura PADRÃO.
+   apiKey começa com AIza e tem ~39 chars. OBRIGATORIO TER ESSA CHAVE SENAO FIREBASE ERRO.
+*/
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAr98KGfdrPe81NRfUHBmh25Jxf4cCl8dM",
+  authDomain: "ajeita-app-c9fc2.firebaseapp.com",
+  projectId: "ajeita-app-c9fc2",
+  storageBucket: "ajeita-app-c9fc2.firebasestorage.app",
+  messagingSenderId: "709414286122",
+  appId: "1:709414286122:web:238ea0d985907d5acb6453"
+};
+var FbApp = null;
+var FbDb = null;
+var FbAuth = null;
+var FB_FIRESTORE_DISPONIVEL = false;
+var FB_PROFISSIONAIS_UNSUBSCRIBE = null;
+
+function fbEstaConfigurado() {
+  return (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && typeof FIREBASE_CONFIG.apiKey === 'string' && FIREBASE_CONFIG.apiKey.length >= 20 && !(FIREBASE_CONFIG.apiKey.indexOf('___') === 0));
+}
+
+function fbInit() {
+  try {
+    if (!window.__firebaseLoaded || !window.__fbModules || !fbEstaConfigurado()) {
+      FB_FIRESTORE_DISPONIVEL = false;
+      DBG('FB', '1395', 'Firebase SKIP init (SDK nao carregou ou apiKey placeholder detectado). Continuando apenas com localStorage.', { configurado: fbEstaConfigurado(), sdkLoaded: !!window.__firebaseLoaded });
+      return;
+    }
+    const mods = window.__fbModules;
+    if (!FbApp) {
+      const apps = (mods.getApps && typeof mods.getApps === 'function') ? mods.getApps() : [];
+      FbApp = (apps.length > 0) ? mods.getApp() : mods.initializeApp(FIREBASE_CONFIG);
+    }
+    FbDb = mods.getFirestore(FbApp);
+    try { FbAuth = mods.getAuth(FbApp); } catch(eAuth){}
+    FB_FIRESTORE_DISPONIVEL = !!FbDb;
+    DBG('FB', '1410', 'Firebase Firestore INICIALIZADO COM SUCESSO ✅. Agora sincronizando profissionais em tempo real.', { projectId: FIREBASE_CONFIG.projectId, disponivel: FB_FIRESTORE_DISPONIVEL });
+    fbSyncProfissionaisRealtime();
+  } catch (e) {
+    FB_FIRESTORE_DISPONIVEL = false;
+    DBG('FB', '1416', 'Firebase init FALHOU (tentaremos novamente em 2s). Erro: ' + String(e && e.message || e), {});
+    try { setTimeout(fbInit, 2000); } catch(eDelay){}
+  }
+}
+window.__fbInit = fbInit;
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    if (window.__firebaseLoaded === true) fbInit();
+    else window.addEventListener('firebase:loaded', fbInit, { once: true });
+  } catch(eDCL){}
+});
+
+function fbSyncAddProfissional(novoProfissional) {
+  return new Promise(function(resolve, reject) {
+    if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules) {
+      DBG('FB', '1432', 'fbSyncAddProfissional SKIP (Firestore nao disponivel). Apenas localStorage persistiu.', { disponivel: FB_FIRESTORE_DISPONIVEL });
+      return resolve({ status: 'skipped', reason: 'firestore_unavailable' });
+    }
+    try {
+      const mods = window.__fbModules;
+      var uidDocFs = (novoProfissional && novoProfissional.id) ? ('local_' + String(novoProfissional.id)) : ('local_' + Date.now());
+      if (novoProfissional && novoProfissional.uid && String(novoProfissional.uid).length > 4) uidDocFs = String(novoProfissional.uid);
+      const docRef = mods.doc(FbDb, 'profissionais', uidDocFs);
+      const payload = Object.assign({}, novoProfissional || {}, { _syncType: 'localStorage_to_firestore', _syncedAt: Date.now() });
+      mods.setDoc(docRef, payload).then(function(){
+        DBG('FB', '1445', '✅ Profissional SINCRONIZADO no Firestore! docId/profissionais/'+uidDocFs, { docId: uidDocFs, nome: (novoProfissional && novoProfissional.nome) });
+        toast('success','💾 Firebase salvo!','O profissional foi cadastrado também no banco de dados central.',3000);
+        resolve({ status: 'ok', docId: uidDocFs });
+      }).catch(function(errFs){
+        DBG('FB', '1450', '❌ Falha addDoc Firestore profissionais: ' + String(errFs && errFs.message || errFs), {});
+        toast('warn','Local salvo só','Cadastro foi salvo no seu celular, mas falhou ao sincronizar com o banco. Verifique sua conexão.');
+        resolve({ status: 'error', err: String(errFs && errFs.message || errFs) });
+      });
+    } catch(eSync) {
+      DBG('FB', '1456', 'Exception fbSyncAddProfissional: ' + String(eSync && eSync.message || eSync), {});
+      resolve({ status: 'error', err: String(eSync && eSync.message || eSync) });
+    }
+  });
+}
+
+function fbSyncProfissionaisRealtime() {
+  if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules) return;
+  if (typeof FB_PROFISSIONAIS_UNSUBSCRIBE === 'function') {
+    try { FB_PROFISSIONAIS_UNSUBSCRIBE(); } catch(eUnsub){}
+    FB_PROFISSIONAIS_UNSUBSCRIBE = null;
+  }
+  const mods = window.__fbModules;
+  try {
+    const q = mods.query(mods.collection(FbDb, 'profissionais'));
+    FB_PROFISSIONAIS_UNSUBSCRIBE = mods.onSnapshot(q, function(snapshot) {
+      try {
+        if (!snapshot || !snapshot.docs) return;
+        var totalMudancas = snapshot.docChanges().length;
+        if (totalMudancas === 0) return;
+        DBG('FB', '1477', '📡 Firestore onSnapshot disparou! Atualizando '+totalMudancas+' documentos no catálogo localStorage.', { docs: snapshot.size, changes: totalMudancas });
+        snapshot.forEach(function(docSnap) {
+          if (!docSnap || !docSnap.exists) return;
+          var dados = docSnap.data() || {};
+          var idProfLocal = null;
+          if (dados.id) idProfLocal = String(dados.id);
+          else if (dados._id) idProfLocal = String(dados._id);
+          else if (docSnap.id && docSnap.id.indexOf('local_') === 0) idProfLocal = docSnap.id.substring(6);
+          else idProfLocal = docSnap.id;
+          if (!idProfLocal) return;
+          var idxExistente = -1;
+          for (var k=0; k<profissionais.length; k++) if (String(profissionais[k].id) === idProfLocal) { idxExistente = k; break; }
+          if (idxExistente >= 0) profissionais[idxExistente] = Object.assign({}, profissionais[idxExistente], dados, { id: idProfLocal });
+          else profissionais.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
+        });
+        try {
+          salvarTodosGlobaisNoStorage();
+          if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais();
+          if (typeof renderMuralPedidos === 'function') renderMuralPedidos();
+        } catch(ePersist){}
+        if (totalMudancas > 0) toast('info','Atualização recebida!','Foram sincronizados '+totalMudancas+' profissionais do banco central.',2500);
+      } catch(eInner) {
+        DBG('FB', '1503', 'Erro interno onSnapshot handler: ' + String(eInner && eInner.message || eInner), {});
+      }
+    }, function(errOnsnap){
+      DBG('FB', '1506', 'Firestore onSnapshot ERRO (regra de seguranca provavelmente bloqueou leitura). Ver firestore.rules allow read: if true; . Detalhe: ' + String(errOnsnap && errOnsnap.message || errOnsnap), {});
+    });
+  } catch(eQry) {
+    DBG('FB', '1510', 'Exception fbSyncProfissionaisRealtime: ' + String(eQry && eQry.message || eQry), {});
+  }
+}
+
 // #region debug-point GLOBAL:dbg-helper (google-login-final-fix instrumentation)
 function DBG(hid, loc, msg, dataObj) {
   try {
@@ -3744,6 +3887,16 @@ function submitCadastroProfissional(e) {
   profissionalGoogleEmailPending = null;
   profissionalGoogleLogadoDados = null;
   salvarTodosGlobaisNoStorage();
+
+  try { if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais(); } catch(eR1){}
+  try { if (typeof renderMuralPedidos === 'function') renderMuralPedidos(); } catch(eR2){}
+  try {
+    if (typeof fbSyncAddProfissional === 'function') {
+      setTimeout(function() {
+        try { fbSyncAddProfissional(Object.assign({}, novo, { uid: ('local_' + String(id)) })); } catch(eAsync){ console.error(eAsync); }
+      }, 300);
+    }
+  } catch(eSync){}
 
   // Reset form
   document.getElementById('formCadastroProfissional').reset();
