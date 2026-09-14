@@ -1308,7 +1308,7 @@ function DBG(hid, loc, msg, dataObj) {
   try {
     var payload = {
       sessionId: 'google-login-final-fix',
-      runId: 'post2',
+      runId: 'post3',
       hypothesisId: hid,
       location: 'index.html:' + loc,
       msg: '[DEBUG] ' + msg,
@@ -1853,15 +1853,33 @@ function gsiFallbackRedirectOAuthAbrir() {
       '&state=' + encodeURIComponent('intent='+intent) +
       '&prompt=select_account';
     // #region debug-point H2:fallback-url
-    DBG('H2','1831','Fallback OAuth redirect URL montado (abrindo nova aba) FIX V5B', {
+    DBG('H2','1831','Fallback OAuth redirect URL montado FIX V5C (REDIRECIONAMENTO MESMA PAGINA = 0 BLOQUEIO)', {
       intent: intent,
       authUrlPrimeiros150: authUrl.substring(0,150)+'...',
       redirectAfterClean: redirectAfterClean,
       oldLocationHref: window.location.href
     });
     // #endregion
-    window.open(authUrl, '_blank', 'noopener,noreferrer,width=600,height=700');
-    toast('warning','Abrindo Google em nova aba...','Pop-up foi bloqueado ou FedCM falhou. Se não abrir automaticamente, permita pop-ups para este site e tente novamente.',6500);
+    // ============================================================
+    // ⚠️ FIX V5C GOOGLE LOGIN (bug fatal #3 → window.open BLOQUEADO no mobile):
+    // NÃO USAMOS MAIS window.open (popup/nova aba) no fallback, pois no
+    // Chrome Mobile/Safari iOS os parâmetros width=600,height=700 fazem
+    // o navegador interpretar como "popup suspeita" e BLOQUEAR COMPLETAMENTE
+    // (sem pedir permissão, sem abrir nada). Usuário só vê os toasts e NADA ACONTECE.
+    // SOLUÇÃO 100% CONFIÁVEL: redirecionar a MESMA ABA/PÁGINA para o Google OAuth.
+    // Após login o Google redireciona de volta com #id_token=... no hash e
+    // o parser no DOMContentLoaded (L3875-L3901) processa tudo automaticamente.
+    // É o mesmo UX de Instagram/Facebook no mobile. NÃO EXISTE BLOQUEIO PARA REDIRECT.
+    // ============================================================
+    toast('info','Redirecionando para o Google...','Você será levado para a página de login do Google. Após fazer login, voltará automaticamente para o Ajeita logado.',5500);
+    setTimeout(function(){
+      try {
+        window.location.assign(authUrl);  // ← REDIRECIONA MESMA PÁGINA = 0 bloqueio mobile
+      } catch(eAssign){
+        // Último fallback de emergência: tenta window.open SEM parâmetros de tamanho
+        try { window.open(authUrl,'_blank','noopener,noreferrer'); } catch(e2){}
+      }
+    }, 500);
   } catch(eFallback){
     // #region debug-point H2:fallback-catch
     DBG('H2','1834','Fallback CATCH ERROR', { error: eFallback && eFallback.message ? eFallback.message : String(eFallback) });
@@ -1894,7 +1912,7 @@ function abrirLoginGoogle(tipoIntent) {
   }
   googleLoginIntent = tipoIntent || 'cliente';
   // Feedback IMEDIATO (essencial no mobile para sensação de clique funcionando)
-  toast('info','Abrindo Google...','A janela de login do Google está abrindo. Se aparecer popup bloqueado, permita popups para este site. Caso nada abra em 3 segundos, uma nova aba abrirá automaticamente.',6200);
+  toast('info','Abrindo Google...','A janela do Google está abrindo. Caso nada abra em 1,5 segundos, você será redirecionado automaticamente para a página de login do Google.',6200);
   try {
     const gsi = window.google.accounts.id;
     if (!_gsiInicializado) {
@@ -1910,13 +1928,14 @@ function abrirLoginGoogle(tipoIntent) {
       DBG('H1','1855','abrirLoginGoogle: inicializou GSI LAZY (pois _gsiInicializado era false)', { sucesso: true });
       // #endregion
     }
-    // Safety: se em 3.5s o user NAO clicou em nenhuma conta (popup bloqueado / FedCM erro mobile)
-    // rodamos fallback REDIRECT em nova aba. Se o popup já abriu e callback handleGoogleCredentialResponse
+    // Safety: se em 1500ms o user NAO clicou em nenhuma conta (popup bloqueado / FedCM erro mobile)
+    // rodamos fallback REDIRECT na MESMA PÁGINA (window.location.assign = 0 bloqueio).
+    // Se o popup já abriu e callback handleGoogleCredentialResponse
     // rodou, handleGoogleCredentialResponse limpa _gsiFallbackTimer antes de disparar.
     if (_gsiFallbackTimer) { clearTimeout(_gsiFallbackTimer); }
-    _gsiFallbackTimer = setTimeout(gsiFallbackRedirectOAuthAbrir, 3500);
+    _gsiFallbackTimer = setTimeout(gsiFallbackRedirectOAuthAbrir, 1500);
     // #region debug-point H2:fallbackTimer-set
-    DBG('H2','1869','_gsiFallbackTimer programado (3500ms → dispara gsiFallbackRedirectOAuthAbrir se NENHUM callback rodar)', { timerAtivo: true, duracaoMs: 3500 });
+    DBG('H2','1869','_gsiFallbackTimer programado (1500ms → dispara gsiFallbackRedirectOAuthAbrir se NENHUM callback rodar)', { timerAtivo: true, duracaoMs: 1500 });
     // #endregion
 
     var tentativas = 0;
