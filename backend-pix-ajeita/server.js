@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const admin = require('firebase-admin');
+const crypto = require('crypto'); // ← (NOVO VALIDACAO WEBHOOK HMAC) Node built-in, nao precisa instalar nada
 
 /* ============================
    FIREBASE ADMIN INIT (SERVICE ACCOUNT JSON)
@@ -36,6 +37,7 @@ const dbFirestore = admin.firestore ? admin.firestore() : null;
      NUNCA cai no modo MOCK (nao gera QR falso com dinheiro real envolvido).
    ============================ */
 const MP_ACCESS_TOKEN = String(process.env.MERCADO_PAGO_ACCESS_TOKEN || '').trim();
+const MP_WEBHOOK_SECRET = String(process.env.MERCADO_PAGO_WEBHOOK_SECRET || '').trim(); // ← (NOVO) Assinatura secreta do webhook MP (painel developers) — opcional, mas RECOMENDADO produzao real
 const MODO_PRODUCAO_REAL = Boolean(MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.startsWith('APP_USR-'));
 const MODO_HOMOLOGACAO_TESTE = Boolean(MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.startsWith('TEST-'));
 let mercadopago = null;
@@ -67,8 +69,62 @@ const BACKEND_PUBLIC_URL = String(process.env.BACKEND_PUBLIC_URL || 'http://127.
 const PORTA = Number(process.env.PORT || '7001');
 const app = express();
 app.use(cors({ origin: true }));
+// (NOVO V11 WEBHOOK SEGURO) Preservamos raw body EM TODAS as requisicoes no Buffer,
+// para podermos validar HMAC x-signature do Mercado Pago (precisa do JSON exato, sem reformatação do express.json)
+app.use((req, res, next) => {
+  let dataRaw = [];
+  req.on('data', chunk => dataRaw.push(chunk));
+  req.on('end', () => {
+    if (dataRaw.length > 0) {
+      try { req.rawBodyStr = Buffer.concat(dataRaw).toString('utf8'); }
+      catch(eRaw) { req.rawBodyStr = ''; }
+    } else req.rawBodyStr = '';
+    next();
+  });
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('combined'));
+
+/* ============================
+   (NOVO V11 WEBHOOK HMAC) Helper valida assinatura secreta Mercado Pago
+   Documentacao MP: x-signature header tem format ts=123,v1=abc,v1=def
+   Regra: criar string "id={dataId};{request_id or ''};{ts};" + rawBody
+   HMAC_SHA256 com MP_WEBHOOK_SECRET → comparar com os v1=...
+   ============================ */
+function _validarAssinaturaWebhookMp(req, pagamentoIdFromBody) {
+  // Se nao tem secret configurado: skip validacao (compativel com versões anteriores)
+  if (!MP_WEBHOOK_SECRET || MP_WEBHOOK_SECRET.length < 5) {
+    console.log('[WEBHOOK_MP_VALIDACAO] MERCADO_PAGO_WEBHOOK_SECRET nao configurado → SKIP validacao HMAC (recomendamos configurar para produzai real).');
+    return true;
+  }
+  try {
+    const headerXSig = String(req.headers['x-signature'] || req.headers['X-Signature'] || '');
+    if (!headerXSig) { console.warn('[WEBHOOK_MP_VALIDACAO] x-signature header nao recebido, MP_WEBHOOK_SECRET ativo → REJEITADO.'); return false; }
+    const parts = headerXSig.split(',').reduce((acc, p) => {
+      const [k, v] = p.split('=');
+      if (k && v) acc[String(k).trim()] = String(v).trim();
+      return acc;
+    }, {});
+    const ts = parts.ts || '';
+    const v1Signatures = Object.keys(parts).filter(k => k.startsWith('v1')).map(k => parts[k]);
+    if (!ts || v1Signatures.length === 0) { console.warn('[WEBHOOK_MP_VALIDACAO] x-signature sem ts ou v1.'); return false; }
+    const idParaHash = String(pagamentoIdFromBody || (req.body && (req.body.data?.id || req.body.id)) || '').trim();
+    const reqId = String(req.headers['x-request-id'] || '').trim();
+    const manifest = `id:${idParaHash};request-id:${reqId};ts:${ts};`; // formato MP para webhook endpoint v2 (Pix checkouts)
+    const baseHmac = `${manifest}\n${String(req.rawBodyStr || '')}`;
+    const digest = crypto.createHmac('sha256', MP_WEBHOOK_SECRET).update(baseHmac, 'utf8').digest('hex');
+    const match = v1Signatures.some(sig => crypto.timingSafeEqual ? crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(digest, 'hex')) : (sig.toLowerCase() === digest.toLowerCase()));
+    if (!match) {
+      console.warn(`[WEBHOOK_MP_VALIDACAO] ASSINATURA INVALIDA. recebidas: ${v1Signatures.join('/')} calculada: ${digest.substring(0, 12)}... payloadLen=${String(req.rawBodyStr || '').length}.`);
+      return false;
+    }
+    console.log(`[WEBHOOK_MP_VALIDACAO] ✅ HMAC x-signature validado com sucesso. ts=${ts} id=${idParaHash}.`);
+    return true;
+  } catch (eHmac) {
+    console.error('[WEBHOOK_MP_VALIDACAO] exception durante validacao HMAC:', eHmac);
+    return false;
+  }
+}
 
 /* ============================
    HELPERS INTERNOS
@@ -127,10 +183,11 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.1-producao-real',
+    versao: '1.2-producao-real-webhook-hmac',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
+    mp_webhook_hmac_configurado: !!MP_WEBHOOK_SECRET && MP_WEBHOOK_SECRET.length > 5,
     backend_url_publica: BACKEND_PUBLIC_URL,
     backend_url_https_valida: Boolean(BACKEND_PUBLIC_URL && BACKEND_PUBLIC_URL.toLowerCase().startsWith('https://') && !BACKEND_PUBLIC_URL.includes('localhost') && !BACKEND_PUBLIC_URL.includes('127.0.0.1'))
   });
@@ -369,6 +426,10 @@ app.post('/api/pix/aprovar-manual-admin', async (req, res) => {
 
 /* ============================
    POST /webhook-pix  (WEBHOOK OFICIAL DO MERCADO PAGO)
+   - Passo 0: Responder 200 IMEDIATAMENTE para MP nao repetir.
+   - Passo 1 (NOVO SEGURANCA): Validar x-signature HMAC (se MP_WEBHOOK_SECRET foi colocado em ENV Render).
+   - Passo 2: Extrair payment_id do body, consultar MP para pegar external_reference e status REAL (jamais confiar só no body webhook).
+   - Passo 3: Se approved/accredited → processarAprovacaoPix libera moedas.
    ============================ */
 app.post('/webhook-pix', async (req, res) => {
   res.status(200).send('OK'); // Resposta IMEDIATA ao MP (obrigação para não repetir webhook)
@@ -377,9 +438,19 @@ app.post('/webhook-pix', async (req, res) => {
     const action = String(body.action || '');
     const type = String(body.type || body.data?.type || '');
     const paymentId = String(body.data?.id || body.id || '');
-    if (!mercadopago || !paymentId || !action || !action.includes('payment')) {
-      // Webhook vazio / invalido / nao temos SDK para consultar detalhe. Ignora.
+    if (!paymentId || !action || !action.includes('payment')) {
       console.log(`[WEBHOOK_MP] Ignorado: action=${action} paymentId=${paymentId}`);
+      return;
+    }
+    // ===== (NOVO V11 SEGURANCA WEBHOOK) Validar assinatura HMAC x-signature =====
+    const assinaturaValida = _validarAssinaturaWebhookMp(req, paymentId);
+    if (!assinaturaValida) {
+      // Mesmo que já tenhamos respondido 200, NÃO processa nada (rejeita por segurança e loga)
+      console.warn(`[WEBHOOK_MP] 🚨 BLOQUEADO POR ASSINATURA INVALIDA: paymentId=${paymentId}. Nao vamos consultar MP nem liberar moedas. BodyStrLen=${String(req.rawBodyStr || '').length}.`);
+      return;
+    }
+    if (!mercadopago) {
+      console.log('[WEBHOOK_MP] Ignorado: SDK MP nao carregado (ainda). Espera proxima notificacao MP.');
       return;
     }
     // Consultar detalhe do pagamento no MP (obrigatorio para pegar external_reference e status REAL):
