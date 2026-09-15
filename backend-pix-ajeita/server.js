@@ -179,7 +179,7 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.6-producao-real-qr-png-prefix-datauri',
+    versao: '1.7-producao-real-consulta-manual-endpoint-fallback-webhook',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -464,6 +464,96 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
 });
 
 /* ============================
+   HELPER: _consultarPagamentoMpPorExternalRef(externalRef)
+   - Busca no Mercado Pago pagamentos com external_reference = externalRef
+   - Se acha pag approved/accredited: atualiza Firestore e CHAMA processarAprovacaoPix (libera moedas!)
+   - Fallback se webhook nao chegou nunca.
+   ============================ */
+async function _consultarPagamentoMpPorExternalRef(externalRef) {
+  if (!externalRef) return { ok:false, erro:'sem external_ref' };
+  if (!MP_ACCESS_TOKEN) return { ok:false, erro:'sem MP_ACCESS_TOKEN' };
+  let docFirestore = null;
+  if (dbFirestore) try { const s = await dbFirestore.collection('pix_transacoes').doc(externalRef).get(); if (s.exists) docFirestore = Object.assign({}, s.data()); } catch(e){}
+  let mpPaymentId = docFirestore && docFirestore.mp_payment_id ? String(docFirestore.mp_payment_id) : null;
+  let pag = null;
+  // 1) Se temos mp_payment_id no Firestore, consulta direto
+  if (mpPaymentId && mpPaymentId.length > 3) {
+    try {
+      if (mercadopago && mercadopago.Payment) {
+        const d = await mercadopago.Payment.get({ id: mpPaymentId });
+        if (d && d.response) pag = d.response;
+      }
+      if (!pag) {
+        const r = await fetch(`https://api.mercadopago.com/v1/payments/${mpPaymentId}`, { headers: { 'Authorization':'Bearer '+MP_ACCESS_TOKEN, 'accept':'application/json' } });
+        if (r.ok) pag = await r.json();
+      }
+    } catch(eP1){ console.warn('[CONSULTA_MP] erro por mp_payment_id='+mpPaymentId, eP1 && eP1.message); pag = null; }
+  }
+  // 2) Se não achou por payment_id, busca por external_reference via search
+  if (!pag) {
+    try {
+      const searchUrl = `https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&external_reference=${encodeURIComponent(externalRef)}`;
+      const r = await fetch(searchUrl, { headers: { 'Authorization':'Bearer '+MP_ACCESS_TOKEN, 'accept':'application/json' } });
+      if (r.ok) {
+        const s = await r.json();
+        const arr = (s && Array.isArray(s.results)) ? s.results : [];
+        if (arr && arr.length > 0) pag = arr[0];
+      }
+    } catch(eSearch){ console.warn('[CONSULTA_MP] erro search external_ref:', eSearch && eSearch.message); }
+  }
+  if (!pag) {
+    console.log(`[CONSULTA_MP] external_ref=${externalRef} → NÃO ENCONTRADO pag MP ainda (nao foi pago ou webhook nao chegou).`);
+    return { ok:true, status_mp: 'nao_encontrado_ainda', external_reference: externalRef, aprovado: false, doc_firestore: docFirestore };
+  }
+  const statusMp = String(pag.status || '');
+  const valorMp = Number(pag.transaction_amount || 0);
+  const idPag = String(pag.id || mpPaymentId || '');
+  // Atualiza Firestore com status atual do MP SEMPRE (mesmo pendente, user vê progresso)
+  if (dbFirestore && externalRef) {
+    try {
+      await dbFirestore.collection('pix_transacoes').doc(externalRef).set({
+        mp_payment_id: idPag,
+        mp_status_consulta_manual: statusMp,
+        mp_valor_retornado: valorMp,
+        ultima_consulta_manual_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString()
+      }, { merge: true });
+    } catch(eFbUp2){}
+  }
+  if (statusMp === 'approved' || statusMp === 'accredited') {
+    console.log(`[CONSULTA_MP] ✅ external_ref=${externalRef} PAGAMENTO APROVADO NO MP! (status=${statusMp} id=${idPag} valor=${valorMp}). Chamando processarAprovacaoPix.`);
+    await processarAprovacaoPix({
+      external_reference: externalRef,
+      status: 'approved',
+      mp_payment_id: idPag,
+      valor: valorMp,
+      aprovado_via: 'consulta_manual_mp_backend_fallback_webhook'
+    });
+    return { ok:true, status_mp: statusMp, external_reference: externalRef, aprovado: true, mp_payment_id: idPag, valor_mp: valorMp };
+  } else {
+    console.log(`[CONSULTA_MP] external_ref=${externalRef} → MP status=${statusMp} (nao aprovado ainda). id=${idPag} valor=${valorMp}`);
+    return { ok:true, status_mp: statusMp, external_reference: externalRef, aprovado: false, mp_payment_id: idPag, valor_mp: valorMp };
+  }
+}
+
+/* ============================
+   GET /api/pix/consultar-status/:externalRef
+   (FALLBACK WEBHOOK FRONTEND CHAMA A CADA 8s)
+   - Não precisa de autenticacao admin, qualquer um pode consultar (apenas le status MP e atualiza Firestore, moedas liberam por backend se aprovado).
+   - Retorna { ok, status_mp, aprovado, valor_mp }
+   ============================ */
+app.get('/api/pix/consultar-status/:externalRef', async (req, res) => {
+  try {
+    const externalRef = String(req.params.externalRef || '');
+    if (!externalRef) return res.status(400).json({ ok:false, msg:'informe external_ref na URL /api/pix/consultar-status/XXX' });
+    const r = await _consultarPagamentoMpPorExternalRef(externalRef);
+    return res.json(Object.assign({ ok: true }, r || {}));
+  } catch (e) {
+    console.error('[CONSULTA_MP_ENDPOINT] ERRO:', e);
+    return res.status(500).json({ ok:false, erro: e && e.message });
+  }
+});
+
+/* ============================
    POST /api/pix/aprovar-manual-admin
    (Fallback caso webhook MP demore muito ou fora do ar)
    - ADMIN chama essa rota com external_reference e senha do admin (bolo2024) ou header
@@ -506,12 +596,14 @@ app.post('/webhook-pix', async (req, res) => {
       return;
     }
     // ===== (NOVO V11 SEGURANCA WEBHOOK) Validar assinatura HMAC x-signature =====
+    console.log(`[WEBHOOK_MP] >>> RECEBIDO paymentId=${paymentId} action=${action} type=${type}`);
     const assinaturaValida = _validarAssinaturaWebhookMp(req, paymentId);
     if (!assinaturaValida) {
       // Mesmo que já tenhamos respondido 200, NÃO processa nada (rejeita por segurança e loga)
-      console.warn(`[WEBHOOK_MP] 🚨 BLOQUEADO POR ASSINATURA INVALIDA: paymentId=${paymentId}. Nao vamos consultar MP nem liberar moedas. BodyStrLen=${String(req.rawBodyStr || '').length}.`);
+      console.warn(`[WEBHOOK_MP] 🚨 BLOQUEADO POR ASSINATURA INVALIDA: paymentId=${paymentId}. Nao vamos consultar MP nem liberar moedas. BodyStrLen=${String(req.rawBodyStr || '').length}. HMAC SECRET configurado? ${MP_WEBHOOK_SECRET ? 'SIM (len='+MP_WEBHOOK_SECRET.length+')' : 'NAO, skip validacao'}.`);
       return;
     }
+    console.log(`[WEBHOOK_MP] ✅ Assinatura HMAC validada OK (ou secret vazio skip). paymentId=${paymentId}`);
     if (!mercadopago && !MP_ACCESS_TOKEN) {
       console.log('[WEBHOOK_MP] Ignorado: SDK MP e MP_ACCESS_TOKEN nao disponiveis. Espera proxima notificacao MP.');
       return;
@@ -532,6 +624,7 @@ app.post('/webhook-pix', async (req, res) => {
       }
     } catch (ePagGet) { console.warn('[WEBHOOK_MP] Erro consultar detalhe pagamento:', ePagGet && ePagGet.message); }
     if (!pag) { console.warn('[WEBHOOK_MP] Nao consegui detalhe do pagamento id=' + paymentId); return; }
+    console.log(`[WEBHOOK_MP] status mp_pag status=${pag.status || ''} id=${pag.id} external_ref=${pag.external_reference || ''} valor=${pag.transaction_amount || 0}`);
     const statusMP = String(pag.status || '');
     const externalRef = String(pag.external_reference || '');
     const valor = Number(pag.transaction_amount || 0);

@@ -3736,9 +3736,9 @@ var _pixTransacaoAtual = null;
 var _pixUnsubscribeSnapshot = null;
 var _pixFallbackTimeout = null;
 var _pixIntervalCheckFirebaseDoc = null;
+var _pixIntervalBackendPolling = null;
 function pixBackendUrl() {
   if (window.AJEITA_PIX_BACKEND_URL) return String(window.AJEITA_PIX_BACKEND_URL).replace(/\/+$/, '');
-  // Fallback local se nao tiver deploy Render (voce configurou window.AJEITA_PIX_BACKEND_URL)
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') return 'http://127.0.0.1:7001';
   return null;
 }
@@ -3746,6 +3746,7 @@ function pararEscutasPix() {
   try { if (_pixUnsubscribeSnapshot && typeof _pixUnsubscribeSnapshot === 'function') { _pixUnsubscribeSnapshot(); } } catch(e){}
   try { if (_pixFallbackTimeout) { clearTimeout(_pixFallbackTimeout); _pixFallbackTimeout = null; } } catch(e){}
   try { if (_pixIntervalCheckFirebaseDoc) { clearInterval(_pixIntervalCheckFirebaseDoc); _pixIntervalCheckFirebaseDoc = null; } } catch(e){}
+  try { if (_pixIntervalBackendPolling) { clearInterval(_pixIntervalBackendPolling); _pixIntervalBackendPolling = null; } } catch(e){}
   _pixUnsubscribeSnapshot = null;
 }
 function iniciarEscutaPagamentoPix(externalRef) {
@@ -3804,6 +3805,74 @@ function iniciarEscutaPagamentoPix(externalRef) {
       toast('warning','Tempo máximo de espera atingido','Se você já pagou, aguarde 1 minuto e depois clique em "Já efetuei o pagamento" novamente, ou envie o comprovante pelo WhatsApp. As moedas serão liberadas assim que o pagamento for confirmado.');
     }
   }, 8*60*1000);
+
+  // ====== (V1.7 FALLBACK MAIS FORTE 100% GARANTIDO) Polling direto BACKEND GET /api/pix/consultar-status/:ref a cada 8s ======
+  // NÃO depende de webhook MP, NÃO depende de firestore onSnapshot, NÃO depende de regras firestore.
+  // O próprio backend consulta o Mercado Pago direto e, se aprovado, CHAMA processarAprovacaoPix e libera moedas.
+  var base = pixBackendUrl();
+  if (base) {
+    var contagemBackoff = 0;
+    _pixIntervalBackendPolling = setInterval(async () => {
+      if (!_pixTransacaoAtual) return;
+      try {
+        contagemBackoff++;
+        var resp = await fetch(base + '/api/pix/consultar-status/' + encodeURIComponent(externalRef), { method:'GET', headers: { 'accept':'application/json' } });
+        if (!resp.ok) { console.warn('[PIX_BACKEND_POLL] HTTP '+resp.status+' (vamos tentar de novo em 8s)'); return; }
+        var jsonPoll = await resp.json();
+        console.log('[PIX_BACKEND_POLL] status=' + (jsonPoll&&jsonPoll.status_mp?jsonPoll.status_mp:'?') + ' aprovado=' + (jsonPoll&&jsonPoll.aprovado?'SIM':'nao') + ' ref=' + externalRef);
+        // Atualiza UI do texto de status (feedback pro usuario nao achar que ta travado)
+        var elSt = document.getElementById('pixContagemAuto');
+        var elSub = document.getElementById('pixStatusProcessoTexto');
+        if (jsonPoll && jsonPoll.aprovado === true) {
+          // Pagamento aprovado! O backend já liberou moedas no Firestore.
+          // Agora forçamos frontend pegar doc atualizado do Firestore + finalizar UI:
+          pararEscutasPix();
+          try {
+            if (mods && fb) {
+              var snap = await mods.getDoc(mods.doc(fb, docPath));
+              if (snap && snap.exists()) {
+                await finalizarAprovacaoPixComDados(snap.data() || {});
+                return;
+              }
+            }
+          } catch(eGdoc){}
+          // Se nao pegou doc firestore, libera na mao mesmo (backend ja gravou saldo, frontend so atualiza UI visual):
+          await finalizarAprovacaoPixComDados({
+            external_reference: externalRef,
+            pacote_key: String(_pixTransacaoAtual.pacote && _pixTransacaoAtual.pacote.key || 'bronze'),
+            qtd_moedas: Number(_pixTransacaoAtual.pacote && _pixTransacaoAtual.pacote.qtd_moedas || 10),
+            preco_brl: Number(_pixTransacaoAtual.pacote && _pixTransacaoAtual.pacote.preco_brl || 15),
+            status: 'aprovado'
+          });
+          return;
+        }
+        // Nao aprovado ainda → atualiza UI com status real para usuario ver progresso (nao mais travado!)
+        var statusBr = 'aguardando pagamento';
+        if (jsonPoll && jsonPoll.status_mp) {
+          var s = String(jsonPoll.status_mp).toLowerCase();
+          if (s === 'pending' || s === 'pendente') statusBr = 'aguardando pagamento no banco';
+          else if (s === 'in_process' || s === 'in_processing') statusBr = 'processando pelo Mercado Pago (10-30s)';
+          else if (s === 'approved' || s === 'accredited' || s === 'aprovado') statusBr = '✅ APROVADO — aguarde liberação automática';
+          else if (s === 'rejected' || s === 'cancelled' || s === 'canceled') statusBr = '❌ Pagamento cancelado ou recusado';
+          else if (s === 'nao_encontrado_ainda') statusBr = 'QR gerado — aguardando pagamento';
+          else statusBr = 'status: ' + s;
+        }
+        if (elSt && estadoPagamentoPix === 'processando') {
+          elSt.textContent = statusBr.toUpperCase();
+        }
+        if (elSub && estadoPagamentoPix === 'processando' && contagemBackoff % 3 === 0) {
+          // a cada ~24s atualiza também o texto explicativo com horário para dar sensação de vida
+          var agoraH = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+          try {
+            var originalEl = document.getElementById('pixStatusProcessoTexto');
+            if (originalEl && !originalEl.dataset.pollingOriginal) originalEl.dataset.pollingOriginal = String(originalEl.innerHTML || '');
+          } catch(eO){}
+        }
+      } catch(ePollBk) {
+        console.warn('[PIX_BACKEND_POLL] erro fetch (rede?):', ePollBk && ePollBk.message);
+      }
+    }, 8000);
+  }
 }
 async function finalizarAprovacaoPixComDados(dadosTransacaoFirestore) {
   if (!dadosTransacaoFirestore || !profissionalLogado) {

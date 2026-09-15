@@ -49,5 +49,23 @@ service cloud.firestore {
       allow write: if isAdmin()
                    || !exists(/databases/$(database)/documents/config/admin);
     }
+
+    match /pix_transacoes/{externalRef} {
+      allow read, create:  if true;
+      allow update:        if isAdmin()
+                           || (request.auth != null && request.auth.uid == resource.data.uid_usuario);
+    }
+
+    match /pix_solicitacoes_manuais/{id} {
+      allow read:   if isAdmin()
+                    || (request.auth != null && request.auth.uid == resource.data.profissionalId);
+      allow create: if isAdmin() || request.auth != null;
+      allow update: if isAdmin();
+    }
+
+    match /recargas/{id} {
+      allow read, create: if isAdmin()
+                          || (request.auth != null && request.auth.uid == resource.data.profissional_id);
+    }
   }
 }
