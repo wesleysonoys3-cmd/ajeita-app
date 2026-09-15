@@ -179,7 +179,7 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.7-producao-real-consulta-manual-endpoint-fallback-webhook',
+    versao: '1.8-producao-real-preco-minimo-pacote-anti-r1',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -220,20 +220,32 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
 
     const pacoteKey = String(b.pacoteKey || 'bronze').toLowerCase();
 
-    // ================ (BUG FIX R$0 PRODUCAO: PRIORIDADE MAXIMA VALOR ENVIADO PELO FRONTEND) ================
-    // 1) Se frontend enviou valorOpcional e ele é >0 → USAMOS ELE SEMPRE (nunca calculamos por pacote de novo, evita desalinhamento)
-    // 2) Senão, usamos helper _PrecoPorPacote(pacoteKey)
-    // 3) No final valida >0 ou BLOQUEIA
+    // ================ (V1.8 BUG FIX R$1 ANTI-FRAUDE PREÇO) ================
+    // SEMPRE usa MAX(valorOpcional front, _PrecoPorPacote helper)
+    // Nunca mais aceita R$0, R$1 ou qualquer preço abaixo do pacote.
+    // (Antes aceitava valorOpcional = 1 e criava cobrança de R$1 por engano!)
     let precoBRL = 0;
     const valorEnviadoFront = Number(b.valorOpcional || 0);
+    const precoMinimoPorPacote = _PrecoPorPacote(pacoteKey); // Bronze=15, Prata=30, Ouro=60
     if (valorEnviadoFront > 0) {
-      precoBRL = valorEnviadoFront;
-      console.log(`[CRIAR_PIX] Usando valor ENVIADO PELO FRONTEND (valorOpcional) = R$${precoBRL} (pacote=${pacoteKey}) — PRIORIDADE MAXIMA`);
+      // ✅ NOVA REGRA V1.8: NUNCA deixa preco ficar MENOR que preco minimo do pacote
+      if (valorEnviadoFront >= precoMinimoPorPacote) {
+        precoBRL = valorEnviadoFront;
+        console.log(`[CRIAR_PIX] Usando valor ENVIADO PELO FRONTEND (valorOpcional) = R$${precoBRL} (pacote=${pacoteKey}) — OK, >= minimo R$${precoMinimoPorPacote}`);
+      } else {
+        precoBRL = precoMinimoPorPacote;
+        console.warn(`[CRIAR_PIX] ⚠️ FRONTEND ENVIOU PRECO ABAIXO DO MINIMO! valorEnviadoFront=R$${valorEnviadoFront} < minimo R$${precoMinimoPorPacote}. SOBRESCREVENDO PARA R$${precoBRL} (anti-fraude preco minimo V1.8). pacote=${pacoteKey}`);
+      }
     } else {
-      precoBRL = _PrecoPorPacote(pacoteKey);
+      precoBRL = precoMinimoPorPacote;
       console.log(`[CRIAR_PIX] Valor opcional nao envio. Usando helper interno pacoteKey → R$${precoBRL}`);
     }
     precoBRL = Number(precoBRL);
+    // Ultima protecao: se ainda for 0 ou negativo, usa preco minimo
+    if (!(precoBRL > 0) || precoBRL < precoMinimoPorPacote) {
+      console.warn(`[CRIAR_PIX] ⚠️ Ultima protecao anti-fraude: precoBRL=R$${precoBRL} invalido, sobrescrevendo para R$${precoMinimoPorPacote}`);
+      precoBRL = precoMinimoPorPacote;
+    }
 
     const qtdMoedas = _QtdMoedasPorPacote(pacoteKey);
     const uidUsuario = String(b.uidUsuario || ('anon_' + Date.now()));
