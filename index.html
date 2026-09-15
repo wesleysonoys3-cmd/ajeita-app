@@ -28,6 +28,8 @@
 <!-- GOOGLE IDENTITY SERVICES (Login com Google) -->
 <meta name="google-signin-client_id" content="709414286122-tu642dhpa9dnp158keo816ln1a52npu6.apps.googleusercontent.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- (V11 QR MP FIX FALLBACK) Biblioteca QR Code gerador offline — se MP retornar PNG base64 vazio, geramos QR real a partir da chave copia_cola EMV -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <!-- =============== FIREBASE SDK V9+ (compatibilidade browser ES modules) =============== -->
 <script type="module">
   window.__firebaseLoaded = false;
@@ -3940,17 +3942,55 @@ async function abrirPixPagamento(pkgKey) {
     // Salvamos transacao atual e iniciamos escuta Firestore onSnapshot
     _pixTransacaoAtual = json;
     var pixDados = (json.pix || {});
-    if (pixDados.qr_code_base64 && pixDados.qr_code_base64.length > 20) {
+    var pixChaveCopiaColaReal = (pixDados.copia_cola && pixDados.copia_cola.length > 10) ? pixDados.copia_cola : null;
+    var tentouImgMp = false;
+    function _fallbackGerarQrViaCopiaCola() {
+      // FALLBACK ROBUSTO: se imagem PNG base64 do MP nao funcionar, geramos QR NA HORA usando a chave EMV real (copia_cola) — funciona 100%
+      if (!qrDiv) return;
+      if (!pixChaveCopiaColaReal) {
+        console.warn('qr_code_base64 e copia_cola ambos vazios do MP, fallback manual.');
+        _setModoPixModal('fallback_manual', valorVindoBackend);
+        qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
+        return;
+      }
+      try {
+        qrDiv.innerHTML = '';
+        var qrContainer = document.createElement('div');
+        qrContainer.id = 'pixQrDinamicoContainer';
+        qrContainer.style.cssText = 'display:inline-block;padding:16px;background:#ffffff;border-radius:24px;border:4px solid #e2e8f0;';
+        qrDiv.appendChild(qrContainer);
+        new QRCode(qrContainer, {
+          text: pixChaveCopiaColaReal,
+          width: 320,
+          height: 320,
+          colorDark : '#0f172a',
+          colorLight : '#ffffff',
+          correctLevel : QRCode.CorrectLevel.H
+        });
+        console.log('[QR_FALLBACK] QR gerado via biblioteca qrcodejs a partir da chave copia_cola EMV real.');
+      } catch (eQrFallback) {
+        console.error('[QR_FALLBACK] ERRO gerar QR dinâmico:', eQrFallback);
+        qrDiv.innerHTML = gerarQrCodeVisual(String(pixChaveCopiaColaReal || 'pix-fallback'));
+      }
+    }
+
+    if (pixDados.qr_code_base64 && pixDados.qr_code_base64.length > 100) {
+      // Tenta primeiro a imagem PNG do Mercado Pago (com data:image/png;base64, prefixo garantido no backend v1.6)
       var img = document.createElement('img');
       img.alt = 'QR Code Pix Mercado Pago';
-      img.src = pixDados.qr_code_base64;
       img.style.cssText = 'width:100%;max-width:340px;height:auto;border-radius:24px;';
+      img.onload = function() { console.log('[QR_MP] Imagem PNG base64 carregou OK.'); };
+      img.onerror = function() {
+        console.warn('[QR_MP] Imagem PNG do MP falhou ao carregar. Fallback para gerar QR via copia_cola.');
+        _fallbackGerarQrViaCopiaCola();
+      };
+      img.src = pixDados.qr_code_base64;
+      tentouImgMp = true;
       if (qrDiv) { qrDiv.innerHTML = ''; qrDiv.appendChild(img); }
     } else {
-      // -------- QR vazio voltou do MP: fallback manual --------
-      console.warn('qr_code_base64 vazio do MP, fallback manual.');
-      _setModoPixModal('fallback_manual', valorVindoBackend);
-      if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
+      // QR base64 vazio/pequeno → fallback direto
+      console.warn('qr_code_base64 vazio/pequeno do MP → fallback gerar QR via copia_cola EMV.');
+      _fallbackGerarQrViaCopiaCola();
     }
     if (pixDados.copia_cola && pixDados.copia_cola.length > 10) {
       document.getElementById('pixChaveCopiaCola').value = pixDados.copia_cola;

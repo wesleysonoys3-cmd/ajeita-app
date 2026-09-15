@@ -179,7 +179,7 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.5-producao-real-remove-currency_id-code8',
+    versao: '1.6-producao-real-qr-png-prefix-datauri',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -370,9 +370,22 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
         const valorRetornadoMp = Number(r.transaction_amount || 0);
         const poi = r.point_of_interaction && r.point_of_interaction.transaction_data ? r.point_of_interaction.transaction_data : null;
         if (poi) {
-          qrCodeBase64 = poi.qr_code_base64 || null;
+          let rawQrPng = poi.qr_code_base64 || null;
+          // (V1.6 QR PNG FIX) Garante prefixo data:image/png;base64, — Mercado Pago as vezes retorna base64 cru sem prefixo, img src nao renderiza
+          if (rawQrPng && typeof rawQrPng === 'string' && rawQrPng.length > 100) {
+            if (rawQrPng.startsWith('data:image') || rawQrPng.startsWith('http')) {
+              qrCodeBase64 = rawQrPng;
+            } else {
+              // Remove whitespace/newlines que podem existir
+              rawQrPng = rawQrPng.replace(/\s+/g, '').trim();
+              qrCodeBase64 = 'data:image/png;base64,' + rawQrPng;
+            }
+          } else {
+            qrCodeBase64 = null;
+          }
           copiaCola = poi.qr_code || null;
           ticketUrl = poi.ticket_url || null;
+          console.log(`[MERCADO_PAGO][QR_DIAG] raw_qr_base64_len=${(poi.qr_code_base64||'').length} | qr_final_len=${(qrCodeBase64||'').length} | copia_cola_len=${(copiaCola||'').length} | ticket_url=${ticketUrl ? 'SIM' : 'NAO'}`);
         }
         // ============ (BUG FIX R$0 PRODUCAO) DOUBLE CHECK ============
         if (mpPaymentId && valorRetornadoMp === 0) {
