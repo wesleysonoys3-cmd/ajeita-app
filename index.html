@@ -1419,13 +1419,18 @@ tailwind.config = {
           </div>
           <p>As moedas são liberadas <strong>INSTANTANEAMENTE sem precisar clicar em nada</strong>, pois o gateway de pagamento (Mercado Pago) envia automaticamente um <strong>WEBHOOK POST</strong> para nossos servidores no momento exato que o banco confirma a transferência PIX.</p>
         </div>
-        <div id="pixBotoesProcessando" class="flex flex-col sm:flex-row gap-3">
-          <button onclick="voltarParaQrCodePix()" class="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
-            <i class="fa-solid fa-arrow-left mr-1.5"></i>Voltar ao QR Code
+        <div id="pixBotoesProcessando" class="flex flex-col gap-3">
+          <button onclick="forcarVerificarPagamentoPixBackend()" id="btnForcarVerificarPix" class="w-full px-5 py-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-black rounded-xl shadow-lg shadow-violet-600/25 transition text-base">
+            <i class="fa-solid fa-rotate mr-2 animate-spinSlow"></i>🔄 FORÇAR VERIFICAÇÃO PAGAMENTO (AGORA)
           </button>
-          <button onclick="simularAprovacaoWebhook()" id="btnSimularWebhook" class="hidden flex-1 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black rounded-xl shadow-lg shadow-indigo-600/20 transition">
-            🤖 Simular Webhook Aprovado (SÓ ADMIN)
-          </button>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button onclick="voltarParaQrCodePix()" class="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+              <i class="fa-solid fa-arrow-left mr-1.5"></i>Voltar ao QR Code
+            </button>
+            <button onclick="simularAprovacaoWebhook()" id="btnSimularWebhook" class="hidden flex-1 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black rounded-xl shadow-lg shadow-indigo-600/20 transition">
+              🤖 Simular Webhook (SÓ ADMIN)
+            </button>
+          </div>
         </div>
       </div>
 
@@ -3806,26 +3811,24 @@ function iniciarEscutaPagamentoPix(externalRef) {
     }
   }, 8*60*1000);
 
-  // ====== (V1.7 FALLBACK MAIS FORTE 100% GARANTIDO) Polling direto BACKEND GET /api/pix/consultar-status/:ref a cada 8s ======
+  // ====== (V1.7 FALLBACK MAIS FORTE 100% GARANTIDO) Polling direto BACKEND GET /api/pix/consultar-status/:ref a cada 4s ======
   // NÃO depende de webhook MP, NÃO depende de firestore onSnapshot, NÃO depende de regras firestore.
   // O próprio backend consulta o Mercado Pago direto e, se aprovado, CHAMA processarAprovacaoPix e libera moedas.
   var base = pixBackendUrl();
   if (base) {
     var contagemBackoff = 0;
-    _pixIntervalBackendPolling = setInterval(async () => {
+    var ultimoStatusMostrado = '';
+    async function _executarPollingBackendPix() {
       if (!_pixTransacaoAtual) return;
       try {
         contagemBackoff++;
-        var resp = await fetch(base + '/api/pix/consultar-status/' + encodeURIComponent(externalRef), { method:'GET', headers: { 'accept':'application/json' } });
-        if (!resp.ok) { console.warn('[PIX_BACKEND_POLL] HTTP '+resp.status+' (vamos tentar de novo em 8s)'); return; }
+        var resp = await fetch(base + '/api/pix/consultar-status/' + encodeURIComponent(externalRef), { method:'GET', headers: { 'accept':'application/json' }, signal: (typeof AbortController !== 'undefined') ? (new AbortController().signal) : undefined });
+        if (!resp.ok) { console.warn('[PIX_BACKEND_POLL] HTTP '+resp.status+' (tentamos de novo em 4s)'); return; }
         var jsonPoll = await resp.json();
         console.log('[PIX_BACKEND_POLL] status=' + (jsonPoll&&jsonPoll.status_mp?jsonPoll.status_mp:'?') + ' aprovado=' + (jsonPoll&&jsonPoll.aprovado?'SIM':'nao') + ' ref=' + externalRef);
-        // Atualiza UI do texto de status (feedback pro usuario nao achar que ta travado)
         var elSt = document.getElementById('pixContagemAuto');
-        var elSub = document.getElementById('pixStatusProcessoTexto');
         if (jsonPoll && jsonPoll.aprovado === true) {
           // Pagamento aprovado! O backend já liberou moedas no Firestore.
-          // Agora forçamos frontend pegar doc atualizado do Firestore + finalizar UI:
           pararEscutasPix();
           try {
             if (mods && fb) {
@@ -3836,7 +3839,6 @@ function iniciarEscutaPagamentoPix(externalRef) {
               }
             }
           } catch(eGdoc){}
-          // Se nao pegou doc firestore, libera na mao mesmo (backend ja gravou saldo, frontend so atualiza UI visual):
           await finalizarAprovacaoPixComDados({
             external_reference: externalRef,
             pacote_key: String(_pixTransacaoAtual.pacote && _pixTransacaoAtual.pacote.key || 'bronze'),
@@ -3848,8 +3850,9 @@ function iniciarEscutaPagamentoPix(externalRef) {
         }
         // Nao aprovado ainda → atualiza UI com status real para usuario ver progresso (nao mais travado!)
         var statusBr = 'aguardando pagamento';
+        var s = '';
         if (jsonPoll && jsonPoll.status_mp) {
-          var s = String(jsonPoll.status_mp).toLowerCase();
+          s = String(jsonPoll.status_mp).toLowerCase();
           if (s === 'pending' || s === 'pendente') statusBr = 'aguardando pagamento no banco';
           else if (s === 'in_process' || s === 'in_processing') statusBr = 'processando pelo Mercado Pago (10-30s)';
           else if (s === 'approved' || s === 'accredited' || s === 'aprovado') statusBr = '✅ APROVADO — aguarde liberação automática';
@@ -3857,21 +3860,22 @@ function iniciarEscutaPagamentoPix(externalRef) {
           else if (s === 'nao_encontrado_ainda') statusBr = 'QR gerado — aguardando pagamento';
           else statusBr = 'status: ' + s;
         }
-        if (elSt && estadoPagamentoPix === 'processando') {
+        if (elSt && estadoPagamentoPix === 'processando' && statusBr && ultimoStatusMostrado !== String(s + '_' + statusBr)) {
+          ultimoStatusMostrado = String(s + '_' + statusBr);
           elSt.textContent = statusBr.toUpperCase();
-        }
-        if (elSub && estadoPagamentoPix === 'processando' && contagemBackoff % 3 === 0) {
-          // a cada ~24s atualiza também o texto explicativo com horário para dar sensação de vida
-          var agoraH = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-          try {
-            var originalEl = document.getElementById('pixStatusProcessoTexto');
-            if (originalEl && !originalEl.dataset.pollingOriginal) originalEl.dataset.pollingOriginal = String(originalEl.innerHTML || '');
-          } catch(eO){}
+          // Primeira mudanca de status mostra toast para o usuario saber que a verificacao REALMENTE esta rodando
+          if (contagemBackoff <= 4) {
+            try { toast('info','Verificação automática ativa ✅', 'Status atual: ' + statusBr, 3000); } catch(eT){}
+          }
         }
       } catch(ePollBk) {
-        console.warn('[PIX_BACKEND_POLL] erro fetch (rede?):', ePollBk && ePollBk.message);
+        console.warn('[PIX_BACKEND_POLL] erro fetch (rede? cold start?):', ePollBk && ePollBk.message);
       }
-    }, 8000);
+    }
+    // 1) Primeira consulta RAPIDA 1.2s apos entrar na tela (usuario ve que NAO esta travado!)
+    setTimeout(_executarPollingBackendPix, 1200);
+    // 2) Depois polling contínuo a cada 4s
+    _pixIntervalBackendPolling = setInterval(_executarPollingBackendPix, 4000);
   }
 }
 async function finalizarAprovacaoPixComDados(dadosTransacaoFirestore) {
@@ -4214,6 +4218,38 @@ function confirmarPagamentoPix() {
       renderEstadoModalPix('processando'); // continua na tela processando para não dar a falsa sensação de aprovado
       if (elCont) elCont.textContent = 'PENDENTE · VALIDAÇÃO MANUAL WESLEY';
     }, 1800);
+  }
+}
+
+/* (V1.7 ROBUSTEZ) Funcao para o usuario CLICAR e FORCAR verificacao no backend imediatamente (nao espera polling) */
+async function forcarVerificarPagamentoPixBackend() {
+  if (!_pixTransacaoAtual) { toast('warning','Nenhuma transação ativa','Feche e abra o pagamento Pix novamente para gerar uma nova cobrança.'); return; }
+  const externalRef = String(_pixTransacaoAtual.external_reference || '');
+  if (!externalRef) { toast('warning','Referência externa não encontrada','Reabra o pagamento.'); return; }
+  const base = pixBackendUrl();
+  if (!base) { toast('error','Backend não configurado','AJEITA_PIX_BACKEND_URL faltando.'); return; }
+  toast('info','Verificando pagamento agora...','Aguarde 5 segundos enquanto consultamos o Mercado Pago.');
+  try {
+    const resp = await fetch(base + '/api/pix/consultar-status/' + encodeURIComponent(externalRef), { method:'GET', headers:{ 'accept':'application/json' } });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+    const elSt = document.getElementById('pixContagemAuto');
+    const s = String((json && json.status_mp) || 'desconhecido').toLowerCase();
+    let msgToast = 'Status atual: ' + s;
+    if (elSt) {
+      let txt = s.toUpperCase();
+      if (s === 'pending' || s === 'pendente') txt = 'AGUARDANDO PAGAMENTO NO BANCO';
+      else if (s === 'in_process' || s === 'in_processing') txt = 'PROCESSANDO PELO MERCADO PAGO';
+      else if (s === 'approved' || s === 'accredited') txt = '✅ PAGAMENTO APROVADO';
+      else if (s === 'rejected' || s === 'cancelled' || s === 'canceled') txt = '❌ PAGAMENTO CANCELADO';
+      else if (s === 'nao_encontrado_ainda') txt = 'QR GERADO — AGUARDANDO PAGAMENTO';
+      elSt.textContent = txt;
+      msgToast = 'Status: ' + txt;
+    }
+    toast('success','Consulta concluída',msgToast);
+  } catch (eFv) {
+    console.error(eFv);
+    toast('error','Erro ao forçar verificação',String(eFv && eFv.message || eFv || 'desconhecido'));
   }
 }
 
