@@ -1351,12 +1351,26 @@ tailwind.config = {
     <div class="p-6 sm:p-8">
       <!-- ESTADO 1: QR CODE EXIBIDO (PADRÃO) -->
       <div id="pixEstadoQr" class="space-y-5">
-        <div class="bg-primary-50 border border-primary-200 rounded-2xl p-4 flex items-start gap-3 text-sm text-primary-800">
+        <!-- ================= (NOVO: TIPO DE PIX BANNER CLARO — EVITA CONFUSAO) ================= -->
+        <div id="pixModoAviso" class="bg-gradient-to-r from-primary-500 to-primary-700 rounded-2xl p-4 flex items-center gap-3 shadow-card">
+          <div class="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <i id="pixModoIcone" class="fa-solid fa-credit-card text-white text-2xl"></i>
+          </div>
+          <div class="flex-1">
+            <div id="pixModoTag" class="text-xs font-black uppercase tracking-widest text-white/90 mb-0.5">MODO AUTOMÁTICO · MERCADO PAGO</div>
+            <div id="pixModoTitulo" class="text-white font-extrabold text-base leading-snug">Pagamento validado automaticamente (moedas liberam em < 3 segundos)</div>
+          </div>
+        </div>
+
+        <div id="pixInfoBeneficiarioBox" class="bg-primary-50 border border-primary-200 rounded-2xl p-4 flex items-start gap-3 text-sm text-primary-800">
           <i class="fa-solid fa-user-tie text-primary-600 mt-0.5 text-lg flex-shrink-0"></i>
           <div>
             <div class="font-black uppercase tracking-wider text-xs text-primary-600 mb-0.5">Beneficiário</div>
             <div class="font-extrabold" id="pixBeneficiario">Wesley - Ajeita Serviços Domésticos</div>
-            <div class="text-xs text-primary-700 mt-1">Chave Pix (telefone): <span id="pixChaveLabel" class="font-mono font-bold">+55 61 99251-8130</span></div>
+            <!-- (NOVO: so mostra esse numero manual se NAO for Mercado Pago automatico — hide por padrao quando MP estiver ativo) -->
+            <div id="pixChaveManualAviso" class="text-xs text-primary-700 mt-1 hidden">
+              Chave Pix (telefone): <span id="pixChaveLabel" class="font-mono font-bold">+55 61 99251-8130</span>
+            </div>
           </div>
         </div>
         <div class="text-center">
@@ -3846,7 +3860,7 @@ async function abrirPixPagamento(pkgKey) {
     navigateTo('view-profissional-cadastro');
     return;
   }
-  // ========== (BUG FIX R$0 PRODUCAO: FRONTEND VALIDACAO PRECO ANTES DE TUDO) ==========
+  // ========== (BUG FIX R$0 PRODUCAO / NUMERO PIX ANTIGO CONFUNDE) ==========
   var precoEsperado = Number(pkg.preco || 0);
   if (!(precoEsperado > 0)) {
     toast('error','Erro de preço','Pacote selecionado tem preço R$0 inválido. Entre em contato com o suporte.', 5000);
@@ -3860,9 +3874,8 @@ async function abrirPixPagamento(pkgKey) {
   estadoPagamentoPix = 'qr';
   document.getElementById('pixValor').textContent = formatarBRL(precoEsperado);
   document.getElementById('pixBeneficiario').textContent = NOME_BENEFICIARIO_PIX;
-  document.getElementById('pixChaveLabel').textContent = CHAVE_PIX_PROPRIETARIO;
-  document.getElementById('pixChaveCopiaCola').value = CHAVE_PIX_PROPRIETARIO;
-  document.getElementById('pixQrCode').innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
+  // ========== (DEFAULT antes de chamar backend: MODO MANUAL FALLBACK — mostra numero pix antigo se MP falhar) ==========
+  _setModoPixModal('fallback_manual', precoEsperado);
 
   const btn = document.getElementById('btnConfirmarPix');
   if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>Já efetuei o pagamento'; }
@@ -3872,12 +3885,12 @@ async function abrirPixPagamento(pkgKey) {
   // ============= (NOVO V11: TENTAR GERAR QR REAL MERCADO PAGO PELO BACKEND) ==============
   const bkUrl = pixBackendUrl();
   if (!bkUrl) {
-    toast('info','Modo simulação Pix (sem backend)','Para usar Pix real do Mercado Pago, configure a URL do seu backend na variável window.AJEITA_PIX_BACKEND_URL no início do index.html.');
+    toast('info','Modo Pix Manual (sem backend)','Use a chave Pix abaixo ou QR. Para ativar Pix automático Mercado Pago, ligue o backend.');
     return;
   }
   try {
     var qrDiv = document.getElementById('pixQrCode');
-    if (qrDiv) qrDiv.innerHTML = '<div class="flex flex-col items-center gap-3 py-10 px-4"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary-500"></i><div class="font-bold text-primary-700 text-base">Gerando QR Code Pix do Mercado Pago... ('+ nomeEsperadoValor +')</div><div class="text-xs text-slate-500">Aguarde 2 segundos</div></div>';
+    if (qrDiv) qrDiv.innerHTML = '<div class="flex flex-col items-center gap-3 py-10 px-4"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary-500"></i><div class="font-bold text-primary-700 text-base">Gerando QR Code Pix Mercado Pago Automático... ('+ nomeEsperadoValor +')</div><div class="text-xs text-slate-500">Aguarde 2 segundos</div></div>';
     var nomeUsuario = profissionalLogado ? (profissionalLogado.nome || 'Profissional Ajeita') : 'Usuario Ajeita';
     var emailUsuario = profissionalLogado ? (profissionalLogado.emailGoogle || profissionalLogado.email || 'profissional@ajeita.com.br') : 'profissional@ajeita.com.br';
     var resp = await fetch(bkUrl + '/api/pix/criar-recarga-moedas', {
@@ -3885,7 +3898,7 @@ async function abrirPixPagamento(pkgKey) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pacoteKey: pkgKey,
-        valorOpcional: precoEsperado, // <-- BUG FIX R$0: enviamos valor explicitamente para nao depender só da chave
+        valorOpcional: precoEsperado, // <-- PRIORIDADE MAXIMA: enviamos o preço EXATO para o backend (nunca mais depende de chave)
         uidUsuario: profissionalLogado ? profissionalLogado.id : ('anom_' + Date.now()),
         tipoUsuario: 'profissional',
         nomeUsuario: nomeUsuario,
@@ -3894,18 +3907,27 @@ async function abrirPixPagamento(pkgKey) {
     });
     var json = await resp.json();
     if (!json || !json.ok) {
-      toast('error','Erro ao gerar Pix Mercado Pago', json.msg || 'Tente novamente ou use a chave pix manual (copia e cola abaixo). Use o botão "Já efetuei o pagamento" quando concluir.', 7000);
+      // -------- FALHA: cai em MODO MANUAL FALLBACK (mostra numero pix antigo wesley) --------
+      console.error('backend pix retornou erro:', json);
+      _setModoPixModal('fallback_manual', precoEsperado);
+      toast('error','Erro Mercado Pago → Usando Chave Pix Manual', (json.msg || 'Tente novamente depois, ou use a chave Pix manual abaixo.') + ' Clique em "Já efetuei o pagamento" após concluir.', 9000);
       if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
       return;
     }
-    // ============= (BUG FIX R$0: DOUBLE CHECK RETORNO BACKEND VALOR) ==============
+    // ============= (DOUBLE CHECK VALOR RETORNADO BACKEND) ==============
     var valorVindoBackend = Number((json.pacote && json.pacote.preco_brl) ? json.pacote.preco_brl : 0);
     if (valorVindoBackend <= 0) {
-      toast('warning','Atenção! Valor Pix retornou R$0.','Isso é um erro do gateway. Pagamento foi cancelado automaticamente. Use a chave Pix manual copia e cola abaixo, ou feche e tente novamente. Contate suporte se persistir.', 9000);
+      // -------- VALOR ZEROU: cai em MODO MANUAL FALLBACK --------
+      console.error('backend pix retornou preco <= 0, fallback manual. json.pacote =', json.pacote);
+      _setModoPixModal('fallback_manual', precoEsperado);
+      toast('warning','Atenção! Valor Pix voltou zerado no gateway.','Mudamos para Modo Manual Pix: use a chave +55 61 99251-8130 abaixo, ou feche e tente novamente em 1 minuto. Já enviamos aviso ao suporte.', 11000);
       if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
       return;
     }
-    // Atualiza o valor na tela com o que voltou real do backend para visibilidade do usuario
+    // ========== (SUCESSO! TROCA PARA MODO AUTOMATICO MERCADO PAGO — ESCONDE NUMERO PIX ANTIGO!) ==========
+    _setModoPixModal('automatico_mp', valorVindoBackend);
+
+    // Atualiza o valor real confirmado pelo backend na tela
     document.getElementById('pixValor').textContent = formatarBRL(valorVindoBackend);
     // Salvamos transacao atual e iniciamos escuta Firestore onSnapshot
     _pixTransacaoAtual = json;
@@ -3917,21 +3939,63 @@ async function abrirPixPagamento(pkgKey) {
       img.style.cssText = 'width:100%;max-width:340px;height:auto;border-radius:24px;';
       if (qrDiv) { qrDiv.innerHTML = ''; qrDiv.appendChild(img); }
     } else {
+      // -------- QR vazio voltou do MP: fallback manual --------
+      console.warn('qr_code_base64 vazio do MP, fallback manual.');
+      _setModoPixModal('fallback_manual', valorVindoBackend);
       if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
     }
     if (pixDados.copia_cola && pixDados.copia_cola.length > 10) {
       document.getElementById('pixChaveCopiaCola').value = pixDados.copia_cola;
-      document.getElementById('pixChaveLabel').textContent = 'Copia e Cola Pix Mercado Pago (automático)';
+      document.getElementById('pixChaveCopiaCola').dataset.modo = 'mp_automatico';
     }
     iniciarEscutaPagamentoPix(json.external_reference);
-    toast('success','QR Code Pix Mercado Pago gerado! ('+ formatarBRL(valorVindoBackend) +')','Escaneie com o app do banco ou copie e cole o código. As moedas serão liberadas AUTOMATICAMENTE (<3 segundos) após pagamento aprovado.', 6500);
+    toast('success','✅ Modo Automático Mercado Pago Ativado! ('+ formatarBRL(valorVindoBackend) +')','Escaneie o QR com app do banco ou copie o código Copia-e-Cola. Moedas aparecem SOZINHAS após pagamento (< 3 segundos).', 8000);
   } catch (eBk) {
     console.error('abrirPixPagamento backend erro:', eBk);
-    toast('error','Falha ao contatar backend Pix','Modo simulação local ativado (QR visual). PIX REAL: verifique se window.AJEITA_PIX_BACKEND_URL está correta e se o backend está no ar.');
+    _setModoPixModal('fallback_manual', precoEsperado);
+    toast('error','Falha conexão backend → Modo Pix Manual ativado','Use a chave Pix manual abaixo ou clique em "Já efetuei pagamento" após concluir.');
     try {
       var qrDiv = document.getElementById('pixQrCode');
       if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
     } catch(e){}
+  }
+}
+
+/* ================= (NOVO HELPER: CONTROLA MODO AUTOMATICO vs FALLBACK MANUAL — NAO MOSTRA NUMERO PIX ANTIGO NO MP!) ================= */
+function _setModoPixModal(modo, valorBRL) {
+  // modos: 'automatico_mp' (Mercado Pago OK, ESCONDE numero antigo) | 'fallback_manual' (MP falhou, MOSTRA numero antigo wesley telefone)
+  const modoTag = document.getElementById('pixModoTag');
+  const modoTitulo = document.getElementById('pixModoTitulo');
+  const modoIcone = document.getElementById('pixModoIcone');
+  const modoAviso = document.getElementById('pixModoAviso');
+  const chaveManualDiv = document.getElementById('pixChaveManualAviso'); // div com numero +55 61 99251... (tem que ter se for fallback, senão hidden)
+  const chaveCopiaColaInput = document.getElementById('pixChaveCopiaCola');
+  const copiaColaLabel = document.querySelector('label[for="pixChaveCopiaCola"]') || (document.getElementById('pixChaveLabel') ? document.getElementById('pixChaveLabel').closest('.block') : null);
+  if (!modoTag || !modoTitulo) return;
+  if (modo === 'automatico_mp') {
+    // MODO AUTOMATICO → BANNER VERDE/PURPLE, ESCONDE o numero de telefone antigo
+    modoAviso.className = 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-700 rounded-2xl p-4 flex items-center gap-3 shadow-card';
+    modoIcone.className = 'fa-brands fa-pix text-white text-2xl';
+    modoTag.textContent = '✅ MODO AUTOMÁTICO · MERCADO PAGO';
+    modoTitulo.textContent = 'Valor = ' + (valorBRL ? formatarBRL(valorBRL) : '') + ' · Moedas liberam SOZINHAS (< 3 segundos)';
+    if (chaveManualDiv) chaveManualDiv.classList.add('hidden'); // ESCONDE numero antigo (NAO CONFUNDE USUARIO!)
+    if (document.getElementById('pixChaveLabel')) {
+      document.getElementById('pixChaveLabel').textContent = 'Copia e Cola Pix Mercado Pago (Automático)';
+    }
+  } else {
+    // MODO MANUAL FALLBACK → BANNER LARANJA/AMARELO, MOSTRA numero antigo
+    modoAviso.className = 'bg-gradient-to-r from-amber-500 via-orange-500 to-orange-700 rounded-2xl p-4 flex items-center gap-3 shadow-card';
+    modoIcone.className = 'fa-solid fa-circle-exclamation text-white text-2xl';
+    modoTag.textContent = '⚠️ MODO MANUAL · CHAVE PIX WESLEY (APENAS FALLBACK)';
+    modoTitulo.textContent = 'Use a Chave Pix abaixo. Clique em "Já efetuei pagamento" para liberar manualmente.';
+    if (chaveManualDiv) chaveManualDiv.classList.remove('hidden'); // MOSTRA numero antigo
+    if (document.getElementById('pixChaveLabel')) {
+      document.getElementById('pixChaveLabel').textContent = CHAVE_PIX_PROPRIETARIO;
+    }
+    if (chaveCopiaColaInput && (!chaveCopiaColaInput.value || chaveCopiaColaInput.value.length < 10 || (chaveCopiaColaInput.dataset.modo && chaveCopiaColaInput.dataset.modo !== 'fallback'))) {
+      chaveCopiaColaInput.value = CHAVE_PIX_PROPRIETARIO;
+      chaveCopiaColaInput.dataset.modo = 'fallback';
+    }
   }
 }
 

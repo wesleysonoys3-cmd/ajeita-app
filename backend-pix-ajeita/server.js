@@ -165,8 +165,23 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
     // =================================================================================
 
     const pacoteKey = String(b.pacoteKey || 'bronze').toLowerCase();
+
+    // ================ (BUG FIX R$0 PRODUCAO: PRIORIDADE MAXIMA VALOR ENVIADO PELO FRONTEND) ================
+    // 1) Se frontend enviou valorOpcional e ele é >0 → USAMOS ELE SEMPRE (nunca calculamos por pacote de novo, evita desalinhamento)
+    // 2) Senão, usamos helper _PrecoPorPacote(pacoteKey)
+    // 3) No final valida >0 ou BLOQUEIA
+    let precoBRL = 0;
+    const valorEnviadoFront = Number(b.valorOpcional || 0);
+    if (valorEnviadoFront > 0) {
+      precoBRL = valorEnviadoFront;
+      console.log(`[CRIAR_PIX] Usando valor ENVIADO PELO FRONTEND (valorOpcional) = R$${precoBRL} (pacote=${pacoteKey}) — PRIORIDADE MAXIMA`);
+    } else {
+      precoBRL = _PrecoPorPacote(pacoteKey);
+      console.log(`[CRIAR_PIX] Valor opcional nao envio. Usando helper interno pacoteKey → R$${precoBRL}`);
+    }
+    precoBRL = Number(precoBRL);
+
     const qtdMoedas = _QtdMoedasPorPacote(pacoteKey);
-    const precoBRL = Number(b.valorOpcional) || _PrecoPorPacote(pacoteKey);
     const uidUsuario = String(b.uidUsuario || ('anon_' + Date.now()));
     const tipoUsuario = String(b.tipoUsuario || 'profissional');
     const nomeUsuario = String(b.nomeUsuario || 'Usuario Ajeita');
