@@ -1408,21 +1408,21 @@ tailwind.config = {
           </div>
           <h4 class="text-xl font-black text-slate-800 mb-1">Verificando pagamento junto ao banco...</h4>
           <p class="text-slate-500 text-sm">Aguardando confirmação da transferência PIX.</p>
+          <p id="pixContagemAuto" class="mt-2 text-xs font-black uppercase tracking-widest text-primary-700 bg-primary-100 inline-block px-3 py-1 rounded-lg border border-primary-200">~5 segundos</p>
         </div>
-        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-xs sm:text-sm text-indigo-900 space-y-2">
+        <div id="pixStatusProcessoTexto" class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-xs sm:text-sm text-indigo-900 space-y-2">
           <div class="flex items-start gap-2">
             <i class="fa-solid fa-robot text-indigo-600 mt-0.5"></i>
-            <div><strong>ℹ️ Em produção (reald):</strong></div>
+            <div><strong>ℹ️ Em produção (real):</strong></div>
           </div>
-          <p>As moedas são liberadas <strong>INSTANTANEAMENTE sem precisar clicar em nada</strong>, pois o gateway de pagamento (Mercado Pago / Asaas / Stripe) envia automaticamente um <strong>WEBHOOK POST</strong> para nossos servidores no momento exato que o banco confirma a transferência PIX.</p>
-          <p class="text-indigo-800 italic">Nesta demo: simulação de aprovação automática em <span id="pixContagemAuto" class="font-black underline">~5 segundos</span> — ou clique no botão abaixo.</p>
+          <p>As moedas são liberadas <strong>INSTANTANEAMENTE sem precisar clicar em nada</strong>, pois o gateway de pagamento (Mercado Pago) envia automaticamente um <strong>WEBHOOK POST</strong> para nossos servidores no momento exato que o banco confirma a transferência PIX.</p>
         </div>
-        <div class="flex flex-col sm:flex-row gap-3">
+        <div id="pixBotoesProcessando" class="flex flex-col sm:flex-row gap-3">
           <button onclick="voltarParaQrCodePix()" class="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
             <i class="fa-solid fa-arrow-left mr-1.5"></i>Voltar ao QR Code
           </button>
-          <button onclick="simularAprovacaoWebhook()" id="btnSimularWebhook" class="flex-1 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black rounded-xl shadow-lg shadow-indigo-600/20 transition">
-            🤖 Simular Webhook Aprovado (Demo)
+          <button onclick="simularAprovacaoWebhook()" id="btnSimularWebhook" class="hidden flex-1 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black rounded-xl shadow-lg shadow-indigo-600/20 transition">
+            🤖 Simular Webhook Aprovado (SÓ ADMIN)
           </button>
         </div>
       </div>
@@ -1848,6 +1848,7 @@ const CIDADES_DISPONIVEIS = Object.keys(BAIRROS_POR_CIDADE);
 let estadoPagamentoPix = 'qr';
 let _intervalPixContagemRegressiva = null;
 let _timeoutPixAutoAprovacao = null;
+let _pixModoAtual = 'fallback_manual'; // 'automatico_mp' | 'fallback_manual' — usado em TODOS os fluxos para bloquear aprovacao manual em modo automatico (producao real)
 let _debounceFotoPerfilTimer = null;
 let _gsiFallbackTimer = null;
 
@@ -3862,6 +3863,13 @@ async function abrirPixPagamento(pkgKey) {
   }
   // ========== (BUG FIX R$0 PRODUCAO / NUMERO PIX ANTIGO CONFUNDE) ==========
   var precoEsperado = Number(pkg.preco || 0);
+  // (PROTECAO EXTRA R$0) se pkg.preco nao existir ou vier invalido, calcula manualmente por nome do pacote (nunca mais depende de um unico ponto)
+  if (!(precoEsperado > 0)) {
+    const keyLower = String(pkgKey || '').toLowerCase();
+    if (keyLower === 'bronze') precoEsperado = 15.00;
+    else if (keyLower === 'prata') precoEsperado = 30.00;
+    else if (keyLower === 'ouro') precoEsperado = 60.00;
+  }
   if (!(precoEsperado > 0)) {
     toast('error','Erro de preço','Pacote selecionado tem preço R$0 inválido. Entre em contato com o suporte.', 5000);
     return;
@@ -3964,6 +3972,7 @@ async function abrirPixPagamento(pkgKey) {
 /* ================= (NOVO HELPER: CONTROLA MODO AUTOMATICO vs FALLBACK MANUAL — NAO MOSTRA NUMERO PIX ANTIGO NO MP!) ================= */
 function _setModoPixModal(modo, valorBRL) {
   // modos: 'automatico_mp' (Mercado Pago OK, ESCONDE numero antigo) | 'fallback_manual' (MP falhou, MOSTRA numero antigo wesley telefone)
+  _pixModoAtual = modo; // GRAVA GLOBALMENTE para confirmarPagamentoPix e outros bloquear aprovacao falsa
   const modoTag = document.getElementById('pixModoTag');
   const modoTitulo = document.getElementById('pixModoTitulo');
   const modoIcone = document.getElementById('pixModoIcone');
@@ -4007,6 +4016,13 @@ function renderEstadoModalPix(estado) {
     if (!el) return;
     if (k === estado) el.classList.remove('hidden'); else el.classList.add('hidden');
   });
+  // (NOVO V11 SEGURANÇA) Botão Simular Webhook SÓ VISÍVEL SE ADMIN LOGADO (nunca para clientes/profissionais comuns)
+  const btnSim = document.getElementById('btnSimularWebhook');
+  if (btnSim) {
+    const adminLogadoSafe = (window.adminLogado === true) || (localStorage.getItem('ajeita_admin_logado') === '1');
+    btnSim.classList.toggle('hidden', !adminLogadoSafe); // se nao for admin, display:none garantido
+    if (adminLogadoSafe) btnSim.classList.remove('hidden'); else btnSim.classList.add('hidden');
+  }
 }
 
 function voltarParaQrCodePix() {
@@ -4020,24 +4036,88 @@ function confirmarPagamentoPix() {
     toast('error','Ops','Faça login como profissional antes.');
     return;
   }
+
+  // =============== (BUG FIX CRÍTICO PRODUÇÃO REAL) NUNCA MAIS APROVA SOZINHO COM TIMEOUT! ===============
+  // Limpamos qlqr simulação antiga pendente e BLOQUEIAMOS simulação automática (setTimeout NUNCA MAIS)
+  if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); _intervalPixContagemRegressiva = null; }
+  if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); _timeoutPixAutoAprovacao = null; }
+
   renderEstadoModalPix('processando');
-
-  let segRestantes = 5;
   const elCont = document.getElementById('pixContagemAuto');
-  if (elCont) elCont.textContent = `~${segRestantes} segundos`;
-  if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); }
-  if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); }
-  _intervalPixContagemRegressiva = setInterval(() => {
-    segRestantes -= 1;
-    if (elCont) elCont.textContent = segRestantes > 0 ? `~${segRestantes} segundos` : `agora mesmo`;
-  }, 1000);
+  const elStatusProcesso = document.getElementById('pixStatusProcessoTexto');
 
-  _timeoutPixAutoAprovacao = setTimeout(() => {
-    if (estadoPagamentoPix === 'processando') simularAprovacaoWebhook();
-  }, 5000);
+  if (_pixModoAtual === 'automatico_mp') {
+    // =================================================================
+    // MODO AUTOMATICO MERCADO PAGO PRODUCAO REAL
+    // - NUNCA aprova por clique em botao!
+    // - Aprovacao SOMENTE por Firestore onSnapshot (webhook real do MP)
+    // =================================================================
+    if (elCont) elCont.textContent = 'AGUARDANDO PAGAMENTO NO BANCO';
+    if (elStatusProcesso) elStatusProcesso.innerHTML =
+      '<strong class="text-emerald-800">ℹ️ Pagamento via Mercado Pago Automático:</strong><br>Moedas são liberadas INSTANTANEAMENTE pelo nosso servidor, assim que o banco confirmar a transferência PIX via webhook.<br><br><strong class="text-rose-700">NÃO precisa clicar em nenhum botão, NÃO fecha essa página e NÃO aprova nada manualmente — é só aguardar.</strong>';
+    toast('info','Aguardando pagamento Pix automático...','Pague o QR no app do banco. Moedas aparecem SOZINHAS em até 3s após o banco confirmar. Caso não apareça em 1 minuto, envie comprovante para WhatsApp do suporte.',9000);
+  } else {
+    // =================================================================
+    // MODO FALLBACK MANUAL (Chave Pix Wesley telefone)
+    // - NUNCA libera moedas automaticamente por clique!
+    // - Apenas REGISTRA uma solicitação de aprovação manual para o Wesley admin verificar comprovante.
+    // - Wesley aprova no painel admin ou por endpoint aprovar-manual-admin.
+    // =================================================================
+    if (elCont) elCont.textContent = 'SOLICITAÇÃO ENVIADA';
+    if (elStatusProcesso) elStatusProcesso.innerHTML =
+      '<strong class="text-amber-800">⚠️ Modo Fallback Manual (gateway temporariamente indisponível):</strong><br>Enviamos uma solicitação de aprovação MANUAL para o proprietário Wesley.<br><br><strong>Moedas NÃO são liberadas automaticamente.</strong><br>O Wesley vai ANALISAR SEU COMPROVANTE e aprovar MANUALMENTE em até 10 minutos úteis (normalmente mais rápido). Se demorar, chame no WhatsApp e envie o comprovante.<br><br>Após aprovação, feche e reabra o app para aparecer as moedas.';
+
+    // Registra a solicitação PENDENTE_VALIDACAO_MANUAL no array de recargas (para o admin listar)
+    const pkg = pacotePixAtual;
+    const ts = Date.now();
+    const objSolicitacao = {
+      id: 'sol_manual_' + ts,
+      profissionalId: profissionalLogado.id,
+      profissionalNome: profissionalLogado.nome || '',
+      profissionalWhats: profissionalLogado.whatsapp || profissionalLogado.telefone || '',
+      pacoteKey: pkg.key,
+      qtd: pkg.qtd,
+      preco: pkg.preco,
+      timestamp: ts,
+      data: new Date().toISOString(),
+      status: 'pendente_validacao_manual', // ← NÃO é 'aprovado'! Admin precisa mudar.
+      gateway: 'fallback_manual_chave_pix_wesley',
+      metodoPagamento: 'pix_manual',
+      observacao: 'Pagamento solicitado no modo fallback manual. Wesley precisa validar comprovante e aprovar no admin ou endpoint /api/pix/aprovar-manual-admin.'
+    };
+    recargas.push(objSolicitacao);
+    salvarTodosGlobaisNoStorage();
+
+    // Também salva no Firestore collection "pix_solicitacoes_manuais" se tiver conectado Firebase, para admin ver.
+    try {
+      if (window.db && typeof db.collection === 'function') {
+        db.collection('pix_solicitacoes_manuais').doc(objSolicitacao.id).set({
+          ...objSolicitacao,
+          sincronizado_em: new Date().toISOString()
+        }).catch(()=>{});
+      }
+    } catch(eFbSol){}
+
+    toast('warning','✅ Solicitação enviada! Aguarde validação manual.','Moedas NÃO são liberadas automaticamente no modo manual. Wesley vai checar seu comprovante e aprovar em até ~10 minutos (envie o comprovante pelo WhatsApp para agilizar).', 12000);
+
+    // Mostra botão de contato WhatsApp no canto inferior (opcional, já tem o do site)
+    setTimeout(() => {
+      renderEstadoModalPix('processando'); // continua na tela processando para não dar a falsa sensação de aprovado
+      if (elCont) elCont.textContent = 'PENDENTE · VALIDAÇÃO MANUAL WESLEY';
+    }, 1800);
+  }
 }
 
 function simularAprovacaoWebhook() {
+  // ========== (NOVO V11 BLOQUEIO FRAUDE) SÓ ADMIN LOGADO PODE USAR ESSE MÉTODO! ==========
+  // Qualquer profissional cliente que tentar usar (por engano ou tentativa de hack) — bloqueamos.
+  // Motivo: essa função era usada para demos antigas, mas em produção real é só para Wesley admin testar UI.
+  const adminLogadoSafe = (window.adminLogado === true) || (localStorage.getItem('ajeita_admin_logado') === '1');
+  if (!adminLogadoSafe) {
+    console.warn('[SIMULAR_APROVACAO_WEBHOOK] BLOQUEADO: usuario nao é admin.');
+    toast('error','Acesso negado','Apenas o administrador Wesley pode simular aprovação manual. Para suas moedas, aguarde o webhook real ou envie comprovante no WhatsApp.',7000);
+    return;
+  }
   if (!pacotePixAtual || !profissionalLogado) return;
   if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); _intervalPixContagemRegressiva = null; }
   if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); _timeoutPixAutoAprovacao = null; }
