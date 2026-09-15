@@ -69,20 +69,16 @@ const BACKEND_PUBLIC_URL = String(process.env.BACKEND_PUBLIC_URL || 'http://127.
 const PORTA = Number(process.env.PORT || '7001');
 const app = express();
 app.use(cors({ origin: true }));
-// (NOVO V11 WEBHOOK SEGURO) Preservamos raw body EM TODAS as requisicoes no Buffer,
-// para podermos validar HMAC x-signature do Mercado Pago (precisa do JSON exato, sem reformatação do express.json)
-app.use((req, res, next) => {
-  let dataRaw = [];
-  req.on('data', chunk => dataRaw.push(chunk));
-  req.on('end', () => {
-    if (dataRaw.length > 0) {
-      try { req.rawBodyStr = Buffer.concat(dataRaw).toString('utf8'); }
-      catch(eRaw) { req.rawBodyStr = ''; }
-    } else req.rawBodyStr = '';
-    next();
-  });
-});
-app.use(express.json({ limit: '10mb' }));
+// (NOVO V11 WEBHOOK SEGURO — FORMA CORRETA NO EXPRESS) Preservar raw body string SEM quebrar express.json
+// Usamos a opcao `verify` do proprio express.json que devolve o Buffer intacto para o HMAC
+// (Evita o middleware custom que consumia o stream antes do express.json, causando HTTP 500 em POSTs)
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf, encoding) => {
+    try { req.rawBodyStr = buf ? buf.toString(encoding || 'utf8') : ''; }
+    catch (eRaw) { req.rawBodyStr = ''; }
+  }
+}));
 app.use(morgan('combined'));
 
 /* ============================
@@ -183,7 +179,7 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.2-producao-real-webhook-hmac',
+    versao: '1.3-producao-real-500fix-middleware-verify',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -567,6 +563,24 @@ async function processarAprovacaoPix(payload) {
     return false;
   }
 }
+
+// ===================== (NOVO V11: HANDLERS FINAIS — 404 + ERROR GLOBAL — VEM SEMPRE DEPOIS DE TODAS AS ROTAS E ANTES DE app.listen) =====================
+// 404: se nenhuma rota acima bateu, retorna JSON amigavel
+app.use((req, res) => {
+  if (res.headersSent) return;
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (Ajeita Pix Backend). Rotas validas: GET / (healthcheck), POST /api/pix/criar-recarga-moedas, POST /api/pix/aprovar-manual-admin, POST /webhook-pix' });
+});
+// Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  console.error('[EXPRESS_GLOBAL_ERROR_HANDLER] Erro capturado stack primeira parte:', err && err.stack ? String(err.stack).substring(0,1400) : String(err));
+  res.status(Number(err && (err.statusCode || err.status) || 500)).json({
+    ok: false,
+    erro_critico: 'EXPRESS_GLOBAL_ERROR',
+    msg: 'Erro interno servidor Pix (handled). Se persistir, contate Wesley suporte.',
+    err_mensagem: String(err && err.message ? err.message : err).substring(0, 600)
+  });
+});
 
 /* ============================
    START SERVER
