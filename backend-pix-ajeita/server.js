@@ -179,7 +179,7 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.91-producao-real-cron-sem-index-firestore-filtro-node',
+    versao: '1.92-producao-real-admin-liberar-alterar-preco-pacotes',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -198,7 +198,8 @@ app.get('/', (req, res) => {
      uidUsuario: 'pro_xxx' ou cliente uid (REQUIRED),
      tipoUsuario: 'profissional' | 'cliente',
      nomeUsuario: 'Fulano',
-     emailUsuario: 'fulano@...'
+     emailUsuario: 'fulano@...',
+     admin_senha: 'bolo2024' (OPCIONAL — se fornecido e correto: LIBERA preço QUALQUER (abaixo ou acima do default) p/ admin alterar valores)
    }
    ============================ */
 app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
@@ -220,30 +221,36 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
 
     const pacoteKey = String(b.pacoteKey || 'bronze').toLowerCase();
 
-    // ================ (V1.8 BUG FIX R$1 ANTI-FRAUDE PREÇO) ================
-    // SEMPRE usa MAX(valorOpcional front, _PrecoPorPacote helper)
-    // Nunca mais aceita R$0, R$1 ou qualquer preço abaixo do pacote.
-    // (Antes aceitava valorOpcional = 1 e criava cobrança de R$1 por engano!)
+    // ================ (V1.92 ADMIN PODE ALTERAR PRECOS! LIBERADO!) ================
+    // Regra nova:
+    //  (a) Se body.admin_senha === 'bolo2024' (admin Wesley logado tentando cobrar valor diferente): USA QUALQUER preco > 0 (abaixo OU acima do default). Liberdade total p/ admin!
+    //  (b) Senão (usuário comum profissional/cliente): anti-fraude V1.8 continua: SEMPRE >= preco minimo default 15/30/60 (nunca aceita R$0/R$1)
     let precoBRL = 0;
     const valorEnviadoFront = Number(b.valorOpcional || 0);
     const precoMinimoPorPacote = _PrecoPorPacote(pacoteKey); // Bronze=15, Prata=30, Ouro=60
+    const ehAdminAlterando = String(b.admin_senha || '').trim() === 'bolo2024';
+    if (ehAdminAlterando) console.log(`[CRIAR_PIX] 🔑 ADMIN DETECTADO (admin_senha correta)! Libera alteracao de preco para QUALQUER valor > 0. pacote=${pacoteKey} valor enviado=${valorEnviadoFront}`);
     if (valorEnviadoFront > 0) {
-      // ✅ NOVA REGRA V1.8: NUNCA deixa preco ficar MENOR que preco minimo do pacote
-      if (valorEnviadoFront >= precoMinimoPorPacote) {
+      if (ehAdminAlterando) {
+        // ✅ ADMIN: preco VALE QUALQUER coisa > 0 (abaixo OU acima do default — Wesley alterou no painel admin!)
         precoBRL = valorEnviadoFront;
-        console.log(`[CRIAR_PIX] Usando valor ENVIADO PELO FRONTEND (valorOpcional) = R$${precoBRL} (pacote=${pacoteKey}) — OK, >= minimo R$${precoMinimoPorPacote}`);
+        console.log(`[CRIAR_PIX] ✅ ADMIN usando preco personalizado R$${precoBRL} (pacote=${pacoteKey} default=${precoMinimoPorPacote}).`);
+      } else if (valorEnviadoFront >= precoMinimoPorPacote) {
+        precoBRL = valorEnviadoFront;
+        console.log(`[CRIAR_PIX] Usuario comum. Usando valor ENVIADO PELO FRONTEND R$${precoBRL} (pacote=${pacoteKey}) — >= minimo R$${precoMinimoPorPacote}`);
       } else {
+        // Anti-fraude V1.8: usuario comum tentou enviar preco baixo → corrige para minimo
         precoBRL = precoMinimoPorPacote;
-        console.warn(`[CRIAR_PIX] ⚠️ FRONTEND ENVIOU PRECO ABAIXO DO MINIMO! valorEnviadoFront=R$${valorEnviadoFront} < minimo R$${precoMinimoPorPacote}. SOBRESCREVENDO PARA R$${precoBRL} (anti-fraude preco minimo V1.8). pacote=${pacoteKey}`);
+        console.warn(`[CRIAR_PIX] ⚠️ USUARIO COMUM ENVIOU PRECO ABAIXO DO MINIMO! valorEnviadoFront=R$${valorEnviadoFront} < minimo R$${precoMinimoPorPacote}. SOBRESCREVENDO PARA R$${precoBRL} (anti-fraude). pacote=${pacoteKey}`);
       }
     } else {
       precoBRL = precoMinimoPorPacote;
-      console.log(`[CRIAR_PIX] Valor opcional nao envio. Usando helper interno pacoteKey → R$${precoBRL}`);
+      console.log(`[CRIAR_PIX] Valor opcional nao envio. Usando helper interno default pacoteKey → R$${precoBRL}`);
     }
     precoBRL = Number(precoBRL);
-    // Ultima protecao: se ainda for 0 ou negativo, usa preco minimo
-    if (!(precoBRL > 0) || precoBRL < precoMinimoPorPacote) {
-      console.warn(`[CRIAR_PIX] ⚠️ Ultima protecao anti-fraude: precoBRL=R$${precoBRL} invalido, sobrescrevendo para R$${precoMinimoPorPacote}`);
+    if (!(precoBRL > 0)) {
+      // Ultima protecao: se ainda for 0/negativo, usa default minimo
+      console.warn(`[CRIAR_PIX] ⚠️ Ultima protecao anti-fraude: precoBRL=R$${precoBRL} invalido, sobrescrevendo default R$${precoMinimoPorPacote}`);
       precoBRL = precoMinimoPorPacote;
     }
 

@@ -3976,17 +3976,29 @@ async function abrirPixPagamento(pkgKey) {
     if (qrDiv) qrDiv.innerHTML = '<div class="flex flex-col items-center gap-3 py-10 px-4"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary-500"></i><div class="font-bold text-primary-700 text-base">Gerando QR Code Pix Mercado Pago Automático... ('+ nomeEsperadoValor +')</div><div class="text-xs text-slate-500">Aguarde 2 segundos</div></div>';
     var nomeUsuario = profissionalLogado ? (profissionalLogado.nome || 'Profissional Ajeita') : 'Usuario Ajeita';
     var emailUsuario = profissionalLogado ? (profissionalLogado.emailGoogle || profissionalLogado.email || 'profissional@ajeita.com.br') : 'profissional@ajeita.com.br';
+    // ========== (V1.92 ADMIN LIBERAR ALTERAR PRECOS) ==========
+    // Regra: se adminLogado (Wesley) estiver autenticado, OU se preço personalizado do pacote (configEconomia.pacotes[...].preco)
+    // for DIFERENTE do default (15/30/60), quer dizer que admin alterou o valor no painel → enviar admin_senha='bolo2024' para
+    // o backend LIBERAR preço QUALQUER (abaixo OU acima do default) sem bloqueio anti-fraude V1.8.
+    const ehAdminAqui = window.adminLogado || (typeof localStorage !== 'undefined' && localStorage.getItem('ajeita_admin_logado') === '1');
+    const precoDefaultPorPacote = (String(pkgKey||'').toLowerCase()==='bronze')?15:(String(pkgKey||'').toLowerCase()==='prata'?30:60);
+    const adminAlterouPrecoPersonalizado = Math.abs(Number(precoEsperado) - Number(precoDefaultPorPacote)) > 0.009;
+    const bodyPix = {
+      pacoteKey: pkgKey,
+      valorOpcional: precoEsperado,
+      uidUsuario: profissionalLogado ? profissionalLogado.id : ('anom_' + Date.now()),
+      tipoUsuario: 'profissional',
+      nomeUsuario: nomeUsuario,
+      emailUsuario: emailUsuario
+    };
+    if (ehAdminAqui || adminAlterouPrecoPersonalizado) {
+      bodyPix.admin_senha = 'bolo2024';
+      console.log('[PIX_ADMIN_LIBERAR_PRECO] 🔑 Enviando admin_senha para backend (admin logado OU preco personalizado diferente do default). preco=' + precoEsperado + ', default=' + precoDefaultPorPacote + ', pkg=' + pkgKey);
+    }
     var resp = await fetch(bkUrl + '/api/pix/criar-recarga-moedas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pacoteKey: pkgKey,
-        valorOpcional: precoEsperado, // <-- PRIORIDADE MAXIMA: enviamos o preço EXATO para o backend (nunca mais depende de chave)
-        uidUsuario: profissionalLogado ? profissionalLogado.id : ('anom_' + Date.now()),
-        tipoUsuario: 'profissional',
-        nomeUsuario: nomeUsuario,
-        emailUsuario: emailUsuario
-      })
+      body: JSON.stringify(bodyPix)
     });
     var json = await resp.json();
     if (!json || !json.ok) {
