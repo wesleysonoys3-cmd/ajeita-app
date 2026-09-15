@@ -179,7 +179,7 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.9-producao-real-cron-backend-aprovacao-automatica-sem-webhook',
+    versao: '1.91-producao-real-cron-sem-index-firestore-filtro-node',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -790,37 +790,49 @@ app.listen(PORTA, '0.0.0.0', () => {
   //   - Frontend NÃO esteja deployado com polling novo (codigo antigo)
   // =============================================================
   if (dbFirestore && MP_ACCESS_TOKEN) {
-    console.log(`[CRON_APROVACAO_AUTOMATICA] ✅ Iniciando varredura automatica a cada 15s por pagamentos pendentes no Firestore.`);
+    console.log(`[CRON_APROVACAO_AUTOMATICA] ✅ Iniciando varredura automatica a cada 15s por pagamentos pendentes no Firestore. (FILTRO FEITO NO NODE — SEM NECESSIDADE DE INDICE FIREBASE COMPOSTO)`);
     setInterval(async () => {
       try {
-        const snapPendentes = await dbFirestore.collection('pix_transacoes')
-          .where('status', '!=', 'aprovado')
-          .orderBy('status')
+        // (FIX V1.91) NÃO USA MAIS where != aprovado + orderBy (precisa de índice composto, dava FAILED_PRECONDITION)
+        // Agora: lista TODOS os docs da collection, ordena por criado_em DESC e filtra PENDENTES no Node.js (100% permitido sem índice)
+        const snapTodos = await dbFirestore.collection('pix_transacoes')
           .orderBy('criado_em', 'desc')
-          .limit(50)
+          .limit(100)
           .get();
-        let qtde = 0, aprovadosNestaRodada = 0;
-        if (snapPendentes && snapPendentes.size > 0) {
-          snapPendentes.forEach(async (docSnap) => {
+        let qtde = 0, aprovadosNestaRodada = 0, totalDocs = 0;
+        if (snapTodos && snapTodos.size > 0) {
+          const docsParaProcessar = [];
+          snapTodos.forEach((docSnap) => {
             try {
-              qtde++;
+              totalDocs++;
               const dados = Object.assign({}, docSnap.data() || {});
-              const extRef = String(dados.external_reference || docSnap.id || '');
-              if (!extRef) return;
-              // Evita re-processar muito recentes (criado nos ultimos 4s — nao deu tempo MP criar)
-              const criadoMs = (dados.criado_em && dados.criado_em.toDate && typeof dados.criado_em.toDate === 'function')
-                ? (new Date(dados.criado_em.toDate())).getTime()
-                : null;
-              if (criadoMs && (Date.now() - criadoMs) < 4000) return;
-              console.log(`[CRON_APROVACAO_AUTOMATICA] Varredura doc #${qtde}: ref=${extRef} status atual="${dados.status || ''}" mp_payment_id=${dados.mp_payment_id || '?'} preco_brl=${dados.preco_brl || 0}`);
+              const statusAtual = String(dados.status || '').toLowerCase();
+              // Filtro feito AQUI NO NODE.JS → sem índice composto necessário!
+              if (statusAtual !== 'aprovado' && statusAtual !== 'cancelado' && statusAtual !== 'rejeitado') {
+                // Evita re-processar muito recentes (criado nos ultimos 4s — nao deu tempo MP criar)
+                const criadoMs = (dados.criado_em && dados.criado_em.toDate && typeof dados.criado_em.toDate === 'function')
+                  ? (new Date(dados.criado_em.toDate())).getTime()
+                  : null;
+                if (criadoMs && (Date.now() - criadoMs) < 4000) return; // skip muito novo
+                const extRef = String(dados.external_reference || docSnap.id || '');
+                if (extRef) docsParaProcessar.push({ extRef, dados });
+              }
+            } catch(eF){}
+          });
+          qtde = docsParaProcessar.length;
+          for (const item of docsParaProcessar) {
+            try {
+              const extRef = item.extRef;
+              const dados = item.dados;
+              console.log(`[CRON_APROVACAO_AUTOMATICA] Varredura doc: ref=${extRef} status atual="${dados.status || ''}" mp_payment_id=${dados.mp_payment_id || '?'} preco_brl=${dados.preco_brl || 0}`);
               const r = await _consultarPagamentoMpPorExternalRef(extRef);
               if (r && r.aprovado === true) { aprovadosNestaRodada++; }
             } catch (eDoc) { console.warn('[CRON_APROVACAO_AUTOMATICA] Erro no doc:', eDoc && eDoc.message || eDoc); }
-          });
-          if (aprovadosNestaRodada > 0) console.log(`[CRON_APROVACAO_AUTOMATICA] ✅ RODADA FINALIZADA: ${aprovadosNestaRodada} pagamentos APROVADOS automaticamente nesta rodada. Total pendentes escaneados=${qtde}.`);
-          else console.log(`[CRON_APROVACAO_AUTOMATICA] RODADA OK: 0 novos aprovados. Escaneados=${qtde} doc(s) pendentes.`);
+          }
+          if (aprovadosNestaRodada > 0) console.log(`[CRON_APROVACAO_AUTOMATICA] ✅ RODADA FINALIZADA: ${aprovadosNestaRodada} pagamentos APROVADOS automaticamente. Pendentes escaneados=${qtde}/${totalDocs} docs.`);
+          else console.log(`[CRON_APROVACAO_AUTOMATICA] RODADA OK: 0 novos aprovados. Total docs lidos=${totalDocs}, pendentes escaneados=${qtde}.`);
         } else {
-          console.log(`[CRON_APROVACAO_AUTOMATICA] Nenhum doc pendente no Firestore. Aguardando novas cobrancas...`);
+          console.log(`[CRON_APROVACAO_AUTOMATICA] Nenhum doc na collection pix_transacoes ainda. Aguardando novas cobrancas...`);
         }
       } catch (eGeral) {
         console.warn('[CRON_APROVACAO_AUTOMATICA] Erro GERAL rodada cron (ignora, proxima em 15s):', eGeral && eGeral.message);
