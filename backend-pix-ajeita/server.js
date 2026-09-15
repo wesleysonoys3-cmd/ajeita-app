@@ -179,7 +179,7 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.8-producao-real-preco-minimo-pacote-anti-r1',
+    versao: '1.9-producao-real-cron-backend-aprovacao-automatica-sem-webhook',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -774,4 +774,59 @@ app.listen(PORTA, '0.0.0.0', () => {
   console.log(`   URL publica (render BACKEND_PUBLIC_URL): ${BACKEND_PUBLIC_URL}`);
   console.log(`   Modo MP: ${mercadopago ? 'SDK MERCADO PAGO CONECTADO' : 'MOCK LOCAL'}`);
   console.log(`   Modo Firestore Admin: ${svcAccount ? `Projeto ${svcAccount.project_id} CONECTADO` : 'DESLIGADO (apenas log console)'}\n`);
+
+  // =============================================================
+  // (NOVO V1.9 VERIFICACAO AUTOMATICA 100% BACKEND — SEM WEBOOK, SEM POLLING FRONTEND!)
+  // CRON a cada 15 segundos:
+  //   1) Busca TODOS os docs da collection "pix_transacoes" onde status NAO é "aprovado"
+  //   2) Para cada doc pendente, consulta o Mercado Pago direto
+  //   3) Se status MP === approved/accredited → CHAMA processarAprovacaoPix (libera moedas!)
+  //   4) Atualiza status do doc no Firestore para o user ver progresso
+  //
+  // ISSO FUNCIONA MESMO SE:
+  //   - Webhook MP NUNCA chegar (ex: não criou webhook ou conta errada)
+  //   - Usuário FECHAR a aba/navedor antes da aprovação
+  //   - Regras Firestore estiverem ERRADAS (cron roda no backend, ignora regras client-side)
+  //   - Frontend NÃO esteja deployado com polling novo (codigo antigo)
+  // =============================================================
+  if (dbFirestore && MP_ACCESS_TOKEN) {
+    console.log(`[CRON_APROVACAO_AUTOMATICA] ✅ Iniciando varredura automatica a cada 15s por pagamentos pendentes no Firestore.`);
+    setInterval(async () => {
+      try {
+        const snapPendentes = await dbFirestore.collection('pix_transacoes')
+          .where('status', '!=', 'aprovado')
+          .orderBy('status')
+          .orderBy('criado_em', 'desc')
+          .limit(50)
+          .get();
+        let qtde = 0, aprovadosNestaRodada = 0;
+        if (snapPendentes && snapPendentes.size > 0) {
+          snapPendentes.forEach(async (docSnap) => {
+            try {
+              qtde++;
+              const dados = Object.assign({}, docSnap.data() || {});
+              const extRef = String(dados.external_reference || docSnap.id || '');
+              if (!extRef) return;
+              // Evita re-processar muito recentes (criado nos ultimos 4s — nao deu tempo MP criar)
+              const criadoMs = (dados.criado_em && dados.criado_em.toDate && typeof dados.criado_em.toDate === 'function')
+                ? (new Date(dados.criado_em.toDate())).getTime()
+                : null;
+              if (criadoMs && (Date.now() - criadoMs) < 4000) return;
+              console.log(`[CRON_APROVACAO_AUTOMATICA] Varredura doc #${qtde}: ref=${extRef} status atual="${dados.status || ''}" mp_payment_id=${dados.mp_payment_id || '?'} preco_brl=${dados.preco_brl || 0}`);
+              const r = await _consultarPagamentoMpPorExternalRef(extRef);
+              if (r && r.aprovado === true) { aprovadosNestaRodada++; }
+            } catch (eDoc) { console.warn('[CRON_APROVACAO_AUTOMATICA] Erro no doc:', eDoc && eDoc.message || eDoc); }
+          });
+          if (aprovadosNestaRodada > 0) console.log(`[CRON_APROVACAO_AUTOMATICA] ✅ RODADA FINALIZADA: ${aprovadosNestaRodada} pagamentos APROVADOS automaticamente nesta rodada. Total pendentes escaneados=${qtde}.`);
+          else console.log(`[CRON_APROVACAO_AUTOMATICA] RODADA OK: 0 novos aprovados. Escaneados=${qtde} doc(s) pendentes.`);
+        } else {
+          console.log(`[CRON_APROVACAO_AUTOMATICA] Nenhum doc pendente no Firestore. Aguardando novas cobrancas...`);
+        }
+      } catch (eGeral) {
+        console.warn('[CRON_APROVACAO_AUTOMATICA] Erro GERAL rodada cron (ignora, proxima em 15s):', eGeral && eGeral.message);
+      }
+    }, 15000); // 15 segundos — aprovacao MAXIMA latencia 15s apos pagamento, 100% automatica
+  } else {
+    console.warn('[CRON_APROVACAO_AUTOMATICA] ⚠️ Cron NAO iniciado: faltando dbFirestore ou MP_ACCESS_TOKEN. Verificar ENV Render.');
+  }
 });
