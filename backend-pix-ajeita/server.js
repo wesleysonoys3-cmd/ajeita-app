@@ -32,20 +32,35 @@ const dbFirestore = admin.firestore ? admin.firestore() : null;
    MERCADO PAGO SDK CONFIG
    - TOKEN via ENV VAR: MERCADO_PAGO_ACCESS_TOKEN
    (Pode usar TEST-... primeiro para homologacao, depois APP_USR-... producao)
+   - MODO PRODUCAO SEGURO: se token comeca com APP_USR- (producao real),
+     NUNCA cai no modo MOCK (nao gera QR falso com dinheiro real envolvido).
    ============================ */
 const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
+const MODO_PRODUCAO_REAL = Boolean(MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.startsWith('APP_USR-'));
+const MODO_HOMOLOGACAO_TESTE = Boolean(MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.startsWith('TEST-'));
 let mercadopago = null;
 try {
   const { MercadoPagoConfig, Payment, Preference } = require('mercadopago');
   if (MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.length > 10) {
-    const mpClient = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN, options: { timeout: 10000 } });
+    const mpClient = new MercadoPagoConfig({
+      accessToken: MP_ACCESS_TOKEN,
+      options: { timeout: 15000 }
+    });
     mercadopago = { Payment: new Payment(mpClient), Preference: new Preference(mpClient) };
-    console.log(`[MERCADO_PAGO] SDK inicializado. Access Token prefixo: ${MP_ACCESS_TOKEN.substring(0, 12)}...`);
+    console.log(`[MERCADO_PAGO] SDK inicializado. Modo = ${MODO_PRODUCAO_REAL ? '🚨 PRODUCAO (DINHEIRO REAL) 🚨' : MODO_HOMOLOGACAO_TESTE ? '🧪 HOMOLOGACAO TESTE' : 'DESCONHECIDO'}. Access Token prefixo: ${MP_ACCESS_TOKEN.substring(0, 12)}...`);
   } else {
-    console.warn('[MERCADO_PAGO] AVISO: MERCADO_PAGO_ACCESS_TOKEN vazio ou invalido. Modo MOCK (simulacao local) ativado.');
+    if (MODO_PRODUCAO_REAL) {
+      console.error('[MERCADO_PAGO] ERRO CRITICO: MODO PRODUCAO (APP_USR) mas token INVALIDO. Sistema BLOQUEADO para nao gerar QR falso.');
+    } else {
+      console.warn('[MERCADO_PAGO] AVISO: MERCADO_PAGO_ACCESS_TOKEN vazio ou invalido. Modo MOCK (simulacao local HOMOLOGACAO APENAS, nao use producao).');
+    }
   }
 } catch (eInitMp) {
-  console.error('[MERCADO_PAGO] Falha carregar SDK mercado-pago:', eInitMp);
+  console.error('[MERCADO_PAGO] Falha carregar SDK mercadopago:', eInitMp);
+  if (MODO_PRODUCAO_REAL) {
+    console.error('[MERCADO_PAGO] 🚨 PRODUCAO REAL: SDK nao carregou. Sistema BLOQUEADO para evitar QR falso / perda de dinheiro.');
+    mercadopago = null;
+  }
 }
 
 const BACKEND_PUBLIC_URL = process.env.BACKEND_PUBLIC_URL || 'http://127.0.0.1:7001';
@@ -91,9 +106,12 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
+    versao: '1.1-producao-real',
+    modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
-    backend_url_publica: BACKEND_PUBLIC_URL
+    backend_url_publica: BACKEND_PUBLIC_URL,
+    backend_url_https_valida: Boolean(BACKEND_PUBLIC_URL && BACKEND_PUBLIC_URL.toLowerCase().startsWith('https://') && !BACKEND_PUBLIC_URL.includes('localhost') && !BACKEND_PUBLIC_URL.includes('127.0.0.1'))
   });
 });
 
@@ -111,6 +129,20 @@ app.get('/', (req, res) => {
 app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
   try {
     const b = req.body || {};
+
+    // =============== (NOVO V11 PRODUCAO REAL: BLOQUEIOS ANTES DE TUDO) ================
+    // - Se MODO PRODUCAO (token APP_USR) e a URL publica NAO for HTTPS real (nao localhost/ip/http): BLOQUEIA
+    // - Isso evita que notification_url do webhook fique invalida em dinheiro real
+    const urlPublicaValidaHTTPS = Boolean(BACKEND_PUBLIC_URL && BACKEND_PUBLIC_URL.toLowerCase().startsWith('https://') && !BACKEND_PUBLIC_URL.includes('localhost') && !BACKEND_PUBLIC_URL.includes('127.0.0.1'));
+    if (MODO_PRODUCAO_REAL && !urlPublicaValidaHTTPS) {
+      return res.status(500).json({
+        ok: false,
+        erro_critico: 'MODO_PRODUCAO_REAL',
+        msg: 'ERRO CONFIGURACAO BACKEND (PRODUCAO REAL): ENV BACKEND_PUBLIC_URL nao e HTTPS valido. Ajuste no Render (BACKEND_PUBLIC_URL = https://ajeita-backend-pix.onrender.com e faca deploy novamente.'
+      });
+    }
+    // =================================================================================
+
     const pacoteKey = String(b.pacoteKey || 'bronze').toLowerCase();
     const qtdMoedas = _QtdMoedasPorPacote(pacoteKey);
     const precoBRL = Number(b.valorOpcional) || _PrecoPorPacote(pacoteKey);
@@ -197,8 +229,18 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
         return res.status(500).json({ ok: false, msg: 'Erro Mercado Pago ao criar cobranca Pix', err: (eMpCreate.cause || eMpCreate.message) });
       }
     } else {
-      // MOCK LOCAL (se nao tiver token MP) -> gerar QR vazio, marcar
-      console.warn('[MERCADO_PAGO_MOCK] Modo MOCK: Mercado Pago nao configurado. Pagamento simulado.');
+      // =============== (NOVO V11 PRODUCAO REAL: BLOQUEIO MOCK EM DINHEIRO REAL) ================
+      if (MODO_PRODUCAO_REAL) {
+        // NUNCA, EM HIPOTESE NENHUMA, GERA QR FALSO QUANDO ESTA EM PRODUCAO REAL (APP_USR)
+        console.error('[MERCADO_PAGO_PRODUCAO] ERRO CRITICO: MODO PRODUCAO REAL (APP_USR) mas SDK MP desligado. NÃO GERANDO QR MOCK (risco de perda dinheiro). Retorna erro para cliente.');
+        return res.status(503).json({
+          ok: false,
+          erro_critico: 'PRODUCAO_MP_INDISPONIVEL',
+          msg: 'Sistema de Pagamento Pix (Mercado Pago Produção) está temporariamente indisponível. Tente novamente em 2 minutos ou envie comprovante para WhatsApp do suporte.'
+        });
+      }
+      // Se chegou aqui: MODO_HOMOLOGACAO_TESTE (TEST-) ou LOCAL MOCK: Pode gerar QR MOCK para desenvolvedor testar UI, sem dinheiro real
+      console.warn('[MERCADO_PAGO_MOCK_HOMOLOGACAO] Modo MOCK: Mercado Pago (TEST ou LOCAL) nao configurado. Gerando QR simulado PARA TESTE UI APENAS (nao vale dinheiro real).');
       mpPaymentId = 'mock_' + Date.now();
       copiaCola = '00020126360014br.gov.bcb.pix0114' + externalRef + '5204000053039865404' + String(precoBRL).padStart(10,'0') + '5802BR5923AJEITA SERVICOS LTDA 6009SAO PAULO62070503***6304ABCD';
     }
