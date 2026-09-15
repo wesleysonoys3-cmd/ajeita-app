@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ajeita — Marido de Aluguel & Serviços Domésticos</title>
 <meta name="description" content="Encontre profissionais de confiança perto de você. Pedreiros, pintores, eletricistas, diaristas e muito mais.">
+<!-- MERCADO PAGO JS SDK CDN (Oficial MP) + CONSTANTE URL BACKEND PIX AJEITA (Altere essa URL para seu Render backend quando deployar!) -->
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script>
+  // ============== CONFIGURE AQUI A URL DO SEU BACKEND PIX AJEITA (Render deploy!) ================
+  // Exemplo: window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-pix-backend.onrender.com';
+  window.AJEITA_PIX_BACKEND_URL = window.AJEITA_PIX_BACKEND_URL || null;
+  // 👉 Substitua a linha ABAIXO quando tiver o deploy do backend-pix-ajeita no Render:
+  // window.AJEITA_PIX_BACKEND_URL = 'https://COLOQUE-SUA-URL-RENDER-BACKEND.onrender.com';
+  // =================================================================================================
+  window.MERCADO_PAGO_PUBLIC_KEY_AJEITA = window.MERCADO_PAGO_PUBLIC_KEY_AJEITA || null;
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3699,8 +3710,132 @@ function gerarQrCodeVisual(seedStr) {
   return html;
 }
 
-function abrirPixPagamento(pkgKey) {
-  const pkg = configEconomia.pacotes[pkgKey];
+/* ============ (NOVO V11: INTEGRACAO MERCADO PAGO PIX BACKEND) ============ */
+var _pixTransacaoAtual = null;
+var _pixUnsubscribeSnapshot = null;
+var _pixFallbackTimeout = null;
+var _pixIntervalCheckFirebaseDoc = null;
+function pixBackendUrl() {
+  if (window.AJEITA_PIX_BACKEND_URL) return String(window.AJEITA_PIX_BACKEND_URL).replace(/\/+$/, '');
+  // Fallback local se nao tiver deploy Render (voce configurou window.AJEITA_PIX_BACKEND_URL)
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') return 'http://127.0.0.1:7001';
+  return null;
+}
+function pararEscutasPix() {
+  try { if (_pixUnsubscribeSnapshot && typeof _pixUnsubscribeSnapshot === 'function') { _pixUnsubscribeSnapshot(); } } catch(e){}
+  try { if (_pixFallbackTimeout) { clearTimeout(_pixFallbackTimeout); _pixFallbackTimeout = null; } } catch(e){}
+  try { if (_pixIntervalCheckFirebaseDoc) { clearInterval(_pixIntervalCheckFirebaseDoc); _pixIntervalCheckFirebaseDoc = null; } } catch(e){}
+  _pixUnsubscribeSnapshot = null;
+}
+function iniciarEscutaPagamentoPix(externalRef) {
+  pararEscutasPix();
+  var docPath = 'pix_transacoes/' + String(externalRef);
+  var mods = window.__fbModules || null;
+  var fb = window.FbDb || null;
+  if (!mods || !fb || !mods.doc || !mods.onSnapshot || !mods.getDoc) {
+    // Fallback: polling a cada 2s (se SDK Firebase nao carregou)
+    _pixIntervalCheckFirebaseDoc = setInterval(() => {
+      if (!_pixTransacaoAtual) return;
+      (async () => {
+        try {
+          var snap = await mods.getDoc(mods.doc(fb, docPath));
+          if (snap && snap.exists()) {
+            var d = snap.data() || {};
+            if (String(d.status||'').toLowerCase() === 'aprovado') {
+              clearInterval(_pixIntervalCheckFirebaseDoc);
+              _pixIntervalCheckFirebaseDoc = null;
+              await finalizarAprovacaoPixComDados(d);
+            }
+          }
+        } catch(e){}
+      })();
+    }, 2000);
+    return;
+  }
+  try {
+    _pixUnsubscribeSnapshot = mods.onSnapshot(mods.doc(fb, docPath), (snap) => {
+      if (!snap || !snap.exists()) return;
+      var dados = snap.data() || {};
+      var st = String(dados.status || '').toLowerCase();
+      if (st === 'aprovado' || st === 'approved') {
+        pararEscutasPix();
+        finalizarAprovacaoPixComDados(dados);
+      }
+    }, (errSnap) => { console.error('onSnapshot pix erro', errSnap); });
+  } catch(eListen) { console.error(eListen); }
+  // Fallback: polling a cada 2s também (dupla garantia)
+  _pixIntervalCheckFirebaseDoc = setInterval(async () => {
+    if (!_pixTransacaoAtual || !mods || !fb) return;
+    try {
+      var snap = await mods.getDoc(mods.doc(fb, docPath));
+      if (snap && snap.exists()) {
+        var d = snap.data() || {};
+        if (String(d.status||'').toLowerCase() === 'aprovado' || String(d.status||'').toLowerCase() === 'approved') {
+          pararEscutasPix();
+          await finalizarAprovacaoPixComDados(d);
+        }
+      }
+    } catch(e){}
+  }, 2000);
+  // Timeout MAX 8 minutos: usuario pode ter fechado app, avisar.
+  _pixFallbackTimeout = setTimeout(() => {
+    if (estadoPagamentoPix === 'processando' || estadoPagamentoPix === 'qr') {
+      toast('warning','Tempo máximo de espera atingido','Se você já pagou, aguarde 1 minuto e depois clique em "Já efetuei o pagamento" novamente, ou envie o comprovante pelo WhatsApp. As moedas serão liberadas assim que o pagamento for confirmado.');
+    }
+  }, 8*60*1000);
+}
+async function finalizarAprovacaoPixComDados(dadosTransacaoFirestore) {
+  if (!dadosTransacaoFirestore || !profissionalLogado) {
+    // Se profissionalLogado nao existir aqui, forca simular webhook fallback (localStorage atualiza)
+    if (dadosTransacaoFirestore) {
+      var pkg = null;
+      try {
+        if (String(dadosTransacaoFirestore.pacote_key || '').toLowerCase() === 'bronze') pkg = configEconomia.pacotes.bronze;
+        else if (String(dadosTransacaoFirestore.pacote_key || '').toLowerCase() === 'prata') pkg = configEconomia.pacotes.prata;
+        else pkg = configEconomia.pacotes.ouro;
+      } catch(ePkg){ pkg = { qtd:Number(dadosTransacaoFirestore.qtd_moedas||10), nome:'Recarga', preco:Number(dadosTransacaoFirestore.preco_brl||15) }; }
+      pacotePixAtual = pkg;
+      simularAprovacaoWebhook();
+    }
+    return;
+  }
+  // Incrementa saldoMoedas em localStorage e sync local + sync Firebase (se SDK)
+  var qtdMoedas = Number(dadosTransacaoFirestore.qtd_moedas || 0);
+  if (qtdMoedas <= 0) return;
+  var pkgNome = '';
+  try {
+    if (String(dadosTransacaoFirestore.pacote_key || '').toLowerCase() === 'bronze') pkgNome = configEconomia.pacotes.bronze.nome;
+    else if (String(dadosTransacaoFirestore.pacote_key || '').toLowerCase() === 'prata') pkgNome = configEconomia.pacotes.prata.nome;
+    else pkgNome = configEconomia.pacotes.ouro.nome;
+  } catch(e){ pkgNome = ('Recarga ('+qtdMoedas+' moedas)'); }
+  profissionalLogado.saldoMoedas = (profissionalLogado.saldoMoedas || 0) + qtdMoedas;
+  var proIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
+  if (proIdx >= 0) profissionais[proIdx].saldoMoedas = profissionalLogado.saldoMoedas;
+  var objRecarga = {
+    id: 'rec_' + Date.now(), profissionalId: profissionalLogado.id,
+    pacoteKey: String(dadosTransacaoFirestore.pacote_key || 'bronze'),
+    qtd: qtdMoedas, preco: Number(dadosTransacaoFirestore.preco_brl || 0),
+    timestamp: Date.now(), data: new Date().toISOString(),
+    status: 'aprovado',
+    gateway: 'mercado_pago_webhook',
+    external_reference: String(dadosTransacaoFirestore.external_reference || ''),
+    webhookTimestamp: Date.now(),
+    metodoPagamento: 'pix'
+  };
+  recargas.push(objRecarga);
+  salvarTodosGlobaisNoStorage();
+  atualizarHeaderPorSessao();
+  renderLojaPacotes();
+  atualizarCardsEstatisticasPerfil();
+  try { if (document.getElementById('pixAprovadoPacote')) document.getElementById('pixAprovadoPacote').textContent = pkgNome; } catch(e){}
+  try { if (document.getElementById('pixAprovadoMoedas')) document.getElementById('pixAprovadoMoedas').textContent = String(qtdMoedas); } catch(e){}
+  try { if (document.getElementById('pixAprovadoSaldoNovo')) document.getElementById('pixAprovadoSaldoNovo').textContent = String(profissionalLogado.saldoMoedas||0); } catch(e){}
+  renderEstadoModalPix('aprovado');
+}
+
+async function abrirPixPagamento(pkgKey) {
+  pararEscutasPix();
+  var pkg = configEconomia.pacotes[pkgKey];
   if (!pkg) return;
   if (!profissionalLogado) {
     toast('warning','Acesso restrito','Faça login como profissional para comprar moedas.',4500);
@@ -3710,20 +3845,76 @@ function abrirPixPagamento(pkgKey) {
   pacotePixAtual = pkg;
   if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); _intervalPixContagemRegressiva = null; }
   if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); _timeoutPixAutoAprovacao = null; }
+
   estadoPagamentoPix = 'qr';
   document.getElementById('pixValor').textContent = formatarBRL(pkg.preco);
-  const chave = CHAVE_PIX_PROPRIETARIO;
   document.getElementById('pixBeneficiario').textContent = NOME_BENEFICIARIO_PIX;
-  document.getElementById('pixChaveLabel').textContent = chave;
-  document.getElementById('pixChaveCopiaCola').value = chave;
-  document.getElementById('pixQrCode').innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + chave.replace(/\D/g,''));
+  document.getElementById('pixChaveLabel').textContent = CHAVE_PIX_PROPRIETARIO;
+  document.getElementById('pixChaveCopiaCola').value = CHAVE_PIX_PROPRIETARIO;
+  document.getElementById('pixQrCode').innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
+
   const btn = document.getElementById('btnConfirmarPix');
-  if (btn) {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>Já efetuei o pagamento';
-  }
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>Já efetuei o pagamento'; }
   renderEstadoModalPix('qr');
   abrirModal('modal-pix');
+
+  // ============= (NOVO V11: TENTAR GERAR QR REAL MERCADO PAGO PELO BACKEND) ==============
+  const bkUrl = pixBackendUrl();
+  if (!bkUrl) {
+    // Não tem backend configurado. Mantem QR FAKER (modo simulado antigo, mas avisa):
+    toast('info','Modo simulação Pix (sem backend)','Para usar Pix real do Mercado Pago, configure a URL do seu backend na variável window.AJEITA_PIX_BACKEND_URL no início do index.html.');
+    return;
+  }
+  try {
+    // Mostra loadingzinho no QR
+    var qrDiv = document.getElementById('pixQrCode');
+    if (qrDiv) qrDiv.innerHTML = '<div class="flex flex-col items-center gap-3 py-10 px-4"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary-500"></i><div class="font-bold text-primary-700 text-base">Gerando QR Code Pix do Mercado Pago...</div><div class="text-xs text-slate-500">Aguarde 2 segundos</div></div>';
+    var nomeUsuario = profissionalLogado ? (profissionalLogado.nome || 'Profissional Ajeita') : 'Usuario Ajeita';
+    var emailUsuario = profissionalLogado ? (profissionalLogado.emailGoogle || profissionalLogado.email || 'profissional@ajeita.com.br') : 'profissional@ajeita.com.br';
+    var resp = await fetch(bkUrl + '/api/pix/criar-recarga-moedas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pacoteKey: pkgKey,
+        uidUsuario: profissionalLogado ? profissionalLogado.id : ('anom_' + Date.now()),
+        tipoUsuario: 'profissional',
+        nomeUsuario: nomeUsuario,
+        emailUsuario: emailUsuario
+      })
+    });
+    var json = await resp.json();
+    if (!json || !json.ok) {
+      toast('error','Erro ao gerar Pix Mercado Pago', json.msg || 'Tente novamente ou use a chave pix manual (copia e cola abaixo). Use o botão "Já efetuei o pagamento" quando concluir.');
+      if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
+      return;
+    }
+    // Salvamos transacao atual e iniciamos escuta Firestore onSnapshot
+    _pixTransacaoAtual = json;
+    var pixDados = (json.pix || {});
+    if (pixDados.qr_code_base64 && pixDados.qr_code_base64.length > 20) {
+      var img = document.createElement('img');
+      img.alt = 'QR Code Pix Mercado Pago';
+      img.src = pixDados.qr_code_base64;
+      img.style.cssText = 'width:100%;max-width:340px;height:auto;border-radius:24px;';
+      if (qrDiv) { qrDiv.innerHTML = ''; qrDiv.appendChild(img); }
+    } else {
+      if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
+    }
+    if (pixDados.copia_cola && pixDados.copia_cola.length > 10) {
+      document.getElementById('pixChaveCopiaCola').value = pixDados.copia_cola;
+      document.getElementById('pixChaveLabel').textContent = 'Copia e Cola Pix Mercado Pago (automático)';
+    }
+    // Inicia escuta onSnapshot no Firestore
+    iniciarEscutaPagamentoPix(json.external_reference);
+    toast('success','QR Code Pix Mercado Pago gerado!','Escaneie com o app do banco ou copie e cole o código. As moedas serão liberadas AUTOMATICAMENTE (<3 segundos) após pagamento aprovado.');
+  } catch (eBk) {
+    console.error('abrirPixPagamento backend erro:', eBk);
+    toast('error','Falha ao contatar backend Pix','Modo simulação local ativado (QR visual). PIX REAL: verifique se window.AJEITA_PIX_BACKEND_URL está correta e se o backend está no ar.');
+    try {
+      var qrDiv = document.getElementById('pixQrCode');
+      if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
+    } catch(e){}
+  }
 }
 
 function renderEstadoModalPix(estado) {

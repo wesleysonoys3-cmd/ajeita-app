@@ -1,0 +1,21 @@
+{
+  "name": "ajeita-pix-mercado-pago-backend",
+  "version": "1.0.0",
+  "description": "Backend Ajeita Servicos Domesticos - API Pix Mercado Pago + Firebase Admin Firestore (liberacao automatica de moedas).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "mercado-pago": "^2.2.0",
+    "firebase-admin": "^12.5.0",
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
