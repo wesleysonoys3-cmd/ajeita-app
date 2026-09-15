@@ -36,7 +36,7 @@ const dbFirestore = admin.firestore ? admin.firestore() : null;
 const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
 let mercadopago = null;
 try {
-  const { MercadoPagoConfig, Payment, Preference } = require('mercado-pago');
+  const { MercadoPagoConfig, Payment, Preference } = require('mercadopago');
   if (MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.length > 10) {
     const mpClient = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN, options: { timeout: 10000 } });
     mercadopago = { Payment: new Payment(mpClient), Preference: new Preference(mpClient) };
