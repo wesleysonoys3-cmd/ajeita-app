@@ -3755,7 +3755,10 @@ function pararEscutasPix() {
   _pixUnsubscribeSnapshot = null;
 }
 function iniciarEscutaPagamentoPix(externalRef) {
+  if (!externalRef) { console.warn('[iniciarEscutaPagamentoPix] external_ref vazio, abortando.'); return; }
   pararEscutasPix();
+  // Salva ultima external_ref no storage para retentativas (se usuario clicar antes do fetch terminar ainda nao tiver _pixTransacaoAtual)
+  try { if (typeof localStorage !== 'undefined') { localStorage.setItem('ajeita_ult_ext_ref_pix', String(externalRef)); } } catch(eLS){}
   var docPath = 'pix_transacoes/' + String(externalRef);
   var mods = window.__fbModules || null;
   var fb = window.FbDb || null;
@@ -3872,8 +3875,8 @@ function iniciarEscutaPagamentoPix(externalRef) {
         console.warn('[PIX_BACKEND_POLL] erro fetch (rede? cold start?):', ePollBk && ePollBk.message);
       }
     }
-    // 1) Primeira consulta RAPIDA 1.2s apos entrar na tela (usuario ve que NAO esta travado!)
-    setTimeout(_executarPollingBackendPix, 1200);
+    // 1) Primeira consulta RAPIDA 500ms (MEIO SEGUNDO!) apos entrar na tela (usuario ve que NAO esta travado!)
+    setTimeout(_executarPollingBackendPix, 500);
     // 2) Depois polling contínuo a cada 4s
     _pixIntervalBackendPolling = setInterval(_executarPollingBackendPix, 4000);
   }
@@ -4026,6 +4029,7 @@ async function abrirPixPagamento(pkgKey) {
     document.getElementById('pixValor').textContent = formatarBRL(valorVindoBackend);
     // Salvamos transacao atual e iniciamos escuta Firestore onSnapshot
     _pixTransacaoAtual = json;
+    try { if (typeof localStorage !== 'undefined' && json && json.external_reference) { localStorage.setItem('ajeita_ult_ext_ref_pix', String(json.external_reference)); } } catch(eLS){}
     var pixDados = (json.pix || {});
     var pixChaveCopiaColaReal = (pixDados.copia_cola && pixDados.copia_cola.length > 10) ? pixDados.copia_cola : null;
     var tentouImgMp = false;
@@ -4173,14 +4177,40 @@ function confirmarPagamentoPix() {
 
   if (_pixModoAtual === 'automatico_mp') {
     // =================================================================
-    // MODO AUTOMATICO MERCADO PAGO PRODUCAO REAL
-    // - NUNCA aprova por clique em botao!
-    // - Aprovacao SOMENTE por Firestore onSnapshot (webhook real do MP)
+    // MODO AUTOMATICO MERCADO PAGO PRODUCAO REAL (100% SEM CLIQUE OBRIGATORIO!)
+    //   - Aprovacao por: (a) onSnapshot doc Firestore especifico + (b) polling backend 4s + (c) 1 consulta AGORA MESMO abaixo.
+    //   - NUNCA aprova por clique em botao, MAS OBRIGATORIAMENTE INICIA/REINICIA TODAS as escutas AQUI MESMO
+    //     (caso usuario clicou rapido antes do fetch /criar-recarga-moedas terminar e L4084 ainda nao tivesse rodado)
     // =================================================================
-    if (elCont) elCont.textContent = 'AGUARDANDO PAGAMENTO NO BANCO';
+    if (elCont) elCont.textContent = 'INICIANDO VERIFICAÇÃO AUTOMÁTICA...';
+    // (1) Pega external_reference GARANTIDO (3 tentativas: _pixTransacaoAtual > json > localStorage last)
+    const extRefConfirm = String(
+      (_pixTransacaoAtual && (_pixTransacaoAtual.external_reference || (_pixTransacaoAtual.pacote && _pixTransacaoAtual.pacote.external_reference)))
+      || (typeof localStorage !== 'undefined' ? (localStorage.getItem('ajeita_ult_ext_ref_pix') || '') : '')
+      || ''
+    ).trim();
+    console.log('[PIX_CONFIRMAR_AUTO] Modo automático. external_reference detectada = "' + extRefConfirm + '". Iniciando TODAS as escutas agora...');
+    if (extRefConfirm) {
+      // (2) INICIA OBRIGATORIAMENTE escutas onSnapshot + polling 4s (se ja rodava, pararEscutasPix reinicia limpo)
+      try { iniciarEscutaPagamentoPix(extRefConfirm); } catch(eIni){ console.warn('iniciarEscuta falhou, retentando:', eIni); }
+      // (3) 1 CONSULTA BACKEND IMEDIATA (NAO ESPERA 4s NEM 1.2s!) — usuario paga deixa tudo automatico
+      try {
+        const bk = pixBackendUrl();
+        if (bk) {
+          fetch(bk + '/api/pix/consultar-status/' + encodeURIComponent(extRefConfirm), { method:'GET', headers: { 'accept':'application/json' } })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => console.log('[PIX_CONFIRMAR_AUTO] Consulta IMEDIATA status MP: status_mp=' + (d && d.status_mp || '?') + ' aprovado=' + (d && d.aprovado?'SIM':'nao')))
+            .catch(()=>{});
+        }
+      } catch(ePollAgora){}
+      // (4) Atualiza UI para usuario ver que esta rodando mesmo
+      setTimeout(() => {
+        if (elCont) elCont.textContent = 'VERIFICAÇÃO AUTOMÁTICA ATIVA ✅';
+      }, 400);
+    }
     if (elStatusProcesso) elStatusProcesso.innerHTML =
-      '<strong class="text-emerald-800">ℹ️ Pagamento via Mercado Pago Automático:</strong><br>Moedas são liberadas INSTANTANEAMENTE pelo nosso servidor, assim que o banco confirmar a transferência PIX via webhook.<br><br><strong class="text-rose-700">NÃO precisa clicar em nenhum botão, NÃO fecha essa página e NÃO aprova nada manualmente — é só aguardar.</strong>';
-    toast('info','Aguardando pagamento Pix automático...','Pague o QR no app do banco. Moedas aparecem SOZINHAS em até 3s após o banco confirmar. Caso não apareça em 1 minuto, envie comprovante para WhatsApp do suporte.',9000);
+      '<strong class="text-emerald-800">✅ Pagamento via Mercado Pago Automático (VERIFICAÇÃO AUTOMÁTICA LIGADA):</strong><br>Não precisa clicar em nenhum botão! Nosso servidor consulta o Mercado Pago automaticamente a cada 4 segundos e libera as moedas SOZINHO, assim que o banco confirmar.<br><br><strong class="text-sky-700">Você pode fechar essa tela depois — se já pagou, as moedas aparecem assim que voltar/refrescar o app (< 30 segundos).</strong><br><br><em>Se quiser acelerar, use o botão roxo abaixo "Forçar Verificação" (opcional, não obrigatório).</em>';
+    toast('success','✅ Verificação automática ligada!','Moedas aparecem SOZINHAS em até 30 segundos depois do pagamento. Não precisa clicar em nada. Pode fechar essa tela e voltar depois.', 9000);
   } else {
     // =================================================================
     // MODO FALLBACK MANUAL (Chave Pix Wesley telefone)
