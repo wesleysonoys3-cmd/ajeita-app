@@ -179,10 +179,11 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.3-producao-real-500fix-middleware-verify',
+    versao: '1.4-producao-real-fetch-nativo-fallback-code8',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
+    mp_fetch_nativo_habilitado: true,
     mp_webhook_hmac_configurado: !!MP_WEBHOOK_SECRET && MP_WEBHOOK_SECRET.length > 5,
     backend_url_publica: BACKEND_PUBLIC_URL,
     backend_url_https_valida: Boolean(BACKEND_PUBLIC_URL && BACKEND_PUBLIC_URL.toLowerCase().startsWith('https://') && !BACKEND_PUBLIC_URL.includes('localhost') && !BACKEND_PUBLIC_URL.includes('127.0.0.1'))
@@ -281,79 +282,133 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
       });
     }
 
-    if (mercadopago) {
-      try {
-        // ============ (BUG FIX R$0 PRODUCAO MP) NOVO BODY com currency_id BRL, CPF valido, validações ============
-        const cpfValidoAleatorio = _gerarCpfFakeValidoParaMp();
-        const transactionAmountFormatado = Number(Number(precoBRL).toFixed(2));
-        const bodyCreate = {
-          transaction_amount: transactionAmountFormatado,
-          currency_id: 'BRL', // <--- (NOVO) OBRIGATORIO NA V2 SDK MP, sem isso Producao pode zerar
-          payment_method_id: 'pix',
-          payer: {
-            email: emailUsuario,
-            first_name: (nomeUsuario.split(' ')[0] || 'Cliente').substring(0, 30),
-            last_name: (nomeUsuario.split(' ').slice(1).join(' ') || 'Ajeita').substring(0, 60),
-            identification: {
-              type: 'CPF',
-              number: cpfValidoAleatorio // <--- (NOVO BUG FIX) NUNCA MAIS 00000000000 (MP zera valor se CPF for tudo zero anti-fraude)
-            }
-          },
-          external_reference: externalRef,
-          description: (_NomePacote(pacoteKey) + ' - Ajeita Serviços Domésticos').substring(0, 120),
-          notification_url: (BACKEND_PUBLIC_URL + '/webhook-pix'),
-          installments: 1,
-          binary_mode: true // <--- (NOVO) Pagamento Aprovado = Unico status, reduz callbacks desnecessarios
-        };
+    if (mercadopago || MP_ACCESS_TOKEN) {
+      const cpfValidoAleatorio = _gerarCpfFakeValidoParaMp();
+      const transactionAmountFormatado = Number(Number(precoBRL).toFixed(2));
+      const first = (nomeUsuario.split(' ')[0] || 'Cliente').substring(0, 30);
+      const last = (nomeUsuario.split(' ').slice(1).join(' ') || 'Ajeita').substring(0, 60);
+      const emailPayer = emailUsuario || 'cliente@ajeita.com.br';
 
-        // LOG PRODUCAO DETALHADO (para se valor zerar de novo, sabemos exatamente o que enviamos para o MP)
-        console.log(`[MERCADO_PAGO][CRIAR] enviando body → pacote=${pacoteKey} valor=${transactionAmountFormatado} BRL cpf=${cpfValidoAleatorio.substring(0, 6)}*** email=${emailUsuario} external_ref=${externalRef}`);
-        console.log(`[MERCADO_PAGO][CRIAR] BODY COMPLETO = ${JSON.stringify(bodyCreate)}`);
+      // ====== BODY REST OFICIAL (igual documentacao Mercado Pago API v1/payments Pix) ======
+      // Usamos o body MESMO tanto para SDK quanto para FETCH NATIVO (campos oficiais 100% documentados)
+      const bodyCreate = {
+        transaction_amount: transactionAmountFormatado,
+        currency_id: 'BRL',
+        description: (_NomePacote(pacoteKey) + ' - Ajeita Serviços Domésticos').substring(0, 120),
+        payment_method_id: 'pix',
+        payer: {
+          email: emailPayer,
+          first_name: first,
+          last_name: last,
+          identification: { type: 'CPF', number: cpfValidoAleatorio }
+        },
+        external_reference: externalRef,
+        notification_url: (BACKEND_PUBLIC_URL + '/webhook-pix')
+      };
 
-        const created = await mercadopago.Payment.create({
-          body: bodyCreate,
-          requestOptions: { idempotencyKey: externalRef }
-        });
-        if (created && created.response) {
-          const r = created.response;
-          mpPaymentId = String(r.id || '');
-          const valorRetornadoMp = Number(r.transaction_amount || 0);
-          const poi = r.point_of_interaction && r.point_of_interaction.transaction_data ? r.point_of_interaction.transaction_data : null;
-          if (poi) {
-            qrCodeBase64 = poi.qr_code_base64 || null;
-            copiaCola = poi.qr_code || null;
-            ticketUrl = poi.ticket_url || null;
+      console.log(`[MERCADO_PAGO][CRIAR] body OFICIAL v1.4 → pacote=${pacoteKey} valor=${transactionAmountFormatado} BRL email=${emailPayer} cpf_prefix=${cpfValidoAleatorio.substring(0,3)} external_ref=${externalRef}`);
+      console.log(`[MERCADO_PAGO][CRIAR] Body keys: ${Object.keys(bodyCreate).join(',')} | payer keys: ${Object.keys(bodyCreate.payer).join(',')}`);
+
+      let r = null; // resposta padronizada { id, transaction_amount, status, poi:{qr_code_base64, qr_code, ticket_url} }
+      let mp_usou_fetch = false;
+      let erroSdk = null;
+
+      // ====== PASSO 1: TENTA SDK MERCADO PAGO v2 (se carregou) ======
+      if (mercadopago && mercadopago.Payment) {
+        try {
+          const created = await mercadopago.Payment.create({
+            body: bodyCreate,
+            requestOptions: { idempotencyKey: externalRef }
+          });
+          if (created && created.response) {
+            r = created.response;
+            console.log(`[MERCADO_PAGO][CRIAR] SDK v2 funcionou (sem code 8)!`);
+          } else {
+            console.warn('[MERCADO_PAGO][CRIAR] SDK retornou mas sem response. Vamos tentar fetch nativo.');
           }
-          // ============ (BUG FIX R$0 PRODUCAO) DOUBLE CHECK: se MP retornou valor ZERO para a gente, NAO libera esse pagamento (seguranca) ============
-          if (mpPaymentId && valorRetornadoMp === 0) {
-            console.error(`[MERCADO_PAGO][BUG R$0 DETECTADO] Pagamento id=${mpPaymentId} CRIADO MAS MP RETORNOU VALOR R$0. body enviado valor = ${transactionAmountFormatado}. Cancelando pagamento para nao gerar perda dinheiro.`);
-            try { await mercadopago.Payment.cancel({ id: mpPaymentId }); } catch(eCan){ console.warn('[MP] tentativa cancelar pagamento R$0 falhou, ok'); }
-            return res.status(500).json({
-              ok: false,
-              erro_critico: 'MP_RETORNOU_VALOR_ZERO_PRODUCAO',
-              msg: `Mercado Pago retornou valor R$0 em modo produção (pagamento id=${mpPaymentId}). Pagamento cancelado automaticamente. Tente novamente em 2 minutos ou contate suporte.`
-            });
-          }
-          if (dbFirestore) {
-            try {
-              await dbFirestore.collection('pix_transacoes').doc(docTransacaoId).update({
-                mp_payment_id: mpPaymentId,
-                qr_code_base64: qrCodeBase64,
-                copia_cola: copiaCola,
-                ticket_url: ticketUrl,
-                mp_valor_retornado: valorRetornadoMp,
-                mp_cpf_usado: cpfValidoAleatorio.substring(0, 3) + '*****' + cpfValidoAleatorio.substring(cpfValidoAleatorio.length - 2),
-                mp_status_criacao: String(r.status || 'desconhecido')
-              });
-            } catch(eFbUp) { console.error(eFbUp); }
-          }
-          console.log(`[MERCADO_PAGO] Pagamento CRIADO SUCESSO: id=${mpPaymentId} external_ref=${externalRef} valor_mp=${valorRetornadoMp} status=${r.status || 'pendente'}`);
-        } else {
-          console.error(`[MERCADO_PAGO] SDK retornou sem response? created keys=${created ? Object.keys(created) : 'null'}`);
+        } catch (eMpSdk) {
+          erroSdk = eMpSdk;
+          console.warn('[MERCADO_PAGO][CRIAR] SDK v2 falhou. Vamos fazer FALLBACK para FETCH NATIVO API REST (anti-code-8).');
+          try {
+            const causa = eMpSdk && eMpSdk.cause ? eMpSdk.cause : null;
+            if (Array.isArray(causa)) causa.forEach((c, i) => { console.warn(`   [sdk causa ${i}] code=${c.code} desc=${c.description}`); });
+            console.warn(`   sdk e.message=${eMpSdk.message}`);
+          } catch(eL){}
         }
-      } catch (eMpCreate) {
-        console.error('[MERCADO_PAGO] ERRO criar pagamento pix:', JSON.stringify(eMpCreate?.cause || eMpCreate?.message || eMpCreate));
-        return res.status(500).json({ ok: false, msg: 'Erro Mercado Pago ao criar cobranca Pix', err: (eMpCreate.cause || eMpCreate.message) });
+      }
+
+      // ====== PASSO 2: FALLBACK FETCH NATIVO (se SDK falhou / não carregou / não retornou) ======
+      if (!r && MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.length > 10) {
+        mp_usou_fetch = true;
+        try {
+          console.log(`[MERCADO_PAGO][CRIAR_FETCH_NATIVO] POST https://api.mercadopago.com/v1/payments …`);
+          const fetchResp = await fetch('https://api.mercadopago.com/v1/payments', {
+            method: 'POST',
+            headers: {
+              'accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + MP_ACCESS_TOKEN,
+              'X-Idempotency-Key': externalRef
+            },
+            body: JSON.stringify(bodyCreate)
+          });
+          const fetchData = await fetchResp.json();
+          if (!fetchResp.ok) {
+            console.error(`[MERCADO_PAGO][CRIAR_FETCH_NATIVO] HTTP ${fetchResp.status} resposta MP: ${JSON.stringify(fetchData||'').substring(0,1500)}`);
+            throw new Error(`MP REST HTTP ${fetchResp.status}: ${fetchData && (fetchData.message || (Array.isArray(fetchData.cause)?fetchData.cause.map(c=>c.description).join(', '):'erro'))}`);
+          }
+          r = fetchData;
+          console.log(`[MERCADO_PAGO][CRIAR_FETCH_NATIVO] SUCESSO (REST nativo) pagamento id=${r && r.id}`);
+        } catch (eFetchNat) {
+          console.error('[MERCADO_PAGO][CRIAR_FETCH_NATIVO] ERRO:', eFetchNat && eFetchNat.message);
+          if (!erroSdk) erroSdk = eFetchNat;
+          r = null;
+        }
+      }
+
+      if (r) {
+        mpPaymentId = String(r.id || '');
+        const valorRetornadoMp = Number(r.transaction_amount || 0);
+        const poi = r.point_of_interaction && r.point_of_interaction.transaction_data ? r.point_of_interaction.transaction_data : null;
+        if (poi) {
+          qrCodeBase64 = poi.qr_code_base64 || null;
+          copiaCola = poi.qr_code || null;
+          ticketUrl = poi.ticket_url || null;
+        }
+        // ============ (BUG FIX R$0 PRODUCAO) DOUBLE CHECK ============
+        if (mpPaymentId && valorRetornadoMp === 0) {
+          console.error(`[MERCADO_PAGO][BUG R$0 DETECTADO] Pagamento id=${mpPaymentId} CRIADO MAS MP RETORNOU VALOR R$0. Cancelando.`);
+          try {
+            if (mercadopago && mercadopago.Payment) await mercadopago.Payment.cancel({ id: mpPaymentId });
+            else if (MP_ACCESS_TOKEN) await fetch(`https://api.mercadopago.com/v1/payments/${mpPaymentId}`, { method: 'PUT', headers: { 'Authorization': 'Bearer ' + MP_ACCESS_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
+          } catch(eCan){ console.warn('[MP] tentativa cancelar pagamento R$0 falhou, ok'); }
+          return res.status(500).json({
+            ok: false,
+            erro_critico: 'MP_RETORNOU_VALOR_ZERO_PRODUCAO',
+            msg: `Mercado Pago retornou valor R$0 em modo produção (pagamento id=${mpPaymentId}). Pagamento cancelado automaticamente. Tente novamente em 2 minutos ou contate suporte.`
+          });
+        }
+        if (dbFirestore) {
+          try {
+            await dbFirestore.collection('pix_transacoes').doc(docTransacaoId).update({
+              mp_payment_id: mpPaymentId,
+              qr_code_base64: qrCodeBase64,
+              copia_cola: copiaCola,
+              ticket_url: ticketUrl,
+              mp_valor_retornado: valorRetornadoMp,
+              mp_cpf_usado: cpfValidoAleatorio.substring(0, 3) + '*****' + cpfValidoAleatorio.substring(cpfValidoAleatorio.length - 2),
+              mp_status_criacao: String(r.status || 'desconhecido'),
+              mp_modo_criacao: mp_usou_fetch ? 'fetch_nativo_rest_v1' : 'sdk_v2',
+              mp_body_create_json: JSON.stringify(bodyCreate)
+            });
+          } catch(eFbUp) { console.error(eFbUp); }
+        }
+        console.log(`[MERCADO_PAGO] Pagamento CRIADO SUCESSO via ${mp_usou_fetch?'FETCH_NATIVO_REST':'SDK_v2'}: id=${mpPaymentId} external_ref=${externalRef} valor_mp=${valorRetornadoMp} status=${r.status || 'pendente'} qr_len=${(qrCodeBase64||'').length} copiacola_len=${(copiaCola||'').length}`);
+      } else {
+        console.error(`[MERCADO_PAGO] NEM SDK NEM FETCH NATIVO funcionaram. Retorna erro.`);
+        if (erroSdk) {
+          return res.status(500).json({ ok: false, msg: 'Erro Mercado Pago ao criar cobranca Pix (SDK e REST falharam)', err: (erroSdk.cause || erroSdk.message || String(erroSdk)), erro_tentativa: { sdk_ok: !!mercadopago, fetch_nativo_ok: !!MP_ACCESS_TOKEN } });
+        }
       }
     } else {
       // =============== (NOVO V11 PRODUCAO REAL: BLOQUEIO MOCK EM DINHEIRO REAL) ================
@@ -445,14 +500,26 @@ app.post('/webhook-pix', async (req, res) => {
       console.warn(`[WEBHOOK_MP] 🚨 BLOQUEADO POR ASSINATURA INVALIDA: paymentId=${paymentId}. Nao vamos consultar MP nem liberar moedas. BodyStrLen=${String(req.rawBodyStr || '').length}.`);
       return;
     }
-    if (!mercadopago) {
-      console.log('[WEBHOOK_MP] Ignorado: SDK MP nao carregado (ainda). Espera proxima notificacao MP.');
+    if (!mercadopago && !MP_ACCESS_TOKEN) {
+      console.log('[WEBHOOK_MP] Ignorado: SDK MP e MP_ACCESS_TOKEN nao disponiveis. Espera proxima notificacao MP.');
       return;
     }
     // Consultar detalhe do pagamento no MP (obrigatorio para pegar external_reference e status REAL):
-    const detalheResp = await mercadopago.Payment.get({ id: paymentId });
-    if (!detalheResp || !detalheResp.response) return;
-    const pag = detalheResp.response;
+    let pag = null;
+    try {
+      if (mercadopago && mercadopago.Payment) {
+        const detalheResp = await mercadopago.Payment.get({ id: paymentId });
+        if (detalheResp && detalheResp.response) pag = detalheResp.response;
+      }
+      if (!pag && MP_ACCESS_TOKEN) {
+        // Fallback fetch nativo GET /v1/payments/:id
+        const fetchResp = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+          headers: { 'Authorization': 'Bearer ' + MP_ACCESS_TOKEN, 'accept': 'application/json' }
+        });
+        if (fetchResp.ok) pag = await fetchResp.json();
+      }
+    } catch (ePagGet) { console.warn('[WEBHOOK_MP] Erro consultar detalhe pagamento:', ePagGet && ePagGet.message); }
+    if (!pag) { console.warn('[WEBHOOK_MP] Nao consegui detalhe do pagamento id=' + paymentId); return; }
     const statusMP = String(pag.status || '');
     const externalRef = String(pag.external_reference || '');
     const valor = Number(pag.transaction_amount || 0);
