@@ -1114,6 +1114,7 @@ tailwind.config = {
                 <th class="text-center px-6 py-4 font-bold text-slate-600">Avaliação</th>
                 <th class="text-center px-6 py-4 font-bold text-slate-600">Saldo 🪙</th>
                 <th class="text-center px-6 py-4 font-bold text-slate-600">Categorias</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Ações</th>
               </tr>
             </thead>
             <tbody id="adminTabelaProfissionaisBody" class="divide-y divide-slate-100">
@@ -4279,7 +4280,7 @@ function renderAdminDashboard() {
   const tbProBody = document.getElementById('adminTabelaProfissionaisBody');
   if (tbProBody) {
     tbProBody.innerHTML = profissionais.length === 0
-      ? `<tr><td colspan="8" class="px-6 py-10 text-center text-slate-400">Nenhum profissional cadastrado.</td></tr>`
+      ? `<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400">Nenhum profissional cadastrado.</td></tr>`
       : profissionais.map(p => `
       <tr class="hover:bg-slate-50 transition">
         <td class="px-6 py-3.5 font-mono text-[11px] text-slate-500 align-top">${p.id}</td>
@@ -4307,8 +4308,54 @@ function renderAdminDashboard() {
             ${(p.categorias||[]).map(c => `<span class="text-[9px] font-bold bg-primary-50 text-primary-700 px-2 py-0.5 rounded border border-primary-100">${c}</span>`).join('') || '<span class="text-slate-400 text-xs">—</span>'}
           </div>
         </td>
+        <td class="px-6 py-3.5 text-center align-top">
+          <button onclick="excluirProfissionalPorAdmin('${p.id}')" class="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs px-3 py-2 rounded-xl transition" title="Excluir conta do profissional">
+            <i class="fa-solid fa-trash-can"></i> Excluir
+          </button>
+        </td>
       </tr>`).join('');
   }
+}
+function excluirProfissionalPorAdmin(idProfissional) {
+  if (!adminLogado) { toast('error','Acesso negado','Apenas administradores podem excluir contas.'); return; }
+  if (!idProfissional) return;
+  const idx = profissionais.findIndex(p => p.id === idProfissional);
+  if (idx === -1) { toast('warning','Profissional não encontrado','A conta pode ter sido excluída já.'); return; }
+  const p = profissionais[idx];
+  const nomeCurto = (p.nome || 'Profissional').split(' ')[0];
+  const conf = window.confirm(`Tem certeza que quer EXCLUIR a conta do profissional "${p.nome}" (${p.id})?\n\nEssa ação:\n• Remove permanentemente do catálogo e banco de dados\n• Apaga todas as avaliações, histórico e saldo de moedas dele\n• Não pode ser desfeita.\n\nClique em OK para confirmar exclusão.`);
+  if (!conf) return;
+  const eraLogadoAgora = profissionalLogado && profissionalLogado.id === idProfissional;
+  profissionais.splice(idx,1);
+  salvarTodosGlobaisNoStorage();
+  try { if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais(); } catch(e){}
+  try { if (typeof renderMuralPedidos === 'function') renderMuralPedidos(); } catch(e){}
+  try { if (typeof renderAdminDashboard === 'function') renderAdminDashboard(); } catch(e){}
+  if (eraLogadoAgora) {
+    profissionalLogado = null;
+    try { atualizarHeaderPorSessao(); } catch(e){}
+    try { if (typeof renderBottomNav === 'function') renderBottomNav(); } catch(e){}
+    toast('success','Conta excluída',`A conta do ${nomeCurto} foi apagada permanentemente. Como ele estava logado neste dispositivo, o logout foi feito automaticamente.`,7500);
+    navigateTo('view-home');
+  } else {
+    toast('success','✅ Conta de profissional excluída',`A conta de "${p.nome}" (${p.id}) foi apagada permanentemente do catálogo e da plataforma.`,7000);
+  }
+  try {
+    if (typeof window.__fbModules !== 'undefined' && window.__fbModules && window.__fbModules.deleteDoc && typeof FbDb !== 'undefined' && FbDb) {
+      const uidLocal = ('local_' + String(idProfissional));
+      const mods = window.__fbModules;
+      const docRef = mods.doc(FbDb, 'profissionais', uidLocal);
+      setTimeout(function() {
+        try {
+          mods.deleteDoc(docRef).then(function(){
+            DBG('FB','EXCL_OK','Profissional doc '+uidLocal+' deletado do Firestore com sucesso.',{});
+          }).catch(function(errFs){
+            console.error('fbSyncDeleteProfissional erro:',errFs);
+          });
+        } catch(eDel){ console.error(eDel); }
+      }, 200);
+    }
+  } catch(eSyncDel){ console.error(eSyncDel); }
 }
 
 /* =========================================================
