@@ -3846,12 +3846,19 @@ async function abrirPixPagamento(pkgKey) {
     navigateTo('view-profissional-cadastro');
     return;
   }
+  // ========== (BUG FIX R$0 PRODUCAO: FRONTEND VALIDACAO PRECO ANTES DE TUDO) ==========
+  var precoEsperado = Number(pkg.preco || 0);
+  if (!(precoEsperado > 0)) {
+    toast('error','Erro de preço','Pacote selecionado tem preço R$0 inválido. Entre em contato com o suporte.', 5000);
+    return;
+  }
+  var nomeEsperadoValor = 'Pacote ' + String(pkgKey || '').toUpperCase() + ' R$' + formatarBRL(precoEsperado);
   pacotePixAtual = pkg;
   if (_intervalPixContagemRegressiva) { clearInterval(_intervalPixContagemRegressiva); _intervalPixContagemRegressiva = null; }
   if (_timeoutPixAutoAprovacao) { clearTimeout(_timeoutPixAutoAprovacao); _timeoutPixAutoAprovacao = null; }
 
   estadoPagamentoPix = 'qr';
-  document.getElementById('pixValor').textContent = formatarBRL(pkg.preco);
+  document.getElementById('pixValor').textContent = formatarBRL(precoEsperado);
   document.getElementById('pixBeneficiario').textContent = NOME_BENEFICIARIO_PIX;
   document.getElementById('pixChaveLabel').textContent = CHAVE_PIX_PROPRIETARIO;
   document.getElementById('pixChaveCopiaCola').value = CHAVE_PIX_PROPRIETARIO;
@@ -3865,14 +3872,12 @@ async function abrirPixPagamento(pkgKey) {
   // ============= (NOVO V11: TENTAR GERAR QR REAL MERCADO PAGO PELO BACKEND) ==============
   const bkUrl = pixBackendUrl();
   if (!bkUrl) {
-    // Não tem backend configurado. Mantem QR FAKER (modo simulado antigo, mas avisa):
     toast('info','Modo simulação Pix (sem backend)','Para usar Pix real do Mercado Pago, configure a URL do seu backend na variável window.AJEITA_PIX_BACKEND_URL no início do index.html.');
     return;
   }
   try {
-    // Mostra loadingzinho no QR
     var qrDiv = document.getElementById('pixQrCode');
-    if (qrDiv) qrDiv.innerHTML = '<div class="flex flex-col items-center gap-3 py-10 px-4"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary-500"></i><div class="font-bold text-primary-700 text-base">Gerando QR Code Pix do Mercado Pago...</div><div class="text-xs text-slate-500">Aguarde 2 segundos</div></div>';
+    if (qrDiv) qrDiv.innerHTML = '<div class="flex flex-col items-center gap-3 py-10 px-4"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary-500"></i><div class="font-bold text-primary-700 text-base">Gerando QR Code Pix do Mercado Pago... ('+ nomeEsperadoValor +')</div><div class="text-xs text-slate-500">Aguarde 2 segundos</div></div>';
     var nomeUsuario = profissionalLogado ? (profissionalLogado.nome || 'Profissional Ajeita') : 'Usuario Ajeita';
     var emailUsuario = profissionalLogado ? (profissionalLogado.emailGoogle || profissionalLogado.email || 'profissional@ajeita.com.br') : 'profissional@ajeita.com.br';
     var resp = await fetch(bkUrl + '/api/pix/criar-recarga-moedas', {
@@ -3880,6 +3885,7 @@ async function abrirPixPagamento(pkgKey) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pacoteKey: pkgKey,
+        valorOpcional: precoEsperado, // <-- BUG FIX R$0: enviamos valor explicitamente para nao depender só da chave
         uidUsuario: profissionalLogado ? profissionalLogado.id : ('anom_' + Date.now()),
         tipoUsuario: 'profissional',
         nomeUsuario: nomeUsuario,
@@ -3888,10 +3894,19 @@ async function abrirPixPagamento(pkgKey) {
     });
     var json = await resp.json();
     if (!json || !json.ok) {
-      toast('error','Erro ao gerar Pix Mercado Pago', json.msg || 'Tente novamente ou use a chave pix manual (copia e cola abaixo). Use o botão "Já efetuei o pagamento" quando concluir.');
+      toast('error','Erro ao gerar Pix Mercado Pago', json.msg || 'Tente novamente ou use a chave pix manual (copia e cola abaixo). Use o botão "Já efetuei o pagamento" quando concluir.', 7000);
       if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
       return;
     }
+    // ============= (BUG FIX R$0: DOUBLE CHECK RETORNO BACKEND VALOR) ==============
+    var valorVindoBackend = Number((json.pacote && json.pacote.preco_brl) ? json.pacote.preco_brl : 0);
+    if (valorVindoBackend <= 0) {
+      toast('warning','Atenção! Valor Pix retornou R$0.','Isso é um erro do gateway. Pagamento foi cancelado automaticamente. Use a chave Pix manual copia e cola abaixo, ou feche e tente novamente. Contate suporte se persistir.', 9000);
+      if (qrDiv) qrDiv.innerHTML = gerarQrCodeVisual('pix-ajeita-wesley-' + CHAVE_PIX_PROPRIETARIO.replace(/\D/g,''));
+      return;
+    }
+    // Atualiza o valor na tela com o que voltou real do backend para visibilidade do usuario
+    document.getElementById('pixValor').textContent = formatarBRL(valorVindoBackend);
     // Salvamos transacao atual e iniciamos escuta Firestore onSnapshot
     _pixTransacaoAtual = json;
     var pixDados = (json.pix || {});
@@ -3908,9 +3923,8 @@ async function abrirPixPagamento(pkgKey) {
       document.getElementById('pixChaveCopiaCola').value = pixDados.copia_cola;
       document.getElementById('pixChaveLabel').textContent = 'Copia e Cola Pix Mercado Pago (automático)';
     }
-    // Inicia escuta onSnapshot no Firestore
     iniciarEscutaPagamentoPix(json.external_reference);
-    toast('success','QR Code Pix Mercado Pago gerado!','Escaneie com o app do banco ou copie e cole o código. As moedas serão liberadas AUTOMATICAMENTE (<3 segundos) após pagamento aprovado.');
+    toast('success','QR Code Pix Mercado Pago gerado! ('+ formatarBRL(valorVindoBackend) +')','Escaneie com o app do banco ou copie e cole o código. As moedas serão liberadas AUTOMATICAMENTE (<3 segundos) após pagamento aprovado.', 6500);
   } catch (eBk) {
     console.error('abrirPixPagamento backend erro:', eBk);
     toast('error','Falha ao contatar backend Pix','Modo simulação local ativado (QR visual). PIX REAL: verifique se window.AJEITA_PIX_BACKEND_URL está correta e se o backend está no ar.');

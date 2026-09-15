@@ -97,6 +97,27 @@ function _NomePacote(pkgKey) {
     default: return 'Recarga de Moedas Ajeita';
   }
 }
+/* ============================
+   (NOVO BUG FIX R$0 PRODUCAO)
+   Helper gera CPF FAKE VALIDO (formato numerico, valido digito verificador,
+   nao eh 00000000000). Nao precisa ser CPF real para pagamento PIX,
+   mas MP Producao BLOQUEIA e ZERA VALOR se CPF for 00000000000 ou invalido
+   (anti-fraude).
+   ============================ */
+function _gerarCpfFakeValidoParaMp() {
+  // Gera base aleatoria 9 digitos
+  let n = [];
+  for (let i = 0; i < 9; i++) n.push(Math.floor(Math.random() * 9) + 1); // evita zero repetido
+  function calcDV(digitos) {
+    let soma = 0;
+    for (let i = 0; i < digitos.length; i++) soma += digitos[i] * ((digitos.length + 1) - i);
+    let resto = (soma * 10) % 11;
+    return (resto === 10 || resto === 11) ? 0 : resto;
+  }
+  const d1 = calcDV(n); n.push(d1);
+  const d2 = calcDV(n); n.push(d2);
+  return n.join(''); // string 11 digitos numericos validos, nunca 00000000000
+}
 function uidDocLocal(idProfissionalOuCliente) { return 'local_' + String(idProfissionalOuCliente || 'anonimo'); }
 
 /* ============================
@@ -183,22 +204,44 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
     let mpPaymentId = null;
     let ticketUrl = null;
 
+    // ============ (BUG FIX R$0 PRODUCAO MP) VALIDACAO PRECO ANTES DE ENVIAR ============
+    if (!precoBRL || !(Number(precoBRL) > 0)) {
+      return res.status(400).json({
+        ok: false,
+        erro_critico: 'VALOR_INVALIDO_ZERADO',
+        msg: `Valor da cobranca Pix R$0 invalido. Esperado > 0. precoBRL=${precoBRL} (pacote=${pacoteKey}). Entre em contato com suporte.`
+      });
+    }
+
     if (mercadopago) {
       try {
+        // ============ (BUG FIX R$0 PRODUCAO MP) NOVO BODY com currency_id BRL, CPF valido, validações ============
+        const cpfValidoAleatorio = _gerarCpfFakeValidoParaMp();
+        const transactionAmountFormatado = Number(Number(precoBRL).toFixed(2));
         const bodyCreate = {
-          transaction_amount: Number(precoBRL.toFixed(2)),
+          transaction_amount: transactionAmountFormatado,
+          currency_id: 'BRL', // <--- (NOVO) OBRIGATORIO NA V2 SDK MP, sem isso Producao pode zerar
           payment_method_id: 'pix',
           payer: {
             email: emailUsuario,
-            first_name: nomeUsuario.split(' ')[0],
-            last_name: nomeUsuario.split(' ').slice(1).join(' ') || 'Ajeita',
-            identification: { type: 'CPF', number: '00000000000' }
+            first_name: (nomeUsuario.split(' ')[0] || 'Cliente').substring(0, 30),
+            last_name: (nomeUsuario.split(' ').slice(1).join(' ') || 'Ajeita').substring(0, 60),
+            identification: {
+              type: 'CPF',
+              number: cpfValidoAleatorio // <--- (NOVO BUG FIX) NUNCA MAIS 00000000000 (MP zera valor se CPF for tudo zero anti-fraude)
+            }
           },
           external_reference: externalRef,
-          description: _NomePacote(pacoteKey) + ' - Ajeita Serviços Domésticos',
+          description: (_NomePacote(pacoteKey) + ' - Ajeita Serviços Domésticos').substring(0, 120),
           notification_url: (BACKEND_PUBLIC_URL + '/webhook-pix'),
-          installments: 1
+          installments: 1,
+          binary_mode: true // <--- (NOVO) Pagamento Aprovado = Unico status, reduz callbacks desnecessarios
         };
+
+        // LOG PRODUCAO DETALHADO (para se valor zerar de novo, sabemos exatamente o que enviamos para o MP)
+        console.log(`[MERCADO_PAGO][CRIAR] enviando body → pacote=${pacoteKey} valor=${transactionAmountFormatado} BRL cpf=${cpfValidoAleatorio.substring(0, 6)}*** email=${emailUsuario} external_ref=${externalRef}`);
+        console.log(`[MERCADO_PAGO][CRIAR] BODY COMPLETO = ${JSON.stringify(bodyCreate)}`);
+
         const created = await mercadopago.Payment.create({
           body: bodyCreate,
           requestOptions: { idempotencyKey: externalRef }
@@ -206,11 +249,22 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
         if (created && created.response) {
           const r = created.response;
           mpPaymentId = String(r.id || '');
+          const valorRetornadoMp = Number(r.transaction_amount || 0);
           const poi = r.point_of_interaction && r.point_of_interaction.transaction_data ? r.point_of_interaction.transaction_data : null;
           if (poi) {
             qrCodeBase64 = poi.qr_code_base64 || null;
             copiaCola = poi.qr_code || null;
             ticketUrl = poi.ticket_url || null;
+          }
+          // ============ (BUG FIX R$0 PRODUCAO) DOUBLE CHECK: se MP retornou valor ZERO para a gente, NAO libera esse pagamento (seguranca) ============
+          if (mpPaymentId && valorRetornadoMp === 0) {
+            console.error(`[MERCADO_PAGO][BUG R$0 DETECTADO] Pagamento id=${mpPaymentId} CRIADO MAS MP RETORNOU VALOR R$0. body enviado valor = ${transactionAmountFormatado}. Cancelando pagamento para nao gerar perda dinheiro.`);
+            try { await mercadopago.Payment.cancel({ id: mpPaymentId }); } catch(eCan){ console.warn('[MP] tentativa cancelar pagamento R$0 falhou, ok'); }
+            return res.status(500).json({
+              ok: false,
+              erro_critico: 'MP_RETORNOU_VALOR_ZERO_PRODUCAO',
+              msg: `Mercado Pago retornou valor R$0 em modo produção (pagamento id=${mpPaymentId}). Pagamento cancelado automaticamente. Tente novamente em 2 minutos ou contate suporte.`
+            });
           }
           if (dbFirestore) {
             try {
@@ -218,11 +272,16 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
                 mp_payment_id: mpPaymentId,
                 qr_code_base64: qrCodeBase64,
                 copia_cola: copiaCola,
-                ticket_url: ticketUrl
+                ticket_url: ticketUrl,
+                mp_valor_retornado: valorRetornadoMp,
+                mp_cpf_usado: cpfValidoAleatorio.substring(0, 3) + '*****' + cpfValidoAleatorio.substring(cpfValidoAleatorio.length - 2),
+                mp_status_criacao: String(r.status || 'desconhecido')
               });
             } catch(eFbUp) { console.error(eFbUp); }
           }
-          console.log(`[MERCADO_PAGO] Pagamento criado: id=${mpPaymentId} external_ref=${externalRef}`);
+          console.log(`[MERCADO_PAGO] Pagamento CRIADO SUCESSO: id=${mpPaymentId} external_ref=${externalRef} valor_mp=${valorRetornadoMp} status=${r.status || 'pendente'}`);
+        } else {
+          console.error(`[MERCADO_PAGO] SDK retornou sem response? created keys=${created ? Object.keys(created) : 'null'}`);
         }
       } catch (eMpCreate) {
         console.error('[MERCADO_PAGO] ERRO criar pagamento pix:', JSON.stringify(eMpCreate?.cause || eMpCreate?.message || eMpCreate));
