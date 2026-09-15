@@ -9,7 +9,7 @@ const admin = require('firebase-admin');
    - Pegamos FIREBASE_SERVICE_ACCOUNT_JSON de ENV VAR (cole todo JSON bruto,
      exatamente como voce faz no buscabar: $env:FIREBASE_SERVICE_ACCOUNT_JSON=(Get-Content ...json -Raw))
    ============================ */
-const svcAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '{}';
+const svcAccountStr = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '{}').trim();
 let svcAccount;
 try { svcAccount = JSON.parse(svcAccountStr); }
 catch (eParse) {
@@ -35,7 +35,7 @@ const dbFirestore = admin.firestore ? admin.firestore() : null;
    - MODO PRODUCAO SEGURO: se token comeca com APP_USR- (producao real),
      NUNCA cai no modo MOCK (nao gera QR falso com dinheiro real envolvido).
    ============================ */
-const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
+const MP_ACCESS_TOKEN = String(process.env.MERCADO_PAGO_ACCESS_TOKEN || '').trim();
 const MODO_PRODUCAO_REAL = Boolean(MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.startsWith('APP_USR-'));
 const MODO_HOMOLOGACAO_TESTE = Boolean(MP_ACCESS_TOKEN && MP_ACCESS_TOKEN.startsWith('TEST-'));
 let mercadopago = null;
@@ -63,7 +63,7 @@ try {
   }
 }
 
-const BACKEND_PUBLIC_URL = process.env.BACKEND_PUBLIC_URL || 'http://127.0.0.1:7001';
+const BACKEND_PUBLIC_URL = String(process.env.BACKEND_PUBLIC_URL || 'http://127.0.0.1:7001').trim(); // ← (BUG FIX NEWLINE) .trim() remove \n espacos enter se user colou ENV errado no Render
 const PORTA = Number(process.env.PORT || '7001');
 const app = express();
 app.use(cors({ origin: true }));
