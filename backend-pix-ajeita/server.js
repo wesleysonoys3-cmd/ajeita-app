@@ -179,7 +179,7 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.4-producao-real-fetch-nativo-fallback-code8',
+    versao: '1.5-producao-real-remove-currency_id-code8',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -293,7 +293,6 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
       // Usamos o body MESMO tanto para SDK quanto para FETCH NATIVO (campos oficiais 100% documentados)
       const bodyCreate = {
         transaction_amount: transactionAmountFormatado,
-        currency_id: 'BRL',
         description: (_NomePacote(pacoteKey) + ' - Ajeita Serviços Domésticos').substring(0, 120),
         payment_method_id: 'pix',
         payer: {
