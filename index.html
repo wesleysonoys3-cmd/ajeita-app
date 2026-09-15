@@ -33,16 +33,16 @@ tailwind.config = {
       fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
       colors: {
         primary: {
-          50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',
-          500:'#2563eb',600:'#1d4ed8',700:'#1e40af',800:'#1e3a8a',900:'#172554'
+          50:'#faf5ff',100:'#f3e8ff',200:'#e9d5ff',300:'#d8b4fe',400:'#c084fc',
+          500:'#a855f7',600:'#9333ea',700:'#7e22ce',800:'#6b21a8',900:'#581c87'
         },
         accent: {
-          400:'#fbbf24',500:'#f59e0b',600:'#ea580c'
+          400:'#fda4af',500:'#ec4899',600:'#be185d'
         }
       },
       boxShadow: {
-        card: '0 4px 24px -8px rgba(30,64,175,0.15)',
-        pop: '0 20px 60px -20px rgba(30,64,175,0.35)'
+        card: '0 4px 24px -8px rgba(126,34,206,0.18)',
+        pop: '0 20px 60px -20px rgba(126,34,206,0.42)'
       },
       keyframes: {
         fadeIn: { '0%':{opacity:0,transform:'translateY(8px)'}, '100%':{opacity:1,transform:'translateY(0)'} },
@@ -64,20 +64,20 @@ tailwind.config = {
   body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
   .view-section { display: none; }
   .view-section.active { display: block; animation: fadeIn 0.4s ease-out; }
-  .modal-backdrop { background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); }
+  .modal-backdrop { background: rgba(30,10,60,0.55); backdrop-filter: blur(4px); }
   .star-btn { transition: all 0.15s ease; }
   .star-btn:hover { transform: scale(1.15); }
   .galeria-foto { transition: transform 0.3s ease; }
   .galeria-foto:hover { transform: scale(1.04); }
   .qr-dot { width: 100%; height: 100%; border-radius: 2px; }
-  .qr-dot.on { background: #0f172a; }
+  .qr-dot.on { background: #3b0764; }
   .qr-dot.off { background: #ffffff; }
   #toast-container { pointer-events: none; }
   .toast-item { pointer-events: auto; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track { background: #f1f5f9; }
-  ::-webkit-scrollbar-thumb { background: #bfdbfe; border-radius: 8px; }
-  ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+  ::-webkit-scrollbar-track { background: #faf5ff; }
+  ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
@@ -280,9 +280,9 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- 2 B) CTA BOTÃO SOLICITAR ORÇAMENTO (DESTAQUE GRANDE) -->
+    <!-- 2 B) CTA BOTÃO SOLICITAR ORÇAMENTO (DESTAQUE GRANDE — NOVA PALETA ROSA/CORAL) -->
     <div class="mb-7 sm:mb-9">
-      <button onclick="abrirModalSolicitarOrcamento()" class="group w-full relative overflow-hidden rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-gradient-to-r from-accent-500 via-orange-500 to-accent-600 hover:from-accent-600 hover:via-orange-600 hover:to-accent-700 text-white shadow-card hover:shadow-pop transition active:scale-[0.995]">
+      <button onclick="abrirModalSolicitarOrcamento()" class="group w-full relative overflow-hidden rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:from-pink-600 hover:via-rose-600 hover:to-pink-700 text-white shadow-card hover:shadow-pop transition active:scale-[0.995]">
         <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/20 blur-2xl group-hover:bg-white/30 transition"></div>
         <div class="absolute -left-8 -bottom-14 w-44 h-44 rounded-full bg-yellow-300/40 blur-3xl transition"></div>
         <div class="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -296,7 +296,7 @@ tailwind.config = {
               <div class="text-sm sm:text-base text-white/90 font-medium">Publique seu serviço agora e receba propostas dos melhores profissionais!</div>
             </div>
           </div>
-          <div class="flex items-center gap-3 bg-white text-orange-600 font-black px-5 py-3.5 rounded-2xl shadow-xl group-hover:scale-105 group-hover:gap-4 transition self-start sm:self-center">
+          <div class="flex items-center gap-3 bg-white text-pink-600 font-black px-5 py-3.5 rounded-2xl shadow-xl group-hover:scale-105 group-hover:gap-4 transition self-start sm:self-center">
             <span class="text-sm sm:text-base">Começar agora</span>
             <i class="fa-solid fa-arrow-right"></i>
           </div>
@@ -309,69 +309,69 @@ tailwind.config = {
       <div class="flex gap-3 sm:gap-4 min-w-max sm:grid sm:grid-cols-6 sm:gap-4 sm:min-w-0">
         <button onclick="setCategoria('Técnico de Ar Condicionado')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
           <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-screwdriver-wrench text-2xl sm:text-3xl text-yellow-500" style="color: #eab308;"></i>
+            <i class="fa-solid fa-screwdriver-wrench text-2xl sm:text-3xl text-fuchsia-500"></i>
           </div>
           <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Assistência Técnica</span>
         </button>
         <button onclick="setCategoria('Pedreiro')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
           <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-hammer text-2xl sm:text-3xl text-blue-600"></i>
+            <i class="fa-solid fa-hammer text-2xl sm:text-3xl text-purple-600"></i>
           </div>
           <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Reformas e Reparos</span>
         </button>
         <button onclick="abrirModalSolicitarOrcamento()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
           <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-champagne-glasses text-2xl sm:text-3xl text-yellow-500" style="color: #eab308;"></i>
+            <i class="fa-solid fa-champagne-glasses text-2xl sm:text-3xl text-pink-500"></i>
           </div>
           <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Eventos</span>
         </button>
         <button onclick="setCategoria('Diarista')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
           <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-house text-2xl sm:text-3xl text-blue-600"></i>
+            <i class="fa-solid fa-house text-2xl sm:text-3xl text-teal-600"></i>
           </div>
           <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Serviços Domésticos</span>
         </button>
         <button onclick="abrirModalSolicitarOrcamento()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
           <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-trophy text-2xl sm:text-3xl text-yellow-500" style="color: #eab308;"></i>
+            <i class="fa-solid fa-trophy text-2xl sm:text-3xl text-violet-600"></i>
           </div>
           <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Aulas</span>
         </button>
         <button onclick="aplicarFiltrosCatalogo()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
           <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-ellipsis text-2xl sm:text-3xl text-blue-600"></i>
+            <i class="fa-solid fa-ellipsis text-2xl sm:text-3xl text-rose-600"></i>
           </div>
           <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Mais</span>
         </button>
       </div>
     </div>
 
-    <!-- 4) BANNER AMARELO — CADASTRAR COMO PROFISSIONAL (igual referência!) -->
-    <div class="relative overflow-hidden bg-gradient-to-br from-yellow-300 via-yellow-400 to-amber-400 rounded-3xl shadow-lg mb-8 sm:mb-10 group cursor-pointer" onclick="navigateTo('view-profissional-cadastro')">
-      <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-yellow-500/40 mix-blend-multiply blur-2xl group-hover:bg-yellow-500/50 transition"></div>
-      <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-amber-500/30 mix-blend-multiply blur-3xl group-hover:bg-amber-500/40 transition"></div>
+    <!-- 4) BANNER ROXO/VERDE-ÁGUA — CADASTRAR COMO PROFISSIONAL (NOVA PALETA) -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-violet-400 via-purple-500 to-fuchsia-500 rounded-3xl shadow-lg mb-8 sm:mb-10 group cursor-pointer" onclick="navigateTo('view-profissional-cadastro')">
+      <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-pink-400/40 mix-blend-multiply blur-2xl group-hover:bg-pink-400/50 transition"></div>
+      <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-teal-400/30 mix-blend-multiply blur-3xl group-hover:bg-teal-400/40 transition"></div>
       <div class="absolute right-6 top-6 opacity-60 rotate-12 group-hover:rotate-3 transition duration-500">
         <i class="fa-solid fa-user-tie text-white text-7xl"></i>
       </div>
       <div class="relative px-6 sm:px-10 py-8 sm:py-10 text-center sm:text-left">
         <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Cadastrar serviços</h3>
-        <p class="text-base sm:text-lg text-slate-800/80 font-medium mb-5 sm:mb-6 max-w-lg mx-auto sm:mx-0">Confira todas as opções disponíveis para você!</p>
-        <button onclick="event.stopPropagation(); navigateTo('view-profissional-cadastro');" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black text-base sm:text-lg px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition group-hover:-translate-y-0.5">
+        <p class="text-base sm:text-lg text-slate-900/80 font-medium mb-5 sm:mb-6 max-w-lg mx-auto sm:mx-0">Confira todas as opções disponíveis para você!</p>
+        <button onclick="event.stopPropagation(); navigateTo('view-profissional-cadastro');" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-base sm:text-lg px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition group-hover:-translate-y-0.5">
           Seja profissional
         </button>
       </div>
     </div>
 
-    <!-- 5) BANNER AZUL — ACOMPANHE SEUS PEDIDOS (mostra SÓ se logado!) -->
-    <div id="homeBannerAcompanharPedidos" class="hidden relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-blue-800 rounded-3xl shadow-lg mb-8 sm:mb-10 group cursor-pointer" onclick="navigateTo('view-meus-pedidos')">
-      <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-blue-400/30 mix-blend-overlay blur-2xl group-hover:bg-blue-400/40 transition"></div>
-      <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-indigo-500/30 mix-blend-overlay blur-3xl transition"></div>
+    <!-- 5) BANNER VERDE-ÁGUA/ROXO — ACOMPANHE SEUS PEDIDOS (mostra SÓ se logado!) -->
+    <div id="homeBannerAcompanharPedidos" class="hidden relative overflow-hidden bg-gradient-to-br from-teal-500 via-cyan-600 to-emerald-700 rounded-3xl shadow-lg mb-8 sm:mb-10 group cursor-pointer" onclick="navigateTo('view-meus-pedidos')">
+      <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-cyan-300/30 mix-blend-overlay blur-2xl group-hover:bg-cyan-300/40 transition"></div>
+      <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-indigo-400/30 mix-blend-overlay blur-3xl transition"></div>
       <div class="relative flex items-center justify-between px-6 sm:px-10 py-8 sm:py-9">
         <div>
           <h3 class="text-2xl sm:text-3xl font-black text-white mb-1.5">Acessar</h3>
-          <p class="text-base sm:text-lg text-blue-100 font-medium">Acompanhe seus pedidos</p>
+          <p class="text-base sm:text-lg text-emerald-50 font-medium">Acompanhe seus pedidos</p>
         </div>
-        <button onclick="event.stopPropagation(); navigateTo('view-meus-pedidos');" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-blue-500 hover:bg-white text-white hover:text-blue-700 flex items-center justify-center shadow-xl border-4 border-white/20 transition group-hover:scale-110 group-active:scale-95">
+        <button onclick="event.stopPropagation(); navigateTo('view-meus-pedidos');" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-teal-400 hover:bg-white text-white hover:text-teal-700 flex items-center justify-center shadow-xl border-4 border-white/20 transition group-hover:scale-110 group-active:scale-95">
           <i class="fa-solid fa-arrow-right text-xl sm:text-2xl ml-1"></i>
         </button>
       </div>
@@ -630,21 +630,21 @@ tailwind.config = {
           <div>
             <label class="block text-sm font-bold text-slate-700 mb-3">Categorias de Serviço (selecione pelo menos 1) *</label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Pedreiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-trowel text-primary-500"></i>Pedreiro</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Eletricista" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-bolt text-accent-500"></i>Eletricista</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Encanador" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-faucet text-primary-500"></i>Encanador</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Pintor" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-paint-roller text-accent-600"></i>Pintor</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Diarista" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-broom text-primary-500"></i>Diarista</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Marceneiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-hammer text-accent-500"></i>Marceneiro</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Chaveiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-key text-primary-500"></i>Chaveiro</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Técnico de Ar Condicionado" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-snowflake text-primary-400"></i>Ar Condic.</div></label>
+              <label class="cat-check cursor-pointer"><input type="checkbox" value="Pedreiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-trowel text-purple-500"></i>Pedreiro</div></label>
+              <label class="cat-check cursor-pointer"><input type="checkbox" value="Eletricista" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-bolt text-fuchsia-500"></i>Eletricista</div></label>
+              <label class="cat-check cursor-pointer"><input type="checkbox" value="Encanador" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-faucet text-teal-500"></i>Encanador</div></label>
+              <label class="cat-check cursor-pointer"><input type="checkbox" value="Pintor" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-paint-roller text-pink-500"></i>Pintor</div></label>
+              <label class="cat-check cursor-pointer"><input type="checkbox" value="Diarista" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-broom text-violet-500"></i>Diarista</div></label>
+              <label class="cat-check cursor-pointer"><input type="checkbox" value="Marceneiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-hammer text-rose-500"></i>Marceneiro</div></label>
+              <label class="cat-check cursor-pointer"><input type="checkbox" value="Chaveiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-key text-cyan-500"></i>Chaveiro</div></label>
+              <label class="cat-check cursor-pointer"><input type="checkbox" value="Técnico de Ar Condicionado" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-snowflake text-indigo-400"></i>Ar Condic.</div></label>
             </div>
           </div>
-          <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex items-start gap-4">
+          <div class="bg-gradient-to-r from-purple-50 to-fuchsia-50 border border-fuchsia-200 rounded-2xl p-4 sm:p-5 flex items-start gap-4">
             <div class="w-12 h-12 rounded-2xl bg-white shadow flex items-center justify-center text-2xl flex-shrink-0">🪙</div>
             <div class="flex-1">
-              <div class="font-extrabold text-amber-800 text-lg mb-0.5">Bônus de boas-vindas!</div>
-              <div class="text-sm text-amber-700">Ao concluir o cadastro, você recebe automaticamente <strong>10 Moedas</strong> para desbloquear seus primeiros clientes.</div>
+              <div class="font-extrabold text-fuchsia-800 text-lg mb-0.5">Bônus de boas-vindas!</div>
+              <div class="text-sm text-fuchsia-700">Ao concluir o cadastro, você recebe automaticamente <strong>10 Moedas</strong> para desbloquear seus primeiros clientes.</div>
             </div>
           </div>
           <button type="submit" class="w-full bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-extrabold py-4 rounded-xl shadow-card hover:shadow-pop transition text-base flex items-center justify-center gap-2">
