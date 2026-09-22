@@ -424,7 +424,10 @@ function fbSyncProfissionaisRealtime() {
     const q = mods.query(mods.collection(FbDb, 'profissionais'));
     FB_PROFISSIONAIS_UNSUBSCRIBE = mods.onSnapshot(q, function(snapshot) {
       try {
-        if (!snapshot || !snapshot.docs || snapshot.docChanges().length === 0) return;
+        if (!snapshot || !snapshot.docs) return;
+        var totalMudancas = snapshot.docChanges().length;
+        var novoArray = [];
+        var idsVistos = {};
         snapshot.forEach(function(docSnap) {
           if (!docSnap || !docSnap.exists) return;
           var dados = docSnap.data() || {};
@@ -434,11 +437,11 @@ function fbSyncProfissionaisRealtime() {
           else if (docSnap.id && docSnap.id.indexOf('local_') === 0) idProfLocal = docSnap.id.substring(6);
           else idProfLocal = docSnap.id;
           if (!idProfLocal) return;
-          var idxExistente = -1;
-          for (var k=0; k<profissionais.length; k++) if (String(profissionais[k].id) === idProfLocal) { idxExistente = k; break; }
-          if (idxExistente >= 0) profissionais[idxExistente] = Object.assign({}, profissionais[idxExistente], dados, { id: idProfLocal });
-          else profissionais.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
+          if (idsVistos[idProfLocal]) return;
+          idsVistos[idProfLocal] = true;
+          novoArray.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
         });
+        profissionais = novoArray;
         salvarTodosGlobaisNoStorage();
         if (adminLogado) renderAdminDashboard();
       } catch(eInner){}
@@ -640,24 +643,35 @@ function excluirProfissionalPorAdmin(idProfissional) {
   const idx = profissionais.findIndex(p => p.id === idProfissional);
   if (idx === -1) { toast('warning','Profissional não encontrado','A conta pode ter sido excluída já.'); return; }
   const p = profissionais[idx];
+  const nomeCurto = (p.nome || 'Profissional').split(' ')[0];
   const conf = window.confirm(`Tem certeza que quer EXCLUIR a conta do profissional "${p.nome}" (${p.id})?\n\nAção permanente e irreversível.`);
   if (!conf) return;
   profissionais.splice(idx,1);
   salvarTodosGlobaisNoStorage();
-  try {
-    if (typeof window.__fbModules !== 'undefined' && window.__fbModules && window.__fbModules.deleteDoc && typeof FbDb !== 'undefined' && FbDb) {
-      const uidLocal = ('local_' + String(idProfissional));
-      const mods = window.__fbModules;
-      const docRef = mods.doc(FbDb, 'profissionais', uidLocal);
-      mods.deleteDoc(docRef).catch(function(errFs){ console.error('fbSyncDeleteProfissional erro:',errFs); });
-      try {
-        const docRefUid = mods.doc(FbDb, 'profissionais', idProfissional);
-        mods.deleteDoc(docRefUid).catch(function(){});
-      } catch(e2){}
-    }
-  } catch(eFbDel){}
   renderAdminDashboard();
   toast('success','✅ Conta de profissional excluída',`A conta de "${p.nome}" (${p.id}) foi apagada permanentemente.`,7000);
+  (async function _deleteTodasCopiasFirestore() {
+    try {
+      if (typeof window.__fbModules === 'undefined' || !window.__fbModules || !FbDb) return;
+      const mods = window.__fbModules;
+      const idsParaDeletar = new Set();
+      idsParaDeletar.add('local_' + String(idProfissional));
+      idsParaDeletar.add(String(idProfissional));
+      try {
+        const q = mods.query(mods.collection(FbDb, 'profissionais'));
+        const snap = await mods.getDocs(q);
+        snap && snap.forEach(function(ds) {
+          if (!ds || !ds.exists) return;
+          const dd = ds.data() || {};
+          const innerId = dd.id ? String(dd.id) : (dd._id ? String(dd._id) : null);
+          if (innerId && innerId === String(idProfissional)) idsParaDeletar.add(ds.id);
+        });
+      } catch(eScan){}
+      for (const docId of idsParaDeletar) {
+        try { await mods.deleteDoc(mods.doc(FbDb, 'profissionais', docId)); } catch(eDel){}
+      }
+    } catch(eAsyncDel){ console.error('fbDeleteProfissional erro:', eAsyncDel); }
+  })();
 }
 
 /* Boot */

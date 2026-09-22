@@ -1409,8 +1409,9 @@ function fbSyncProfissionaisRealtime() {
       try {
         if (!snapshot || !snapshot.docs) return;
         var totalMudancas = snapshot.docChanges().length;
-        if (totalMudancas === 0) return;
         DBG('FB', '1477', '📡 Firestore onSnapshot disparou! Atualizando '+totalMudancas+' documentos no catálogo localStorage.', { docs: snapshot.size, changes: totalMudancas });
+        var novoArray = [];
+        var idsVistos = {};
         snapshot.forEach(function(docSnap) {
           if (!docSnap || !docSnap.exists) return;
           var dados = docSnap.data() || {};
@@ -1420,11 +1421,11 @@ function fbSyncProfissionaisRealtime() {
           else if (docSnap.id && docSnap.id.indexOf('local_') === 0) idProfLocal = docSnap.id.substring(6);
           else idProfLocal = docSnap.id;
           if (!idProfLocal) return;
-          var idxExistente = -1;
-          for (var k=0; k<profissionais.length; k++) if (String(profissionais[k].id) === idProfLocal) { idxExistente = k; break; }
-          if (idxExistente >= 0) profissionais[idxExistente] = Object.assign({}, profissionais[idxExistente], dados, { id: idProfLocal });
-          else profissionais.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
+          if (idsVistos[idProfLocal]) return;
+          idsVistos[idProfLocal] = true;
+          novoArray.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
         });
+        profissionais = novoArray;
         try {
           salvarTodosGlobaisNoStorage();
           if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais();
