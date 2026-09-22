@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Admin — AjeitaAi</title>
+<meta name="robots" content="noindex,nofollow">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script type="module">
+  window.__firebaseLoaded = false;
+  import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+  import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, setDoc, query, where, orderBy, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+  window.__fbModules = { initializeApp, getApp, getApps, getFirestore, collection, addDoc, getDocs, onSnapshot, doc, setDoc, query, where, orderBy, deleteDoc, serverTimestamp };
+  window.__firebaseLoaded = true;
+  window.dispatchEvent(new CustomEvent('firebase:loaded', { detail: { ok: true } }));
+  try { if (typeof window.__fbInit === 'function') setTimeout(window.__fbInit, 0); } catch(e){}
+</script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+      colors: {
+        primary: {
+          50:'#faf5ff',100:'#f3e8ff',200:'#e9d5ff',300:'#d8b4fe',400:'#c084fc',
+          500:'#a855f7',600:'#9333ea',700:'#7e22ce',800:'#6b21a8',900:'#581c87'
+        },
+        accent: { 400:'#fda4af',500:'#ec4899',600:'#be185d' }
+      },
+      boxShadow: {
+        card: '0 4px 24px -8px rgba(126,34,206,0.18)',
+        pop: '0 20px 60px -20px rgba(126,34,206,0.42)'
+      },
+      keyframes: {
+        fadeIn: { '0%':{opacity:0,transform:'translateY(8px)'}, '100%':{opacity:1,transform:'translateY(0)'} },
+        popIn: { '0%':{opacity:0,transform:'scale(0.95)'}, '100%':{opacity:1,transform:'scale(1)'} },
+        slideRight: { '0%':{opacity:0,transform:'translateX(40px)'}, '100%':{opacity:1,transform:'translateX(0)'} }
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.4s ease-out',
+        popIn: 'popIn 0.25s ease-out',
+        slideRight: 'slideRight 0.35s ease-out'
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  .view-section { display: none; }
+  .view-section.active { display: block; animation: fadeIn 0.4s ease-out; }
+  #toast-container { pointer-events: none; }
+  .toast-item { pointer-events: auto; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #faf5ff; }
+  ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+<div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 max-w-sm w-[calc(100%-2.5rem)] sm:w-auto"></div>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+
+  <!-- VIEW LOGIN -->
+  <section id="view-admin-login" class="view-section active">
+    <div class="max-w-md mx-auto">
+      <div class="text-center mb-8">
+        <a href="./index.html" class="inline-flex items-center gap-2 group mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-card group-hover:shadow-pop transition">
+            <i class="fa-solid fa-screwdriver-wrench text-white text-xl"></i>
+          </div>
+          <div class="text-left">
+            <div class="text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">AjeitaAi</div>
+            <div class="text-xs text-slate-500 font-medium -mt-0.5">Painel Administrativo</div>
+          </div>
+        </a>
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center mx-auto mb-4 shadow-pop">
+          <i class="fa-solid fa-shield-halved text-white text-2xl"></i>
+        </div>
+        <h2 class="text-3xl font-black text-slate-800 mb-2">Acesso Administrativo</h2>
+        <p class="text-slate-500">Entre com suas credenciais de administrador.</p>
+      </div>
+      <form id="formAdminLogin" onsubmit="submitAdminLogin(event)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="bg-white rounded-3xl shadow-card p-8 border border-slate-100 space-y-5">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Login</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input required id="adminLoginInput" type="text" placeholder="Digite seu login" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Senha</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input required id="adminSenhaInput" type="password" placeholder="Digite sua senha" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-700 hover:to-primary-900 text-white font-extrabold py-3.5 rounded-xl shadow-card hover:shadow-pop transition">
+          <i class="fa-solid fa-right-to-bracket mr-2"></i>Entrar no Painel
+        </button>
+        <div class="text-xs text-slate-400 text-center pt-2 border-t border-slate-100 flex flex-col gap-2">
+          <span>Área restrita — apenas administradores autorizados.</span>
+          <a href="./index.html" class="text-primary-600 font-semibold hover:text-primary-700 hover:underline"><i class="fa-solid fa-arrow-left mr-1"></i>Voltar para o site</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- VIEW DASHBOARD -->
+  <section id="view-admin-dashboard" class="view-section">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
+      <div>
+        <a href="./index.html" class="inline-flex items-center gap-2 mb-3 text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fa-solid fa-arrow-left"></i> Voltar para o site</a>
+        <div class="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-bold px-3 py-1.5 rounded-full border border-primary-200 mb-3">
+          <i class="fa-solid fa-gauge-high"></i> DASHBOARD ADMIN
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-2">Painel Administrativo</h2>
+        <p class="text-slate-500">Configure preços, gerencie pedidos e acompanhe métricas da plataforma.</p>
+      </div>
+      <button onclick="fazerLogoutAdmin()" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2.5 rounded-xl border border-slate-200 flex items-center gap-2 transition">
+        <i class="fa-solid fa-right-from-bracket text-sm"></i>
+        Sair do Admin
+      </button>
+    </div>
+
+    <!-- Métricas -->
+    <div id="adminMetricas" class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+      <div class="bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 rounded-3xl p-6 text-white shadow-pop">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">🪙</div>
+          <i class="fa-solid fa-arrow-trend-up text-2xl opacity-80"></i>
+        </div>
+        <div class="text-xs font-bold uppercase tracking-wider text-white/80 mb-1">Total Moedas Vendidas</div>
+        <div id="metricMoedasVendidas" class="text-4xl font-black">0</div>
+        <div class="text-sm text-white/80 mt-2">Soma de todas as recargas confirmadas.</div>
+      </div>
+      <div class="bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 rounded-3xl p-6 text-white shadow-pop">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-credit-card text-xl"></i></div>
+          <i class="fa-solid fa-chart-simple text-2xl opacity-80"></i>
+        </div>
+        <div class="text-xs font-bold uppercase tracking-wider text-white/80 mb-1">Recargas Efetuadas</div>
+        <div id="metricRecargas" class="text-4xl font-black">0</div>
+        <div class="text-sm text-white/80 mt-2">Número total de pagamentos confirmados.</div>
+      </div>
+      <div class="bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-3xl p-6 text-white shadow-pop">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-dollar-sign text-xl"></i></div>
+          <i class="fa-solid fa-sack-dollar text-2xl opacity-80"></i>
+        </div>
+        <div class="text-xs font-bold uppercase tracking-wider text-white/80 mb-1">Receita Estimada</div>
+        <div id="metricReceita" class="text-4xl font-black">R$ 0,00</div>
+        <div class="text-sm text-white/80 mt-2">Soma dos valores de todas as recargas.</div>
+      </div>
+    </div>
+
+    <!-- Configuração da Economia -->
+    <div class="bg-white rounded-3xl shadow-card border border-slate-100 p-6 sm:p-8 mb-8">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center"><i class="fa-solid fa-gear"></i></div>
+        <div>
+          <h3 class="text-xl font-black text-slate-800">Configuração da Economia</h3>
+          <p class="text-sm text-slate-500">Ajuste custos de desbloqueio e preços dos pacotes sem editar código.</p>
+        </div>
+      </div>
+      <div class="space-y-5">
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+            <div>
+              <div class="font-bold text-slate-700">Custo por desbloqueio de lead</div>
+              <div class="text-xs text-slate-500">Quantidade de moedas que o profissional paga para ver cada WhatsApp.</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="number" min="1" id="cfgCustoDesbloqueio" class="w-24 px-4 py-2.5 rounded-xl border border-slate-300 text-center font-bold text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400">
+              <span class="font-bold text-amber-600">🪙 Moedas</span>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div id="cfgPacoteBronze" class="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-200 rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-9 h-9 rounded-lg bg-amber-600 text-white flex items-center justify-center"><i class="fa-solid fa-medal"></i></div>
+              <div class="font-extrabold text-amber-800 text-lg">Pacote Bronze</div>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-amber-900">Qtd Moedas</label><input type="number" min="1" data-pctkey="qtd" data-pkg="bronze" class="w-24 px-3 py-2 rounded-lg border border-amber-300 text-center font-bold text-amber-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-amber-900">Preço (R$)</label><input type="number" min="0" step="0.01" data-pctkey="preco" data-pkg="bronze" class="w-24 px-3 py-2 rounded-lg border border-amber-300 text-center font-bold text-amber-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+            </div>
+          </div>
+          <div id="cfgPacotePrata" class="bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-400 rounded-2xl p-5 relative overflow-hidden">
+            <div class="absolute top-3 right-3 bg-primary-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow">MAIS POPULAR</div>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-9 h-9 rounded-lg bg-slate-500 text-white flex items-center justify-center"><i class="fa-solid fa-medal"></i></div>
+              <div class="font-extrabold text-slate-800 text-lg">Pacote Prata</div>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-slate-800">Qtd Moedas</label><input type="number" min="1" data-pctkey="qtd" data-pkg="prata" class="w-24 px-3 py-2 rounded-lg border border-slate-400 text-center font-bold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"></div>
+              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-slate-800">Preço (R$)</label><input type="number" min="0" step="0.01" data-pctkey="preco" data-pkg="prata" class="w-24 px-3 py-2 rounded-lg border border-slate-400 text-center font-bold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"></div>
+            </div>
+          </div>
+          <div id="cfgPacoteOuro" class="bg-gradient-to-br from-yellow-50 to-amber-100 border-2 border-yellow-300 rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-9 h-9 rounded-lg bg-yellow-500 text-white flex items-center justify-center"><i class="fa-solid fa-crown"></i></div>
+              <div class="font-extrabold text-yellow-800 text-lg">Pacote Ouro</div>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-yellow-900">Qtd Moedas</label><input type="number" min="1" data-pctkey="qtd" data-pkg="ouro" class="w-24 px-3 py-2 rounded-lg border border-yellow-400 text-center font-bold text-yellow-800 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"></div>
+              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-yellow-900">Preço (R$)</label><input type="number" min="0" step="0.01" data-pctkey="preco" data-pkg="ouro" class="w-24 px-3 py-2 rounded-lg border border-yellow-400 text-center font-bold text-yellow-800 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"></div>
+            </div>
+          </div>
+        </div>
+        <button onclick="adminSalvarEconomia()" class="w-full sm:w-auto bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-bold px-8 py-3 rounded-xl shadow-card hover:shadow-pop transition">
+          <i class="fa-solid fa-floppy-disk mr-2"></i>Salvar Configurações
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabelas Gestão -->
+    <div class="bg-white rounded-3xl shadow-card border border-slate-100 overflow-hidden">
+      <div class="px-6 sm:px-8 py-5 border-b border-slate-100">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-black text-slate-800">Gestão de Dados</h3>
+            <p class="text-sm text-slate-500">Acompanhe todos os pedidos e profissionais cadastrados.</p>
+          </div>
+          <div class="inline-flex bg-slate-100 rounded-xl p-1">
+            <button onclick="trocarTabAdmin('pedidos')" id="tabAdminPedidos" class="px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm">📋 Pedidos</button>
+            <button onclick="trocarTabAdmin('profissionais')" id="tabAdminProfissionais" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">👥 Profissionais</button>
+          </div>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <div id="adminTabelaPedidosContainer">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">ID</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Categoria</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Localização</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Descrição</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">WhatsApp</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Desbloq.</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Status</th>
+              </tr>
+            </thead>
+            <tbody id="adminTabelaPedidosBody" class="divide-y divide-slate-100">
+            </tbody>
+          </table>
+        </div>
+        <div id="adminTabelaProfissionaisContainer" class="hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">ID</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Nome</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">WhatsApp</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Cidade</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Bairro</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Avaliação</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Saldo 🪙</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Categorias</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="adminTabelaProfissionaisBody" class="divide-y divide-slate-100">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* =========================
+   ADMIN AjeitaAi — Painel
+   Compartilha localStorage do app principal via mesmo PREFIXO
+   ========================= */
+
+const PREFIXO_STORAGE = 'ajeita_moeda_app_';
+
+const CATEGORIAS_ICONE = {
+  'Pedreiro':'fa-trowel','Eletricista':'fa-bolt','Encanador':'fa-faucet','Pintor':'fa-paint-roller',
+  'Diarista':'fa-broom','Marceneiro':'fa-hammer','Chaveiro':'fa-key','Técnico de Ar Condicionado':'fa-snowflake'
+};
+
+const FOTO_UI_AVATAR = (nome) => `https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=random&color=fff&size=512&bold=true`;
+
+const PROFISSIONAIS_MOCK = [
+  { id:'pro_mock_1', nome:'Carlos Eduardo Lima', whatsapp:'61991234501', cidade:'Brasília (DF)', bairro:'Asa Sul', bairrosAtendimento:['Asa Sul','Sudoeste','Lago Sul','Asa Norte'], taxaHora:80, categorias:['Pedreiro','Marceneiro'], sobre:'Pedreiro com 15 anos de experiência.', mediaAvaliacoes:4.8, qtdAvaliacoes:37, saldoMoedas:8 },
+  { id:'pro_mock_2', nome:'Rosângela Maria Dias', whatsapp:'61991234502', cidade:'Taguatinga', bairro:'Setor O', bairrosAtendimento:['Setor O','Setor Central','QNA','QNB'], taxaHora:50, categorias:['Diarista'], sobre:'Diarista com mais de 10 anos de experiência.', mediaAvaliacoes:4.9, qtdAvaliacoes:62, saldoMoedas:15 },
+  { id:'pro_mock_3', nome:'João Paulo Santos', whatsapp:'61991234503', cidade:'Brasília (DF)', bairro:'Asa Norte', bairrosAtendimento:['Asa Norte','Noroeste','Vicente Pires','Guará'], taxaHora:90, categorias:['Eletricista','Técnico de Ar Condicionado'], sobre:'Eletricista certificado.', mediaAvaliacoes:4.7, qtdAvaliacoes:28, saldoMoedas:4 }
+];
+
+const PEDIDOS_MOCK = [
+  { id:'ped_mock_1', categoria:'Encanador', cidade:'Brasília (DF)', bairro:'Asa Sul', descricao:'Vazamento embaixo da pia da cozinha.', data:new Date(Date.now() - 2*3600*1000).toISOString(), whatsapp:'61998882001', qtdDesbloqueios:0, status:'aberto', finalizado:false, avaliado:false },
+  { id:'ped_mock_2', categoria:'Pintor', cidade:'Samambaia', bairro:'Samambaia Norte', descricao:'Quero pintar 2 quartos e a sala.', data:new Date(Date.now() - 5*3600*1000).toISOString(), whatsapp:'61998882002', qtdDesbloqueios:0, status:'aberto', finalizado:false, avaliado:false }
+];
+
+const CONFIG_ECONOMIA_PADRAO = {
+  custoMoedasPorDesbloqueio: 2,
+  pacotes: {
+    bronze: { key:'bronze', nome:'Pacote Bronze', qtd:10, preco:15.00, cor:'amber', badge:'' },
+    prata:  { key:'prata',  nome:'Pacote Prata',  qtd:25, preco:30.00, cor:'slate', badge:'MAIS POPULAR' },
+    ouro:   { key:'ouro',   nome:'Pacote Ouro',   qtd:60, preco:60.00, cor:'yellow', badge:'' }
+  }
+};
+
+/* Firebase (mesma config do app principal) */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAr98KGfdrPe81NRfUHBmh25Jxf4cCl8dM",
+  authDomain: "ajeita-app-c9fc2.firebaseapp.com",
+  projectId: "ajeita-app-c9fc2",
+  storageBucket: "ajeita-app-c9fc2.firebasestorage.app",
+  messagingSenderId: "709414286122",
+  appId: "1:709414286122:web:238ea0d985907d5acb6453"
+};
+var FbApp = null;
+var FbDb = null;
+var FB_FIRESTORE_DISPONIVEL = false;
+var FB_PROFISSIONAIS_UNSUBSCRIBE = null;
+
+/* Globais de estado */
+let adminLogado = false;
+let profissionais = [];
+let pedidos = [];
+let recargas = [];
+let configEconomia = null;
+
+/* Storage */
+function salvarNoStorage(chave, valor) {
+  try { localStorage.setItem(PREFIXO_STORAGE + chave, JSON.stringify(valor)); return true; }
+  catch(e) { console.error('[Storage Erro]', chave, e); return false; }
+}
+function pegarDoStorage(chave, fallback=null) {
+  try { const str = localStorage.getItem(PREFIXO_STORAGE + chave); if (!str) return fallback; return JSON.parse(str); }
+  catch(e) { console.error('[Storage Get Erro]', chave, e); return fallback; }
+}
+function salvarTodosGlobaisNoStorage() {
+  salvarNoStorage('profissionais', profissionais);
+  salvarNoStorage('pedidos', pedidos);
+  salvarNoStorage('adminLogado', adminLogado);
+  salvarNoStorage('recargas', recargas);
+  salvarNoStorage('configEconomia', configEconomia);
+}
+function carregarDadosStorageBootstrap() {
+  const profissionaisSalvos = pegarDoStorage('profissionais');
+  const pedidosSalvos = pegarDoStorage('pedidos');
+  const cfgSalva = pegarDoStorage('configEconomia');
+  const recargasSalvas = pegarDoStorage('recargas');
+
+  profissionais = Array.isArray(profissionaisSalvos) && profissionaisSalvos.length>0
+    ? profissionaisSalvos : [...PROFISSIONAIS_MOCK];
+  pedidos = Array.isArray(pedidosSalvos) && pedidosSalvos.length>0
+    ? pedidosSalvos : [...PEDIDOS_MOCK];
+  configEconomia = cfgSalva && cfgSalva.pacotes ? cfgSalva : JSON.parse(JSON.stringify(CONFIG_ECONOMIA_PADRAO));
+  recargas = Array.isArray(recargasSalvas) ? recargasSalvas : [];
+  adminLogado = !!pegarDoStorage('adminLogado');
+}
+
+/* Utils */
+function DBG(){}
+function formatarBRL(val) { return 'R$ ' + Number(val||0).toFixed(2).replace('.',','); }
+function formataWhatsAppBrasil(wa) {
+  const n = String(wa||'').replace(/\D/g,'');
+  if (n.length < 10) return wa;
+  if (n.length === 11) return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`;
+  if (n.length === 10) return `(${n.slice(0,2)}) ${n.slice(2,6)}-${n.slice(6)}`;
+  return wa;
+}
+function htmlEstrelas(nota) {
+  const n = Math.max(0, Math.min(5, Number(nota)||0));
+  const cheias = Math.floor(n);
+  const meia = (n - cheias) >= 0.5;
+  const vazias = 5 - cheias - (meia?1:0);
+  let s = '';
+  for (let i=0;i<cheias;i++) s += '<i class="fa-solid fa-star text-amber-400 text-xs"></i>';
+  if (meia) s += '<i class="fa-solid fa-star-half-stroke text-amber-400 text-xs"></i>';
+  for (let i=0;i<vazias;i++) s += '<i class="fa-regular fa-star text-amber-300 text-xs"></i>';
+  return s;
+}
+function imgErroAvatar(el, nome) { el.onerror = null; el.src = FOTO_UI_AVATAR(nome || 'Profissional'); }
+
+/* Firebase init */
+function fbEstaConfigurado() {
+  return (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && typeof FIREBASE_CONFIG.apiKey === 'string' && FIREBASE_CONFIG.apiKey.length >= 20 && !(FIREBASE_CONFIG.apiKey.indexOf('___') === 0));
+}
+function fbInit() {
+  try {
+    if (!window.__firebaseLoaded || !window.__fbModules || !fbEstaConfigurado()) { FB_FIRESTORE_DISPONIVEL = false; return; }
+    const mods = window.__fbModules;
+    if (!FbApp) {
+      const apps = (mods.getApps && typeof mods.getApps === 'function') ? mods.getApps() : [];
+      FbApp = (apps.length > 0) ? mods.getApp() : mods.initializeApp(FIREBASE_CONFIG);
+    }
+    FbDb = mods.getFirestore(FbApp);
+    FB_FIRESTORE_DISPONIVEL = !!FbDb;
+    fbSyncProfissionaisRealtime();
+  } catch (e) {
+    FB_FIRESTORE_DISPONIVEL = false;
+    try { setTimeout(fbInit, 2000); } catch(eDelay){}
+  }
+}
+window.__fbInit = fbInit;
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    if (window.__firebaseLoaded === true) fbInit();
+    else window.addEventListener('firebase:loaded', fbInit, { once: true });
+  } catch(eDCL){}
+});
+
+function fbSyncProfissionaisRealtime() {
+  if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules) return;
+  if (typeof FB_PROFISSIONAIS_UNSUBSCRIBE === 'function') { try { FB_PROFISSIONAIS_UNSUBSCRIBE(); } catch(e){} FB_PROFISSIONAIS_UNSUBSCRIBE = null; }
+  const mods = window.__fbModules;
+  try {
+    const q = mods.query(mods.collection(FbDb, 'profissionais'));
+    FB_PROFISSIONAIS_UNSUBSCRIBE = mods.onSnapshot(q, function(snapshot) {
+      try {
+        if (!snapshot || !snapshot.docs || snapshot.docChanges().length === 0) return;
+        snapshot.forEach(function(docSnap) {
+          if (!docSnap || !docSnap.exists) return;
+          var dados = docSnap.data() || {};
+          var idProfLocal = null;
+          if (dados.id) idProfLocal = String(dados.id);
+          else if (dados._id) idProfLocal = String(dados._id);
+          else if (docSnap.id && docSnap.id.indexOf('local_') === 0) idProfLocal = docSnap.id.substring(6);
+          else idProfLocal = docSnap.id;
+          if (!idProfLocal) return;
+          var idxExistente = -1;
+          for (var k=0; k<profissionais.length; k++) if (String(profissionais[k].id) === idProfLocal) { idxExistente = k; break; }
+          if (idxExistente >= 0) profissionais[idxExistente] = Object.assign({}, profissionais[idxExistente], dados, { id: idProfLocal });
+          else profissionais.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
+        });
+        salvarTodosGlobaisNoStorage();
+        if (adminLogado) renderAdminDashboard();
+      } catch(eInner){}
+    });
+  } catch(eQry){}
+}
+
+/* Toast */
+function toast(tipo, titulo, mensagem, duracao=4200) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const configs = {
+    success: { bg:'from-emerald-500 to-emerald-600', icon:'fa-circle-check' },
+    error:   { bg:'from-rose-500 to-rose-600',      icon:'fa-circle-exclamation' },
+    info:    { bg:'from-primary-500 to-primary-600', icon:'fa-circle-info' },
+    warning: { bg:'from-amber-500 to-amber-600',    icon:'fa-triangle-exclamation' }
+  };
+  const cfg = configs[tipo] || configs.info;
+  const id = 'toast_' + Date.now() + Math.random().toString(36).slice(2,7);
+  const el = document.createElement('div');
+  el.id = id;
+  el.className = `toast-item bg-white rounded-2xl shadow-pop overflow-hidden border border-slate-200 animate-slideRight max-w-sm`;
+  el.innerHTML = `
+    <div class="flex items-stretch">
+      <div class="w-1.5 bg-gradient-to-b ${cfg.bg}"></div>
+      <div class="flex-1 px-4 py-3.5 flex items-start gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${cfg.bg} text-white flex items-center justify-center flex-shrink-0 shadow-sm"><i class="fa-solid ${cfg.icon}"></i></div>
+        <div class="flex-1 min-w-0">
+          <div class="font-black text-slate-800 text-sm mb-0.5">${titulo || ''}</div>
+          <div class="text-xs text-slate-600 break-words leading-relaxed">${mensagem || ''}</div>
+        </div>
+        <button onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-slate-600 flex-shrink-0 p-0.5"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>`;
+  container.appendChild(el);
+  setTimeout(() => {
+    const t = document.getElementById(id);
+    if (t) { t.style.transition='all 0.4s'; t.style.opacity='0'; t.style.transform='translateX(40px)'; setTimeout(()=>t.remove(), 400); }
+  }, duracao);
+}
+
+/* Nav */
+function navigateTo(viewId) {
+  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+  const alvo = document.getElementById(viewId);
+  if (alvo) alvo.classList.add('active');
+  if (viewId === 'view-admin-dashboard') renderAdminDashboard();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* Auth admin */
+function submitAdminLogin(e) {
+  if (e) e.preventDefault();
+  const login = (document.getElementById('adminLoginInput').value||'').trim();
+  const senha = (document.getElementById('adminSenhaInput').value||'').trim();
+  if (login === 'admin10' && senha === 'bolo2024') {
+    adminLogado = true;
+    salvarTodosGlobaisNoStorage();
+    toast('success','✅ Login admin efetuado!','Bem-vindo(a) ao painel administrativo.');
+    document.getElementById('formAdminLogin').reset();
+    navigateTo('view-admin-dashboard');
+  } else {
+    toast('error','Credenciais inválidas','Verifique login e senha e tente novamente.');
+  }
+}
+function fazerLogoutAdmin() {
+  adminLogado = false;
+  salvarTodosGlobaisNoStorage();
+  toast('info','Logout efetuado','Você saiu do painel administrativo.');
+  navigateTo('view-admin-login');
+}
+
+/* Dashboard */
+let _tabAdminAtual = 'pedidos';
+function trocarTabAdmin(tab) {
+  _tabAdminAtual = tab;
+  const btnPed = document.getElementById('tabAdminPedidos');
+  const btnPro = document.getElementById('tabAdminProfissionais');
+  const tbPed = document.getElementById('adminTabelaPedidosContainer');
+  const tbPro = document.getElementById('adminTabelaProfissionaisContainer');
+  if (tab === 'pedidos') {
+    btnPed.className='px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
+    btnPro.className='px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
+    tbPed.classList.remove('hidden'); tbPro.classList.add('hidden');
+  } else {
+    btnPro.className='px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
+    btnPed.className='px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
+    tbPro.classList.remove('hidden'); tbPed.classList.add('hidden');
+  }
+}
+
+function adminSalvarEconomia() {
+  const custo = Number(document.getElementById('cfgCustoDesbloqueio').value);
+  if (!custo || custo < 1) { toast('error','Custo inválido','Informe um custo de desbloqueio maior que zero.'); return; }
+  const pacotes = configEconomia.pacotes;
+  const inputsPkg = document.querySelectorAll('[data-pkg]');
+  inputsPkg.forEach(inp => {
+    const pkg = inp.dataset.pkg;
+    const key = inp.dataset.pctkey;
+    const val = Number(inp.value);
+    if (pacotes[pkg] && !Number.isNaN(val) && val >= 0) {
+      pacotes[pkg][key] = key === 'preco' ? Math.round(val*100)/100 : Math.max(1, Math.round(val));
+    }
+  });
+  configEconomia.custoMoedasPorDesbloqueio = Math.round(custo);
+  salvarTodosGlobaisNoStorage();
+  toast('success','⚙️ Configurações salvas!','Os novos preços e custos já estão ativos na plataforma. Faça refresh no app principal para aplicar.');
+}
+
+function renderAdminDashboard() {
+  if (!adminLogado) { navigateTo('view-admin-login'); return; }
+  if (document.getElementById('cfgCustoDesbloqueio'))
+    document.getElementById('cfgCustoDesbloqueio').value = configEconomia.custoMoedasPorDesbloqueio;
+  Object.entries(configEconomia.pacotes).forEach(([key,pkg])=>{
+    const inpQtd = document.querySelector(`[data-pkg="${key}"][data-pctkey="qtd"]`);
+    const inpPre = document.querySelector(`[data-pkg="${key}"][data-pctkey="preco"]`);
+    if (inpQtd) inpQtd.value = pkg.qtd;
+    if (inpPre) inpPre.value = pkg.preco;
+  });
+
+  const totMoedas = recargas.reduce((s,r)=>s+(r.qtd||0),0);
+  const totRecargas = recargas.length;
+  const totReceita = recargas.reduce((s,r)=>s+(Number(r.preco)||0),0);
+  if (document.getElementById('metricMoedasVendidas')) document.getElementById('metricMoedasVendidas').textContent = totMoedas;
+  if (document.getElementById('metricRecargas')) document.getElementById('metricRecargas').textContent = totRecargas;
+  if (document.getElementById('metricReceita')) document.getElementById('metricReceita').textContent = formatarBRL(totReceita);
+
+  const tbPedBody = document.getElementById('adminTabelaPedidosBody');
+  if (tbPedBody) {
+    tbPedBody.innerHTML = pedidos.length === 0
+      ? `<tr><td colspan="7" class="px-6 py-10 text-center text-slate-400">Nenhum pedido cadastrado ainda.</td></tr>`
+      : pedidos.map(p => `
+      <tr class="hover:bg-slate-50 transition">
+        <td class="px-6 py-3.5 font-mono text-[11px] text-slate-500 align-top">${p.id}</td>
+        <td class="px-6 py-3.5 align-top">
+          <div class="inline-flex items-center gap-1.5 bg-primary-50 text-primary-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-primary-100">
+            <i class="fa-solid ${CATEGORIAS_ICONE[p.categoria]||'fa-clipboard'}"></i>${p.categoria}
+          </div>
+        </td>
+        <td class="px-6 py-3.5 align-top text-slate-700 text-xs"><strong>${p.bairro}</strong><br><span class="text-slate-500">${p.cidade}</span></td>
+        <td class="px-6 py-3.5 align-top text-slate-700 text-xs max-w-xs">${(p.descricao||'').slice(0,120)}${(p.descricao||'').length>120?'...':''}</td>
+        <td class="px-6 py-3.5 align-top text-slate-700 font-mono text-xs">${formataWhatsAppBrasil(p.whatsapp)||'-'}</td>
+        <td class="px-6 py-3.5 text-center align-top">
+          <span class="font-bold ${(p.qtdDesbloqueios||0)>=4?'text-rose-600':'text-primary-600'}">${p.qtdDesbloqueios||0}</span>
+          <span class="text-slate-400">/4</span>
+        </td>
+        <td class="px-6 py-3.5 text-center align-top">
+          ${ p.avaliado ? '<span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">AVALIADO</span>'
+            : p.finalizado ? '<span class="text-[10px] font-bold bg-primary-50 text-primary-700 px-2.5 py-1 rounded-full border border-primary-200">FINALIZADO</span>'
+            : (p.qtdDesbloqueios||0)>=4 ? '<span class="text-[10px] font-bold bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full border border-rose-200">FECHADO</span>'
+            : '<span class="text-[10px] font-bold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">ABERTO</span>'}
+        </td>
+      </tr>`).join('');
+  }
+
+  const tbProBody = document.getElementById('adminTabelaProfissionaisBody');
+  if (tbProBody) {
+    tbProBody.innerHTML = profissionais.length === 0
+      ? `<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400">Nenhum profissional cadastrado.</td></tr>`
+      : profissionais.map(p => `
+      <tr class="hover:bg-slate-50 transition">
+        <td class="px-6 py-3.5 font-mono text-[11px] text-slate-500 align-top">${p.id}</td>
+        <td class="px-6 py-3.5 align-top">
+          <div class="flex items-center gap-2.5">
+            <img src="${p.foto||FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${(p.nome||'').replace(/'/g,"\\'")}')" class="w-9 h-9 rounded-xl object-cover border-2 border-white shadow-sm">
+            <div>
+              <div class="font-bold text-slate-800 text-sm leading-tight">${p.nome}</div>
+              <div class="text-[10px] text-slate-400 leading-tight">${(p.categorias||[]).slice(0,2).join(' • ')}</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-3.5 align-top font-mono text-xs text-slate-700">${formataWhatsAppBrasil(p.whatsapp)||'-'}</td>
+        <td class="px-6 py-3.5 align-top text-xs text-slate-700">${p.cidade||'-'}</td>
+        <td class="px-6 py-3.5 align-top text-xs text-slate-700">${p.bairro||'-'}</td>
+        <td class="px-6 py-3.5 text-center align-top whitespace-nowrap">
+          ${ p.qtdAvaliacoes>0 ? `<span class="inline-flex items-center gap-1">${htmlEstrelas(p.mediaAvaliacoes)} <span class="font-bold text-xs text-slate-700 ml-1">${(p.mediaAvaliacoes||0).toFixed(1)} (${p.qtdAvaliacoes})</span></span>`
+            : '<span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-full">SEM NOTA</span>'}
+        </td>
+        <td class="px-6 py-3.5 text-center align-top">
+          <span class="font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg text-sm border border-amber-100">🪙 ${p.saldoMoedas||0}</span>
+        </td>
+        <td class="px-6 py-3.5 text-center align-top">
+          <div class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
+            ${(p.categorias||[]).map(c => `<span class="text-[9px] font-bold bg-primary-50 text-primary-700 px-2 py-0.5 rounded border border-primary-100">${c}</span>`).join('') || '<span class="text-slate-400 text-xs">—</span>'}
+          </div>
+        </td>
+        <td class="px-6 py-3.5 text-center align-top">
+          <button onclick="excluirProfissionalPorAdmin('${p.id}')" class="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs px-3 py-2 rounded-xl transition" title="Excluir conta do profissional">
+            <i class="fa-solid fa-trash-can"></i> Excluir
+          </button>
+        </td>
+      </tr>`).join('');
+  }
+}
+
+function excluirProfissionalPorAdmin(idProfissional) {
+  if (!adminLogado) { toast('error','Acesso negado','Apenas administradores podem excluir contas.'); return; }
+  if (!idProfissional) return;
+  const idx = profissionais.findIndex(p => p.id === idProfissional);
+  if (idx === -1) { toast('warning','Profissional não encontrado','A conta pode ter sido excluída já.'); return; }
+  const p = profissionais[idx];
+  const conf = window.confirm(`Tem certeza que quer EXCLUIR a conta do profissional "${p.nome}" (${p.id})?\n\nAção permanente e irreversível.`);
+  if (!conf) return;
+  profissionais.splice(idx,1);
+  salvarTodosGlobaisNoStorage();
+  try {
+    if (typeof window.__fbModules !== 'undefined' && window.__fbModules && window.__fbModules.deleteDoc && typeof FbDb !== 'undefined' && FbDb) {
+      const uidLocal = ('local_' + String(idProfissional));
+      const mods = window.__fbModules;
+      const docRef = mods.doc(FbDb, 'profissionais', uidLocal);
+      mods.deleteDoc(docRef).catch(function(errFs){ console.error('fbSyncDeleteProfissional erro:',errFs); });
+      try {
+        const docRefUid = mods.doc(FbDb, 'profissionais', idProfissional);
+        mods.deleteDoc(docRefUid).catch(function(){});
+      } catch(e2){}
+    }
+  } catch(eFbDel){}
+  renderAdminDashboard();
+  toast('success','✅ Conta de profissional excluída',`A conta de "${p.nome}" (${p.id}) foi apagada permanentemente.`,7000);
+}
+
+/* Boot */
+(function boot() {
+  carregarDadosStorageBootstrap();
+  if (adminLogado) { navigateTo('view-admin-dashboard'); }
+  else { navigateTo('view-admin-login'); }
+})();
+</script>
+</body>
+</html>

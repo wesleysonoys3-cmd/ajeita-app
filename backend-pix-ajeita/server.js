@@ -146,7 +146,7 @@ function _NomePacote(pkgKey) {
     case 'bronze': return 'Pacote Bronze (10 moedas)';
     case 'prata': return 'Pacote Prata (25 moedas)';
     case 'ouro': return 'Pacote Ouro (60 moedas)';
-    default: return 'Recarga de Moedas Ajeita';
+    default: return 'Recarga de Moedas AjeitaAi';
   }
 }
 /* ============================
@@ -257,7 +257,7 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
     const qtdMoedas = _QtdMoedasPorPacote(pacoteKey);
     const uidUsuario = String(b.uidUsuario || ('anon_' + Date.now()));
     const tipoUsuario = String(b.tipoUsuario || 'profissional');
-    const nomeUsuario = String(b.nomeUsuario || 'Usuario Ajeita');
+    const nomeUsuario = String(b.nomeUsuario || 'Usuario AjeitaAi');
     const emailUsuario = String(b.emailUsuario || 'cliente@ajeita.com.br');
     const externalRef = 'ajeita_moeda_' + Date.now() + '_' + uidUsuario.substring(0,12);
 
@@ -305,14 +305,14 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
       const cpfValidoAleatorio = _gerarCpfFakeValidoParaMp();
       const transactionAmountFormatado = Number(Number(precoBRL).toFixed(2));
       const first = (nomeUsuario.split(' ')[0] || 'Cliente').substring(0, 30);
-      const last = (nomeUsuario.split(' ').slice(1).join(' ') || 'Ajeita').substring(0, 60);
+      const last = (nomeUsuario.split(' ').slice(1).join(' ') || 'AjeitaAi').substring(0, 60);
       const emailPayer = emailUsuario || 'cliente@ajeita.com.br';
 
       // ====== BODY REST OFICIAL (igual documentacao Mercado Pago API v1/payments Pix) ======
       // Usamos o body MESMO tanto para SDK quanto para FETCH NATIVO (campos oficiais 100% documentados)
       const bodyCreate = {
         transaction_amount: transactionAmountFormatado,
-        description: (_NomePacote(pacoteKey) + ' - Ajeita Serviços Domésticos').substring(0, 120),
+        description: (_NomePacote(pacoteKey) + ' - AjeitaAi Serviços Domésticos').substring(0, 120),
         payment_method_id: 'pix',
         payer: {
           email: emailPayer,
@@ -759,7 +759,7 @@ async function processarAprovacaoPix(payload) {
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
   if (res.headersSent) return;
-  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (Ajeita Pix Backend). Rotas validas: GET / (healthcheck), POST /api/pix/criar-recarga-moedas, POST /api/pix/aprovar-manual-admin, POST /webhook-pix' });
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAi Pix Backend). Rotas validas: GET / (healthcheck), POST /api/pix/criar-recarga-moedas, POST /api/pix/aprovar-manual-admin, POST /webhook-pix' });
 });
 // Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
 app.use((err, req, res, next) => {

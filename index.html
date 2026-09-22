@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ajeita — Marido de Aluguel & Serviços Domésticos</title>
+<title>AjeitaAi — Marido de Aluguel & Serviços Domésticos</title>
 <meta name="description" content="Encontre profissionais de confiança perto de você. Pedreiros, pintores, eletricistas, diaristas e muito mais.">
 <!-- MERCADO PAGO JS SDK CDN (Oficial MP) + CONSTANTE URL BACKEND PIX AJEITA (Altere essa URL para seu Render backend quando deployar!) -->
 <script src="https://sdk.mercadopago.com/js/v2"></script>
@@ -14,7 +14,7 @@
   window.AJEITA_PIX_BACKEND_URL = window.AJEITA_PIX_BACKEND_URL || 'https://ajeita-backend-pix.onrender.com';
   // =================================================================================================
   // ========== (NOVO V11 PRODUCAO REAL) CHAVE PUBLICA MERCADO PAGO PRODUCAO AJEITA =================
-  // Wesley: Pegue no painel MP Developers → Integração "Ajeita Serviços Domésticos" → Credenciais →
+  // Wesley: Pegue no painel MP Developers → Integração "AjeitaAi Serviços Domésticos" → Credenciais →
   // aba PRODUÇÃO → campo PUBLIC KEY (nao eh Access Token! Eh a chave PUBLICA comecando com APP_USR-...)
   // Depois cole o valor AQUI no lugar do null (ex: 'APP_USR-a7a4a5b7-0e00-4e2f-...'):
   window.MERCADO_PAGO_PUBLIC_KEY_AJEITA = window.MERCADO_PAGO_PUBLIC_KEY_AJEITA || null;
@@ -109,7 +109,7 @@ tailwind.config = {
           <i class="fa-solid fa-screwdriver-wrench text-white text-lg lg:text-xl"></i>
         </div>
         <div class="text-left">
-          <div class="text-xl lg:text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">Ajeita</div>
+          <div class="text-xl lg:text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">AjeitaAi</div>
           <div class="text-[10px] lg:text-xs text-slate-500 font-medium -mt-1">Serviços domésticos</div>
         </div>
       </button>
@@ -127,7 +127,6 @@ tailwind.config = {
             <button onclick="abrirModalSolicitarOrcamento()" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 shadow-sm transition"><i class="fa-solid fa-bullhorn mr-1.5"></i>Pedir Serviço</button>
             <button onclick="navigateTo('view-meus-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase mr-1.5 text-accent-500"></i>Meus Pedidos</button>
             <button onclick="navigateTo('view-profissional-cadastro')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie mr-1.5 text-primary-500"></i>Sou Profissional</button>
-            <button onclick="navigateTo('view-admin-login')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-shield-halved mr-1.5 text-primary-700"></i>Admin</button>
           </div>
           <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
           <div id="headerNavGroupProfissional" class="hidden items-center gap-1">
@@ -153,17 +152,6 @@ tailwind.config = {
             <i class="fa-solid fa-plus text-[10px]"></i> Recarregar
           </button>
         </div>
-
-        <!-- BADGE ADMIN LOGADO (se adminLogado) -->
-        <button id="headerBadgeAdminLogado" onclick="navigateTo('view-admin-dashboard')" class="hidden items-center gap-2 bg-gradient-to-r from-primary-50 to-primary-100 border-2 border-primary-300 text-primary-800 rounded-xl px-3 py-1.5 sm:px-4 sm:py-2 shadow-sm hover:shadow transition">
-          <span class="inline-flex w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-primary-600 to-primary-800 rounded-lg items-center justify-center text-white">
-            <i class="fa-solid fa-shield-halved text-xs sm:text-sm"></i>
-          </span>
-          <div class="text-left leading-tight">
-            <div class="text-[11px] sm:text-xs font-black uppercase tracking-wide text-primary-700">Admin Logado</div>
-            <div class="text-[10px] sm:text-[11px] font-bold text-primary-600">Clique p/ abrir Painel</div>
-          </div>
-        </button>
 
         <!-- AVATAR GOOGLE CLIENTE (se logado) -->
         <div id="headerAvatarGoogleContainer" class="hidden items-center gap-2">
@@ -196,13 +184,6 @@ tailwind.config = {
           Cadastrar como Profissional
         </button>
 
-        <!-- ===== BOTAO ADMIN HEADER MOBILE/TABLET (VISIVEL SEMPRE, NAO PRECISA ABRIR MENU) ===== -->
-        <button onclick="navigateTo('view-admin-login')" id="headerBtnAdminMobile" class="flex sm:flex items-center gap-1.5 bg-white hover:bg-primary-50 border-2 border-primary-200 text-primary-800 font-black px-3 py-2 rounded-xl shadow-sm hover:shadow transition text-xs sm:text-sm xl:hidden" title="Acesso Administrador">
-          <i class="fa-solid fa-shield-halved text-primary-700 text-sm sm:text-base"></i>
-          <span class="sm:hidden">Admin</span>
-          <span class="hidden sm:inline">Painel Admin</span>
-        </button>
-
         <!-- Logout (profissional) -->
         <button onclick="fazerLogoutProfissional()" id="headerBtnLogout" class="hidden items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-2 rounded-xl transition text-sm">
           <i class="fa-solid fa-right-from-bracket"></i>
@@ -227,7 +208,7 @@ tailwind.config = {
             <i class="fa-solid fa-screwdriver-wrench text-white"></i>
           </div>
           <div>
-            <div class="font-bold text-primary-700">Ajeita</div>
+            <div class="font-bold text-primary-700">AjeitaAi</div>
             <div class="text-xs text-slate-500">Menu</div>
           </div>
         </div>
@@ -242,7 +223,6 @@ tailwind.config = {
           <button onclick="abrirModalSolicitarOrcamento(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 shadow-sm transition"><i class="fa-solid fa-bullhorn w-5"></i>Pedir Serviço / Orçamento</button>
           <button onclick="navigateTo('view-meus-pedidos'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase text-accent-500 w-5"></i>Meus Pedidos</button>
           <button onclick="navigateTo('view-profissional-cadastro'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie text-primary-500 w-5"></i>Quero ser Profissional</button>
-          <button onclick="navigateTo('view-admin-login'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-shield-halved text-primary-700 w-5"></i>Área do Admin</button>
         </div>
         <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
         <div id="mobileNavGroupProfissional" class="hidden space-y-1.5">
@@ -869,12 +849,9 @@ tailwind.config = {
             <i class="fa-solid fa-screwdriver-wrench text-white text-lg"></i>
           </div>
           <div class="text-left">
-            <div class="text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">Ajeita</div>
+            <div class="text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">AjeitaAi</div>
             <div class="text-[11px] text-slate-500 font-medium -mt-0.5">Serviços domésticos</div>
           </div>
-        </button>
-        <button onclick="navigateTo('view-admin-login')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-primary-50 hover:bg-primary-100 border-2 border-primary-200 text-primary-700 shadow-sm transition" title="Área do Admin">
-          <i class="fa-solid fa-shield-halved text-base"></i>
         </button>
       </div>
 
@@ -892,7 +869,7 @@ tailwind.config = {
       <form id="formLoginGeral" onsubmit="submitLoginGeral(event)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="bg-white rounded-3xl shadow-card border border-slate-100 p-7 space-y-6">
         <!-- Titulo dinamico -->
         <div class="text-center mb-2">
-          <h2 id="loginCardTitulo" class="text-2xl sm:text-3xl font-black text-slate-800 leading-tight">Sua Conta Ajeita (Cliente)</h2>
+          <h2 id="loginCardTitulo" class="text-2xl sm:text-3xl font-black text-slate-800 leading-tight">Sua Conta AjeitaAi (Cliente)</h2>
           <p id="loginCardSubtitulo" class="text-slate-500 text-sm mt-1.5">Acesse para pedir serviços e acompanhar seus pedidos.</p>
         </div>
 
@@ -941,204 +918,6 @@ tailwind.config = {
           </button>
         </div>
       </form>
-    </div>
-  </section>
-
-  <!-- VIEW ADMIN LOGIN -->
-  <section id="view-admin-login" class="view-section">
-    <div class="max-w-md mx-auto">
-      <div class="text-center mb-8">
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center mx-auto mb-4 shadow-pop">
-          <i class="fa-solid fa-shield-halved text-white text-2xl"></i>
-        </div>
-        <h2 class="text-3xl font-black text-slate-800 mb-2">Acesso Administrativo</h2>
-        <p class="text-slate-500">Entre com suas credenciais de administrador.</p>
-      </div>
-      <form id="formAdminLogin" onsubmit="submitAdminLogin(event)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="bg-white rounded-3xl shadow-card p-8 border border-slate-100 space-y-5">
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">Login</label>
-          <div class="relative">
-            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input required id="adminLoginInput" type="text" placeholder="Digite seu login" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">Senha</label>
-          <div class="relative">
-            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input required id="adminSenhaInput" type="password" placeholder="Digite sua senha" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
-          </div>
-        </div>
-        <button type="submit" class="w-full bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-700 hover:to-primary-900 text-white font-extrabold py-3.5 rounded-xl shadow-card hover:shadow-pop transition">
-          <i class="fa-solid fa-right-to-bracket mr-2"></i>Entrar no Painel
-        </button>
-        <div class="text-xs text-slate-400 text-center pt-2 border-t border-slate-100">
-          Área restrita — apenas administradores autorizados.
-        </div>
-      </form>
-    </div>
-  </section>
-
-  <!-- VIEW ADMIN DASHBOARD -->
-  <section id="view-admin-dashboard" class="view-section">
-    <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
-      <div>
-        <div class="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-bold px-3 py-1.5 rounded-full border border-primary-200 mb-3">
-          <i class="fa-solid fa-gauge-high"></i> DASHBOARD ADMIN
-        </div>
-        <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-2">Painel Administrativo</h2>
-        <p class="text-slate-500">Configure preços, gerencie pedidos e acompanhe métricas da plataforma.</p>
-      </div>
-      <button onclick="fazerLogoutAdmin()" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2.5 rounded-xl border border-slate-200 flex items-center gap-2 transition">
-        <i class="fa-solid fa-right-from-bracket text-sm"></i>
-        Sair do Admin
-      </button>
-    </div>
-
-    <!-- Métricas -->
-    <div id="adminMetricas" class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-      <div class="bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 rounded-3xl p-6 text-white shadow-pop">
-        <div class="flex items-start justify-between mb-4">
-          <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">🪙</div>
-          <i class="fa-solid fa-arrow-trend-up text-2xl opacity-80"></i>
-        </div>
-        <div class="text-xs font-bold uppercase tracking-wider text-white/80 mb-1">Total Moedas Vendidas</div>
-        <div id="metricMoedasVendidas" class="text-4xl font-black">0</div>
-        <div class="text-sm text-white/80 mt-2">Soma de todas as recargas confirmadas.</div>
-      </div>
-      <div class="bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 rounded-3xl p-6 text-white shadow-pop">
-        <div class="flex items-start justify-between mb-4">
-          <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-credit-card text-xl"></i></div>
-          <i class="fa-solid fa-chart-simple text-2xl opacity-80"></i>
-        </div>
-        <div class="text-xs font-bold uppercase tracking-wider text-white/80 mb-1">Recargas Efetuadas</div>
-        <div id="metricRecargas" class="text-4xl font-black">0</div>
-        <div class="text-sm text-white/80 mt-2">Número total de pagamentos confirmados.</div>
-      </div>
-      <div class="bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-3xl p-6 text-white shadow-pop">
-        <div class="flex items-start justify-between mb-4">
-          <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-dollar-sign text-xl"></i></div>
-          <i class="fa-solid fa-sack-dollar text-2xl opacity-80"></i>
-        </div>
-        <div class="text-xs font-bold uppercase tracking-wider text-white/80 mb-1">Receita Estimada</div>
-        <div id="metricReceita" class="text-4xl font-black">R$ 0,00</div>
-        <div class="text-sm text-white/80 mt-2">Soma dos valores de todas as recargas.</div>
-      </div>
-    </div>
-
-    <!-- Configuração da Economia -->
-    <div class="bg-white rounded-3xl shadow-card border border-slate-100 p-6 sm:p-8 mb-8">
-      <div class="flex items-center gap-3 mb-6">
-        <div class="w-10 h-10 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center"><i class="fa-solid fa-gear"></i></div>
-        <div>
-          <h3 class="text-xl font-black text-slate-800">Configuração da Economia</h3>
-          <p class="text-sm text-slate-500">Ajuste custos de desbloqueio e preços dos pacotes sem editar código.</p>
-        </div>
-      </div>
-      <div class="space-y-5">
-        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-            <div>
-              <div class="font-bold text-slate-700">Custo por desbloqueio de lead</div>
-              <div class="text-xs text-slate-500">Quantidade de moedas que o profissional paga para ver cada WhatsApp.</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <input type="number" min="1" id="cfgCustoDesbloqueio" class="w-24 px-4 py-2.5 rounded-xl border border-slate-300 text-center font-bold text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400">
-              <span class="font-bold text-amber-600">🪙 Moedas</span>
-            </div>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div id="cfgPacoteBronze" class="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-200 rounded-2xl p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="w-9 h-9 rounded-lg bg-amber-600 text-white flex items-center justify-center"><i class="fa-solid fa-medal"></i></div>
-              <div class="font-extrabold text-amber-800 text-lg">Pacote Bronze</div>
-            </div>
-            <div class="space-y-3">
-              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-amber-900">Qtd Moedas</label><input type="number" min="1" data-pctkey="qtd" data-pkg="bronze" class="w-24 px-3 py-2 rounded-lg border border-amber-300 text-center font-bold text-amber-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
-              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-amber-900">Preço (R$)</label><input type="number" min="0" step="0.01" data-pctkey="preco" data-pkg="bronze" class="w-24 px-3 py-2 rounded-lg border border-amber-300 text-center font-bold text-amber-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
-            </div>
-          </div>
-          <div id="cfgPacotePrata" class="bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-400 rounded-2xl p-5 relative overflow-hidden">
-            <div class="absolute top-3 right-3 bg-primary-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow">MAIS POPULAR</div>
-            <div class="flex items-center gap-2 mb-3">
-              <div class="w-9 h-9 rounded-lg bg-slate-500 text-white flex items-center justify-center"><i class="fa-solid fa-medal"></i></div>
-              <div class="font-extrabold text-slate-800 text-lg">Pacote Prata</div>
-            </div>
-            <div class="space-y-3">
-              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-slate-800">Qtd Moedas</label><input type="number" min="1" data-pctkey="qtd" data-pkg="prata" class="w-24 px-3 py-2 rounded-lg border border-slate-400 text-center font-bold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"></div>
-              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-slate-800">Preço (R$)</label><input type="number" min="0" step="0.01" data-pctkey="preco" data-pkg="prata" class="w-24 px-3 py-2 rounded-lg border border-slate-400 text-center font-bold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"></div>
-            </div>
-          </div>
-          <div id="cfgPacoteOuro" class="bg-gradient-to-br from-yellow-50 to-amber-100 border-2 border-yellow-300 rounded-2xl p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="w-9 h-9 rounded-lg bg-yellow-500 text-white flex items-center justify-center"><i class="fa-solid fa-crown"></i></div>
-              <div class="font-extrabold text-yellow-800 text-lg">Pacote Ouro</div>
-            </div>
-            <div class="space-y-3">
-              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-yellow-900">Qtd Moedas</label><input type="number" min="1" data-pctkey="qtd" data-pkg="ouro" class="w-24 px-3 py-2 rounded-lg border border-yellow-400 text-center font-bold text-yellow-800 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"></div>
-              <div class="flex items-center justify-between"><label class="text-sm font-semibold text-yellow-900">Preço (R$)</label><input type="number" min="0" step="0.01" data-pctkey="preco" data-pkg="ouro" class="w-24 px-3 py-2 rounded-lg border border-yellow-400 text-center font-bold text-yellow-800 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"></div>
-            </div>
-          </div>
-        </div>
-        <button onclick="adminSalvarEconomia()" class="w-full sm:w-auto bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-bold px-8 py-3 rounded-xl shadow-card hover:shadow-pop transition">
-          <i class="fa-solid fa-floppy-disk mr-2"></i>Salvar Configurações
-        </button>
-      </div>
-    </div>
-
-    <!-- Tabelas Gestão -->
-    <div class="bg-white rounded-3xl shadow-card border border-slate-100 overflow-hidden">
-      <div class="px-6 sm:px-8 py-5 border-b border-slate-100">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h3 class="text-xl font-black text-slate-800">Gestão de Dados</h3>
-            <p class="text-sm text-slate-500">Acompanhe todos os pedidos e profissionais cadastrados.</p>
-          </div>
-          <div class="inline-flex bg-slate-100 rounded-xl p-1">
-            <button onclick="trocarTabAdmin('pedidos')" id="tabAdminPedidos" class="px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm">📋 Pedidos</button>
-            <button onclick="trocarTabAdmin('profissionais')" id="tabAdminProfissionais" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">👥 Profissionais</button>
-          </div>
-        </div>
-      </div>
-      <div class="overflow-x-auto">
-        <div id="adminTabelaPedidosContainer">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">ID</th>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">Categoria</th>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">Localização</th>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">Descrição</th>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">WhatsApp</th>
-                <th class="text-center px-6 py-4 font-bold text-slate-600">Desbloq.</th>
-                <th class="text-center px-6 py-4 font-bold text-slate-600">Status</th>
-              </tr>
-            </thead>
-            <tbody id="adminTabelaPedidosBody" class="divide-y divide-slate-100">
-            </tbody>
-          </table>
-        </div>
-        <div id="adminTabelaProfissionaisContainer" class="hidden">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">ID</th>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">Nome</th>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">WhatsApp</th>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">Cidade</th>
-                <th class="text-left px-6 py-4 font-bold text-slate-600">Bairro</th>
-                <th class="text-center px-6 py-4 font-bold text-slate-600">Avaliação</th>
-                <th class="text-center px-6 py-4 font-bold text-slate-600">Saldo 🪙</th>
-                <th class="text-center px-6 py-4 font-bold text-slate-600">Categorias</th>
-                <th class="text-center px-6 py-4 font-bold text-slate-600">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="adminTabelaProfissionaisBody" class="divide-y divide-slate-100">
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -1368,7 +1147,7 @@ tailwind.config = {
           <i class="fa-solid fa-user-tie text-primary-600 mt-0.5 text-lg flex-shrink-0"></i>
           <div>
             <div class="font-black uppercase tracking-wider text-xs text-primary-600 mb-0.5">Beneficiário</div>
-            <div class="font-extrabold" id="pixBeneficiario">Wesley - Ajeita Serviços Domésticos</div>
+            <div class="font-extrabold" id="pixBeneficiario">Wesley - AjeitaAi Serviços Domésticos</div>
             <!-- (NOVO: so mostra esse numero manual se NAO for Mercado Pago automatico — hide por padrao quando MP estiver ativo) -->
             <div id="pixChaveManualAviso" class="text-xs text-primary-700 mt-1 hidden">
               Chave Pix (telefone): <span id="pixChaveLabel" class="font-mono font-bold">+55 61 99251-8130</span>
@@ -1532,7 +1311,7 @@ tailwind.config = {
 // --------------- VARS GLOBAIS ---------------
 const PREFIXO_STORAGE = 'ajeita_moeda_app_';
 const CHAVE_PIX_PROPRIETARIO = '+55 61 99251-8130'; // Telefone formatado com DDI + DDD
-const NOME_BENEFICIARIO_PIX = 'Wesley - Ajeita Serviços Domésticos';
+const NOME_BENEFICIARIO_PIX = 'Wesley - AjeitaAi Serviços Domésticos';
 
 /* =============== FIREBASE CONFIG + INIT (V6 Firestore Sync) ===============
    Documentação: pegar valor EXATO em console.firebase.google.com → Configurações Gerais
@@ -2255,7 +2034,7 @@ function handleGoogleCredentialResponse(resp) {
       });
       // #endregion
       atualizarHeaderPorSessao();
-      toast('success',`Olá, ${dadosGoogle.primeiroNome}!`, `Login Google realizado. Bem-vindo(a) de volta à Ajeita Profissional.`,5500);
+      toast('success',`Olá, ${dadosGoogle.primeiroNome}!`, `Login Google realizado. Bem-vindo(a) de volta à AjeitaAi Profissional.`,5500);
       navigateTo('view-profissional-loja');
       return;
     }
@@ -2382,7 +2161,7 @@ function gsiFallbackRedirectOAuthAbrir() {
     // o parser no DOMContentLoaded (L3875-L3901) processa tudo automaticamente.
     // É o mesmo UX de Instagram/Facebook no mobile. NÃO EXISTE BLOQUEIO PARA REDIRECT.
     // ============================================================
-    toast('info','Redirecionando para o Google...','Você será levado para a página de login do Google. Após fazer login, voltará automaticamente para o Ajeita logado.',5500);
+    toast('info','Redirecionando para o Google...','Você será levado para a página de login do Google. Após fazer login, voltará automaticamente para o AjeitaAi logado.',5500);
     setTimeout(function(){
       try {
         window.location.assign(authUrl);  // ← REDIRECIONA MESMA PÁGINA = 0 bloqueio mobile
@@ -2728,7 +2507,7 @@ function trocarAbaLogin(aba) {
   if (_loginAbaAtual === 'cliente') {
     btnCliente.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition bg-white shadow-sm text-primary-700';
     btnProf.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition text-slate-500 hover:text-slate-700';
-    if (titulo) titulo.textContent = 'Sua Conta Ajeita (Cliente)';
+    if (titulo) titulo.textContent = 'Sua Conta AjeitaAi (Cliente)';
     if (sub) sub.textContent = 'Acesse para pedir serviços e acompanhar seus pedidos.';
     if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-home')");
     if (btnCadLabel) btnCadLabel.textContent = 'Começar a pedir serviços (Cliente)';
@@ -2736,7 +2515,7 @@ function trocarAbaLogin(aba) {
   } else {
     btnProf.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition bg-white shadow-sm text-primary-700';
     btnCliente.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition text-slate-500 hover:text-slate-700';
-    if (titulo) titulo.textContent = 'Sua Conta Ajeita (Profissionais)';
+    if (titulo) titulo.textContent = 'Sua Conta AjeitaAi (Profissionais)';
     if (sub) sub.textContent = 'Acesse para ver pedidos, histórico e sua carteira de moedas.';
     if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-profissional-cadastro')");
     if (btnCadLabel) btnCadLabel.textContent = 'Cadastrar-se como Profissional';
@@ -2747,7 +2526,7 @@ function trocarAbaLogin(aba) {
 }
 function submitLoginGeral(e) {
   if (e) e.preventDefault();
-  toast('info','Login com senha','Atualmente o login por e-mail e senha estará disponível em breve. Use o botão "Continuar com o Google" para entrar SEM SENHA na sua conta Ajeita.','5500');
+  toast('info','Login com senha','Atualmente o login por e-mail e senha estará disponível em breve. Use o botão "Continuar com o Google" para entrar SEM SENHA na sua conta AjeitaAi.','5500');
 }
 function renderLoginDedicado() {
   // garante que a view-login abra com o estado correto e botao google preenchido
@@ -2776,12 +2555,6 @@ function navigateTo(viewId) {
     navigateTo('view-profissional-cadastro');
     return;
   }
-  if (viewId === 'view-admin-dashboard' && !adminLogado) {
-    toast('error','Acesso negado','Faça login como administrador primeiro.');
-    navigateTo('view-admin-login');
-    return;
-  }
-
   document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
   const alvo = document.getElementById(viewId);
   if (alvo) alvo.classList.add('active');
@@ -2789,7 +2562,6 @@ function navigateTo(viewId) {
   // ===== RE-RENDER VIEWS ESPECÍFICAS =====
   if (viewId === 'view-profissional-loja') renderLojaPacotes();
   if (viewId === 'view-meus-pedidos') renderMeusPedidos();
-  if (viewId === 'view-admin-dashboard') renderAdminDashboard();
   if (viewId === 'view-login') renderLoginDedicado();
   if (viewId === 'view-profissional-perfil') {
     setTimeout(() => {
@@ -2903,36 +2675,6 @@ function renderBottomNav(viewIdAtual) {
     viewAtiva = ativa ? ativa.id : 'view-home';
   }
 
-  // ===== CASO 0: ADMIN LOGADO (PRIORIDADE MÁXIMA: mostra atalho Painel Admin + Sair) =====
-  if (adminLogado) {
-    const abaAtiva = (id) => id === viewAtiva ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600';
-    const ativaBg = (id) => id === viewAtiva ? 'bg-blue-50' : 'bg-transparent';
-    nav.innerHTML = `
-      <div class="grid grid-cols-5 gap-0.5 px-1.5 sm:px-2">
-        <button onclick="navigateTo('view-home')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-home')} ${abaAtiva('view-home')}">
-          <i class="fa-solid fa-house text-xl sm:text-2xl ${viewAtiva==='view-home' ? 'text-blue-600' : ''}"></i>
-          <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Início</span>
-        </button>
-        <button onclick="navigateTo('view-admin-dashboard')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-admin-dashboard')} ${abaAtiva('view-admin-dashboard')}">
-          <i class="fa-solid fa-shield-halved text-xl sm:text-2xl text-primary-700 ${viewAtiva==='view-admin-dashboard' ? 'text-primary-800' : ''}"></i>
-          <span class="text-[10px] sm:text-[11px] font-black tracking-tight text-primary-700">Admin</span>
-        </button>
-        <button onclick="navigateTo('view-admin-dashboard')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-admin-dashboard')} ${abaAtiva('view-admin-dashboard')}">
-          <i class="fa-solid fa-chart-column text-xl sm:text-2xl text-primary-700 ${viewAtiva==='view-admin-dashboard' ? 'text-primary-800' : ''}"></i>
-          <span class="text-[10px] sm:text-[11px] font-black tracking-tight text-primary-700">Painel</span>
-        </button>
-        <button onclick="navigateTo('view-profissional-cadastro')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition text-slate-400 hover:text-slate-600">
-          <i class="fa-solid fa-user-plus text-xl sm:text-2xl"></i>
-          <span class="text-[10px] sm:text-[11px] font-black tracking-tight">+ Prof</span>
-        </button>
-        <button onclick="fazerLogoutAdmin()" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition text-rose-500 hover:text-rose-600">
-          <i class="fa-solid fa-right-from-bracket text-xl sm:text-2xl"></i>
-          <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Sair</span>
-        </button>
-      </div>`;
-    return;
-  }
-
   // ===== CASO 1: PROFISSIONAL LOGADO =====
   if (profissionalLogado) {
     const abaAtiva = (id) => id === viewAtiva ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600';
@@ -2990,9 +2732,9 @@ function renderBottomNav(viewIdAtual) {
         <i class="fa-solid fa-briefcase text-xl sm:text-2xl ${viewAtiva==='view-meus-pedidos' ? 'text-blue-600' : ''}"></i>
         <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Pedidos</span>
       </button>
-      <button onclick="navigateTo('view-admin-login')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition ${ativaBg('view-admin-login')} ${viewAtiva==='view-admin-login' ? 'text-primary-700' : 'text-primary-500 hover:text-primary-700'}">
-        <i class="fa-solid fa-shield-halved text-xl sm:text-2xl"></i>
-        <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Admin</span>
+      <button onclick="navigateTo('view-profissional-cadastro')" class="flex flex-col items-center gap-1 py-2 sm:py-2.5 rounded-2xl transition text-slate-400 hover:text-slate-600">
+        <i class="fa-solid fa-user-tie text-xl sm:text-2xl"></i>
+        <span class="text-[10px] sm:text-[11px] font-black tracking-tight">Prof</span>
       </button>
       ${aba5}
     </div>`;
@@ -3036,15 +2778,12 @@ function atualizarHeaderPorSessao() {
   const mobileRecarga = document.getElementById('mobileBtnRecarga');
   const mobileCadastro = document.getElementById('mobileBtnCadastrar');
   const mobileLogout = document.getElementById('mobileBtnLogout');
-  const headerBadgeAdmin = document.getElementById('headerBadgeAdminLogado');
   // Novos containers Google
   const avatarContainer = document.getElementById('headerAvatarGoogleContainer');
   const btnEntrarGoogle = document.getElementById('headerBtnEntrarGoogle');
   const avatarFoto = document.getElementById('headerAvatarFotoGoogle');
   const avatarNome = document.getElementById('headerAvatarNomeGoogle');
   const mobileBtnLogoutGoogleCliente = document.getElementById('mobileBtnLogoutGoogleCliente');
-  // NOVO V6d e V7 (Login Dedicado Unificado)
-  const btnAdminMobile = document.getElementById('headerBtnAdminMobile');
   const mobileBtnEntrarUnificado = document.getElementById('mobileBtnEntrarUnificado');
   // ===== V3: GRUPOS DE NAVEGAÇÃO SEPARADOS CLIENTE vs PROFISSIONAL =====
   const headerGroupCliente = document.getElementById('headerNavGroupCliente');
@@ -3053,8 +2792,6 @@ function atualizarHeaderPorSessao() {
   const mobileGroupProfissional = document.getElementById('mobileNavGroupProfissional');
 
   // ====== (NOVO V7: REGRAS FIXAS HEADER) =====
-  // Usuário pediu: REMOVER botao Entrar Google e Cadastrar Profissional do HEADER GLOBAL.
-  // Só aparecem no Menu Hambúrguer (mobile) ou na Tela Login dedicada.
   if (btnCadastrar) { btnCadastrar.classList.add('hidden'); btnCadastrar.classList.remove('sm:flex'); }
   if (btnEntrarGoogle) { btnEntrarGoogle.classList.add('hidden'); btnEntrarGoogle.classList.remove('lg:flex'); }
 
@@ -3064,11 +2801,6 @@ function atualizarHeaderPorSessao() {
     if (headerGroupProfissional) { headerGroupProfissional.classList.remove('hidden'); headerGroupProfissional.classList.add('flex'); }
     if (mobileGroupCliente) mobileGroupCliente.classList.add('hidden');
     if (mobileGroupProfissional) mobileGroupProfissional.classList.remove('hidden');
-  } else if (adminLogado) {
-    if (headerGroupCliente) { headerGroupCliente.classList.remove('hidden'); headerGroupCliente.classList.add('flex'); }
-    if (headerGroupProfissional) { headerGroupProfissional.classList.add('hidden'); headerGroupProfissional.classList.remove('flex'); }
-    if (mobileGroupCliente) mobileGroupCliente.classList.remove('hidden');
-    if (mobileGroupProfissional) mobileGroupProfissional.classList.add('hidden');
   } else {
     if (headerGroupCliente) { headerGroupCliente.classList.remove('hidden'); headerGroupCliente.classList.add('flex'); }
     if (headerGroupProfissional) { headerGroupProfissional.classList.add('hidden'); headerGroupProfissional.classList.remove('flex'); }
@@ -3084,14 +2816,12 @@ function atualizarHeaderPorSessao() {
     if (avatarNome) avatarNome.textContent = clienteGoogleLogado.primeiroNome || clienteGoogleLogado.nome || 'Cliente Google';
     if (avatarFoto && clienteGoogleLogado.foto) { avatarFoto.src = clienteGoogleLogado.foto; avatarFoto.style.display='block'; }
     else if (avatarFoto) { avatarFoto.src=''; avatarFoto.style.display='none'; }
-    // novo mobile: esconder botao Entrar (ja esta logado)
     if (mobileBtnEntrarUnificado) mobileBtnEntrarUnificado.classList.add('hidden');
     if (mobileBtnLogoutGoogleCliente) { mobileBtnLogoutGoogleCliente.classList.remove('hidden'); mobileBtnLogoutGoogleCliente.classList.add('block'); }
   } else {
     avatarContainer?.classList.add('hidden'); avatarContainer?.classList.remove('flex');
     if (mobileBtnLogoutGoogleCliente) mobileBtnLogoutGoogleCliente.classList.add('hidden');
-    // novo mobile: MOSTRAR botao Entrar Unificado se NAO logou profissional nem admin
-    if (mobileBtnEntrarUnificado && !profissionalLogado && !adminLogado) {
+    if (mobileBtnEntrarUnificado && !profissionalLogado) {
       mobileBtnEntrarUnificado.classList.remove('hidden');
     } else if (mobileBtnEntrarUnificado) {
       mobileBtnEntrarUnificado.classList.add('hidden');
@@ -3099,7 +2829,6 @@ function atualizarHeaderPorSessao() {
   }
 
   if (profissionalLogado) {
-    // Garante que o objeto global reflete o array
     const noArray = profissionais.find(p => p.id === profissionalLogado.id);
     if (noArray) profissionalLogado = noArray;
     saldoContainer.classList.remove('hidden');
@@ -3122,29 +2851,6 @@ function atualizarHeaderPorSessao() {
     if (mobileLogout) { mobileLogout.classList.add('hidden'); mobileLogout.classList.remove('block'); }
   }
 
-  // ===== V4: ATUALIZAÇÕES HOME + BOTTOM NAV =====
-  // ===== ATUALIZA BADGE ADMIN NO HEADER (visivel quando adminLogado) =====
-  if (adminLogado && headerBadgeAdmin) {
-    headerBadgeAdmin.classList.remove('hidden');
-    headerBadgeAdmin.classList.add('flex');
-    btnCadastrar?.classList.add('hidden');
-    btnEntrarGoogle?.classList.add('hidden');
-    btnEntrarGoogle?.classList.remove('lg:flex');
-    avatarContainer?.classList.add('hidden');
-    avatarContainer?.classList.remove('flex');
-    // V6d: se admin logado, ESCONDE botao admin mobile do header (ja aparece o Badge Admin Logado maior)
-    if (btnAdminMobile) { btnAdminMobile.classList.add('hidden'); btnAdminMobile.classList.remove('flex','sm:flex'); }
-  } else if (headerBadgeAdmin) {
-    headerBadgeAdmin.classList.add('hidden');
-    headerBadgeAdmin.classList.remove('flex');
-    // V6d: se admin NAO logado, MOSTRA botao admin mobile no header (se NAO for profissional logado)
-    if (btnAdminMobile && !profissionalLogado) { btnAdminMobile.classList.remove('hidden'); btnAdminMobile.classList.add('flex','sm:flex'); }
-    else if (btnAdminMobile) { btnAdminMobile.classList.add('hidden'); btnAdminMobile.classList.remove('flex','sm:flex'); }
-  } else {
-    // fallback caso headerBadgeAdmin nao exista
-    if (btnAdminMobile && !profissionalLogado) { btnAdminMobile.classList.remove('hidden'); btnAdminMobile.classList.add('flex','sm:flex'); }
-    else if (btnAdminMobile) { btnAdminMobile.classList.add('hidden'); btnAdminMobile.classList.remove('flex','sm:flex'); }
-  }
   try { atualizarHomeSessao(); } catch(e){}
   try { renderBottomNav(); } catch(e){ console.error('[header renderBottomNav]',e); }
   // #region debug-point H3:H4:header-exit
@@ -3320,7 +3026,7 @@ function abrirPerfilProfissional(proId) {
   if (!p) { toast('error','Ops','Profissional não encontrado.'); return; }
   const cont = document.getElementById('modalPerfilConteudo');
   const numWa = numeroLimpoWaLink(p.whatsapp);
-  const msgWa = encodeURIComponent(`Olá ${p.nome.split(' ')[0]}! Vi seu perfil no Ajeita e gostaria de um orçamento.`);
+  const msgWa = encodeURIComponent(`Olá ${p.nome.split(' ')[0]}! Vi seu perfil no AjeitaAi e gostaria de um orçamento.`);
   const waLink = `https://wa.me/55${numWa}?text=${msgWa}`;
 
   const cats = (p.categorias||[]).map(c =>
@@ -3370,7 +3076,7 @@ function abrirPerfilProfissional(proId) {
           </div>
         </div>
       </div>
-      <div class="mb-6"><p class="text-slate-600 leading-relaxed">${p.sobre||'Profissional verificado pela plataforma Ajeita.'}</p></div>
+      <div class="mb-6"><p class="text-slate-600 leading-relaxed">${p.sobre||'Profissional verificado pela plataforma AjeitaAi.'}</p></div>
       <div class="mb-8 text-center">
         <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-extrabold px-8 py-3.5 rounded-2xl shadow-card hover:shadow-pop transition">
           <i class="fa-brands fa-whatsapp text-xl"></i>
@@ -3481,7 +3187,7 @@ function renderMuralPedidos() {
     const waExibir = jaDesbloqueado ? formataWhatsAppBrasil(ped.whatsapp) : mascararWhatsApp(ped.whatsapp);
     const dataBadge = dataRelativa(ped.data);
     const numWa = jaDesbloqueado ? numeroLimpoWaLink(ped.whatsapp) : null;
-    const waLink = numWa ? `https://wa.me/55${numWa}?text=${encodeURIComponent(`Olá! Vi seu pedido no Ajeita (${ped.categoria}) e gostaria de oferecer um orçamento.`)}` : null;
+    const waLink = numWa ? `https://wa.me/55${numWa}?text=${encodeURIComponent(`Olá! Vi seu pedido no AjeitaAi (${ped.categoria}) e gostaria de oferecer um orçamento.`)}` : null;
     const catIco = CATEGORIAS_ICONE[ped.categoria] || 'fa-clipboard';
 
     let acaoHtml = '';
@@ -3615,7 +3321,7 @@ function executarDesbloqueio() {
   fecharModal('modal-desbloquear');
 
   const numWa = numeroLimpoWaLink(ped.whatsapp);
-  const waLink = `https://wa.me/55${numWa}?text=${encodeURIComponent(`Olá! Vi seu pedido no Ajeita (${ped.categoria}) e gostaria de oferecer um orçamento.`)}`;
+  const waLink = `https://wa.me/55${numWa}?text=${encodeURIComponent(`Olá! Vi seu pedido no AjeitaAi (${ped.categoria}) e gostaria de oferecer um orçamento.`)}`;
   toast('success','Contato desbloqueado!',`Você pagou ${custo} 🪙. Agora é só chamar o cliente no WhatsApp.`,6000);
   setTimeout(()=>{ window.open(waLink,'_blank'); }, 700);
 }
@@ -3977,7 +3683,7 @@ async function abrirPixPagamento(pkgKey) {
   try {
     var qrDiv = document.getElementById('pixQrCode');
     if (qrDiv) qrDiv.innerHTML = '<div class="flex flex-col items-center gap-3 py-10 px-4"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary-500"></i><div class="font-bold text-primary-700 text-base">Gerando QR Code Pix Mercado Pago Automático... ('+ nomeEsperadoValor +')</div><div class="text-xs text-slate-500">Aguarde 2 segundos</div></div>';
-    var nomeUsuario = profissionalLogado ? (profissionalLogado.nome || 'Profissional Ajeita') : 'Usuario Ajeita';
+    var nomeUsuario = profissionalLogado ? (profissionalLogado.nome || 'Profissional AjeitaAi') : 'Usuario AjeitaAi';
     var emailUsuario = profissionalLogado ? (profissionalLogado.emailGoogle || profissionalLogado.email || 'profissional@ajeita.com.br') : 'profissional@ajeita.com.br';
     // ========== (V1.92 ADMIN LIBERAR ALTERAR PRECOS) ==========
     // Regra: se adminLogado (Wesley) estiver autenticado, OU se preço personalizado do pacote (configEconomia.pacotes[...].preco)
@@ -4502,7 +4208,7 @@ function renderMeusPedidos() {
             <i class="fa-solid fa-star"></i> Avaliar serviço
           </button>`:''}
         ${(!isCliente && euJaDesbloquei(ped.id)) ? `
-          <a href="https://wa.me/55${numeroLimpoWaLink(ped.whatsapp)}?text=${encodeURIComponent(`Olá! Vimos seu pedido no Ajeita (${ped.categoria}) e gostaria de conversar.`)}" target="_blank" rel="noopener noreferrer" class="bg-gradient-to-r from-emerald-500 to-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2">
+          <a href="https://wa.me/55${numeroLimpoWaLink(ped.whatsapp)}?text=${encodeURIComponent(`Olá! Vimos seu pedido no AjeitaAi (${ped.categoria}) e gostaria de conversar.`)}" target="_blank" rel="noopener noreferrer" class="bg-gradient-to-r from-emerald-500 to-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2">
             <i class="fa-brands fa-whatsapp"></i> Abrir WhatsApp
           </a>`:''}
       </div>
@@ -4600,7 +4306,7 @@ function enviarAvaliacao() {
       // Adiciona depoimento
       if (comentario) {
         // Tenta pegar nome do cliente: 1) pedido.nomeCliente 2) clienteUltimosDados 3) genérico
-        let nomeAutor = 'Cliente Ajeita';
+        let nomeAutor = 'Cliente AjeitaAi';
         if (ped.nomeCliente) nomeAutor = ped.nomeCliente;
         else if (clienteUltimosDados && clienteUltimosDados.nome) nomeAutor = clienteUltimosDados.nome;
         if (!profissionais[idxP].depoimentos) profissionais[idxP].depoimentos = [];
@@ -4670,7 +4376,7 @@ function submitCadastroProfissional(e) {
     googleId: googleId || null,
     categorias: categoriasSelecionadas,
     foto: fotoFinal,
-    sobre: `${nome.split(' ')[0]} é um profissional verificado pela plataforma Ajeita, especializado em ${categoriasSelecionadas.join(', ')}. Atende com qualidade e pontualidade em ${cidade}.`,
+    sobre: `${nome.split(' ')[0]} é um profissional verificado pela plataforma AjeitaAi, especializado em ${categoriasSelecionadas.join(', ')}. Atende com qualidade e pontualidade em ${cidade}.`,
     mediaAvaliacoes: 0, qtdAvaliacoes: 0,
     saldoMoedas: 10, // BÔNUS 10 moedas
     trabalhosAnteriores: [],
@@ -4708,195 +4414,9 @@ function submitCadastroProfissional(e) {
   navigateTo('view-home');
 }
 
-// --------------- ADMIN ---------------
-function submitAdminLogin(e) {
-  if (e) e.preventDefault();
-  const login = (document.getElementById('adminLoginInput').value||'').trim();
-  const senha = (document.getElementById('adminSenhaInput').value||'').trim();
-  if (login === 'admin10' && senha === 'bolo2024') {
-    adminLogado = true;
-    salvarTodosGlobaisNoStorage();
-    try { atualizarHeaderPorSessao(); } catch(eAH){}
-    toast('success','✅ Login admin efetuado!','Bem-vindo(a) ao painel administrativo. Agora aparece a ABA ADMIN no bottom nav e no header.');
-    document.getElementById('formAdminLogin').reset();
-    navigateTo('view-admin-dashboard');
-  } else {
-    toast('error','Credenciais inválidas','Verifique login e senha e tente novamente.');
-  }
-}
-function fazerLogoutAdmin() {
-  adminLogado = false;
-  salvarTodosGlobaisNoStorage();
-  try { atualizarHeaderPorSessao(); } catch(eAH){}
-  toast('info','Logout efetuado','Você saiu do painel administrativo.');
-  navigateTo('view-admin-login');
-}
-let _tabAdminAtual = 'pedidos';
-function trocarTabAdmin(tab) {
-  _tabAdminAtual = tab;
-  const btnPed = document.getElementById('tabAdminPedidos');
-  const btnPro = document.getElementById('tabAdminProfissionais');
-  const tbPed = document.getElementById('adminTabelaPedidosContainer');
-  const tbPro = document.getElementById('adminTabelaProfissionaisContainer');
-  if (tab === 'pedidos') {
-    btnPed.className='px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
-    btnPro.className='px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
-    tbPed.classList.remove('hidden'); tbPro.classList.add('hidden');
-  } else {
-    btnPro.className='px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
-    btnPed.className='px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
-    tbPro.classList.remove('hidden'); tbPed.classList.add('hidden');
-  }
-}
-function adminSalvarEconomia() {
-  const custo = Number(document.getElementById('cfgCustoDesbloqueio').value);
-  if (!custo || custo < 1) { toast('error','Custo inválido','Informe um custo de desbloqueio maior que zero.'); return; }
-  const pacotes = configEconomia.pacotes;
-  const inputsPkg = document.querySelectorAll('[data-pkg]');
-  inputsPkg.forEach(inp => {
-    const pkg = inp.dataset.pkg;
-    const key = inp.dataset.pctkey;
-    const val = Number(inp.value);
-    if (pacotes[pkg] && !Number.isNaN(val) && val >= 0) {
-      pacotes[pkg][key] = key === 'preco' ? Math.round(val*100)/100 : Math.max(1, Math.round(val));
-    }
-  });
-  configEconomia.custoMoedasPorDesbloqueio = Math.round(custo);
-  salvarTodosGlobaisNoStorage();
-  renderLojaPacotes();
-  renderMuralPedidos();
-  toast('success','⚙️ Configurações salvas!','Os novos preços e custos já estão ativos na plataforma.');
-}
-function renderAdminDashboard() {
-  if (!adminLogado) return;
-  // Economia: preenche inputs
-  if (document.getElementById('cfgCustoDesbloqueio'))
-    document.getElementById('cfgCustoDesbloqueio').value = configEconomia.custoMoedasPorDesbloqueio;
-  Object.entries(configEconomia.pacotes).forEach(([key,pkg])=>{
-    const inpQtd = document.querySelector(`[data-pkg="${key}"][data-pctkey="qtd"]`);
-    const inpPre = document.querySelector(`[data-pkg="${key}"][data-pctkey="preco"]`);
-    if (inpQtd) inpQtd.value = pkg.qtd;
-    if (inpPre) inpPre.value = pkg.preco;
-  });
-
-  // Métricas
-  const totMoedas = recargas.reduce((s,r)=>s+(r.qtd||0),0);
-  const totRecargas = recargas.length;
-  const totReceita = recargas.reduce((s,r)=>s+(Number(r.preco)||0),0);
-  if (document.getElementById('metricMoedasVendidas')) document.getElementById('metricMoedasVendidas').textContent = totMoedas;
-  if (document.getElementById('metricRecargas')) document.getElementById('metricRecargas').textContent = totRecargas;
-  if (document.getElementById('metricReceita')) document.getElementById('metricReceita').textContent = formatarBRL(totReceita);
-
-  // Tabela Pedidos
-  const tbPedBody = document.getElementById('adminTabelaPedidosBody');
-  if (tbPedBody) {
-    tbPedBody.innerHTML = pedidos.length === 0
-      ? `<tr><td colspan="7" class="px-6 py-10 text-center text-slate-400">Nenhum pedido cadastrado ainda.</td></tr>`
-      : pedidos.map(p => `
-      <tr class="hover:bg-slate-50 transition">
-        <td class="px-6 py-3.5 font-mono text-[11px] text-slate-500 align-top">${p.id}</td>
-        <td class="px-6 py-3.5 align-top">
-          <div class="inline-flex items-center gap-1.5 bg-primary-50 text-primary-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-primary-100">
-            <i class="fa-solid ${CATEGORIAS_ICONE[p.categoria]||'fa-clipboard'}"></i>${p.categoria}
-          </div>
-        </td>
-        <td class="px-6 py-3.5 align-top text-slate-700 text-xs"><strong>${p.bairro}</strong><br><span class="text-slate-500">${p.cidade}</span></td>
-        <td class="px-6 py-3.5 align-top text-slate-700 text-xs max-w-xs">${(p.descricao||'').slice(0,120)}${(p.descricao||'').length>120?'...':''}</td>
-        <td class="px-6 py-3.5 align-top text-slate-700 font-mono text-xs">${formataWhatsAppBrasil(p.whatsapp)||'-'}</td>
-        <td class="px-6 py-3.5 text-center align-top">
-          <span class="font-bold ${(p.qtdDesbloqueios||0)>=4?'text-rose-600':'text-primary-600'}">${p.qtdDesbloqueios||0}</span>
-          <span class="text-slate-400">/4</span>
-        </td>
-        <td class="px-6 py-3.5 text-center align-top">
-          ${ p.avaliado ? '<span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">AVALIADO</span>'
-            : p.finalizado ? '<span class="text-[10px] font-bold bg-primary-50 text-primary-700 px-2.5 py-1 rounded-full border border-primary-200">FINALIZADO</span>'
-            : (p.qtdDesbloqueios||0)>=4 ? '<span class="text-[10px] font-bold bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full border border-rose-200">FECHADO</span>'
-            : '<span class="text-[10px] font-bold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">ABERTO</span>'}
-        </td>
-      </tr>`).join('');
-  }
-
-  // Tabela Profissionais
-  const tbProBody = document.getElementById('adminTabelaProfissionaisBody');
-  if (tbProBody) {
-    tbProBody.innerHTML = profissionais.length === 0
-      ? `<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400">Nenhum profissional cadastrado.</td></tr>`
-      : profissionais.map(p => `
-      <tr class="hover:bg-slate-50 transition">
-        <td class="px-6 py-3.5 font-mono text-[11px] text-slate-500 align-top">${p.id}</td>
-        <td class="px-6 py-3.5 align-top">
-          <div class="flex items-center gap-2.5">
-            <img src="${p.foto||FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${p.nome.replace(/'/g,"\\'")}')" class="w-9 h-9 rounded-xl object-cover border-2 border-white shadow-sm">
-            <div>
-              <div class="font-bold text-slate-800 text-sm leading-tight">${p.nome}</div>
-              <div class="text-[10px] text-slate-400 leading-tight">${(p.categorias||[]).slice(0,2).join(' • ')}</div>
-            </div>
-          </div>
-        </td>
-        <td class="px-6 py-3.5 align-top font-mono text-xs text-slate-700">${formataWhatsAppBrasil(p.whatsapp)||'-'}</td>
-        <td class="px-6 py-3.5 align-top text-xs text-slate-700">${p.cidade||'-'}</td>
-        <td class="px-6 py-3.5 align-top text-xs text-slate-700">${p.bairro||'-'}</td>
-        <td class="px-6 py-3.5 text-center align-top whitespace-nowrap">
-          ${ p.qtdAvaliacoes>0 ? `<span class="inline-flex items-center gap-1">${htmlEstrelas(p.mediaAvaliacoes)} <span class="font-bold text-xs text-slate-700 ml-1">${p.mediaAvaliacoes?.toFixed(1)} (${p.qtdAvaliacoes})</span></span>`
-            : '<span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-full">SEM NOTA</span>'}
-        </td>
-        <td class="px-6 py-3.5 text-center align-top">
-          <span class="font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg text-sm border border-amber-100">🪙 ${p.saldoMoedas||0}</span>
-        </td>
-        <td class="px-6 py-3.5 text-center align-top">
-          <div class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
-            ${(p.categorias||[]).map(c => `<span class="text-[9px] font-bold bg-primary-50 text-primary-700 px-2 py-0.5 rounded border border-primary-100">${c}</span>`).join('') || '<span class="text-slate-400 text-xs">—</span>'}
-          </div>
-        </td>
-        <td class="px-6 py-3.5 text-center align-top">
-          <button onclick="excluirProfissionalPorAdmin('${p.id}')" class="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs px-3 py-2 rounded-xl transition" title="Excluir conta do profissional">
-            <i class="fa-solid fa-trash-can"></i> Excluir
-          </button>
-        </td>
-      </tr>`).join('');
-  }
-}
-function excluirProfissionalPorAdmin(idProfissional) {
-  if (!adminLogado) { toast('error','Acesso negado','Apenas administradores podem excluir contas.'); return; }
-  if (!idProfissional) return;
-  const idx = profissionais.findIndex(p => p.id === idProfissional);
-  if (idx === -1) { toast('warning','Profissional não encontrado','A conta pode ter sido excluída já.'); return; }
-  const p = profissionais[idx];
-  const nomeCurto = (p.nome || 'Profissional').split(' ')[0];
-  const conf = window.confirm(`Tem certeza que quer EXCLUIR a conta do profissional "${p.nome}" (${p.id})?\n\nEssa ação:\n• Remove permanentemente do catálogo e banco de dados\n• Apaga todas as avaliações, histórico e saldo de moedas dele\n• Não pode ser desfeita.\n\nClique em OK para confirmar exclusão.`);
-  if (!conf) return;
-  const eraLogadoAgora = profissionalLogado && profissionalLogado.id === idProfissional;
-  profissionais.splice(idx,1);
-  salvarTodosGlobaisNoStorage();
-  try { if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais(); } catch(e){}
-  try { if (typeof renderMuralPedidos === 'function') renderMuralPedidos(); } catch(e){}
-  try { if (typeof renderAdminDashboard === 'function') renderAdminDashboard(); } catch(e){}
-  if (eraLogadoAgora) {
-    profissionalLogado = null;
-    try { atualizarHeaderPorSessao(); } catch(e){}
-    try { if (typeof renderBottomNav === 'function') renderBottomNav(); } catch(e){}
-    toast('success','Conta excluída',`A conta do ${nomeCurto} foi apagada permanentemente. Como ele estava logado neste dispositivo, o logout foi feito automaticamente.`,7500);
-    navigateTo('view-home');
-  } else {
-    toast('success','✅ Conta de profissional excluída',`A conta de "${p.nome}" (${p.id}) foi apagada permanentemente do catálogo e da plataforma.`,7000);
-  }
-  try {
-    if (typeof window.__fbModules !== 'undefined' && window.__fbModules && window.__fbModules.deleteDoc && typeof FbDb !== 'undefined' && FbDb) {
-      const uidLocal = ('local_' + String(idProfissional));
-      const mods = window.__fbModules;
-      const docRef = mods.doc(FbDb, 'profissionais', uidLocal);
-      setTimeout(function() {
-        try {
-          mods.deleteDoc(docRef).then(function(){
-            DBG('FB','EXCL_OK','Profissional doc '+uidLocal+' deletado do Firestore com sucesso.',{});
-          }).catch(function(errFs){
-            console.error('fbSyncDeleteProfissional erro:',errFs);
-          });
-        } catch(eDel){ console.error(eDel); }
-      }, 200);
-    }
-  } catch(eSyncDel){ console.error(eSyncDel); }
-}
+// --------------- ÁREA ADMIN MOVIDA PARA admin.html ---------------
+// Login e dashboard administrativo foram movidos para um arquivo dedicado.
+// Acesse: ./admin.html  (credenciais: admin10 / bolo2024)
 
 /* =========================================================
    FUNÇÕES — V3: MEU PERFIL PROFISSIONAL
@@ -5140,7 +4660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(inicializarGoogleIdentityBootstrap, 500);
     setTimeout(()=> { if (window.google?.accounts?.id) inicializarGoogleIdentityBootstrap(); }, 1500);
   } catch (eBoot) {
-    console.error('[Ajeita Boot Erro]:', eBoot);
+    console.error('[AjeitaAi Boot Erro]:', eBoot);
     try {
       toast('error','Ops, erro ao carregar!', String(eBoot?.message||eBoot), 15000);
     } catch(e){}
