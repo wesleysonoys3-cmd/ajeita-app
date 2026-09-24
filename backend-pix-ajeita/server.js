@@ -88,9 +88,12 @@ app.use(morgan('combined'));
    HMAC_SHA256 com MP_WEBHOOK_SECRET → comparar com os v1=...
    ============================ */
 function _validarAssinaturaWebhookMp(req, pagamentoIdFromBody) {
-  // Se nao tem secret configurado: skip validacao (compativel com versões anteriores)
   if (!MP_WEBHOOK_SECRET || MP_WEBHOOK_SECRET.length < 5) {
-    console.log('[WEBHOOK_MP_VALIDACAO] MERCADO_PAGO_WEBHOOK_SECRET nao configurado → SKIP validacao HMAC (recomendamos configurar para produzai real).');
+    if (MODO_PRODUCAO_REAL) {
+      console.error('[WEBHOOK_MP_VALIDACAO] 🚨 ALTO RISCO PRODUCAO: MERCADO_PAGO_WEBHOOK_SECRET VAZIO EM PRODUCAO REAL (APP_USR). QUALQUER UM PODE ENVIAR WEBHOOK FALSO E TENTAR FRAUDE. RECOMENDAMOS CONFIGURAR AGORA MESMO NO PAINEL RENDER ENV: MP_WEBHOOK_SECRET=<segredo painel developers MP>. SKIP validacao por compatibilidade, MAS FACA ISSO URGENTE.');
+    } else {
+      console.log('[WEBHOOK_MP_VALIDACAO] MERCADO_PAGO_WEBHOOK_SECRET nao configurado → SKIP validacao HMAC (recomendamos configurar para produzai real).');
+    }
     return true;
   }
   try {
@@ -259,7 +262,7 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
     const tipoUsuario = String(b.tipoUsuario || 'profissional');
     const nomeUsuario = String(b.nomeUsuario || 'Usuario AjeitaAi');
     const emailUsuario = String(b.emailUsuario || 'cliente@ajeita.com.br');
-    const externalRef = 'ajeita_moeda_' + Date.now() + '_' + uidUsuario.substring(0,12);
+    const externalRef = 'RECARGA_PRO_' + uidUsuario.substring(0,20) + '_' + Date.now();
 
     // --- Passo 1: Salvar transacao PENDENTE no Firestore (colecao pix_transacoes) ---
     let docTransacaoId = externalRef;
@@ -689,8 +692,13 @@ async function processarAprovacaoPix(payload) {
       if (snap.exists) transacao = Object.assign({}, snap.data());
     } catch (eSnap){ console.error(eSnap); }
   }
+  // ======================== (FIX IDEMPOTENCIA §4) ========================
+  const statusAnterior = String((transacao && transacao.status) || '').toLowerCase();
+  if (statusAnterior === 'aprovado' || statusAnterior === 'approved') {
+    console.log(`[IDEMPOTENCIA] SKIP: pagamento external_ref="${externalRef}" JA ESTAVA aprovado. Nao credita moedas 2x, nao duplica recarga, nao ativa patrocinio 2x. via=${payload.aprovado_via || 'desconhecida'}.`);
+    return true;
+  }
   if (!transacao) {
-    // Tenta montar transacao minima pelos parametros recebidos
     transacao = {
       uid_usuario: 'desconhecido', tipo_usuario: 'profissional',
       qtd_moedas: 0, preco_brl: Number(payload.valor || 0),
@@ -700,6 +708,35 @@ async function processarAprovacaoPix(payload) {
   const qtdMoedas = Number(transacao.qtd_moedas || 0);
   const uidUsuario = String(transacao.uid_usuario || '');
   const tipoUsuario = String(transacao.tipo_usuario || 'profissional');
+  // ======================== (SWITCH TIPO PAGAMENTO §6) ========================
+  const prefixoTipo = externalRef.startsWith('RECARGA_PRO_') ? 'RECARGA_PRO'
+    : externalRef.startsWith('SPONSOR_') ? 'SPONSOR'
+    : externalRef.startsWith('CLIENT_ORDER_') ? 'CLIENT_ORDER'
+    : 'DESCONHECIDO';
+  console.log(`[PROCESSAR_APROVACAO] external_ref=${externalRef} tipo_prefixo=${prefixoTipo} status_anterior=${statusAnterior} qtdMoedas=${qtdMoedas} via=${payload.aprovado_via||'?'}`);
+  if (prefixoTipo === 'SPONSOR') {
+    // Ativação patrocinador (handler implementado na Task 3; se ainda null, retorna true sem erros.)
+    try {
+      if (typeof _ativarPatrocinadorPorPagamento === 'function') {
+        await _ativarPatrocinadorPorPagamento(externalRef, {
+          mp_payment_id: payload.mp_payment_id,
+          valor_pago: Number(payload.valor || transacao.preco_brl || 0),
+          aprovado_via: payload.aprovado_via
+        });
+      } else {
+        console.log('[PROCESSAR_APROVACAO] SPONSOR_: _ativarPatrocinadorPorPagamento ainda nao carregado (stub Task2). Firestore atualiza status no cron Task3 proxima rodada.');
+      }
+    } catch(eSponsor){ console.error('[PROCESSAR_APROVACAO] ERRO SPONSOR:', eSponsor && eSponsor.message || eSponsor); }
+  }
+  if (prefixoTipo === 'CLIENT_ORDER') {
+    console.log('[PROCESSAR_APROVACAO] CLIENT_ORDER: TIPO RESERVADO para futuro. Nao libera nada por enquanto. external_ref='+externalRef);
+    if (dbFirestore) { try { await dbFirestore.collection('pix_transacoes').doc(externalRef).update({ status:'aprovado',tipo_pagamento_prefixo:'CLIENT_ORDER_RESERVADO',aprovado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),mp_payment_id: payload.mp_payment_id,aprovado_via: payload.aprovado_via }); } catch(e){} }
+    return true;
+  }
+  if (prefixoTipo === 'DESCONHECIDO') {
+    console.warn(`[PROCESSAR_APROVACAO] ⚠️ external_ref="${externalRef}" sem prefixo conhecido. Tenta fluxo RECARGA_PRO padrao para manter compatibilidade de pagamentos antigos (ajeita_moeda_*). Nao libera patrocinador.`);
+  }
+  // ======================== (FLUXO RECARGA_PRO / LEGADO) ========================
   // 1) Atualiza doc pix_transacoes -> aprovado
   if (dbFirestore) {
     try {
@@ -708,7 +745,8 @@ async function processarAprovacaoPix(payload) {
         mp_payment_id: payload.mp_payment_id,
         aprovado_via: payload.aprovado_via,
         aprovado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),
-        valor_pago_mp: Number(payload.valor || transacao.preco_brl || 0)
+        valor_pago_mp: Number(payload.valor || transacao.preco_brl || 0),
+        tipo_pagamento_prefixo: prefixoTipo === 'DESCONHECIDO' ? 'RECARGA_PRO_LEGADO' : prefixoTipo
       });
     } catch(eUp1){}
   }
@@ -741,7 +779,8 @@ async function processarAprovacaoPix(payload) {
           status: 'aprovado',
           gateway: 'mercado_pago',
           aprovado_via: payload.aprovado_via,
-          metodo_pagamento: 'pix'
+          metodo_pagamento: 'pix',
+          tipo_pagamento_prefixo: prefixoTipo === 'DESCONHECIDO' ? 'RECARGA_PRO_LEGADO' : prefixoTipo
         });
       } catch(eRec){}
       return true;
@@ -755,11 +794,414 @@ async function processarAprovacaoPix(payload) {
   }
 }
 
+/* ============================
+   PATROCINADORES CORE HELPERS (Task 2 stub + T3 full)
+   ============================ */
+const PATROCINIO_PLANOS_CONFIG = Object.freeze({
+  bronze:       { dias: 30,  preco_min: 50.00,  nome: 'Bronze 30 dias' },
+  prata:        { dias: 60,  preco_min: 120.00, nome: 'Prata 60 dias' },
+  ouro:         { dias: 90,  preco_min: 240.00, nome: 'Ouro 90 dias' },
+  personalizado:{ dias: 30,  preco_min: 50.00,  nome: 'Personalizado (admin define)' }
+});
+function _parsePatrocinioExtRef(externalRef) {
+  try {
+    if (!externalRef || !String(externalRef).startsWith('SPONSOR_')) return null;
+    const parts = String(externalRef).split('_');
+    if (parts.length < 3) return null;
+    // SPONSOR_<docId>_<plano>_<ts>   => docId = parts[1..length-2] (caso docId tenha underline raro), plano = parts[length-2], ts=parts[length-1]
+    const ts = parts[parts.length-1];
+    const plano = parts[parts.length-2];
+    const docId = parts.slice(1, parts.length-2).join('_');
+    if (!docId) return null;
+    return { external_reference: externalRef, docId, plano, ts };
+  } catch(e){ return null; }
+}
+async function _ativarPatrocinadorPorPagamento(externalRef, opts) {
+  opts = opts || {};
+  const parsed = _parsePatrocinioExtRef(externalRef);
+  if (!parsed || !parsed.docId) { console.warn('[ATIVAR_PATROCINADOR] external_ref invalido para SPONSOR: "'+externalRef+'"'); return false; }
+  if (!dbFirestore) return false;
+  try {
+    const docRef = dbFirestore.collection('patrocinadores').doc(parsed.docId);
+    const snap = await docRef.get();
+    if (!snap.exists) { console.warn('[ATIVAR_PATROCINADOR] doc nao existe: "'+parsed.docId+'"'); return false; }
+    const doc = Object.assign({}, snap.data() || {});
+    const planoKey = parsed.plano || doc.plano || 'bronze';
+    const planoCfg = PATROCINIO_PLANOS_CONFIG[planoKey] || PATROCINIO_PLANOS_CONFIG.bronze;
+    const statusPatr = String(doc.status_patrocinador || '').toLowerCase();
+    // ====================== IDEMPOTENCIA ======================
+    if (statusPatr === 'ativo') {
+      console.log(`[IDEMPOTENCIA_PATROCINADOR] SKIP ativar: doc "${parsed.docId}" JA ESTA status_patrocinador=ativo. Nao duplica datas.`);
+      return true;
+    }
+    const agora = admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString();
+    const dias = Number(doc.plano_dias || planoCfg.dias || 30);
+    const termMs = Date.now() + (dias * 24 * 60 * 60 * 1000);
+    const termObj = admin.firestore.Timestamp ? admin.firestore.Timestamp.fromMillis(termMs) : new Date(termMs).toISOString();
+    const patch = {
+      status_pagamento: 'approved',
+      status_patrocinador: 'ativo',
+      data_inicio: agora,
+      data_termino: termObj,
+      updated_at: agora
+    };
+    if (opts.mp_payment_id) patch.mp_payment_id = String(opts.mp_payment_id);
+    if (opts.aprovado_via) patch.aprovado_via = String(opts.aprovado_via);
+    if (opts.valor_pago) patch.valor_pago_final = Number(opts.valor_pago || doc.valor || 0);
+    await docRef.set(patch, { merge: true });
+    console.log(`[ATIVAR_PATROCINADOR] OK doc="${parsed.docId}" plano=${planoKey} dias=${dias} termino=${new Date(termMs).toISOString()} via=${opts.aprovado_via||'?'}`);
+    return true;
+  } catch(e) { console.error('[ATIVAR_PATROCINADOR] ERRO:', e && e.message || e); return false; }
+}
+app.get('/api/patrocinadores/ativos', async (req, res) => {
+  const agoraMs = Date.now();
+  const toMs = function(v) {
+    if (!v) return null;
+    if (typeof v === 'string') return (new Date(v)).getTime();
+    if (v && v.toDate && typeof v.toDate === 'function') return (new Date(v.toDate())).getTime();
+    if (v && typeof v._seconds === 'number') return v._seconds * 1000;
+    if (typeof v === 'number') return v;
+    return new Date(String(v)).getTime();
+  };
+  try {
+    if (!dbFirestore) return res.status(200).json({ ok: true, total: 0, items: [] });
+    const snap = await dbFirestore.collection('patrocinadores').orderBy('created_at','desc').limit(200).get();
+    const items = [];
+    snap.forEach(ds => {
+      try {
+        const d = Object.assign({ id: ds.id }, ds.data() || {});
+        if (String(d.status_patrocinador || '').toLowerCase() !== 'ativo') return;
+        if (String(d.status_pagamento || '').toLowerCase() !== 'approved') return;
+        const ini = toMs(d.data_inicio);
+        const fim = toMs(d.data_termino);
+        if (ini && agoraMs < ini) return; // ainda nao começou
+        if (fim && agoraMs > fim) return; // expirou
+        // Retorna APENAS campos publicos (remove dados sensiveis como mp_payment_id external_reference uid criador)
+        items.push({
+          id: String(d.id || ''),
+          nome_empresa: d.nome_empresa || '',
+          categoria: d.categoria || '',
+          descricao: d.descricao || '',
+          logo: d.logo || null,
+          cartao_visita: d.cartao_visita || null,
+          fotos: Array.isArray(d.fotos) ? d.fotos.slice(0,3) : [],
+          whatsapp: d.whatsapp || '',
+          site: d.site || '',
+          instagram: d.instagram || '',
+          plano: d.plano || '',
+          data_inicio: d.data_inicio || null,
+          data_termino: d.data_termino || null,
+          created_at: d.created_at || null
+        });
+      } catch(eItm){}
+    });
+    return res.status(200).json({ ok: true, total: items.length, items });
+  } catch(eGeral){
+    console.error('/api/patrocinadores/ativos erro:', eGeral && eGeral.message || eGeral);
+    return res.status(500).json({ ok:false, msg:'Erro interno listar patrocinadores ativos.' });
+  }
+});
+
+/* ============================================================
+   POST /api/patrocinadores/criar-pagamento  (TASK 3)
+   Cria o pagamento MP para o patrocínio e grava doc inicial na collection "patrocinadores".
+   Reutiliza EXATAMENTE a mesma engine MP (SDK v2 + fetch nativo fallback) de /criar-recarga-moedas.
+   Body (empresa que está cadastrando):
+     {
+       plano: 'bronze'|'prata'|'ouro'|'personalizado'  (REQUIRED)
+       valor_plano: 50.00   (REQUIRED se plano=personalizado; senao usa PATROCINIO_PLANOS_CONFIG)
+       nome_empresa, categoria, descricao, whatsapp, site, instagram,
+       logo (base64), cartao_visita (base64), fotos ([base64]),
+       uid_criador (opcional uid do usuario/admin),
+       admin_senha (opcional, se bolo2024 → libera preço QUALQUER > 0, igual recarga-moedas)
+     }
+   External_ref padrão: SPONSOR_<patrocinadorDocId>_<plano>_<ts>
+   ============================================================ */
+app.post('/api/patrocinadores/criar-pagamento', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const urlPublicaValidaHTTPS = Boolean(BACKEND_PUBLIC_URL && BACKEND_PUBLIC_URL.toLowerCase().startsWith('https://') && !BACKEND_PUBLIC_URL.includes('localhost') && !BACKEND_PUBLIC_URL.includes('127.0.0.1'));
+    if (MODO_PRODUCAO_REAL && !urlPublicaValidaHTTPS) {
+      return res.status(500).json({ ok:false, erro_critico:'MODO_PRODUCAO_REAL', msg:'ENV BACKEND_PUBLIC_URL nao e HTTPS valido. Ajuste Render.' });
+    }
+
+    const planoKey = String(b.plano || 'bronze').toLowerCase();
+    const planoCfg = PATROCINIO_PLANOS_CONFIG[planoKey] || PATROCINIO_PLANOS_CONFIG.bronze;
+    const ehAdmin = String(b.admin_senha || '').trim() === 'bolo2024';
+    if (ehAdmin) console.log(`[CRIAR_PATROCINIO] 🔑 ADMIN DETECTADO! Libera alteracao de preco patrocínio plano=${planoKey}.`);
+
+    let precoBRL = Number(planoCfg.valor || 0);
+    const valorEnviado = Number(b.valor_plano || 0);
+    if (valorEnviado > 0) {
+      if (ehAdmin) precoBRL = valorEnviado;
+      else if (planoKey === 'personalizado') precoBRL = valorEnviado >= 50 ? valorEnviado : 50;
+      else if (valorEnviado >= planoCfg.valor) precoBRL = valorEnviado;
+      else { console.warn(`[CRIAR_PATROCINIO] ⚠️ usuario tentou preco abaixo minimo (${valorEnviado} < ${planoCfg.valor}). SOBRESCREVENDO DEFAULT anti-fraude.`); precoBRL = planoCfg.valor; }
+    }
+    precoBRL = Number(precoBRL);
+    if (!(precoBRL > 0)) precoBRL = 50;
+    const diasPlano = Number(planoCfg.dias || 30);
+
+    // Grava doc patrocinador inicial PENDENTE na collection "patrocinadores"
+    let patrocinadorDocId = null;
+    if (dbFirestore) {
+      try {
+        const dadosBase = {
+          nome_empresa: String(b.nome_empresa || '').trim().substring(0, 120),
+          categoria: String(b.categoria || '').trim().substring(0, 80),
+          descricao: String(b.descricao || '').trim().substring(0, 800),
+          logo: b.logo ? String(b.logo).substring(0, 4_000_000) : null,
+          cartao_visita: b.cartao_visita ? String(b.cartao_visita).substring(0, 4_000_000) : null,
+          fotos: Array.isArray(b.fotos) ? b.fotos.map(f => String(f || '').substring(0, 4_000_000)).slice(0,5) : [],
+          whatsapp: String(b.whatsapp || '').trim().substring(0, 30),
+          site: String(b.site || '').trim().substring(0, 180),
+          instagram: String(b.instagram || '').trim().substring(0, 80),
+          plano: planoKey,
+          plano_dias: diasPlano,
+          valor: precoBRL,
+          status_pagamento: 'pending',
+          status_patrocinador: 'inativo',
+          mp_payment_id: null,
+          external_reference: null,
+          data_inicio: null,
+          data_termino: null,
+          uid_criador: b.uid_criador ? String(b.uid_criador).substring(0,60) : null,
+          created_at: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),
+          updated_at: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString()
+        };
+        const ref = dbFirestore.collection('patrocinadores').doc();
+        patrocinadorDocId = ref.id;
+        await ref.set(dadosBase);
+        console.log(`[PATROCINIO] doc criado id="${patrocinadorDocId}" empresa="${dadosBase.nome_empresa}" plano=${planoKey} R$${precoBRL} dias=${diasPlano}`);
+      } catch (eFb1) {
+        console.error('[PATROCINIO] ERRO gravar doc patrocinador inicial:', eFb1 && eFb1.message || eFb1);
+        return res.status(500).json({ ok:false, msg:'Erro interno salvar patrocinador no banco.' });
+      }
+    } else {
+      patrocinadorDocId = 'local_pat_' + Date.now();
+    }
+
+    // External_ref padrão SPONSOR_<docId>_<plano>_<ts>
+    const externalRef = 'SPONSOR_' + String(patrocinadorDocId) + '_' + planoKey + '_' + Date.now();
+    // Atualiza doc patrocinador com external_ref (antes de criar MP)
+    if (dbFirestore && patrocinadorDocId && !patrocinadorDocId.startsWith('local_pat_')) {
+      try { await dbFirestore.collection('patrocinadores').doc(patrocinadorDocId).update({ external_reference: externalRef, updated_at: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString() }); } catch(e){}
+    }
+
+    // Também grava a trilha em pix_transacoes (mesma coleção legada, não duplica)
+    if (dbFirestore) {
+      try {
+        await dbFirestore.collection('pix_transacoes').doc(externalRef).set({
+          external_reference: externalRef,
+          tipo_pagamento_prefixo: 'SPONSOR',
+          pacote_key: 'patrocinio_' + planoKey,
+          qtd_moedas: 0,
+          preco_brl: precoBRL,
+          uid_usuario: b.uid_criador ? String(b.uid_criador) : ('sponsor_' + String(patrocinadorDocId)),
+          tipo_usuario: 'patrocinador',
+          nome_usuario: String(b.nome_empresa || 'Patrocinador AjeitaAi').substring(0,100),
+          email_usuario: 'patrocinio@ajeita.com.br',
+          status: 'pendente',
+          mp_payment_id: null,
+          qr_code_base64: null,
+          copia_cola: null,
+          criado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),
+          _sponsor_doc_id: String(patrocinadorDocId)
+        }, { merge: true });
+      } catch(eT){}
+    }
+
+    // --- Passo 2: Cria pagamento PIX no Mercado Pago (MESMISSIMA engine recarga-moedas SDK v2 + fallback) ---
+    let qrCodeBase64 = null, copiaCola = null, mpPaymentId = null, tentouSdk = false, usouFetchFallback = false;
+    const descricaoMp = 'Patrocinio AjeitaAi Plano ' + planoKey.charAt(0).toUpperCase() + planoKey.slice(1) + ' - ' + String(b.nome_empresa || 'Empresa Parceira').substring(0,50);
+    const VALOR_CENTAVOS = Math.floor(Number(precoBRL) * 100);
+    if (mercadopago) {
+      tentouSdk = true;
+      try {
+        const bodyMpSdk = {
+          transaction_amount: Number(precoBRL),
+          description: descricaoMp.substring(0,60),
+          payment_method_id: 'pix',
+          external_reference: externalRef,
+          payer: {
+            email: 'patrocinio@ajeita.com.br',
+            first_name: String(b.nome_empresa || 'Empresa').substring(0,30),
+            last_name: 'AjeitaAi',
+            identification: { type:'CNPJ', number:'00000000000000' }
+          },
+          notification_url: BACKEND_PUBLIC_URL ? (BACKEND_PUBLIC_URL + '/webhook-pix') : undefined,
+          metadata: { origem: 'ajeita-patrocinio', plano: planoKey, sponsor_doc_id: patrocinadorDocId }
+        };
+        const respMp = await mercadopago.payment.create({ body: bodyMpSdk, requestOptions: {} });
+        const pay = respMp && respMp.body ? respMp.body : (respMp || {});
+        mpPaymentId = pay && (pay.id || pay._id) ? String(pay.id || pay._id) : null;
+        const pt = pay && pay.point_of_interaction && pay.point_of_interaction.transaction_data ? pay.point_of_interaction.transaction_data : null;
+        if (pt) {
+          qrCodeBase64 = pt.qr_code_base64 || null;
+          copiaCola = pt.qr_code || pt.copia_e_cola || null;
+        }
+      } catch (eMpSdk) {
+        console.warn('[PATROCINIO] MP SDK v2 falhou (Code 8?), caindo para FETCH REST nativo... Detalhe:', eMpSdk && (eMpSdk.status || eMpSdk.code || ''), eMpSdk && eMpSdk.message ? (eMpSdk.message).substring(0,260) : '');
+        tentouSdk = false;
+      }
+    }
+    if (!tentouSdk || (!qrCodeBase64 && MP_ACCESS_TOKEN)) {
+      usouFetchFallback = true;
+      try {
+        const bodyNativo = {
+          transaction_amount: Number(precoBRL),
+          description: descricaoMp.substring(0,60),
+          payment_method_id: 'pix',
+          external_reference: externalRef,
+          payer: { email: 'patrocinio@ajeita.com.br', first_name: 'Empresa', last_name: 'AjeitaAi', identification: { type: 'CNPJ', number: '00000000000000' } }
+        };
+        if (BACKEND_PUBLIC_URL) bodyNativo.notification_url = BACKEND_PUBLIC_URL + '/webhook-pix';
+        bodyNativo.metadata = { origem: 'ajeita-patrocinio', plano: planoKey, sponsor_doc_id: patrocinadorDocId };
+        const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MP_ACCESS_TOKEN, 'X-Idempotency-Key': 'pat_' + externalRef };
+        const respFetch = await fetch('https://api.mercadopago.com/v1/payments', { method: 'POST', headers: headers, body: JSON.stringify(bodyNativo) });
+        const pay2 = await respFetch.json().catch(()=>({}));
+        mpPaymentId = pay2 && (pay2.id || pay2._id) ? String(pay2.id || pay2._id) : null;
+        const pt2 = pay2 && pay2.point_of_interaction && pay2.point_of_interaction.transaction_data ? pay2.point_of_interaction.transaction_data : null;
+        if (pt2) { qrCodeBase64 = pt2.qr_code_base64 || null; copiaCola = pt2.qr_code || pt2.copia_e_cola || null; }
+      } catch(eFetch){
+        console.error('[PATROCINIO] MP FETCH fallback também falhou:', eFetch && eFetch.message || eFetch);
+      }
+    }
+
+    if (qrCodeBase64 && !qrCodeBase64.toLowerCase().startsWith('data:image')) qrCodeBase64 = 'data:image/png;base64,' + String(qrCodeBase64);
+    if (dbFirestore && patrocinadorDocId && !patrocinadorDocId.startsWith('local_pat_')) {
+      try {
+        await dbFirestore.collection('patrocinadores').doc(patrocinadorDocId).update({
+          mp_payment_id: mpPaymentId,
+          qr_code_base64: qrCodeBase64,
+          copia_cola: copiaCola,
+          updated_at: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString()
+        });
+      } catch(eUp){}
+    }
+    if (dbFirestore) {
+      try {
+        await dbFirestore.collection('pix_transacoes').doc(externalRef).set({
+          mp_payment_id: mpPaymentId,
+          qr_code_base64: qrCodeBase64,
+          copia_cola: copiaCola
+        }, { merge: true });
+      } catch(eT2){}
+    }
+
+    if (!qrCodeBase64 && !mpPaymentId) {
+      return res.status(500).json({ ok:false, msg:'Mercado Pago nao retornou QR. Verificar Access Token backend e rede.' });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      external_reference: externalRef,
+      patrocinador_doc_id: patrocinadorDocId,
+      mp_payment_id: mpPaymentId,
+      plano: planoKey,
+      dias: diasPlano,
+      preco_brl: precoBRL,
+      valor_centavos_mp: VALOR_CENTAVOS,
+      qr_code_base64: qrCodeBase64,
+      copia_cola: copiaCola,
+      usou_sdk_mp_v2: tentouSdk,
+      usou_fetch_rest_fallback: usouFetchFallback
+    });
+
+  } catch (eGeral) {
+    console.error('[ROTA /api/patrocinadores/criar-pagamento] EXCEPTION:', eGeral && eGeral.message || eGeral);
+    return res.status(500).json({ ok:false, msg:'Erro interno criar pagamento patrocinio.' });
+  }
+});
+
+/* ============================================================
+   ADMIN — PATROCINADORES  (TASK 3)
+   Todas as rotas exigem header? ou body? admin_senha === 'bolo2024'
+   (mesma convenção já usada nas rotas admin pix em server.js)
+   GET    /api/patrocinadores/admin/todos
+   PATCH  /api/patrocinadores/admin/patch  {docId, patch, admin_senha, marcar_pagamento_aprovado_motivo?}
+   DELETE /api/patrocinadores/admin/delete {docId, admin_senha}
+   ============================================================ */
+app.get('/api/patrocinadores/admin/todos', async (req, res) => {
+  try {
+    const senha = String((req.query && req.query.admin_senha) || (req.body && req.body.admin_senha) || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    if (!dbFirestore) return res.status(200).json({ ok:true, total:0, items:[] });
+    const snap = await dbFirestore.collection('patrocinadores').orderBy('created_at','desc').limit(300).get();
+    const items = [];
+    snap.forEach(ds => { try { items.push(Object.assign({ id: ds.id }, ds.data() || {})); } catch(e){} });
+    return res.status(200).json({ ok:true, total: items.length, items });
+  } catch(e){
+    console.error('/api/patrocinadores/admin/todos erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno admin listar patrocinadores.' });
+  }
+});
+app.patch('/api/patrocinadores/admin/patch', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const senha = String(b.admin_senha || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const docId = String(b.docId || '').trim();
+    if (!docId || !dbFirestore) return res.status(400).json({ ok:false, msg:'docId ausente.' });
+    const snapDoc = await dbFirestore.collection('patrocinadores').doc(docId).get().catch(()=>null);
+    if (!snapDoc || !snapDoc.exists) return res.status(404).json({ ok:false, msg:'Patrocinador nao encontrado.' });
+    const docAtual = Object.assign({}, snapDoc.data() || {});
+    // Regra §13: para marcar pagamento approved ou ativar patrocinador MANUALMENTE via admin, EXIGE
+    // checkbox b.marcar_pagamento_aprovado_confirmar === true + motivo em texto
+    const patch = Object.assign({}, b.patch || {});
+    const querMarcarAprovado = (patch.status_pagamento && String(patch.status_pagamento).toLowerCase() === 'approved') ||
+                              (patch.status_patrocinador && String(patch.status_patrocinador).toLowerCase() === 'ativo');
+    if (querMarcarAprovado) {
+      const confirmar = Boolean(b.marcar_pagamento_aprovado_confirmar === true || b.marcar_pagamento_aprovado_confirmar === 'true' || b.marcar_pagamento_aprovado_confirmar === 'on');
+      const motivo = String(b.marcar_pagamento_aprovado_motivo || '').trim();
+      if (!confirmar || motivo.length < 8) return res.status(400).json({ ok:false, msg:'Para aprovar manualmente: marque checkbox obrigatória e justifique com motivo (mín 8 caracteres). Ação bloqueada para não confundir com pagamento real MP.' });
+      patch.aprovado_via = 'admin_manual';
+      patch.aprovado_manual_motivo = motivo.substring(0,400);
+      patch.aprovado_manual_em = admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString();
+      // Se marcou approved sem data de inicio: ativa patrocínio automático igual fluxo MP aprovado (calcula inicio/fim)
+      if (!patch.data_inicio && String(patch.status_patrocinador || docAtual.status_patrocinador || '').toLowerCase() === 'ativo') {
+        const dias = Number(patch.plano_dias || docAtual.plano_dias || ((PATROCINIO_PLANOS_CONFIG[String(patch.plano || docAtual.plano || 'bronze').toLowerCase()] || {}).dias) || 30);
+        patch.data_inicio = admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString();
+        const termMs = Date.now() + (dias * 24*60*60*1000);
+        patch.data_termino = admin.firestore.Timestamp ? admin.firestore.Timestamp.fromMillis(termMs) : new Date(termMs).toISOString();
+        console.log(`[ADMIN_PATROCINIO_ATIVACAO_MANUAL] docId=${docId} dias=${dias} motivo="${motivo}"`);
+      }
+      // Atualiza também pix_transacoes correspondente (se external_reference existir)
+      if (docAtual.external_reference) {
+        try { await dbFirestore.collection('pix_transacoes').doc(docAtual.external_reference).set({ status: 'aprovado', updated_at: admin.firestore.Timestamp? admin.firestore.Timestamp.now(): new Date().toISOString() }, { merge: true }); } catch(e){}
+      }
+    }
+    patch.updated_at = admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString();
+    await dbFirestore.collection('patrocinadores').doc(docId).set(patch, { merge: true });
+    return res.status(200).json({ ok:true, msg:'Patrocinador atualizado.' });
+  } catch(e){
+    console.error('/api/patrocinadores/admin/patch erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno admin atualizar patrocinador.' });
+  }
+});
+app.delete('/api/patrocinadores/admin/delete', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const senha = String(b.admin_senha || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const docId = String(b.docId || '').trim();
+    if (!docId || !dbFirestore) return res.status(400).json({ ok:false, msg:'docId ausente.' });
+    const snapDoc = await dbFirestore.collection('patrocinadores').doc(docId).get().catch(()=>null);
+    const extRef = snapDoc && snapDoc.exists && snapDoc.data() ? (snapDoc.data().external_reference || null) : null;
+    await dbFirestore.collection('patrocinadores').doc(docId).delete().catch(()=>{});
+    if (extRef) { try { await dbFirestore.collection('pix_transacoes').doc(extRef).delete().catch(()=>{}); } catch(e){} }
+    return res.status(200).json({ ok:true, msg:'Patrocinador excluído.' });
+  } catch(e){
+    console.error('/api/patrocinadores/admin/delete erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno admin excluir patrocinador.' });
+  }
+});
+
 // ===================== (NOVO V11: HANDLERS FINAIS — 404 + ERROR GLOBAL — VEM SEMPRE DEPOIS DE TODAS AS ROTAS E ANTES DE app.listen) =====================
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
   if (res.headersSent) return;
-  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAi Pix Backend). Rotas validas: GET / (healthcheck), POST /api/pix/criar-recarga-moedas, POST /api/pix/aprovar-manual-admin, POST /webhook-pix' });
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAi Pix Backend). Rotas validas: GET / (healthcheck), GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix' });
 });
 // Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
 app.use((err, req, res, next) => {
@@ -841,6 +1283,85 @@ app.listen(PORTA, '0.0.0.0', () => {
         } else {
           console.log(`[CRON_APROVACAO_AUTOMATICA] Nenhum doc na collection pix_transacoes ainda. Aguardando novas cobrancas...`);
         }
+
+        // =============================================================
+        // (TASK 2 BLOCO 2) PATROCINADORES — PAGAMENTOS PENDENTES
+        // Varre doc's de patrocinadores criados recentemente cujo pagamento ainda nao foi aprovado,
+        // consulta MP por external_reference e chama processarAprovacaoPix se aprovado.
+        // =============================================================
+        try {
+          if (dbFirestore && MP_ACCESS_TOKEN) {
+            const snapPatPend = await dbFirestore.collection('patrocinadores').orderBy('created_at','desc').limit(200).get();
+            let patAprovadosRodada = 0, patTotal = 0, patPendentes = 0;
+            if (snapPatPend && snapPatPend.size > 0) {
+              const patParaProcessar = [];
+              snapPatPend.forEach(function(ds){
+                try {
+                  patTotal++;
+                  const d = Object.assign({}, ds.data() || {});
+                  const statusPag = String(d.status_pagamento || '').toLowerCase();
+                  const extRef = String(d.external_reference || '').trim();
+                  if (statusPag !== 'approved' && statusPag !== 'refunded' && statusPag !== 'rejected' && statusPag !== 'cancelled' && extRef && extRef.startsWith('SPONSOR_')) {
+                    const criadoMs = (d.created_at && d.created_at.toDate && typeof d.created_at.toDate === 'function') ? (new Date(d.created_at.toDate())).getTime() : null;
+                    if (criadoMs && (Date.now() - criadoMs) < 4000) return;
+                    patPendentes++;
+                    patParaProcessar.push({ extRef: extRef, docId: ds.id });
+                  }
+                } catch(eP1){}
+              });
+              for (const item of patParaProcessar) {
+                try {
+                  console.log(`[CRON_PATROCINIO_PENDENTE] ref="${item.extRef}" doc="${item.docId}"`);
+                  const r = await _consultarPagamentoMpPorExternalRef(item.extRef);
+                  if (r && r.aprovado === true) {
+                    await processarAprovacaoPix({ external_reference: item.extRef, mp_payment_id: r.mp_payment_id || null, valor: Number(r.valor_mp || 0), aprovado_via: 'cron_15s_mp_pesquisa_external_ref' });
+                    patAprovadosRodada++;
+                  } else if (r && r.status_mp && r.status_mp !== 'nao_encontrado_ainda' && dbFirestore) {
+                    try { await dbFirestore.collection('patrocinadores').doc(item.docId).update({ status_pagamento: r.status_mp, updated_at: admin.firestore.Timestamp? admin.firestore.Timestamp.now(): new Date().toISOString() }); } catch(eUpPat){}
+                  }
+                } catch(eItemPat) { console.warn('[CRON_PATROCINIO_PENDENTE] erro item:', eItemPat && eItemPat.message || eItemPat); }
+              }
+              if (patAprovadosRodada > 0 || patPendentes > 0) console.log(`[CRON_PATROCINIO] rodada OK: ${patPendentes} pendentes, ${patAprovadosRodada} aprovados automaticamente. Total docs patrocinadores: ${patTotal}.`);
+            }
+          }
+        } catch(ePatGeral) { console.warn('[CRON_PATROCINIO_PENDENTE] Geral erro (ignora proxima):', ePatGeral && ePatGeral.message); }
+
+        // =============================================================
+        // (TASK 2 BLOCO 3) PATROCINADORES — EXPIRAÇÃO AUTOMÁTICA
+        // Se hoje > data_termino E status_patrocinador='ativo', marca status=expirado.
+        // =============================================================
+        try {
+          if (dbFirestore) {
+            const snapPatAtivos = await dbFirestore.collection('patrocinadores').orderBy('created_at','desc').limit(200).get();
+            let expiradosRodada = 0;
+            if (snapPatAtivos && snapPatAtivos.size > 0) {
+              const agoraExp = Date.now();
+              const toMsExp = function(v) {
+                if (!v) return null; if (typeof v === 'string') return (new Date(v)).getTime();
+                if (v && v.toDate && typeof v.toDate === 'function') return (new Date(v.toDate())).getTime();
+                if (v && typeof v._seconds === 'number') return v._seconds * 1000;
+                if (typeof v === 'number') return v; return (new Date(String(v))).getTime();
+              };
+              snapPatAtivos.forEach(function(ds){
+                try {
+                  const d = Object.assign({}, ds.data() || {});
+                  if (String(d.status_patrocinador || '').toLowerCase() !== 'ativo') return;
+                  const fim = toMsExp(d.data_termino);
+                  if (fim && agoraExp > fim) {
+                    dbFirestore.collection('patrocinadores').doc(ds.id).update({
+                      status_patrocinador: 'expirado',
+                      updated_at: admin.firestore.Timestamp? admin.firestore.Timestamp.now(): new Date().toISOString(),
+                      expirado_em: admin.firestore.Timestamp? admin.firestore.Timestamp.now(): new Date().toISOString(),
+                      _motivo_expiracao: 'cron_15s_data_termino_atingido'
+                    }).then(() => { expiradosRodada++; }).catch(function(){});
+                  }
+                } catch(eExpItem){}
+              });
+              if (expiradosRodada > 0) console.log(`[CRON_PATROCINIO_EXPIRACAO] ${expiradosRodada} patrocinadores marcados expirados automaticamente nesta rodada.`);
+            }
+          }
+        } catch(eExpGeral) { console.warn('[CRON_PATROCINIO_EXPIRACAO] Geral erro (ignora proxima):', eExpGeral && eExpGeral.message); }
+
       } catch (eGeral) {
         console.warn('[CRON_APROVACAO_AUTOMATICA] Erro GERAL rodada cron (ignora, proxima em 15s):', eGeral && eGeral.message);
       }

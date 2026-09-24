@@ -18,6 +18,10 @@ npm-debug.log*
 node_modules/
 .cache/
 
+# Debug / instrumentação temporária
+.dbg/
+*.ndjson
+
 # Env / secrets
 .env
 .env.*

@@ -123,10 +123,15 @@ tailwind.config = {
         <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-2">Painel Administrativo</h2>
         <p class="text-slate-500">Configure preços, gerencie pedidos e acompanhe métricas da plataforma.</p>
       </div>
-      <button onclick="fazerLogoutAdmin()" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2.5 rounded-xl border border-slate-200 flex items-center gap-2 transition">
-        <i class="fa-solid fa-right-from-bracket text-sm"></i>
-        Sair do Admin
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="adminLimparCacheListagens()" class="bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-4 py-2.5 rounded-xl border border-amber-200 flex items-center gap-2 transition" title="Limpa caches de listagens (profissionais, pedidos, patrocinadores). Preserva login/sessão.">
+          🧹 <span class="hidden sm:inline">Limpar cache</span>
+        </button>
+        <button onclick="fazerLogoutAdmin()" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2.5 rounded-xl border border-slate-200 flex items-center gap-2 transition">
+          <i class="fa-solid fa-right-from-bracket text-sm"></i>
+          Sair do Admin
+        </button>
+      </div>
     </div>
 
     <!-- Métricas -->
@@ -232,6 +237,7 @@ tailwind.config = {
           <div class="inline-flex bg-slate-100 rounded-xl p-1">
             <button onclick="trocarTabAdmin('pedidos')" id="tabAdminPedidos" class="px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm">📋 Pedidos</button>
             <button onclick="trocarTabAdmin('profissionais')" id="tabAdminProfissionais" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">👥 Profissionais</button>
+            <button onclick="trocarTabAdmin('patrocinadores')" id="tabAdminPatrocinadores" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">🤝 Patrocinadores</button>
           </div>
         </div>
       </div>
@@ -269,6 +275,28 @@ tailwind.config = {
               </tr>
             </thead>
             <tbody id="adminTabelaProfissionaisBody" class="divide-y divide-slate-100">
+            </tbody>
+          </table>
+        </div>
+        <div id="adminTabelaPatrocinadoresContainer" class="hidden">
+          <div class="px-6 py-4 bg-amber-50/50 border-b border-amber-100 text-[11px] text-amber-800 flex items-center gap-2">
+            <i class="fa-solid fa-circle-info"></i>
+            <span><strong>Somente patrocinadores com status <u>aprovado</u> (pagamento Mercado Pago) + <u>ativo</u> + dentro do prazo de validade aparecem no banner público do site.</strong> A ativação manual requer checkbox e justificativa (não substitui pagamento real).</span>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">ID</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Empresa</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Plano</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Pagamento</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Status</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Início / Fim</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Payment ID MP</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="adminTabelaPatrocinadoresBody" class="divide-y divide-slate-100">
             </tbody>
           </table>
         </div>
@@ -516,21 +544,299 @@ function fazerLogoutAdmin() {
 
 /* Dashboard */
 let _tabAdminAtual = 'pedidos';
+let _adminCachePatrocinadores = [];
 function trocarTabAdmin(tab) {
   _tabAdminAtual = tab;
   const btnPed = document.getElementById('tabAdminPedidos');
   const btnPro = document.getElementById('tabAdminProfissionais');
+  const btnPat = document.getElementById('tabAdminPatrocinadores');
   const tbPed = document.getElementById('adminTabelaPedidosContainer');
   const tbPro = document.getElementById('adminTabelaProfissionaisContainer');
-  if (tab === 'pedidos') {
-    btnPed.className='px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
-    btnPro.className='px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
-    tbPed.classList.remove('hidden'); tbPro.classList.add('hidden');
-  } else {
-    btnPro.className='px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
-    btnPed.className='px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
-    tbPro.classList.remove('hidden'); tbPed.classList.add('hidden');
+  const tbPat = document.getElementById('adminTabelaPatrocinadoresContainer');
+  const des = 'px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
+  const atv = 'px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
+  [btnPed,btnPro,btnPat].forEach(b => b && (b.className = des));
+  [tbPed,tbPro,tbPat].forEach(t => t && t.classList.add('hidden'));
+  if (tab === 'pedidos') { btnPed && (btnPed.className = atv); tbPed && tbPed.classList.remove('hidden'); }
+  else if (tab === 'profissionais') { btnPro && (btnPro.className = atv); tbPro && tbPro.classList.remove('hidden'); }
+  else if (tab === 'patrocinadores') { btnPat && (btnPat.className = atv); tbPat && tbPat.classList.remove('hidden'); adminCarregarPatrocinadores(); }
+}
+
+async function adminLimparCacheListagens() {
+  if (!adminLogado) { toast('error','Acesso negado','Apenas administradores.'); return; }
+  try {
+    // §14 + §15: NAO usa localStorage.clear(). Invalidamos SOMENTE listagens.
+    const PRESERVAR_KEYS_EXATAS = new Set([
+      PREFIXO_STORAGE + 'admin_logado',
+      PREFIXO_STORAGE + 'usuarioLogado',
+      PREFIXO_STORAGE + 'usuarioAtualTipo',
+      PREFIXO_STORAGE + 'googleAuthToken',
+      PREFIXO_STORAGE + 'googleAuthExp',
+      PREFIXO_STORAGE + 'pedidoEmAberto_fotos'
+    ]);
+    const KEYS_INVALIDAR_PARTE = ['profissionais','pedidos','recargas','avaliacoes','clientes','configEconomia','notificacoes_pro_','patrocinadores'];
+    let removidas = 0, total = 0;
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      try {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        total++;
+        if (PRESERVAR_KEYS_EXATAS.has(k)) continue;
+        if (!k.startsWith(PREFIXO_STORAGE)) continue;
+        const nomeChave = k.substring(PREFIXO_STORAGE.length);
+        const invalidar = KEYS_INVALIDAR_PARTE.some(function(sub){ return nomeChave.indexOf(sub) === 0; });
+        if (invalidar) { localStorage.removeItem(k); removidas++; }
+      } catch(e){}
+    }
+    // Recarrega storage e Firebase
+    carregarDadosStorageBootstrap();
+    if (typeof fbSyncProfissionaisRealtime === 'function') { try { fbSyncProfissionaisRealtime(true); } catch(e){} }
+    renderAdminDashboard();
+    toast('success','🧹 Cache atualizado com sucesso!',`Foram limpas ${removidas} chaves de listagens (de ${total} total). Login e sessão preservados.`,6000);
+    console.log(`[ADMIN_CACHE] Limpo ${removidas} keys (total ${total}) por admin.`);
+  } catch(e){
+    console.error('[adminLimparCacheListagens] erro:', e);
+    toast('error','Erro','Não foi possível limpar o cache. ' + (e && e.message || ''));
   }
+}
+
+async function adminCarregarPatrocinadores(force) {
+  if (!adminLogado) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const url = BACKEND_PIX_URL + '/api/patrocinadores/admin/todos?admin_senha=' + encodeURIComponent('bolo2024');
+    const r = await fetch(url, { method:'GET', headers: {'Accept':'application/json'} }).catch(()=>null);
+    const json = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    if (json && json.ok === true && Array.isArray(json.items)) {
+      _adminCachePatrocinadores = json.items;
+      salvarNoStorage('patrocinadores_admin', json.items);
+      renderAdminPatrocinadores(json.items);
+      return;
+    }
+    // Fallback storage local (se backend fora do ar)
+    const local = pegarDoStorage('patrocinadores_admin');
+    renderAdminPatrocinadores(Array.isArray(local) ? local : []);
+  } catch(e){ console.error('[adminCarregarPatrocinadores] erro:', e); renderAdminPatrocinadores([]); }
+}
+function renderAdminPatrocinadores(items) {
+  const tb = document.getElementById('adminTabelaPatrocinadoresBody');
+  if (!tb) return;
+  items = Array.isArray(items) ? items : _adminCachePatrocinadores || [];
+  if (items.length === 0) {
+    tb.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center text-slate-400">Nenhum patrocinador cadastrado ainda. Cadastre em "Seja um parceiro" no site.</td></tr>`;
+    return;
+  }
+  const toDataStr = function(v) {
+    if (!v) return '—';
+    try {
+      let ms = null;
+      if (typeof v === 'number') ms = v;
+      else if (typeof v === 'string') ms = (new Date(v)).getTime();
+      else if (v && v.toDate && typeof v.toDate === 'function') ms = (new Date(v.toDate())).getTime();
+      else if (v && typeof v._seconds === 'number') ms = v._seconds * 1000;
+      if (!ms || Number.isNaN(ms)) return '—';
+      const d = new Date(ms);
+      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    } catch(e){ return '—'; }
+  };
+  const statusPagColor = function(s) {
+    s = String(s||'').toLowerCase();
+    if (s === 'approved' || s === 'aprovado') return { t:'APROVADO', c:'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    if (s === 'pending' || s === 'pendente') return { t:'PENDENTE', c:'bg-amber-50 text-amber-700 border-amber-200' };
+    if (s === 'rejected' || s === 'rejeitado') return { t:'RECUSADO', c:'bg-rose-50 text-rose-700 border-rose-200' };
+    if (s === 'cancelled' || s === 'cancelado') return { t:'CANCELADO', c:'bg-slate-100 text-slate-600 border-slate-200' };
+    if (s === 'refunded' || s === 'reembolsado') return { t:'REEMBOLSADO', c:'bg-purple-50 text-purple-700 border-purple-200' };
+    return { t: (s || '—').toUpperCase().slice(0,10), c:'bg-slate-100 text-slate-600 border-slate-200' };
+  };
+  const statusPatColor = function(s) {
+    s = String(s||'').toLowerCase();
+    if (s === 'ativo') return { t:'ATIVO', c:'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    if (s === 'expirado') return { t:'EXPIRADO', c:'bg-rose-50 text-rose-700 border-rose-200' };
+    if (s === 'inativo') return { t:'INATIVO', c:'bg-slate-100 text-slate-500 border-slate-200' };
+    return { t: (s || '—').toUpperCase().slice(0,10), c:'bg-slate-100 text-slate-600 border-slate-200' };
+  };
+  tb.innerHTML = items.map(function(p){
+    const sp = statusPagColor(p.status_pagamento);
+    const sPat = statusPatColor(p.status_patrocinador);
+    const planoTxt = (p.plano||'bronze').toUpperCase();
+    const valorBRL = 'R$ ' + Number(p.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return `
+      <tr class="hover:bg-slate-50 transition align-top">
+        <td class="px-6 py-3.5 font-mono text-[10px] text-slate-500 w-[60px]">${String(p.id||'').substring(0,12)}...</td>
+        <td class="px-6 py-3.5">
+          <div class="flex items-center gap-3">
+            ${p.logo ? `<img src="${p.logo}" onerror="this.style.display='none'" class="w-10 h-10 rounded-lg border border-slate-200 object-cover bg-white flex-shrink-0">` : `<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-100 to-primary-200 text-primary-700 flex items-center justify-center text-lg font-black flex-shrink-0">${String(p.nome_empresa||'?').charAt(0).toUpperCase()}</div>`}
+            <div class="min-w-0">
+              <div class="font-bold text-slate-800 text-sm leading-tight truncate max-w-[220px]">${p.nome_empresa||'—'}</div>
+              <div class="text-[11px] text-slate-500 truncate max-w-[220px]">${p.categoria||''} • ${p.whatsapp?formataWhatsAppBrasil(p.whatsapp):''}</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-3.5 text-xs">
+          <div class="inline-flex flex-col gap-1">
+            <span class="inline-flex items-center gap-1 font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 w-fit">${planoTxt}</span>
+            <span class="font-black text-primary-700">${valorBRL}</span>
+          </div>
+        </td>
+        <td class="px-6 py-3.5 text-center">
+          <span class="text-[10px] font-black px-2.5 py-1 rounded-full border ${sp.c}">${sp.t}</span>
+          ${p.aprovado_via === 'admin_manual' ? `<div class="text-[9px] font-bold text-purple-700 mt-1">MANUAL ⚠️</div>` : ''}
+        </td>
+        <td class="px-6 py-3.5 text-center">
+          <span class="text-[10px] font-black px-2.5 py-1 rounded-full border ${sPat.c}">${sPat.t}</span>
+        </td>
+        <td class="px-6 py-3.5 text-center text-[11px] leading-tight text-slate-600">
+          <div><strong>${toDataStr(p.data_inicio)}</strong></div>
+          <div class="text-slate-400">↓</div>
+          <div><strong>${toDataStr(p.data_termino)}</strong></div>
+        </td>
+        <td class="px-6 py-3.5 align-top">
+          <span class="font-mono text-[10px] text-slate-500">${p.mp_payment_id ? String(p.mp_payment_id).substring(0,18) : '—'}</span>
+        </td>
+        <td class="px-6 py-3.5">
+          <div class="flex flex-col gap-1.5 justify-center">
+            <button onclick="adminEditarPatrocinador('${String(p.id||'').replace(/'/g,"\\'")}')" class="inline-flex items-center justify-center gap-1 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-200 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition">
+              <i class="fa-solid fa-pen-to-square"></i> Editar
+            </button>
+            <button onclick="adminTogglePatrocinadorStatus('${String(p.id||'').replace(/'/g,"\\'")}')" class="inline-flex items-center justify-center gap-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition">
+              <i class="fa-solid fa-power-off"></i> Ativar/Desat.
+            </button>
+            <button onclick="adminAprovarPagamentoPatrocinadorManual('${String(p.id||'').replace(/'/g,"\\'")}')" class="inline-flex items-center justify-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition" title="⚠️ Marca como aprovado SEM Mercado Pago. Requer justificativa.">
+              <i class="fa-solid fa-hand-holding-dollar"></i> Aprovar manual
+            </button>
+            <button onclick="adminExcluirPatrocinador('${String(p.id||'').replace(/'/g,"\\'")}')" class="inline-flex items-center justify-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition">
+              <i class="fa-solid fa-trash-can"></i> Excluir
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+async function adminEditarPatrocinador(docId) {
+  if (!adminLogado || !docId) return;
+  const p = (_adminCachePatrocinadores || []).find(x => x && String(x.id) === String(docId)) || {};
+  const novoNome = window.prompt('Nome da empresa:', p.nome_empresa || '');
+  if (novoNome === null) return;
+  const novaCat = window.prompt('Categoria:', p.categoria || '');
+  if (novaCat === null) return;
+  const novaDesc = window.prompt('Descrição (curta):', p.descricao || '');
+  if (novaDesc === null) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const resp = await fetch(BACKEND_PIX_URL + '/api/patrocinadores/admin/patch', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({ admin_senha:'bolo2024', docId:docId, patch:{ nome_empresa: novoNome.trim(), categoria: novaCat.trim(), descricao: novaDesc.trim() } })
+    });
+    const j = await resp.json().catch(()=>({ok:false}));
+    if (j && j.ok === true) { toast('success','✅ Patrocinador atualizado','Dados salvos.'); adminCarregarPatrocinadores(true); }
+    else toast('error','Erro', j && j.msg || 'Não foi possível atualizar.');
+  } catch(e){ toast('error','Erro','Sem conexão com backend.'); }
+}
+
+async function adminTogglePatrocinadorStatus(docId) {
+  if (!adminLogado || !docId) return;
+  const p = (_adminCachePatrocinadores || []).find(x => x && String(x.id) === String(docId)) || {};
+  const atual = String(p.status_patrocinador || 'inativo').toLowerCase();
+  const novo = atual === 'ativo' ? 'inativo' : 'ativo';
+  const conf = window.confirm(`Tem certeza que quer ${novo === 'ativo' ? 'ATIVAR' : 'DESATIVAR'} o patrocinador "${p.nome_empresa || docId}"?\n\nObservação: isto NÃO altera status do pagamento Mercado Pago.`);
+  if (!conf) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const resp = await fetch(BACKEND_PIX_URL + '/api/patrocinadores/admin/patch', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({ admin_senha:'bolo2024', docId:docId, patch:{ status_patrocinador: novo } })
+    });
+    const j = await resp.json().catch(()=>({ok:false}));
+    if (j && j.ok === true) { toast('success','✅ Status atualizado',`Patrocinador ${novo === 'ativo' ? 'ATIVADO' : 'DESATIVADO'}.`); adminCarregarPatrocinadores(true); }
+    else toast('error','Erro', j && j.msg || 'Não foi possível atualizar.');
+  } catch(e){ toast('error','Erro','Sem conexão.'); }
+}
+
+async function adminAprovarPagamentoPatrocinadorManual(docId) {
+  if (!adminLogado || !docId) return;
+  const p = (_adminCachePatrocinadores || []).find(x => x && String(x.id) === String(docId)) || {};
+  const html = `
+    <div style="max-width:420px;margin:0 auto;background:white;padding:20px 22px;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 12px 28px rgba(0,0,0,.12);font-family:system-ui">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;display:flex;align-items:center;justify-content:center;font-size:18px">⚠️</div>
+        <div>
+          <div style="font-weight:900;color:#0f172a;font-size:16px">Aprovar pagamento MANUALMENTE</div>
+          <div style="font-size:12px;color:#64748b">Empresa: <strong>${p.nome_empresa || docId}</strong></div>
+        </div>
+      </div>
+      <div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:14px">
+        Esta ação NÃO consulta o Mercado Pago. Ela deve ser usada somente se o pagamento foi confirmado fora da plataforma (Pix manual, transferência etc.). Se abusar, você corre o risco de ativar patrocínios SEM dinheiro recebido.
+      </div>
+      <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;font-size:13px;color:#334155;cursor:pointer">
+        <input id="ap_confirm" type="checkbox" style="margin-top:3px;accent-color:#4f46e5;width:16px;height:16px">
+        <div>
+          <strong>Confirmo que o valor foi recebido</strong> e quero marcar o patrocínio como aprovado e ativar o banner público.
+        </div>
+      </label>
+      <label style="display:block;margin-bottom:10px;font-size:12px;font-weight:700;color:#334155">Motivo / justificativa (mínimo 8 caracteres):</label>
+      <textarea id="ap_motivo" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;resize:vertical" placeholder="Ex: Pix recebido manualmente para a chave tel +55 61 9xxxx-xxxx em 23/09 no valor R$120,00"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button id="ap_cancel" style="padding:9px 16px;border-radius:10px;font-weight:700;border:1px solid #e2e8f0;background:white;color:#475569;cursor:pointer">Cancelar</button>
+        <button id="ap_ok" style="padding:9px 16px;border-radius:10px;font-weight:700;border:0;background:linear-gradient(90deg,#dc2626,#f59e0b);color:white;cursor:pointer">Aprovar e ativar</button>
+      </div>
+    </div>`;
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+  const done = new Promise(function(res){
+    modal.querySelector('#ap_cancel').onclick = function(){ document.body.removeChild(modal); res({ok:false}); };
+    modal.querySelector('#ap_ok').onclick = async function(){
+      const conf = modal.querySelector('#ap_confirm').checked;
+      const mot = (modal.querySelector('#ap_motivo').value || '').trim();
+      if (!conf) { alert('Por favor marque a checkbox "Confirmo que o valor foi recebido".'); return; }
+      if (mot.length < 8) { alert('Informe um motivo com no mínimo 8 caracteres para justificar a aprovação manual.'); return; }
+      document.body.removeChild(modal);
+      res({ok:true, motivo:mot});
+    };
+  });
+  const resultado = await done;
+  if (!resultado.ok) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const resp = await fetch(BACKEND_PIX_URL + '/api/patrocinadores/admin/patch', {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        admin_senha: 'bolo2024',
+        docId: docId,
+        patch: { status_pagamento: 'approved', status_patrocinador: 'ativo' },
+        marcar_pagamento_aprovado_confirmar: true,
+        marcar_pagamento_aprovado_motivo: resultado.motivo
+      })
+    });
+    const j = await resp.json().catch(()=>({ok:false}));
+    if (j && j.ok === true) { toast('success','✅ Aprovação manual registrada!','Patrocínio marcado como aprovado e ativado. Motivo registrado em histórico no banco.'); adminCarregarPatrocinadores(true); }
+    else toast('error','Erro', j && j.msg || 'Verifique console.');
+  } catch(e){ toast('error','Erro','Sem conexão backend.'); }
+}
+
+async function adminExcluirPatrocinador(docId) {
+  if (!adminLogado || !docId) return;
+  const p = (_adminCachePatrocinadores || []).find(x => x && String(x.id) === String(docId)) || {};
+  const conf1 = window.confirm(`PRIMEIRA CONFIRMAÇÃO:\n\nTem certeza que quer EXCLUIR o patrocinador "${p.nome_empresa || docId}"?\n\nIsto apagará o registro do banco (e também o pagamento correspondente em pix_transacoes).`);
+  if (!conf1) return;
+  const conf2 = window.confirm(`SEGUNDA CONFIRMAÇÃO:\n\nDigite SIM e clique OK para apagar PERMANENTEMENTE:\n\nSIM - eu quero excluir.`);
+  if (!conf2) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const resp = await fetch(BACKEND_PIX_URL + '/api/patrocinadores/admin/delete', {
+      method: 'DELETE',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ admin_senha:'bolo2024', docId:docId })
+    });
+    const j = await resp.json().catch(()=>({ok:false}));
+    if (j && j.ok === true) { toast('success','🗑️ Patrocinador excluído','Removido do banco.'); adminCarregarPatrocinadores(true); }
+    else toast('error','Erro', j && j.msg || 'Verifique console.');
+  } catch(e){ toast('error','Erro','Sem conexão.'); }
 }
 
 function adminSalvarEconomia() {

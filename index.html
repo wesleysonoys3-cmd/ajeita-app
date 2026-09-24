@@ -94,7 +94,25 @@ tailwind.config = {
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: #faf5ff; }
   ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 8px; }
-  ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
+  ::-webkit-scrollbar-thumb { background: #a855f7; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:none;} }
+  @keyframes popIn { 0% { opacity:0; transform: scale(0.9);} 60% { opacity:1; transform:scale(1.02);} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideRight { 0% { opacity:0; transform: translateX(80px);} 100% { opacity:1; transform: translateX(0);} }
+  @keyframes scrollCarrosselPatrocinios {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes bellRing {
+    0%, 100% { transform: rotate(0); }
+    10%, 30% { transform: rotate(-15deg); }
+    20%, 40% { transform: rotate(15deg); }
+    50% { transform: rotate(0); }
+  }
+  .animate-popIn { animation: popIn 0.3s ease-out; }
+  .animate-slideRight { animation: slideRight 0.35s ease-out; }
+  .animate-bellRing { animation: bellRing 1.2s ease-in-out infinite; transform-origin: top center; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
@@ -127,11 +145,17 @@ tailwind.config = {
             <button onclick="abrirModalSolicitarOrcamento()" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 shadow-sm transition"><i class="fa-solid fa-bullhorn mr-1.5"></i>Pedir Serviço</button>
             <button onclick="navigateTo('view-meus-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase mr-1.5 text-accent-500"></i>Meus Pedidos</button>
             <button onclick="navigateTo('view-profissional-cadastro')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie mr-1.5 text-primary-500"></i>Sou Profissional</button>
+            <button onclick="navigateTo('view-area-patrocinador')" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-fuchsia-700 bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-fuchsia-200 hover:from-fuchsia-100 hover:to-purple-100 transition"><i class="fa-solid fa-handshake mr-1.5 text-fuchsia-600"></i>Seja um parceiro</button>
           </div>
           <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
           <div id="headerNavGroupProfissional" class="hidden items-center gap-1">
             <button onclick="navigateTo('view-home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-house mr-1.5 text-slate-500"></i>Home</button>
             <button onclick="navigateTo('view-mural-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-map-location-dot mr-1.5 text-primary-500"></i>Mural da Sua Região</button>
+            <button onclick="navigateTo('view-area-patrocinador')" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-fuchsia-700 bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-fuchsia-200 hover:from-fuchsia-100 hover:to-purple-100 transition"><i class="fa-solid fa-handshake mr-1.5 text-fuchsia-600"></i>Seja parceiro</button>
+            <button onclick="abrirDrawerNotificacoes()" class="relative nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition" aria-label="Notificações" title="Notificações">
+              <i class="fa-solid fa-bell mr-1.5 text-primary-500"></i>Notificações
+              <span id="headerProfSinoBadge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md border-2 border-white animate-[bellRing_1.4s_ease-in-out_infinite_0.5s]">0</span>
+            </button>
             <button onclick="abrirLojaMoedas()" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:from-amber-100 hover:to-orange-100 transition"><i class="fa-solid fa-coins mr-1.5 text-amber-600"></i>Minhas Moedas</button>
             <button onclick="abrirHistoricoLeadsProfissional()" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-book-open mr-1.5 text-primary-500"></i>Histórico Leads</button>
             <button onclick="abrirMeuPerfil()" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-sm transition"><i class="fa-solid fa-user-gear mr-1.5"></i>Meu Perfil</button>
@@ -229,6 +253,12 @@ tailwind.config = {
           <div class="text-[10px] uppercase font-black tracking-wider text-primary-600 px-4 pt-3 pb-1 border-b border-primary-100 mb-1">Área do Profissional</div>
           <button onclick="navigateTo('view-home'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-house text-slate-500 w-5"></i>Home / Catálogo</button>
           <button onclick="navigateTo('view-mural-pedidos'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-primary-700 bg-primary-50 border border-primary-100 hover:bg-primary-100 transition"><i class="fa-solid fa-map-location-dot text-primary-500 w-5"></i>Mural de Pedidos (Sua Região)</button>
+          <button onclick="toggleMobileMenu(); setTimeout(function(){try{abrirDrawerNotificacoes();}catch(e){}},150);" class="relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition">
+            <i class="fa-solid fa-bell text-primary-500 w-5"></i>
+            <span>Notificações</span>
+            <span id="mobileProfSinoBadge" class="hidden absolute right-4 top-1/2 -translate-y-1/2 min-w-[22px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md">0</span>
+          </button>
+          <button onclick="navigateTo('view-area-patrocinador'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-fuchsia-700 bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-fuchsia-200 hover:from-fuchsia-100 hover:to-purple-100 transition"><i class="fa-solid fa-handshake text-fuchsia-600 w-5"></i>Seja um parceiro do AjeitaAi</button>
           <button onclick="abrirLojaMoedas(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:from-amber-100 hover:to-orange-100 transition"><i class="fa-solid fa-coins text-amber-600 w-5"></i>Loja / Saldo de Moedas</button>
           <button onclick="abrirHistoricoLeadsProfissional(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-book-open text-primary-500 w-5"></i>Histórico Leads Desbloqueados</button>
           <button onclick="abrirMeuPerfil(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-sm transition"><i class="fa-solid fa-user-gear w-5"></i>Meu Perfil Profissional</button>
@@ -334,11 +364,11 @@ tailwind.config = {
           </div>
           <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Aulas</span>
         </button>
-        <button onclick="aplicarFiltrosCatalogo()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
-          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-ellipsis text-2xl sm:text-3xl text-rose-600"></i>
+        <button onclick="navigateTo('view-categorias-todas')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
+          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-primary-200 bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center group-hover:border-primary-400 group-hover:from-primary-100 group-hover:to-accent-100 transition shadow-sm">
+            <i class="fa-solid fa-grid-2 text-2xl sm:text-3xl text-primary-600"></i>
           </div>
-          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Mais</span>
+          <span class="text-xs sm:text-sm font-semibold text-primary-700 text-center leading-tight">Ver todas →</span>
         </button>
       </div>
     </div>
@@ -373,6 +403,9 @@ tailwind.config = {
         </button>
       </div>
     </div>
+
+    <!-- 5 B) EMPRESAS PARCEIRAS — PATROCINADORES (renderizado via JS) -->
+    <div id="patrocinadoresBannersContainer" class="mb-10 sm:mb-12"></div>
 
     <!-- 6) SEÇÃO: REFORMAS E REPAROS + Ver Tudo + grid 3 colunas FOTOS -->
     <div class="mb-10 sm:mb-12">
@@ -536,6 +569,205 @@ tailwind.config = {
         <option value="Ceilândia">Ceilândia</option>
       </select>
       <input id="filtroBairro" type="text">
+    </div>
+  </section>
+
+  <!-- VIEW TODAS AS CATEGORIAS (TASK 4) -->
+  <section id="view-categorias-todas" class="view-section">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
+      <div>
+        <a href="#" onclick="event.preventDefault(); navigateTo('view-home');" class="inline-flex items-center gap-2 mb-3 text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fa-solid fa-arrow-left"></i> Voltar para o início</a>
+        <div class="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-bold px-3 py-1.5 rounded-full border border-primary-200 mb-3">
+          <i class="fa-solid fa-layer-group"></i> CATÁLOGO COMPLETO
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-2">Todas as categorias</h2>
+        <p class="text-slate-500 max-w-2xl">Mais de <strong class="text-slate-800">60 profissões</strong> organizadas em 5 grupos. Toque em qualquer categoria para ver os profissionais disponíveis mais próximos da sua região.</p>
+      </div>
+      <button onclick="abrirModalSolicitarOrcamento()" class="bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:from-pink-600 hover:via-rose-600 hover:to-pink-700 text-white font-bold px-5 py-3 rounded-2xl shadow-card hover:shadow-pop transition text-sm flex items-center gap-2 flex-shrink-0">
+        <i class="fa-solid fa-bullhorn"></i> Não encontrou? Publique seu serviço
+      </button>
+    </div>
+
+    <!-- Barra de pesquisa rápida dentro da view -->
+    <div class="mb-8">
+      <div class="relative group">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-primary-500 transition"></i>
+        <input id="barraPesquisaCategorias" type="text" placeholder="Pesquisar profissão (ex: soldador, jardineiro, engenheiro...)"
+          oninput="filtrarCategoriasViewTodas(this.value)"
+          class="w-full pl-14 pr-5 py-4 bg-white hover:bg-slate-50 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+      </div>
+    </div>
+
+    <!-- Grupos de categorias renderizados via JS (manter separado) -->
+    <div id="containerGruposCategoriasTodas" class="space-y-10">
+      <!-- JS injeta grupos aqui -->
+    </div>
+  </section>
+
+  <!-- VIEW ÁREA DO PATROCINADOR (TASK 5) -->
+  <section id="view-area-patrocinador" class="view-section">
+    <div class="max-w-5xl mx-auto">
+      <!-- Voltar + Hero -->
+      <div class="mb-8">
+        <a href="#" onclick="event.preventDefault(); navigateTo('view-home');" class="inline-flex items-center gap-2 mb-4 text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fa-solid fa-arrow-left"></i> Voltar para o início</a>
+        <div class="relative overflow-hidden bg-gradient-to-br from-fuchsia-500 via-purple-600 to-indigo-700 rounded-3xl shadow-xl p-7 sm:p-10 text-white">
+          <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-pink-400/40 mix-blend-multiply blur-3xl"></div>
+          <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-amber-400/30 mix-blend-multiply blur-3xl"></div>
+          <div class="relative flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
+            <div class="flex-1">
+              <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-xs font-black uppercase tracking-[0.18em] px-3 py-1.5 rounded-full border border-white/30 mb-4">
+                🤝 SEJA UM PARCEIRO
+              </div>
+              <h1 class="text-3xl sm:text-4xl font-black leading-tight mb-3">Divulgue sua marca para milhares de clientes do AjeitaAi</h1>
+              <p class="text-white/90 text-base sm:text-lg font-medium leading-relaxed max-w-xl">Patrocine o AjeitaAi e apareça para clientes ativos da plataforma. Plano simples, pagamento via Pix, ativação automática após aprovação.</p>
+            </div>
+            <div class="bg-white rounded-3xl shadow-xl p-5 sm:p-6 text-slate-800 min-w-[230px]">
+              <div class="text-[11px] font-black uppercase tracking-wider text-fuchsia-700 mb-2">Mais de</div>
+              <div class="text-4xl sm:text-5xl font-black text-slate-900 mb-1">10K+</div>
+              <div class="text-xs sm:text-sm text-slate-600 font-semibold mb-4">clientes ativos na plataforma</div>
+              <div class="space-y-1.5 text-xs sm:text-sm text-slate-700">
+                <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-600"></i> Banner na página inicial</div>
+                <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-600"></i> Link direto para site/WhatsApp</div>
+                <div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-600"></i> Relatório simples de visualizações</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Passo 1: Dados da Empresa -->
+      <div class="bg-white rounded-3xl shadow-card border border-slate-100 p-6 sm:p-8 mb-6">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white flex items-center justify-center font-black shadow-sm flex-shrink-0">1</div>
+          <div>
+            <h3 class="font-black text-slate-900 text-lg sm:text-xl">Informações da sua empresa</h3>
+            <p class="text-sm text-slate-500">Preencha os dados básicos para cadastro do patrocínio.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          <div class="sm:col-span-2">
+            <label class="text-xs font-bold text-slate-700 mb-1.5 block">Nome da empresa *</label>
+            <input id="patrEmpresa" type="text" maxlength="80" placeholder="Ex: Construtora Bela Vista Ltda"
+              class="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-sm sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+          </div>
+          <div class="sm:col-span-1">
+            <label class="text-xs font-bold text-slate-700 mb-1.5 block">Categoria *</label>
+            <input id="patrCategoria" type="text" maxlength="50" placeholder="Ex: Construção"
+              class="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-sm sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+          </div>
+          <div class="sm:col-span-1">
+            <label class="text-xs font-bold text-slate-700 mb-1.5 block">WhatsApp * (somente números)</label>
+            <input id="patrWhats" type="tel" maxlength="11" inputmode="numeric" placeholder="61999887766"
+              class="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-sm sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-xs font-bold text-slate-700 mb-1.5 block">Descrição da empresa *</label>
+            <textarea id="patrDesc" rows="3" maxlength="400" placeholder="Descreva o que sua empresa oferece (será exibido no banner)."
+              class="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-sm sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition resize-none"></textarea>
+          </div>
+          <div class="sm:col-span-1">
+            <label class="text-xs font-bold text-slate-700 mb-1.5 block">Site (opcional)</label>
+            <input id="patrSite" type="url" maxlength="180" placeholder="https://suaempresa.com.br"
+              class="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-sm sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+          </div>
+          <div class="sm:col-span-1">
+            <label class="text-xs font-bold text-slate-700 mb-1.5 block">Instagram (opcional, @perfil)</label>
+            <input id="patrInsta" type="text" maxlength="60" placeholder="@suaempresa"
+              class="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-sm sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+          </div>
+        </div>
+      </div>
+
+      <!-- Passo 2: Imagens -->
+      <div class="bg-white rounded-3xl shadow-card border border-slate-100 p-6 sm:p-8 mb-6">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black shadow-sm flex-shrink-0">2</div>
+          <div>
+            <h3 class="font-black text-slate-900 text-lg sm:text-xl">Fotos e imagens da marca</h3>
+            <p class="text-sm text-slate-500">Adicione logo, cartão de visita e fotos. Arquivos PNG/JPG até 6MB, serão comprimidos automaticamente.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+          <!-- Logo -->
+          <div>
+            <label class="text-xs font-black text-slate-700 mb-2 block">🖼️ Logo da empresa</label>
+            <label class="relative block cursor-pointer group">
+              <div id="patrLogoPreview" class="aspect-[4/3] rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 group-hover:border-primary-400 group-hover:bg-primary-50 transition overflow-hidden flex items-center justify-center">
+                <div class="text-center p-4">
+                  <div class="text-4xl mb-2 text-slate-400 group-hover:text-primary-500 transition"><i class="fa-solid fa-image"></i></div>
+                  <div class="text-xs font-bold text-slate-600 mb-1">Clique para adicionar logo</div>
+                  <div class="text-[10px] text-slate-400">PNG / JPG</div>
+                </div>
+              </div>
+              <input type="file" accept="image/*" class="hidden" onchange="_patrAtualizaPreviewLogo(this)">
+            </label>
+          </div>
+          <!-- Cartão Visita -->
+          <div>
+            <label class="text-xs font-black text-slate-700 mb-2 block">📇 Cartão de visita</label>
+            <label class="relative block cursor-pointer group">
+              <div id="patrCartaoPreview" class="aspect-[4/3] rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 group-hover:border-primary-400 group-hover:bg-primary-50 transition overflow-hidden flex items-center justify-center">
+                <div class="text-center p-4">
+                  <div class="text-4xl mb-2 text-slate-400 group-hover:text-primary-500 transition"><i class="fa-solid fa-id-card"></i></div>
+                  <div class="text-xs font-bold text-slate-600 mb-1">Escolher cartão</div>
+                  <div class="text-[10px] text-slate-400">Frente/verso</div>
+                </div>
+              </div>
+              <input type="file" accept="image/*" class="hidden" onchange="_patrAtualizaCartao(this)">
+            </label>
+          </div>
+          <!-- Fotos extras -->
+          <div>
+            <label class="text-xs font-black text-slate-700 mb-2 block">📷 Fotos extras (até 3)</label>
+            <label class="relative block cursor-pointer group">
+              <div id="patrFotosPreview" class="aspect-[4/3] rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 group-hover:border-primary-400 group-hover:bg-primary-50 transition overflow-hidden">
+                <div class="h-full flex items-center justify-center p-4">
+                  <div class="text-center">
+                    <div class="text-4xl mb-2 text-slate-400 group-hover:text-primary-500 transition"><i class="fa-solid fa-images"></i></div>
+                    <div class="text-xs font-bold text-slate-600 mb-1">Adicionar imagens</div>
+                    <div class="text-[10px] text-slate-400">Multi seleção (3)</div>
+                  </div>
+                </div>
+              </div>
+              <input type="file" accept="image/*" multiple class="hidden" onchange="_patrAtualizaFotos(this)">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Passo 3: Plano + Pagamento -->
+      <div class="bg-white rounded-3xl shadow-card border border-slate-100 p-6 sm:p-8 mb-6">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-black shadow-sm flex-shrink-0">3</div>
+          <div>
+            <h3 class="font-black text-slate-900 text-lg sm:text-xl">Escolha seu plano</h3>
+            <p class="text-sm text-slate-500">Pagamento via Pix. Ativação automática após aprovação pelo Mercado Pago.</p>
+          </div>
+        </div>
+        <div id="patrPlanosGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
+          <!-- JS injeta cards planos + selected via _renderPatrPlanos() -->
+        </div>
+        <!-- Plano personalizado input valor -->
+        <div id="patrValorPersoWrapper" class="hidden max-w-sm mb-6 bg-gradient-to-br from-fuchsia-50 to-purple-50 border-2 border-fuchsia-200 rounded-2xl p-4 sm:p-5">
+          <label class="text-xs font-black text-fuchsia-800 mb-2 block">💎 Informe o valor do patrocínio personalizado (R$)</label>
+          <div class="flex items-center gap-3">
+            <div class="text-lg font-black text-fuchsia-700">R$</div>
+            <input id="patrValorPerso" type="number" min="30" max="99999" step="0.01" placeholder="Ex: 350"
+              oninput="_patrocinadorState.valorPersonalizado = parseFloat(this.value||'0') || 0;"
+              class="flex-1 px-4 py-3 bg-white border-2 border-fuchsia-300 focus:border-fuchsia-500 focus:outline-none rounded-2xl text-lg font-black text-slate-900 focus:ring-4 focus:ring-fuchsia-100 shadow-sm transition">
+          </div>
+          <div class="text-[11px] text-fuchsia-700 mt-2 font-semibold">Valor mínimo R$ 30,00. A duração será definida por acordo após o pagamento.</div>
+        </div>
+        <!-- Botao enviar -->
+        <button id="patrBtnSubmit" onclick="submitPatrocinadorCriarPagamento()" class="w-full bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-700 hover:from-emerald-600 hover:via-teal-700 hover:to-emerald-800 text-white font-black text-base sm:text-lg px-8 py-4 sm:py-5 rounded-3xl shadow-xl hover:shadow-2xl transition active:scale-[0.995] flex items-center justify-center gap-3">
+          <i class="fa-solid fa-circle-check text-xl"></i>
+          <span>Realizar pagamento PIX</span>
+          <i class="fa-solid fa-arrow-right text-base"></i>
+        </button>
+        <div class="mt-4 text-center text-xs text-slate-500 font-medium">
+          <i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i> Pagamento 100% seguro via Mercado Pago. O patrocínio só é ativado após a aprovação real do pagamento.
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1051,6 +1283,36 @@ tailwind.config = {
         <label class="block text-sm font-bold text-slate-700 mb-2">Descreva seu problema *</label>
         <textarea required id="solicDescricao" rows="3" placeholder="Ex: Infiltração no banheiro, preciso arrumar o rejunte..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500 resize-none"></textarea>
       </div>
+      <!-- (TASK 7) Fotos do pedido: até 3 imagens, comprimidas, valida 5MB, preview nativo celular -->
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-2">📸 Fotos do serviço <span class="text-xs font-normal text-slate-500">(opcional, até 3 fotos)</span></label>
+        <div class="text-xs text-slate-500 mb-2.5">Adicione até 3 fotos para explicar melhor o que você precisa.</div>
+        <div id="solicFotosPreview" class="grid grid-cols-3 gap-2.5 mb-2.5">
+          <!-- Miniaturas dinâmicas (3 slots + add) -->
+          <div id="solicFotoSlot0" class="aspect-square rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:border-accent-400 hover:bg-accent-50 transition group">
+            <div class="text-center p-1.5">
+              <div class="text-2xl text-slate-400 group-hover:text-accent-500 transition mb-1"><i class="fa-solid fa-plus"></i></div>
+              <div class="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-tight">Adicionar</div>
+            </div>
+            <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="_pedidoAdicionarFotos(this, 0)" style="position:relative;width:100%;height:100%;opacity:0;position:absolute;">
+          </div>
+          <div id="solicFotoSlot1" class="aspect-square rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:border-accent-400 hover:bg-accent-50 transition group">
+            <div class="text-center p-1.5">
+              <div class="text-2xl text-slate-400 group-hover:text-accent-500 transition mb-1"><i class="fa-solid fa-plus"></i></div>
+              <div class="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-tight">Adicionar</div>
+            </div>
+            <input type="file" accept="image/*" class="opacity-0 cursor-pointer" onchange="_pedidoAdicionarFotos(this, 1)" style="width:100%;height:100%;position:absolute;">
+          </div>
+          <div id="solicFotoSlot2" class="aspect-square rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:border-accent-400 hover:bg-accent-50 transition group">
+            <div class="text-center p-1.5">
+              <div class="text-2xl text-slate-400 group-hover:text-accent-500 transition mb-1"><i class="fa-solid fa-plus"></i></div>
+              <div class="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-tight">Adicionar</div>
+            </div>
+            <input type="file" accept="image/*" class="opacity-0 cursor-pointer" onchange="_pedidoAdicionarFotos(this, 2)" style="width:100%;height:100%;position:absolute;">
+          </div>
+        </div>
+        <div class="text-[10px] sm:text-[11px] text-slate-400">Formato: PNG / JPG. Tamanho máximo: 5MB por foto. As imagens são comprimidas automaticamente.</div>
+      </div>
       <div>
         <label class="block text-sm font-bold text-slate-700 mb-2">Data pretendida</label>
         <input id="solicData" type="date" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
@@ -1105,6 +1367,58 @@ tailwind.config = {
           ✅ Sim, desbloquear contato
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- (TASK 7) MODAL DETALHE DO PEDIDO / ORÇAMENTO (COM GALERIA) -->
+<div id="modal-pedido-detalhe" class="hidden fixed inset-0 z-50 p-4">
+  <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modal-pedido-detalhe')"></div>
+  <div class="relative max-w-2xl w-full mx-auto my-4 max-h-[92vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+    <div id="detalhePedidoHeader" class="px-6 sm:px-8 py-6 border-b border-slate-100 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center flex-shrink-0">
+        <i class="fa-solid fa-clipboard-list text-white text-xl"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h3 id="detalhePedidoTitulo" class="text-xl font-black text-slate-800 truncate">Detalhe do Pedido</h3>
+        <p id="detalhePedidoSub" class="text-sm text-slate-500 truncate">Informações completas do orçamento</p>
+      </div>
+      <button onclick="fecharModal('modal-pedido-detalhe')" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+    <div id="detalhePedidoBody" class="p-6 sm:p-8 space-y-6"></div>
+    <div id="detalhePedidoFooter" class="px-6 sm:px-8 py-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl"></div>
+  </div>
+</div>
+
+<!-- (TASK 8) DRAWER SININHO NOTIFICAÇÕES PROFISSIONAL -->
+<div id="drawerNotificacoesProf" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onclick="fecharDrawerNotificacoes()"></div>
+  <div class="absolute right-0 top-0 h-full w-full sm:max-w-md bg-white shadow-2xl flex flex-col animate-[slideLeftDrawer_0.25s_ease-out]">
+    <style>@keyframes slideLeftDrawer{from{transform:translateX(100%);}to{transform:none;}}</style>
+    <div class="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-primary-50 to-accent-50">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+          <i class="fa-solid fa-bell text-primary-600 text-lg"></i>
+        </div>
+        <div>
+          <div class="font-black text-slate-800 text-base sm:text-lg">Notificações</div>
+          <div class="text-[11px] text-slate-500 font-medium">Avisos importantes para você</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="marcarTodasNotificacoesLidas()" title="Marcar todas como lidas" class="w-9 h-9 rounded-lg hover:bg-white/80 text-slate-600 flex items-center justify-center transition" aria-label="Marcar todas como lidas">
+          <i class="fa-solid fa-check-double"></i>
+        </button>
+        <button onclick="fecharDrawerNotificacoes()" aria-label="Fechar notificações" class="w-9 h-9 rounded-lg hover:bg-white/80 text-slate-600 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+    </div>
+    <div id="drawerNotificacoesLista" class="flex-1 overflow-y-auto"></div>
+    <div class="px-5 sm:px-6 py-3 border-t border-slate-100 bg-slate-50 text-[11px] sm:text-xs text-slate-500 text-center font-medium">
+      Para segurança, você só recebe notificações de pedidos relacionados à sua conta.
     </div>
   </div>
 </div>
@@ -1354,6 +1668,8 @@ function fbInit() {
     FB_FIRESTORE_DISPONIVEL = !!FbDb;
     DBG('FB', '1410', 'Firebase Firestore INICIALIZADO COM SUCESSO ✅. Agora sincronizando profissionais em tempo real.', { projectId: FIREBASE_CONFIG.projectId, disponivel: FB_FIRESTORE_DISPONIVEL });
     fbSyncProfissionaisRealtime();
+    // (TASK 8) Inicializa listener realtime notificações SE já tem profissional logado no carregamento inicial (bootstrap login)
+    try { setTimeout(function(){ try { inicializarNotificacoesProfissional(false); } catch(eNotif){} }, 1800); } catch(eDly){}
   } catch (e) {
     FB_FIRESTORE_DISPONIVEL = false;
     DBG('FB', '1416', 'Firebase init FALHOU (tentaremos novamente em 2s). Erro: ' + String(e && e.message || e), {});
@@ -1365,6 +1681,7 @@ document.addEventListener('DOMContentLoaded', function() {
   try {
     if (window.__firebaseLoaded === true) fbInit();
     else window.addEventListener('firebase:loaded', fbInit, { once: true });
+    setTimeout(function(){ try { carregarEBannersPatrocinadores(); } catch(e){} }, 800);
   } catch(eDCL){}
 });
 
@@ -1619,11 +1936,104 @@ function escolherRedirectUriLista_Op1Padrao() {
   } catch(e){}
 }
 // ============================================================
-const CATEGORIAS_GLOBAIS = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
-const CATEGORIAS_ICONE = {
-  'Pedreiro':'fa-trowel','Eletricista':'fa-bolt','Encanador':'fa-faucet','Pintor':'fa-paint-roller',
-  'Diarista':'fa-broom','Marceneiro':'fa-hammer','Chaveiro':'fa-key','Técnico de Ar Condicionado':'fa-snowflake'
-};
+// (TASK 4) CATALOGO EXPANDIDO 60+ PROFISSOES EM 5 GRUPOS
+// Estrutura oficial §24 doc melhorias
+// ============================================================
+const CATEGORIAS_GRUPOS = [
+  {
+    key: 'construcao', titulo: '🏗️ Construção e Reforma', iconeGrupo: 'fa-trowel',
+    corBg: 'from-orange-50 to-amber-50', corBorda: 'border-orange-200',
+    itens: [
+      { nome:'Pedreiro', icone:'fa-trowel', cor:'text-orange-600' },
+      { nome:'Servente', icone:'fa-person-digging', cor:'text-orange-700' },
+      { nome:'Mestre de obras', icone:'fa-user-helmet-safety', cor:'text-orange-800' },
+      { nome:'Azulejista', icone:'fa-border-all', cor:'text-amber-700' },
+      { nome:'Gesseiro', icone:'fa-fill-drip', cor:'text-amber-600' },
+      { nome:'Drywall', icone:'fa-sheet-plastic', cor:'text-amber-500' },
+      { nome:'Pintor', icone:'fa-paint-roller', cor:'text-pink-600' },
+      { nome:'Eletricista', icone:'fa-bolt', cor:'text-fuchsia-600' },
+      { nome:'Encanador', icone:'fa-faucet', cor:'text-teal-600' },
+      { nome:'Bombeiro hidráulico', icone:'fa-shower', cor:'text-teal-700' },
+      { nome:'Telhadista', icone:'fa-house-chimney', cor:'text-rose-700' },
+      { nome:'Calheiro', icone:'fa-droplet', cor:'text-cyan-700' },
+      { nome:'Impermeabilizador', icone:'fa-umbrella', cor:'text-sky-700' },
+      { nome:'Serralheiro', icone:'fa-screwdriver-wrench', cor:'text-slate-700' },
+      { nome:'Soldador', icone:'fa-fire', cor:'text-orange-700' },
+      { nome:'Marceneiro', icone:'fa-hammer', cor:'text-rose-600' },
+      { nome:'Carpinteiro', icone:'fa-ruler-combined', cor:'text-amber-800' },
+      { nome:'Vidraceiro', icone:'fa-window-maximize', cor:'text-cyan-600' },
+      { nome:'Marmorista', icone:'fa-gem', cor:'text-violet-600' },
+      { nome:'Instalador de portas e janelas', icone:'fa-door-open', cor:'text-indigo-600' },
+      { nome:'Instalador de ar-condicionado', icone:'fa-snowflake', cor:'text-indigo-400' },
+      { nome:'Instalador de energia solar', icone:'fa-solar-panel', cor:'text-yellow-600' }
+    ]
+  },
+  {
+    key: 'casa', titulo: '🏠 Casa e Manutenção', iconeGrupo: 'fa-house',
+    corBg: 'from-teal-50 to-emerald-50', corBorda: 'border-teal-200',
+    itens: [
+      { nome:'Montador de móveis', icone:'fa-couch', cor:'text-emerald-600' },
+      { nome:'Técnico de eletrodomésticos', icone:'fa-blender', cor:'text-sky-600' },
+      { nome:'Técnico de máquina de lavar', icone:'fa-shirt', cor:'text-blue-600' },
+      { nome:'Técnico de geladeira', icone:'fa-temperature-half', cor:'text-cyan-700' },
+      { nome:'Jardineiro', icone:'fa-seedling', cor:'text-green-700' },
+      { nome:'Paisagista', icone:'fa-tree', cor:'text-emerald-700' },
+      { nome:'Dedetizador', icone:'fa-bug', cor:'text-rose-700' },
+      { nome:'Limpeza residencial', icone:'fa-spray-can-sparkles', cor:'text-teal-600' },
+      { nome:'Limpeza pós-obra', icone:'fa-bucket', cor:'text-cyan-700' },
+      { nome:'Limpeza de caixa-d\'água', icone:'fa-faucet-drip', cor:'text-blue-700' },
+      { nome:'Piscineiro', icone:'fa-water-ladder', cor:'text-blue-600' },
+      { nome:'Chaveiro', icone:'fa-key', cor:'text-cyan-600' },
+      { nome:'Diarista', icone:'fa-broom', cor:'text-violet-500' },
+      { nome:'Técnico de Ar Condicionado', icone:'fa-snowflake', cor:'text-indigo-400' }
+    ]
+  },
+  {
+    key: 'fretes', titulo: '🚚 Fretes e Mudanças', iconeGrupo: 'fa-truck',
+    corBg: 'from-blue-50 to-sky-50', corBorda: 'border-blue-200',
+    itens: [
+      { nome:'Frete', icone:'fa-truck', cor:'text-blue-700' },
+      { nome:'Carreto', icone:'fa-truck-fast', cor:'text-blue-800' },
+      { nome:'Transporte de móveis', icone:'fa-couch', cor:'text-indigo-700' },
+      { nome:'Ajudante de mudança', icone:'fa-person-carry', cor:'text-slate-700' },
+      { nome:'Transporte de materiais', icone:'fa-truck-ramp-box', cor:'text-sky-700' }
+    ]
+  },
+  {
+    key: 'aluguel', titulo: '⚒️ Aluguel e Equipamentos', iconeGrupo: 'fa-screwdriver-wrench',
+    corBg: 'from-amber-50 to-yellow-50', corBorda: 'border-amber-200',
+    itens: [
+      { nome:'Aluguel de ferramentas', icone:'fa-screwdriver', cor:'text-amber-700' },
+      { nome:'Aluguel de andaimes', icone:'fa-layer-group', cor:'text-yellow-700' },
+      { nome:'Aluguel de betoneira', icone:'fa-industry', cor:'text-stone-700' },
+      { nome:'Aluguel de escadas', icone:'fa-stairs', cor:'text-amber-800' },
+      { nome:'Aluguel de máquinas', icone:'fa-gears', cor:'text-orange-700' },
+      { nome:'Aluguel de equipamentos para obra', icone:'fa-hammer', cor:'text-orange-800' },
+      { nome:'Aluguel de caçamba', icone:'fa-dumpster', cor:'text-stone-600' },
+      { nome:'Retroescavadeira', icone:'fa-tractor', cor:'text-yellow-800' },
+      { nome:'Compactador de solo', icone:'fa-gauge-high', cor:'text-emerald-800' },
+      { nome:'Caminhão/Munck', icone:'fa-truck-medical', cor:'text-red-700' }
+    ]
+  },
+  {
+    key: 'projetos', titulo: '📐 Projetos', iconeGrupo: 'fa-ruler-triangle',
+    corBg: 'from-fuchsia-50 to-purple-50', corBorda: 'border-fuchsia-200',
+    itens: [
+      { nome:'Arquiteto', icone:'fa-building', cor:'text-fuchsia-700' },
+      { nome:'Engenheiro civil', icone:'fa-helmet-safety', cor:'text-purple-700' },
+      { nome:'Técnico em edificações', icone:'fa-clipboard-list', cor:'text-violet-700' },
+      { nome:'Projetista', icone:'fa-drafting-compass', cor:'text-indigo-700' },
+      { nome:'Topógrafo', icone:'fa-map-location-dot', cor:'text-green-800' },
+      { nome:'Designer de interiores', icone:'fa-palette', cor:'text-pink-700' },
+      { nome:'Orçamentista de obras', icone:'fa-calculator', cor:'text-blue-700' }
+    ]
+  }
+];
+const CATEGORIAS_GLOBAIS = CATEGORIAS_GRUPOS.reduce(function(acc, g){ return acc.concat(g.itens.map(function(i){ return i.nome; })); }, []);
+const CATEGORIAS_ICONE = CATEGORIAS_GRUPOS.reduce(function(acc, g){ g.itens.forEach(function(i){ acc[i.nome] = i.icone; }); return acc; }, {});
+const CATEGORIAS_COR = CATEGORIAS_GRUPOS.reduce(function(acc, g){ g.itens.forEach(function(i){ acc[i.nome] = i.cor; }); return acc; }, {});
+const CATEGORIAS_POPULARES_HOME = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
+// ============================================================
 const BAIRROS_POR_CIDADE = {
   'Brasília (DF)': ['Asa Sul', 'Asa Norte', 'Sudoeste', 'Noroeste', 'Lago Sul', 'Lago Norte', 'Guará', 'Vicente Pires'],
   'Taguatinga': ['Setor O', 'Setor Central', 'Setor Norte', 'QNA', 'QNB', 'QNC', 'QND'],
@@ -1897,15 +2307,6 @@ function carregarDadosStorageBootstrap() {
     }
   });
 
-  profissionais.forEach((p, i) => {
-    if (Array.isArray(PROFISSIONAIS_MOCK) && PROFISSIONAIS_MOCK[i] && PROFISSIONAIS_MOCK[i].id === p.id) {
-      if (!p.taxaHora || p.taxaHora === 0) p.taxaHora = PROFISSIONAIS_MOCK[i].taxaHora;
-      if (Array.isArray(p.bairrosAtendimento) && p.bairrosAtendimento.length <= 1 && Array.isArray(PROFISSIONAIS_MOCK[i].bairrosAtendimento)) {
-        p.bairrosAtendimento = [...PROFISSIONAIS_MOCK[i].bairrosAtendimento];
-      }
-    }
-  });
-
   recargas.forEach(r => {
     if (!r.status) r.status = 'aprovado';
     if (!r.gateway) r.gateway = 'local_simulado';
@@ -2024,6 +2425,8 @@ function handleGoogleCredentialResponse(resp) {
       if (!profissionais[idxPro].nome || profissionais[idxPro].nome.includes('Profissional')) profissionais[idxPro].nome = dadosGoogle.nome;
       profissionalLogado = profissionais[idxPro];
       salvarTodosGlobaisNoStorage();
+      // (TASK 8) Inicializa listener notificações em tempo real pós login
+      try { setTimeout(function(){ try { inicializarNotificacoesProfissional(true); } catch(eNotif){} }, 400); } catch(eDly){}
       // #region debug-point H4:H3:salvoProfissional
       DBG('H4','1681','PROFISSIONAL LOGADO E SALVO (já cadastrado)', {
         profissionalLogado_nome: profissionalLogado && profissionalLogado.nome,
@@ -2540,6 +2943,974 @@ function renderLoginDedicado() {
 }
 // =============== FIM LOGIN DEDICADO ===============
 
+// (TASK 5 / TASK 7 SHARED) Canvas client-side para comprimir imagens antes de enviar ao backend/storage.
+// Reutilizado por:
+//  - T5: Patrocinadores (logo, cartao visita, fotos)
+//  - T7: Pedidos (ate 3 fotos do servico)
+function _comprimirImagem(file, maxWidthPx, qualityJpeg) {
+  return new Promise(function(resolve, reject){
+    try {
+      maxWidthPx = Number(maxWidthPx || 1080);
+      qualityJpeg = Number(qualityJpeg || 0.78);
+      if (!file) return reject(new Error('Arquivo nao informado.'));
+      if (!file.type || String(file.type).toLowerCase().indexOf('image') === -1) return reject(new Error('Arquivo nao e uma imagem valida.'));
+      if (file.size && Number(file.size) > 6 * 1024 * 1024) return reject(new Error('Imagem muito grande. Escolha ate 6MB.'));
+      const reader = new FileReader();
+      reader.onload = function(e){
+        try {
+          const img = new Image();
+          img.onload = function(){
+            try {
+              let w = img.naturalWidth || 1000;
+              let h = img.naturalHeight || 1000;
+              if (w > maxWidthPx) {
+                h = Math.round(h * maxWidthPx / w);
+                w = maxWidthPx;
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = w; canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0,0,w,h);
+              ctx.drawImage(img, 0, 0, w, h);
+              const dataUrl = canvas.toDataURL('image/jpeg', qualityJpeg);
+              if (!dataUrl || dataUrl.length < 50) return reject(new Error('Nao foi possivel processar a imagem.'));
+              resolve({ dataUrl: dataUrl, width: w, height: h, tamanhoBytesAprox: Math.round(dataUrl.length * 0.75), nome: file && file.name ? String(file.name) : 'imagem.jpg' });
+            } catch(e1){ reject(e1); }
+          };
+          img.onerror = function(){ reject(new Error('Erro carregar imagem.')); };
+          img.src = String(e.target && e.target.result || '');
+        } catch(e){ reject(e); }
+      };
+      reader.onerror = function(){ reject(new Error('Erro ler arquivo.')); };
+      reader.readAsDataURL(file);
+    } catch(eGeral){ reject(eGeral); }
+  });
+}
+// Helper le file input e retorna array de { dataUrl } comprimidos (chama _comprimirImagem em cada arquivo)
+async function _processarArquivosImagensInput(inputEl, maxItens, maxW, q) {
+  if (!inputEl || !inputEl.files) return [];
+  const files = Array.from(inputEl.files).slice(0, maxItens || 1);
+  const out = [];
+  for (const f of files) {
+    try { out.push(await _comprimirImagem(f, maxW, q)); }
+    catch(eComp){ toast('warning','Imagem ignorada', (f&&f.name?f.name+': ':'') + (eComp && eComp.message || 'erro processar')); }
+  }
+  return out;
+}
+
+// (TASK 5) Plano patrocínio (mantenha SINCRONIZADO com server.js PATROCINIO_PLANOS_CONFIG)
+const PATROCINIO_PLANOS_FRONT = {
+  bronze:       { dias:30,  valor:50,  titulo:'Bronze',   descricao:'30 dias de destaque',  cor:'from-amber-500 to-amber-700', emoji:'🥉' },
+  prata:        { dias:60,  valor:120, titulo:'Prata',    descricao:'60 dias de destaque',  cor:'from-slate-400 to-slate-700', emoji:'🥈' },
+  ouro:         { dias:90,  valor:240, titulo:'Ouro',     descricao:'90 dias de destaque',  cor:'from-yellow-400 to-amber-600', emoji:'🥇' },
+  personalizado:{ dias:0,   valor:0,   titulo:'Personalizado', descricao:'Valor e duração negociável', cor:'from-fuchsia-500 to-purple-700', emoji:'💎' }
+};
+
+// (TASK 5) Controle estado do form patrocinador
+let _patrocinadorState = {
+  logo: null, cartao_visita: null, fotos: [], plano:'bronze', valorPersonalizado: 0
+};
+function _patrocinadorResetState(){
+  _patrocinadorState = { logo:null, cartao_visita:null, fotos:[], plano:'bronze', valorPersonalizado:0 };
+}
+
+// (TASK 5) Carrega e renderiza banners publicos patrocinadores na home (carrossel horizontal automatico)
+async function carregarEBannersPatrocinadores() {
+  const cont = document.getElementById('patrocinadoresBannersContainer');
+  if (!cont) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const r = await fetch(BACKEND_PIX_URL + '/api/patrocinadores/ativos', { method:'GET', headers:{'Accept':'application/json'} }).catch(()=>null);
+    const json = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false, items:[] };
+    const items = (json && json.ok && Array.isArray(json.items)) ? json.items : (Array.isArray(json && json.items) ? json.items : (pegarDoStorage('patrocinadores_publicos') || []));
+    if (Array.isArray(items) && items.length > 0) salvarNoStorage('patrocinadores_publicos', items);
+    if (!items || items.length === 0) { cont.innerHTML = ''; return; }
+    cont.innerHTML = `
+      <div class="relative mb-12 sm:mb-14">
+        <div class="flex items-end justify-between mb-5 sm:mb-7 px-1">
+          <div>
+            <div class="inline-flex items-center gap-2 bg-gradient-to-r from-fuchsia-50 to-purple-50 text-fuchsia-700 text-[11px] font-black uppercase tracking-[0.14em] px-3 py-1.5 rounded-full border border-fuchsia-200 mb-3">
+              🤝 EMPRESAS PARCEIRAS
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-1.5">Empresas parceiras do AjeitaAi</h2>
+            <p class="text-sm sm:text-base text-slate-500 max-w-xl">Marcas que apoiam nossa missão de conectar clientes aos melhores profissionais.</p>
+          </div>
+          <div class="hidden sm:flex items-center gap-2">
+            <button onclick="document.getElementById('carrosselPatrocinios').scrollBy({left:-360,behavior:'smooth'})" class="w-10 h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 flex items-center justify-center shadow-sm transition"><i class="fa-solid fa-chevron-left"></i></button>
+            <button onclick="document.getElementById('carrosselPatrocinios').scrollBy({left:360,behavior:'smooth'})" class="w-10 h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 flex items-center justify-center shadow-sm transition"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+        </div>
+        <div id="carrosselPatrocinios" class="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto pb-5 hide-scrollbar snap-x snap-mandatory">
+          <div class="flex gap-4 min-w-max sm:grid sm:grid-cols-1 sm:min-w-0 sm:grid-flow-col sm:auto-cols-[minmax(0,1fr)] sm:gap-4 sm:animate-[scrollCarrosselPatrocinios_40s_linear_infinite] sm:hover:[animation-play-state:paused]" style="grid-template-rows: 1">
+            ${items.concat(items.length < 3 ? items : []).slice(0, Math.max(3, items.length*2)).map(function(p,i){
+              const bgLogo = (i % 4) === 0 ? 'from-rose-50 to-pink-50' : (i%4===1 ? 'from-amber-50 to-yellow-50' : (i%4===2 ? 'from-primary-50 to-accent-50' : 'from-emerald-50 to-teal-50'));
+              return `
+                <div class="snap-start w-[85vw] sm:w-auto bg-white rounded-3xl shadow-card border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition overflow-hidden">
+                  <div class="relative aspect-[16/10] sm:aspect-[5/3] bg-gradient-to-br ${bgLogo} overflow-hidden">
+                    <div class="absolute inset-0 flex items-center justify-center p-5 sm:p-7">
+                      ${ p.logo ? `<img src="${p.logo}" alt="Logo ${p.nome_empresa||''}" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')" class="max-w-full max-h-full object-contain drop-shadow-md">
+                                <div class="hidden w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/70 backdrop-blur-sm border-2 border-white flex items-center justify-center text-4xl sm:text-5xl font-black text-slate-700 shadow-md">${String(p.nome_empresa||'?').charAt(0).toUpperCase()}</div>`
+                             : `<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-white flex items-center justify-center text-4xl sm:text-5xl font-black text-slate-700 shadow-md">${String(p.nome_empresa||'?').charAt(0).toUpperCase()}</div>` }
+                    </div>
+                  </div>
+                  <div class="p-5 sm:p-6">
+                    <div class="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <h3 class="font-black text-slate-900 text-base sm:text-lg leading-tight">${p.nome_empresa||'Empresa parceira'}</h3>
+                        ${ p.categoria ? `<div class="text-[11px] sm:text-xs font-bold text-fuchsia-700 mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-fuchsia-50 border border-fuchsia-200">${p.categoria}</div>` : '' }
+                      </div>
+                      <div class="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 whitespace-nowrap">
+                        <i class="fa-solid fa-circle-check text-[9px]"></i> Parceiro
+                      </div>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4 min-h-[2.8em]">${((p.descricao||'').length > 110 ? ((p.descricao||'').slice(0,107)+'...') : (p.descricao||'Confira os produtos e serviços desta empresa parceira.'))}</p>
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2 min-w-0">
+                        ${ p.whatsapp ? `<a href="https://wa.me/55${String(p.whatsapp).replace(/\D/g,'')}" target="_blank" rel="noopener" class="w-9 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow-sm transition flex-shrink-0" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>` : '' }
+                        ${ p.instagram ? `<a href="${String(p.instagram).toLowerCase().startsWith('http')?p.instagram:'https://instagram.com/'+String(p.instagram).replace(/^@/,'')}" target="_blank" rel="noopener" class="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-600 text-white flex items-center justify-center shadow-sm transition flex-shrink-0" title="Instagram"><i class="fa-brands fa-instagram"></i></a>` : '' }
+                        ${ p.site ? `<a href="${String(p.site).toLowerCase().startsWith('http')?p.site:'https://'+p.site}" target="_blank" rel="noopener" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center shadow-sm transition flex-shrink-0" title="Site"><i class="fa-solid fa-globe"></i></a>` : '' }
+                      </div>
+                      <a href="${ p.site ? (String(p.site).toLowerCase().startsWith('http')?p.site:'https://'+p.site) : (p.whatsapp ? 'https://wa.me/55'+String(p.whatsapp).replace(/\D/g,'') : '#')}" ${ (p.site||p.whatsapp) ? 'target="_blank" rel="noopener"' : ''}
+                         class="inline-flex items-center gap-1.5 bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-700 hover:to-primary-900 text-white text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
+                        <span>Conhecer empresa</span><i class="fa-solid fa-arrow-up-right-from-square text-[10px] sm:text-xs"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  } catch(e){ console.warn('[carregarEBannersPatrocinadores] erro:', e); }
+}
+
+// (TASK 5) Renderiza os 4 planos de patrocínio no grid da view
+function _renderPatrPlanos() {
+  const grid = document.getElementById('patrPlanosGrid');
+  if (!grid) return;
+  _patrocinadorState.plano = _patrocinadorState.plano || 'bronze';
+  const keys = ['bronze','prata','ouro','personalizado'];
+  grid.innerHTML = keys.map(function(k){
+    const p = PATROCINIO_PLANOS_FRONT[k];
+    const sel = _patrocinadorState.plano === k;
+    return `
+      <div onclick="_selecionarPlanoPatrocinador('${k}')" role="button" tabindex="0"
+           class="relative cursor-pointer rounded-2xl sm:rounded-3xl border-2 transition-all p-4 sm:p-5 bg-white ${sel ? 'border-primary-500 shadow-lg -translate-y-1' : 'border-slate-200 hover:border-primary-300 hover:-translate-y-0.5 hover:shadow-md'}">
+        ${sel ? `<div class="absolute -top-2 right-3 bg-primary-600 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">Selecionado</div>` : ''}
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-4xl sm:text-5xl">${p.emoji}</div>
+          <div class="text-[11px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-gradient-to-br ${p.cor} text-white shadow-sm">${p.titulo}</div>
+        </div>
+        <div class="mb-3 h-12">
+          <div class="font-black text-slate-900 text-2xl sm:text-3xl leading-none">
+            R$ ${k==='personalizado' ? '___' : String(p.valor)+',00'}
+          </div>
+          <div class="text-xs text-slate-500 font-semibold mt-1">${p.descricao}</div>
+        </div>
+        <ul class="space-y-1.5 text-xs text-slate-700 mb-4 min-h-[5.6em]">
+          ${k==='bronze' ? `<li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Banner simples na home 30 dias</span></li><li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Link WhatsApp</span></li>` : ''}
+          ${k==='prata' ? `<li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Destaque topo carrossel 60 dias</span></li><li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Logo e cartão de visita</span></li><li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Todos canais: WhatsApp, Instagram, Site</span></li>` : ''}
+          ${k==='ouro' ? `<li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Primeira posição carrossel 90 dias</span></li><li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Até 3 fotos extras + destaque categoria</span></li><li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Relatório mensal de cliques</span></li>` : ''}
+          ${k==='personalizado' ? `<li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Defina seu valor e duração</span></li><li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Benefícios especiais</span></li><li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-600 mt-0.5 text-[10px]"></i><span>Contato direto após pagamento</span></li>` : ''}
+        </ul>
+        <div class="w-full py-2.5 text-center rounded-xl font-black text-xs sm:text-sm transition ${sel ? 'bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+          ${sel ? '✓ Plano selecionado' : 'Escolher este'}
+        </div>
+      </div>
+    `;
+  }).join('');
+  const wrapper = document.getElementById('patrValorPersoWrapper');
+  if (wrapper) wrapper.classList.toggle('hidden', _patrocinadorState.plano !== 'personalizado');
+}
+function _selecionarPlanoPatrocinador(k) {
+  if (!PATROCINIO_PLANOS_FRONT[k]) return;
+  _patrocinadorState.plano = k;
+  _renderPatrPlanos();
+}
+// Preview logo / cartao / fotos
+async function _patrAtualizaPreviewLogo(input) {
+  if (!input) return;
+  const files = await _processarArquivosImagensInput(input, 1, 900, 0.82);
+  const primeiro = files[0];
+  if (primeiro && primeiro.dataUrl) {
+    _patrocinadorState.logo = primeiro.dataUrl;
+    const prev = document.getElementById('patrLogoPreview');
+    if (prev) prev.innerHTML = `<img src="${primeiro.dataUrl}" class="w-full h-full object-contain bg-white p-2" alt="Logo">`;
+  }
+  input.value = '';
+}
+async function _patrAtualizaCartao(input) {
+  if (!input) return;
+  const files = await _processarArquivosImagensInput(input, 1, 1200, 0.8);
+  const primeiro = files[0];
+  if (primeiro && primeiro.dataUrl) {
+    _patrocinadorState.cartao_visita = primeiro.dataUrl;
+    const prev = document.getElementById('patrCartaoPreview');
+    if (prev) prev.innerHTML = `<img src="${primeiro.dataUrl}" class="w-full h-full object-cover" alt="Cartao de visita">`;
+  }
+  input.value = '';
+}
+async function _patrAtualizaFotos(input) {
+  if (!input) return;
+  const novas = await _processarArquivosImagensInput(input, 3, 1200, 0.8);
+  const concat = (_patrocinadorState.fotos || []).concat(novas).slice(0, 3);
+  _patrocinadorState.fotos = concat;
+  const prev = document.getElementById('patrFotosPreview');
+  if (prev) {
+    if (!concat.length) {
+      prev.innerHTML = `<div class="h-full flex items-center justify-center p-4"><div class="text-center"><div class="text-4xl mb-2 text-slate-400"><i class="fa-solid fa-images"></i></div><div class="text-xs font-bold text-slate-600 mb-1">Adicionar imagens</div><div class="text-[10px] text-slate-400">Multi seleção (3)</div></div></div>`;
+    } else {
+      prev.innerHTML = `
+        <div class="grid gap-1.5 p-1.5 ${concat.length===1 ? 'grid-cols-1' : concat.length===2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'} w-full h-full bg-white rounded-2xl overflow-hidden">
+          ${concat.map(function(f,idx){
+            const span = (concat.length===3 && idx===0) ? 'row-span-2 col-span-2' : '';
+            return `<div class="relative ${span} overflow-hidden rounded-xl bg-slate-100 group">
+              <img src="${f.dataUrl}" class="w-full h-full object-cover" alt="Foto ${idx+1}">
+              <button type="button" onclick="event.preventDefault();event.stopPropagation();_patrRemoverFoto(${idx});return false;"
+                class="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[11px] shadow-md flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>`;
+          }).join('')}
+          ${concat.length<3 ? `<div class="rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-[10px] font-bold text-center px-1.5 py-1">${3-concat.length} vaga(s)</div>` : ''}
+        </div>
+      `;
+    }
+  }
+  input.value = '';
+}
+function _patrRemoverFoto(idx) {
+  _patrocinadorState.fotos = (_patrocinadorState.fotos||[]).filter(function(_,i){ return i!==idx; });
+  // Simula a atualizacao chamando funcao sem arquivo: hack cria input fake
+  const fake = { value:'', files:[] };
+  Object.defineProperty(fake,'files',{ value: [] });
+  _patrAtualizaFotos_ReRenderOnly();
+}
+function _patrAtualizaFotos_ReRenderOnly() {
+  const concat = _patrocinadorState.fotos || [];
+  const prev = document.getElementById('patrFotosPreview');
+  if (!prev) return;
+  if (!concat.length) {
+    prev.innerHTML = `<div class="h-full flex items-center justify-center p-4"><div class="text-center"><div class="text-4xl mb-2 text-slate-400"><i class="fa-solid fa-images"></i></div><div class="text-xs font-bold text-slate-600 mb-1">Adicionar imagens</div><div class="text-[10px] text-slate-400">Multi seleção (3)</div></div></div>`;
+  } else {
+    prev.innerHTML = `
+      <div class="grid gap-1.5 p-1.5 ${concat.length===1 ? 'grid-cols-1' : concat.length===2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'} w-full h-full bg-white rounded-2xl overflow-hidden">
+        ${concat.map(function(f,idx){
+          const span = (concat.length===3 && idx===0) ? 'row-span-2 col-span-2' : '';
+          return `<div class="relative ${span} overflow-hidden rounded-xl bg-slate-100 group">
+            <img src="${f.dataUrl}" class="w-full h-full object-cover" alt="Foto ${idx+1}">
+            <button type="button" onclick="event.preventDefault();event.stopPropagation();_patrRemoverFoto(${idx});return false;"
+              class="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[11px] shadow-md flex items-center justify-center transition">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>`;
+        }).join('')}
+        ${concat.length<3 ? `<div class="rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-[10px] font-bold text-center px-1.5 py-1">${3-concat.length} vaga(s)</div>` : ''}
+      </div>
+    `;
+  }
+}
+
+// (TASK 5) Valida e envia formulario para o backend criar pagamento patrocinador, exibe QR no modal-pix existente
+async function submitPatrocinadorCriarPagamento() {
+  const btn = document.getElementById('patrBtnSubmit');
+  try {
+    const nome = (document.getElementById('patrEmpresa')?.value || '').trim();
+    const categoria = (document.getElementById('patrCategoria')?.value || '').trim();
+    const whats = (document.getElementById('patrWhats')?.value || '').replace(/\D/g,'');
+    const desc = (document.getElementById('patrDesc')?.value || '').trim();
+    const site = (document.getElementById('patrSite')?.value || '').trim();
+    const insta = (document.getElementById('patrInsta')?.value || '').trim();
+    const plano = _patrocinadorState.plano || 'bronze';
+    // Validacoes
+    if (!nome || nome.length < 3) return toast('warning','Dados incompletos','Informe o nome da empresa (min 3 letras).');
+    if (!categoria || categoria.length < 2) return toast('warning','Dados incompletos','Informe a categoria da empresa.');
+    if (!whats || whats.length < 10) return toast('warning','Dados incompletos','Informe o WhatsApp com DDD (apenas números).');
+    if (!desc || desc.length < 15) return toast('warning','Dados incompletos','Descreva sua empresa em pelo menos 15 caracteres.');
+    // Valor
+    let valor = PATROCINIO_PLANOS_FRONT[plano]?.valor || 0;
+    if (plano === 'personalizado') {
+      valor = parseFloat((document.getElementById('patrValorPerso')?.value || '0').replace(',','.')) || 0;
+      if (valor < 30) return toast('warning','Valor inválido','Patrocínio personalizado exige valor mínimo R$ 30,00.');
+    }
+    if (!valor || valor < 5) return toast('warning','Valor inválido','Plano selecionado com valor inválido.');
+    if (btn) { btn.disabled = true; btn.classList.add('opacity-70','cursor-not-allowed'); btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-xl"></i><span>Criando pagamento...</span>'; }
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const body = {
+      plano, valor,
+      nome_empresa: nome, categoria, whatsapp: whats,
+      descricao: desc, site, instagram: insta,
+      logo: _patrocinadorState.logo || null,
+      cartao_visita: _patrocinadorState.cartao_visita || null,
+      fotos: Array.isArray(_patrocinadorState.fotos) ? _patrocinadorState.fotos.map(function(f){ return f && f.dataUrl ? f.dataUrl : null; }).filter(Boolean) : []
+    };
+    const resp = await fetch(BACKEND_PIX_URL + '/api/patrocinadores/criar-pagamento', {
+      method: 'POST', headers: {'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify(body)
+    }).catch(function(e){ return null; });
+    const respJson = resp && resp.ok ? (await resp.json().catch(()=>({ok:false}))) : { ok:false };
+    if (!respJson || !respJson.ok) {
+      toast('error','Erro ao criar pagamento', (respJson && respJson.error) ? respJson.error : 'Tente novamente em alguns segundos.');
+      return;
+    }
+    // Sucesso: abre modal Pix existente com QR + copia e cola
+    try {
+      // Usa variaveis globais existentes de modal pix (definidas no trecho da loja)
+      window.PIX_QR_ATUAL = respJson.qr_code_base64 || null;
+      window.PIX_COPIA_COLA_ATUAL = respJson.copia_cola || respJson.pix_copia_e_cola || null;
+      window.PIX_VALOR_ATUAL = Number(valor) || 0;
+      window.PIX_TRANSACAO_ID_ATUAL = respJson.transaction_id || respJson.transacao_id || respJson.doc_id || '';
+      const titulo = document.getElementById('pixModalTitulo');
+      if (titulo) titulo.textContent = `Pagamento Patrocínio ${PATROCINIO_PLANOS_FRONT[plano]?.titulo || plano}`;
+      const sub = document.getElementById('pixModalSubtitulo');
+      if (sub) sub.textContent = nome + ' — Plano ' + (PATROCINIO_PLANOS_FRONT[plano]?.titulo || plano);
+      const valorTxt = document.getElementById('pixModalValor');
+      if (valorTxt) valorTxt.textContent = 'R$ ' + Number(valor).toFixed(2).replace('.',',');
+      const qrDiv = document.getElementById('pixModalQrCode');
+      if (qrDiv) {
+        if (respJson.qr_code_base64 && String(respJson.qr_code_base64).length > 80) {
+          qrDiv.innerHTML = `<img src="${respJson.qr_code_base64}" alt="QR Pix" class="w-48 h-48 mx-auto rounded-xl border-4 border-white shadow-xl">`;
+        } else {
+          const fallbackCod = `ajeita-patrocinio-${respJson.transaction_id||String(Date.now())}`;
+          qrDiv.innerHTML = `<div class="w-48 h-48 mx-auto rounded-xl border-4 border-white shadow-xl bg-white p-4 flex items-center justify-center"><div class="text-center"><div class="text-5xl mb-3"><i class="fa-solid fa-pix text-primary-600"></i></div><div class="text-xs text-slate-600 font-semibold">Use código copia e cola abaixo</div></div></div>`;
+        }
+      }
+      const cc = document.getElementById('pixModalCopiaCola');
+      if (cc) cc.value = window.PIX_COPIA_COLA_ATUAL || '';
+      const botaoPago = document.getElementById('pixModalBtnPago');
+      if (botaoPago) {
+        botaoPago.disabled = false;
+        botaoPago.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>Já efetuei o pagamento';
+        botaoPago.setAttribute('onclick', `toast('info','Aguarde aprovação','O patrocínio será ativado automaticamente após a confirmação real do pagamento pelo Mercado Pago. Não é necessário clicar em nada. Verifique o status em alguns minutos no e-mail ou WhatsApp.');`);
+      }
+      renderEstadoModalPix('qr');
+      abrirModal('modal-pix');
+      // Toast sucesso
+      toast('success','Pagamento criado','QR Pix gerado. Pague e aguarde a aprovação automática pelo Mercado Pago. O patrocínio aparecerá automaticamente após aprovado.',7000);
+      // Reset form parcial (manter dados preenchidos, mas limpar imagens se pagou)
+    } catch(eModal){ console.error(eModal); toast('error','Pagamento criado','Seu pagamento foi criado! Recarregue a página se o QR não aparecer.'); }
+  } catch(e){
+    console.error('[submitPatrocinadorCriarPagamento] erro:', e);
+    toast('error','Erro interno','Tente novamente em alguns minutos.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('opacity-70','cursor-not-allowed'); btn.innerHTML = '<i class="fa-solid fa-circle-check text-xl"></i><span>Realizar pagamento PIX</span><i class="fa-solid fa-arrow-right text-base"></i>'; }
+  }
+}
+// Helper re-render apenas previews
+function inicializarAreaPatrocinador() {
+  _patrocinadorResetState();
+  try {
+    ['patrEmpresa','patrCategoria','patrWhats','patrDesc','patrSite','patrInsta','patrValorPerso'].forEach(function(id){ const e = document.getElementById(id); if (e) e.value = ''; });
+    const logoPrev = document.getElementById('patrLogoPreview');
+    if (logoPrev) logoPrev.innerHTML = `<div class="text-center p-4"><div class="text-4xl mb-2 text-slate-400"><i class="fa-solid fa-image"></i></div><div class="text-xs font-bold text-slate-600 mb-1">Clique para adicionar logo</div><div class="text-[10px] text-slate-400">PNG / JPG</div></div>`;
+    const cartPrev = document.getElementById('patrCartaoPreview');
+    if (cartPrev) cartPrev.innerHTML = `<div class="text-center p-4"><div class="text-4xl mb-2 text-slate-400"><i class="fa-solid fa-id-card"></i></div><div class="text-xs font-bold text-slate-600 mb-1">Escolher cartão</div><div class="text-[10px] text-slate-400">Frente/verso</div></div>`;
+    _patrAtualizaFotos_ReRenderOnly();
+  } catch(e){}
+  _renderPatrPlanos();
+}
+
+// =============== FIM HELPERS PATROCINADORES E IMAGENS ===============
+
+// =============== (TASK 7) HELPERS FOTOS PEDIDO CLIENTE ===============
+var _pedidoFotosState = [null, null, null]; // idx 0-3 (vamos usar 0-2)
+
+function _pedidoReRenderizarSlotsFotos() {
+  for (let i = 0; i < 3; i++) {
+    const slotEl = document.getElementById('solicFotoSlot' + i);
+    if (!slotEl) continue;
+    const fotoAtual = _pedidoFotosState[i];
+    if (fotoAtual && typeof fotoAtual === 'string' && fotoAtual.length > 50) {
+      slotEl.className = 'aspect-square rounded-xl bg-white border-2 border-accent-300 overflow-hidden relative group shadow-sm';
+      slotEl.innerHTML = `
+        <img src="${fotoAtual}" class="w-full h-full object-cover" alt="Foto ${i+1}">
+        <button type="button" onclick="event.preventDefault();event.stopPropagation();_pedidoRemoverFoto(${i});return false;"
+          class="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-sm shadow-md flex items-center justify-center transition z-10">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+    } else {
+      slotEl.className = 'aspect-square rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:border-accent-400 hover:bg-accent-50 transition group relative';
+      slotEl.innerHTML = `
+        <div class="text-center p-1.5 pointer-events-none">
+          <div class="text-2xl text-slate-400 group-hover:text-accent-500 transition mb-1"><i class="fa-solid fa-plus"></i></div>
+          <div class="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-tight">Adicionar</div>
+        </div>
+        <input type="file" accept="image/*" onchange="_pedidoAdicionarFotos(this, ${i})" class="opacity-0 cursor-pointer absolute inset-0 w-full h-full">
+      `;
+    }
+  }
+}
+async function _pedidoAdicionarFotos(input, slotIdx) {
+  try {
+    if (!input || !input.files || !input.files.length) return;
+    slotIdx = Number(slotIdx || 0);
+    if (slotIdx < 0 || slotIdx > 2) return;
+    const files = Array.from(input.files);
+    let proximosSlotsLivres = [slotIdx];
+    if (files.length > 1) {
+      const livres = [];
+      for (let i = 0; i < 3; i++) if (!_pedidoFotosState[i]) livres.push(i);
+      // garante que slot esta na lista
+      if (!livres.includes(slotIdx)) livres.unshift(slotIdx);
+      proximosSlotsLivres = livres;
+    }
+    let qtdAdicionados = 0;
+    for (const file of files.slice(0, 3)) {
+      if (qtdAdicionados >= proximosSlotsLivres.length) break;
+      if (file.size && Number(file.size) > 5 * 1024 * 1024) {
+        toast('warning','Foto muito grande', (file.name || 'Arquivo') + ' excede 5MB. Escolha uma foto menor.');
+        continue;
+      }
+      try {
+        const comp = await _comprimirImagem(file, 1280, 0.8);
+        const slotLivre = proximosSlotsLivres[qtdAdicionados];
+        _pedidoFotosState[slotLivre] = comp.dataUrl;
+        qtdAdicionados++;
+      } catch(ec){
+        toast('warning','Foto inválida', (file.name || 'Arquivo') + ': ' + (ec && ec.message || 'erro processar'));
+      }
+    }
+    _pedidoReRenderizarSlotsFotos();
+    if (qtdAdicionados === 0 && files.length > 0) toast('info','Nenhuma foto adicionada','Verifique o tamanho ou formato das fotos.');
+  } catch(e){ console.error(e); }
+  finally { try { input.value=''; } catch(e){} }
+}
+function _pedidoRemoverFoto(idx) {
+  idx = Number(idx || 0);
+  if (idx < 0 || idx > 2) return;
+  _pedidoFotosState[idx] = null;
+  // Reordena para ficar compacto (move nulls para final)
+  const compacto = _pedidoFotosState.filter(function(x){ return !!x; });
+  while (compacto.length < 3) compacto.push(null);
+  _pedidoFotosState = compacto;
+  _pedidoReRenderizarSlotsFotos();
+}
+function _pedidoResetarFotos() {
+  _pedidoFotosState = [null, null, null];
+  try { _pedidoReRenderizarSlotsFotos(); } catch(e){}
+}
+
+// (TASK 7/8) Persistir pedido também no Firestore (write duplicado)
+async function _pedidoSyncFirestore(pedidoObj) {
+  try {
+    if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules || !pedidoObj) return { status:'skipped' };
+    const mods = window.__fbModules;
+    const col = mods.collection(FbDb, 'pedidos');
+    const docId = pedidoObj.id || ('ped_' + Date.now());
+    const docRef = mods.doc(col, docId);
+    const payload = Object.assign({}, pedidoObj || {}, { _syncType: 'localStorage_to_firestore', _syncedAt: Date.now() });
+    await mods.setDoc(docRef, payload).catch(function(){});
+    return { status:'ok', docId: docId };
+  } catch(e){ return { status:'erro', err: e }; }
+}
+
+// =============== (TASK 7) FUNÇÕES DETALHE DO PEDIDO E ISOLAMENTO ===============
+
+// Retorna true se o usuário atual tem permissão de VER este pedido completo (fotos e whats).
+// Regras isolamento (frontend, reforçado por segurança geral do app):
+//   - Dono do pedido (cliente, id na lista meusPedidosClienteIds)
+//   - Profissional que já DESBLOQUEOU este pedido
+//   - Administrador (adminLogado)
+// Se não tem permissão, ainda pode VER o card público (categoria, cidade, bairro, descricao) mas NÃO as fotos/wpp privados.
+function _usuarioPodeVerDetalhePedidoCompleto(pedidoObj) {
+  if (!pedidoObj) return false;
+  // Admin sempre pode
+  try { if (adminLogado === true) return true; } catch(e){}
+  // Cliente DONO
+  try { if (Array.isArray(meusPedidosClienteIds) && meusPedidosClienteIds.includes(pedidoObj.id)) return true; } catch(e){}
+  // Profissional que já desbloqueou
+  try { if (profissionalLogado && euJaDesbloquei && euJaDesbloquei(pedidoObj.id)) return true; } catch(e){}
+  return false;
+}
+
+function abrirDetalhePedido(pedId) {
+  try {
+    pedId = String(pedId || '');
+    const ped = Array.isArray(pedidos) ? pedidos.find(function(p){ return p && String(p.id||'') === pedId; }) : null;
+    if (!ped) { toast('warning','Pedido não encontrado','Este pedido não existe ou foi removido.'); return; }
+    const titulo = document.getElementById('detalhePedidoTitulo');
+    const sub = document.getElementById('detalhePedidoSub');
+    const body = document.getElementById('detalhePedidoBody');
+    const footer = document.getElementById('detalhePedidoFooter');
+    if (!body) return;
+    if (titulo) titulo.textContent = (ped.categoria || 'Pedido') + ' — Detalhes';
+    if (sub) sub.textContent = (ped.bairro || '') + (ped.bairro && ped.cidade ? ' — ' : '') + (ped.cidade || '');
+    const temPermissaoCompleta = _usuarioPodeVerDetalhePedidoCompleto(ped);
+    const temFotos = Array.isArray(ped.fotos) && ped.fotos.length > 0;
+    const jaDesbloqueado = profissionalLogado ? euJaDesbloquei(ped.id) : false;
+    const waExibir = temPermissaoCompleta ? formataWhatsAppBrasil(ped.whatsapp) : mascararWhatsApp(ped.whatsapp);
+    const waLink = temPermissaoCompleta ? (`https://wa.me/55${numeroLimpoWaLink(ped.whatsapp)}?text=${encodeURIComponent('Olá! Vi seu pedido no AjeitaAi e gostaria de oferecer um orçamento para: ' + (ped.categoria||'') + '.')}`) : null;
+    // Galeria de fotos só se tem permissão ou se o usuário for o dono/profissional/admin
+    const galeriaHtml = (temFotos && temPermissaoCompleta) ? (function(){
+      return `
+        <div class="bg-gradient-to-br from-slate-50 to-primary-50 rounded-3xl border border-primary-100 p-5 sm:p-6">
+          <h4 class="font-black text-slate-800 text-base sm:text-lg mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-images text-primary-600"></i>📸 Fotos enviadas pelo cliente
+          </h4>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            ${ped.fotos.map(function(f, idx){
+              return `
+                <a href="${f}" target="_blank" rel="noopener" class="galeria-foto block rounded-2xl overflow-hidden bg-white border-2 border-white shadow-sm hover:shadow-lg aspect-square">
+                  <img src="${f}" class="w-full h-full object-cover" alt="Foto serviço ${idx+1}" loading="lazy">
+                </a>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    })() : (temFotos && !temPermissaoCompleta ? `
+      <div class="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-4 flex items-start gap-3">
+        <div class="w-9 h-9 rounded-xl bg-slate-200 text-slate-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-lock"></i></div>
+        <div>
+          <div class="font-bold text-slate-700 text-sm mb-0.5">📸 ${ped.fotos.length} foto(s) anexada(s)</div>
+          <div class="text-xs text-slate-500">Desbloqueie o contato deste pedido para visualizar as imagens completas enviadas pelo cliente.</div>
+        </div>
+      </div>
+    ` : '');
+
+    body.innerHTML = `
+      <!-- Badges status -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold ${(ped.finalizado || (ped.qtdDesbloqueios||0)>=4) ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}">
+          <i class="fa-solid ${(ped.finalizado || (ped.qtdDesbloqueios||0)>=4) ? 'fa-lock' : 'fa-door-open'} text-[10px]"></i>
+          ${ped.finalizado ? 'Finalizado' : ((ped.qtdDesbloqueios||0)>=4 ? 'Fechado (4 desbloq.)' : 'Aberto para orçamentos')}
+        </span>
+        ${ped.data ? `<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200"><i class="fa-regular fa-clock text-[10px]"></i>${dataRelativa(ped.data)}</span>` : ''}
+        ${ped.dataPreferida ? `<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold bg-primary-50 text-primary-700 border border-primary-200"><i class="fa-regular fa-calendar text-[10px]"></i>Data pretendida: ${new Date(ped.dataPreferida).toLocaleDateString('pt-BR')}</span>` : ''}
+        ${temFotos ? `<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200"><i class="fa-solid fa-camera text-[10px]"></i>${ped.fotos.length} foto(s)</span>` : ''}
+      </div>
+
+      <!-- Info local -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white text-primary-600 flex items-center justify-center shadow-sm flex-shrink-0"><i class="fa-solid fa-map-location-dot"></i></div>
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Localização</div>
+            <div class="font-bold text-slate-800 text-sm leading-tight">${ped.bairro || ''}${ped.bairro && ped.cidade ? ', ' : ''}${ped.cidade || ''}</div>
+          </div>
+        </div>
+        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white text-accent-600 flex items-center justify-center shadow-sm flex-shrink-0"><i class="fa-solid fa-layer-group"></i></div>
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Categoria</div>
+            <div class="font-bold text-slate-800 text-sm leading-tight">${ped.categoria || 'Geral'}</div>
+          </div>
+        </div>
+        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white text-fuchsia-600 flex items-center justify-center shadow-sm flex-shrink-0"><i class="fa-solid fa-users"></i></div>
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Desbloqueios</div>
+            <div class="font-bold text-slate-800 text-sm leading-tight">${ped.qtdDesbloqueios||0}/4 orçamentos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Descrição completa -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm">
+        <h4 class="font-black text-slate-800 text-base sm:text-lg mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-memo text-primary-500"></i>Descrição do serviço
+        </h4>
+        <p class="text-slate-700 text-sm sm:text-base leading-relaxed whitespace-pre-line">${(ped.descricao||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+      </div>
+
+      <!-- Galeria fotos (bloco isolado condicional) -->
+      ${galeriaHtml || ''}
+
+      ${temPermissaoCompleta ? `
+      <!-- WhatsApp -->
+      <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl border-2 border-emerald-200 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+        <div class="flex items-center gap-4 flex-1 min-w-0">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shadow-lg flex-shrink-0"><i class="fa-brands fa-whatsapp text-2xl"></i></div>
+          <div class="min-w-0">
+            <div class="text-[10px] font-black uppercase tracking-wider text-emerald-700 mb-1">WhatsApp do cliente</div>
+            <div class="font-black text-slate-800 text-lg truncate">${waExibir}</div>
+            ${ped.nomeCliente ? `<div class="text-xs sm:text-sm text-emerald-700 font-semibold">Cliente: ${ped.nomeCliente}</div>` : ''}
+          </div>
+        </div>
+        ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="shrink-0 w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+          <i class="fa-brands fa-whatsapp text-lg"></i>Abrir conversa WhatsApp
+        </a>` : ''}
+      </div>
+      ` : `
+      <!-- WhatsApp bloqueado -->
+      <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border-2 border-amber-200 p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+        <div class="flex items-center gap-4 flex-1 min-w-0">
+          <div class="w-14 h-14 rounded-2xl bg-white border-2 border-amber-200 text-amber-500 flex items-center justify-center shadow-sm flex-shrink-0"><i class="fa-solid fa-lock text-2xl"></i></div>
+          <div class="min-w-0">
+            <div class="text-[10px] font-black uppercase tracking-wider text-amber-700 mb-1">WhatsApp PROTEGIDO</div>
+            <div class="font-bold text-slate-700">${waExibir}</div>
+            <div class="text-xs sm:text-sm text-amber-700 mt-0.5">Desbloqueie com moedas para ter acesso ao contato e às fotos.</div>
+          </div>
+        </div>
+        ${(!ped.finalizado && (ped.qtdDesbloqueios||0)<4 && profissionalLogado) ? `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="shrink-0 w-full sm:w-auto bg-gradient-to-br from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-unlock-keyhole"></i>🔓 Desbloquear (${(configEconomia?.custoMoedasPorDesbloqueio)||2} 🪙)
+        </button>` : ''}
+      </div>
+      `}
+    `;
+
+    // Footer com botões
+    footer.innerHTML = `
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <button onclick="fecharModal('modal-pedido-detalhe')" class="flex-1 px-5 sm:px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition">Fechar</button>
+        ${(!ped.finalizado && (ped.qtdDesbloqueios||0)<4 && profissionalLogado && !jaDesbloqueado) ? `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="flex-1 px-5 sm:px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition">
+          🔓 Desbloquear contato
+        </button>` : ''}
+        ${(profissionalLogado && jaDesbloqueado && waLink) ? `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="flex-1 px-5 sm:px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-brands fa-whatsapp"></i> Conversar no WhatsApp
+        </a>` : ''}
+      </div>
+    `;
+    abrirModal('modal-pedido-detalhe');
+  } catch(eDet){
+    console.error('[abrirDetalhePedido]', eDet);
+    toast('error','Erro detalhe','Tente novamente em alguns segundos.');
+  }
+}
+
+// =============== (TASK 8) SISTEMA DE NOTIFICAÇÕES PROFISSIONAL 🔔 ===============
+// Regras estritas de isolamento §19:
+// - NOTA: backend (rotas firebase) sempre deve validar usuário autenticado, mas aqui no frontend
+//   mantemos a garantia de que o onSnapshot filtra SOMENTE where usuario_id_alvo == EU e tipo_usuario_alvo == 'profissional'
+// - NOTIFICACOES_ADMIN só são visíveis em admin.html, NÃO aparecem aqui.
+
+var NOTIFICACOES_PROF_LISTA = [];
+var NOTIFICACOES_PROF_UNSUB = null;
+var NOTIFICACOES_PROF_ID_USUARIO = null;
+
+async function _salvarNotificacaoFirestore(novaNotif) {
+  try {
+    if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules || !novaNotif) return { status:'skipped' };
+    const mods = window.__fbModules;
+    const col = mods.collection(FbDb, 'notificacoes');
+    const docId = novaNotif.id || ('not_' + Date.now() + Math.random().toString(36).slice(2,7));
+    const ref = mods.doc(col, docId);
+    await mods.setDoc(ref, Object.assign({}, novaNotif, { _sync: 'true', _syncedAt: Date.now() })).catch(function(){});
+    return { status:'ok', docId: docId };
+  } catch(e){ return { status:'erro', err: e }; }
+}
+
+// Para cada profissional da mesma categoria e cidade → cria 1 notificação
+async function _notificarNovoPedidoParaProfissionais(pedidoObj) {
+  try {
+    if (!pedidoObj || !pedidoObj.id || !pedidoObj.categoria) return;
+    const profsAlvos = (Array.isArray(PROFISSIONAIS) ? PROFISSIONAIS.slice() : [])
+      .filter(function(p){
+        if (!p || !p.id) return false;
+        // mesma categoria OU categorias selecionadas do profissional bate com pedido.categoria
+        const categoriasP = Array.isArray(p.categorias) && p.categorias.length ? p.categorias : (p.categoria ? [p.categoria] : []);
+        const mesmacat = categoriasP.includes(pedidoObj.categoria);
+        const mesmacidade = (p.cidade && pedidoObj.cidade) ? (String(p.cidade).trim().toLowerCase() === String(pedidoObj.cidade).trim().toLowerCase()) : true;
+        return mesmacat && mesmacidade;
+      });
+    for (const prof of profsAlvos.slice(0, 40)) { // limite 40 notificações por novo pedido para não sobrecarregar
+      try {
+        const notifId = 'not_' + pedidoObj.id + '_' + String(prof.id) + '_' + Math.random().toString(36).slice(2,6);
+        const n = {
+          id: notifId,
+          usuario_id_alvo: String(prof.id),
+          tipo_usuario_alvo: 'profissional',
+          tipo: 'novo_pedido',
+          subtipo: (prof.categorias && prof.categorias.length>2) ? 'orcamento_solicitado' : 'novo_pedido_servico',
+          titulo: (prof.categorias && prof.categorias.length>2) ? '💰 Novo orçamento solicitado' : '🔨 Novo pedido de serviço',
+          mensagem: `Um cliente publicou um novo pedido de serviço para: ${pedidoObj.categoria}. Descrição: ${((pedidoObj.descricao||'').slice(0, 80))}${(pedidoObj.descricao||'').length>80?'...':''}`,
+          pedido_id: pedidoObj.id,
+          pedido_categoria: pedidoObj.categoria,
+          pedido_cidade: pedidoObj.cidade || null,
+          pedido_bairro: pedidoObj.bairro || null,
+          cliente_nome: pedidoObj.nomeCliente || null,
+          foto_count: Array.isArray(pedidoObj.fotos) ? pedidoObj.fotos.length : 0,
+          lida: false,
+          criado_em: (pedidoObj.data || new Date().toISOString()),
+          origem: 'auto_novo_pedido',
+          _v: 1
+        };
+        _salvarNotificacaoFirestore(n);
+      } catch(eUm){}
+    }
+  } catch(e){ console.warn('[notificarNovoPedidoParaProfissionais] erro:', e); }
+}
+
+function _getProfissionalIdUnico() {
+  try {
+    if (profissionalLogado && profissionalLogado.id) return String(profissionalLogado.id);
+    if (profissionalLogado && profissionalLogado.uid) return String(profissionalLogado.uid);
+    const localStr = pegarDoStorage('usuario_profissional_logado');
+    if (localStr && typeof localStr === 'object' && localStr.id) return String(localStr.id);
+    if (typeof localStr === 'string') {
+      try { const j = JSON.parse(localStr); if (j && j.id) return String(j.id); } catch(e){}
+    }
+  } catch(e){}
+  return null;
+}
+
+function atualizarContadorNotificacoesProfissional() {
+  try {
+    const badge1 = document.getElementById('headerProfSinoBadge');
+    const badge2 = document.getElementById('mobileProfSinoBadge');
+    const naoLidas = NOTIFICACOES_PROF_LISTA.filter(function(n){ return n && n.lida !== true; }).length;
+    if (badge1) {
+      if (naoLidas > 0) {
+        badge1.classList.remove('hidden');
+        badge1.textContent = String(naoLidas > 99 ? '99+' : naoLidas);
+      } else badge1.classList.add('hidden');
+    }
+    if (badge2) {
+      if (naoLidas > 0) {
+        badge2.classList.remove('hidden');
+        badge2.textContent = String(naoLidas > 99 ? '99+' : naoLidas);
+      } else badge2.classList.add('hidden');
+    }
+  } catch(e){}
+}
+
+function renderizarListaNotificacoesProfissional() {
+  const container = document.getElementById('drawerNotificacoesLista');
+  if (!container) return;
+  try {
+    if (!Array.isArray(NOTIFICACOES_PROF_LISTA) || NOTIFICACOES_PROF_LISTA.length === 0) {
+      container.innerHTML = `
+        <div class="p-10 text-center">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary-50 to-accent-50 border-2 border-white shadow-inner flex items-center justify-center text-4xl text-slate-300"><i class="fa-solid fa-bell-slash"></i></div>
+          <div class="font-black text-slate-700 mb-1">Nenhuma notificação</div>
+          <div class="text-sm text-slate-500 max-w-xs mx-auto">Você receberá avisos aqui quando novos pedidos de serviço forem publicados na sua região.</div>
+        </div>
+      `;
+      return;
+    }
+    const ordenado = NOTIFICACOES_PROF_LISTA.slice().sort(function(a,b){
+      const ta = a && a.criado_em ? (new Date(String(a.criado_em)).getTime()||0) : 0;
+      const tb = b && b.criado_em ? (new Date(String(b.criado_em)).getTime()||0) : 0;
+      return tb - ta;
+    });
+    container.innerHTML = ordenado.map(function(n, i){
+      const iconeMap = {
+        novo_pedido: 'fa-clipboard-list text-accent-600 bg-accent-50',
+        orcamento_solicitado: 'fa-sack-dollar text-amber-600 bg-amber-50',
+        mensagem: 'fa-message text-blue-600 bg-blue-50',
+        atualizacao_orcamento: 'fa-pen-to-square text-purple-600 bg-purple-50',
+        novo_cliente: 'fa-user-plus text-emerald-600 bg-emerald-50',
+        sistema: 'fa-shield text-slate-600 bg-slate-100'
+      };
+      const def = iconeMap[novo_pedido] ? iconeMap[novo_pedido] : (n.tipo && iconeMap[n.tipo] ? iconeMap[n.tipo] : 'fa-bell text-primary-600 bg-primary-50');
+      const spl = def.split(' ');
+      const iconeClasse = spl[0];
+      const bgClasse = spl.slice(1).join(' ');
+      return `
+        <div onclick="_handleCliqueNotificacao('${String(n.id||'').replace(/'/g,"\\'")}', ${i})" role="button" tabindex="0"
+          class="relative border-b border-slate-100 px-5 sm:px-6 py-4 hover:bg-slate-50 cursor-pointer transition ${n.lida===true ? 'opacity-70' : ''}">
+          ${n.lida!==true ? `<span class="absolute left-2 top-5 w-2 h-2 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 shadow-sm"></span>` : ''}
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl ${bgClasse} flex items-center justify-center flex-shrink-0 shadow-sm">
+              <i class="fa-solid ${iconeClasse}"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2 mb-1">
+                <div class="font-extrabold text-slate-800 text-sm leading-tight">${String(n.titulo||'Notificação').slice(0,90)}</div>
+                ${n.criado_em ? `<div class="shrink-0 text-[10px] font-bold text-slate-400 whitespace-nowrap mt-0.5">${dataRelativa(n.criado_em)}</div>` : ''}
+              </div>
+              <div class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-2">${String(n.mensagem||'').slice(0,240)}</div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${n.pedido_categoria ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-50 text-accent-700 border border-accent-200">${n.pedido_categoria}</span>` : ''}
+                ${n.pedido_bairro || n.pedido_cidade ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-200"><i class="fa-solid fa-location-dot mr-0.5 text-[9px]"></i>${n.pedido_bairro||''}${n.pedido_bairro && n.pedido_cidade?', ':''}${n.pedido_cidade||''}</span>` : ''}
+                ${n.foto_count>0 ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200"><i class="fa-solid fa-camera mr-0.5 text-[9px]"></i>${n.foto_count} foto(s)</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e){ console.warn(e); }
+}
+
+function _handleCliqueNotificacao(idNotif, idxOrdenado) {
+  try {
+    idNotif = String(idNotif||'');
+    if (!idNotif) return;
+    // Marcar lida no firestore + memória
+    marcarNotificacaoLida(idNotif);
+    // Abrir pedido se for do tipo novo_pedido
+    const ordenado = NOTIFICACOES_PROF_LISTA.slice().sort(function(a,b){
+      const ta = a && a.criado_em ? (new Date(String(a.criado_em)).getTime()||0) : 0;
+      const tb = b && b.criado_em ? (new Date(String(b.criado_em)).getTime()||0) : 0;
+      return tb - ta;
+    });
+    const alvo = ordenado[Number(idxOrdenado||0)];
+    if (alvo && alvo.pedido_id) {
+      fecharDrawerNotificacoes();
+      setTimeout(function(){
+        try { navigateTo('view-mural-pedidos'); } catch(e){}
+        setTimeout(function(){ try { abrirDetalhePedido(alvo.pedido_id); } catch(e){} }, 350);
+      }, 200);
+    }
+  } catch(e){}
+}
+
+async function marcarNotificacaoLida(idNotif) {
+  try {
+    idNotif = String(idNotif||'');
+    if (!idNotif) return;
+    // 1) Memória
+    let alterou = false;
+    NOTIFICACOES_PROF_LISTA = NOTIFICACOES_PROF_LISTA.map(function(n){
+      if (n && n.id === idNotif && n.lida !== true) { alterou = true; return Object.assign({}, n, { lida: true, lida_em: new Date().toISOString() }); }
+      return n;
+    });
+    if (alterou) {
+      renderizarListaNotificacoesProfissional();
+      atualizarContadorNotificacoesProfissional();
+    }
+    // 2) Firestore
+    if (FB_FIRESTORE_DISPONIVEL && window.__fbModules) {
+      try {
+        const mods = window.__fbModules;
+        const ref = mods.doc(mods.collection(FbDb, 'notificacoes'), idNotif);
+        await mods.updateDoc(ref, { lida: true, lida_em: new Date().toISOString() }).catch(function(){});
+      } catch(eFs){}
+    }
+  } catch(e){}
+}
+
+async function marcarTodasNotificacoesLidas() {
+  try {
+    const qtdAntes = NOTIFICACOES_PROF_LISTA.filter(function(n){ return n && n.lida !== true; }).length;
+    if (qtdAntes <= 0) {
+      toast('info','Tudo atualizado','Não há notificações não lidas.');
+      return;
+    }
+    // memória
+    const idsAlvo = [];
+    NOTIFICACOES_PROF_LISTA = NOTIFICACOES_PROF_LISTA.map(function(n){
+      if (n && n.lida !== true) { idsAlvo.push(n.id); return Object.assign({}, n, { lida: true, lida_em: new Date().toISOString() }); }
+      return n;
+    });
+    renderizarListaNotificacoesProfissional();
+    atualizarContadorNotificacoesProfissional();
+    toast('success','Tudo lido ✔️', `${qtdAntes} notificaç${qtdAntes===1?'ão':'ões'} marcada${qtdAntes===1?'':'s'} como lida${qtdAntes===1?'':'s'}.`);
+    // firestore em lote, simple
+    if (FB_FIRESTORE_DISPONIVEL && window.__fbModules) {
+      const mods = window.__fbModules;
+      for (const id of idsAlvo) {
+        try {
+          const ref = mods.doc(mods.collection(FbDb, 'notificacoes'), String(id));
+          mods.updateDoc(ref, { lida: true, lida_em: new Date().toISOString() }).catch(function(){});
+        } catch(e){}
+      }
+    }
+  } catch(e){}
+}
+
+function abrirDrawerNotificacoes() {
+  try {
+    if (!profissionalLogado) {
+      toast('warning','Acesso restrito','Faça login como profissional para acessar suas notificações.');
+      return;
+    }
+    const drawer = document.getElementById('drawerNotificacoesProf');
+    if (!drawer) return;
+    drawer.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    // Garante que temos listener realtime para este profissional
+    inicializarNotificacoesProfissional(true);
+    // Renderiza UI
+    renderizarListaNotificacoesProfissional();
+    atualizarContadorNotificacoesProfissional();
+  } catch(e){ console.warn(e); }
+}
+function fecharDrawerNotificacoes() {
+  try {
+    const drawer = document.getElementById('drawerNotificacoesProf');
+    if (drawer) drawer.classList.add('hidden');
+    document.body.style.overflow = '';
+  } catch(e){}
+}
+
+// Inicializa onSnapshot realtime para MINHAS notificações (isolamento estrito)
+function inicializarNotificacoesProfissional(forcar) {
+  try {
+    if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules) return;
+    if (!profissionalLogado) return;
+    const meuId = _getProfissionalIdUnico();
+    if (!meuId) return;
+    // Já inicializado para este mesmo usuário? (evita duplos listeners)
+    if (!forcar && NOTIFICACOES_PROF_UNSUB && NOTIFICACOES_PROF_ID_USUARIO === meuId) return;
+    // Limpa listener anterior se houver (usuário trocou)
+    if (NOTIFICACOES_PROF_UNSUB) { try { NOTIFICACOES_PROF_UNSUB(); } catch(e){} NOTIFICACOES_PROF_UNSUB = null; }
+    NOTIFICACOES_PROF_ID_USUARIO = meuId;
+    const mods = window.__fbModules;
+    // (ISOLAMENTO §19) Filtro onde:
+    //  - usuario_id_alvo == EU (meuId)
+    //  - tipo_usuario_alvo == 'profissional' (bloqueia notificações admin/cliente que não são nossas)
+    try {
+      const q = mods.query(
+        mods.collection(FbDb, 'notificacoes'),
+        mods.where('usuario_id_alvo', '==', meuId),
+        mods.where('tipo_usuario_alvo', '==', 'profissional'),
+        mods.limit(100)
+      );
+      NOTIFICACOES_PROF_UNSUB = mods.onSnapshot(q, function(snap){
+        try {
+          if (!snap || !snap.docs) return;
+          const arr = [];
+          snap.docs.forEach(function(d){
+            try { arr.push(Object.assign({}, d.data() || {}, { id: d.id })); } catch(e){}
+          });
+          NOTIFICACOES_PROF_LISTA = arr;
+          atualizarContadorNotificacoesProfissional();
+          const drawer = document.getElementById('drawerNotificacoesProf');
+          if (drawer && !drawer.classList.contains('hidden')) renderizarListaNotificacoesProfissional();
+          // Toast apenas de notificação RECÉM CHEGADA (evita spam inicial)
+          try {
+            if (typeof NOTIFICACOES_PROF_COUNT_ANTERIOR === 'undefined') NOTIFICACOES_PROF_COUNT_ANTERIOR = arr.length;
+            const naoLidasAgora = arr.filter(function(n){ return n && n.lida !== true; }).length;
+            if (naoLidasAgora > (window.NOTIFICACOES_PROF_NAOLIDAS_ANTERIOR||0)) {
+              window.NOTIFICACOES_PROF_NAOLIDAS_ANTERIOR = naoLidasAgora;
+              const drawerAberto = drawer && !drawer.classList.contains('hidden');
+              if (!drawerAberto && arr.length > 0) {
+                const maisNova = arr.slice().sort(function(a,b){
+                  const ta = a && a.criado_em ? (new Date(String(a.criado_em)).getTime()||0) : 0;
+                  const tb = b && b.criado_em ? (new Date(String(b.criado_em)).getTime()||0) : 0;
+                  return tb - ta;
+                })[0];
+                if (maisNova && maisNova.criado_em && (Date.now() - new Date(String(maisNova.criado_em)).getTime()) < (15 * 1000)) {
+                  toast('info', maisNova.titulo || 'Nova notificação', maisNova.mensagem || '', 5000);
+                }
+              }
+            } else {
+              window.NOTIFICACOES_PROF_NAOLIDAS_ANTERIOR = naoLidasAgora;
+            }
+          } catch(eCont){}
+        } catch(eOn){ console.warn('[onSnapshot notif]', eOn); }
+      }, function(err){ console.warn('[onSnapshot notif ERRO]', err); });
+    } catch(eQuery){ /* composite index pode não existir ainda. Fallback: ler tudo e filtrar client-side */
+      try {
+        const qFallback = mods.query(mods.collection(FbDb, 'notificacoes'), mods.where('usuario_id_alvo', '==', meuId), mods.limit(200));
+        NOTIFICACOES_PROF_UNSUB = mods.onSnapshot(qFallback, function(snap){
+          if (!snap || !snap.docs) return;
+          const arr = [];
+          snap.docs.forEach(function(d){
+            try { const obj = Object.assign({}, d.data() || {}, { id: d.id }); if (obj && obj.tipo_usuario_alvo === 'profissional') arr.push(obj); } catch(e){}
+          });
+          NOTIFICACOES_PROF_LISTA = arr;
+          atualizarContadorNotificacoesProfissional();
+          const drawer = document.getElementById('drawerNotificacoesProf');
+          if (drawer && !drawer.classList.contains('hidden')) renderizarListaNotificacoesProfissional();
+        });
+      } catch(eFb){}
+    }
+    // Atualiza contador inicial
+    atualizarContadorNotificacoesProfissional();
+  } catch(eGeral){ console.warn('[inicializarNotificacoesProfissional] erro:', eGeral); }
+}
+
+// =============== FIM HELPERS DETALHE PEDIDO / NOTIFICAÇÕES ===============
+
+// =============== FIM HELPERS FOTOS PEDIDO ===============
+
 function navigateTo(viewId) {
   // ===== GUARDS VIEWS PROFISSIONAL PROTEGIDAS =====
   const VIEWS_PROFISSIONAL_PROTEGIDAS = [
@@ -2574,6 +3945,21 @@ function navigateTo(viewId) {
     }, 30);
   }
   if (viewId === 'view-mural-pedidos') renderMuralPedidos();
+  if (viewId === 'view-categorias-todas') {
+    setTimeout(function(){
+      try {
+        const el = document.getElementById('barraPesquisaCategorias');
+        if (el) el.value = '';
+        renderViewTodasCategorias('');
+      } catch(e){}
+    }, 30);
+  }
+  if (viewId === 'view-area-patrocinador') {
+    setTimeout(function(){ try { inicializarAreaPatrocinador(); } catch(e){} }, 30);
+  }
+  if (viewId === 'view-home') {
+    setTimeout(function(){ try { carregarEBannersPatrocinadores(); } catch(e){} }, 100);
+  }
 
   // ===== BOTTOM NAV: RENDERIZA SEMPRE QUE NAVEGA =====
   try { renderBottomNav(viewId); } catch(e) { console.error('[renderBottomNav erro]', e); }
@@ -2862,6 +4248,13 @@ function atualizarHeaderPorSessao() {
   // #endregion
 }
 function fazerLogoutProfissional() {
+  // (TASK 8) Limpa listener realtime notificações antes de deslogar
+  try {
+    if (NOTIFICACOES_PROF_UNSUB) { try { NOTIFICACOES_PROF_UNSUB(); } catch(e){} NOTIFICACOES_PROF_UNSUB = null; }
+    NOTIFICACOES_PROF_LISTA = [];
+    NOTIFICACOES_PROF_ID_USUARIO = null;
+    try { atualizarContadorNotificacoesProfissional(); } catch(eCnt){}
+  } catch(eNotifClear){}
   profissionalLogado = null;
   salvarTodosGlobaisNoStorage();
   atualizarHeaderPorSessao();
@@ -3115,6 +4508,7 @@ function abrirModalSolicitarOrcamento() {
       if (ult.bairro) document.getElementById('solicBairro').value = ult.bairro;
     } catch(e){}
   }
+  _pedidoResetarFotos();
   abrirModal('modal-solicitar-orcamento');
 }
 function submitSolicitarOrcamento(e) {
@@ -3131,20 +4525,27 @@ function submitSolicitarOrcamento(e) {
     toast('error','Faltam dados','Preencha todos os campos obrigatórios corretamente.');
     return;
   }
+  const fotosPedido = Array.isArray(_pedidoFotosState) ? _pedidoFotosState.filter(function(f){ return !!f && typeof f === 'string' && f.length > 50; }) : [];
   const novo = {
     id: 'ped_' + Date.now() + Math.random().toString(36).slice(2,6),
     categoria:cat, cidade:cid, bairro:bai, descricao:desc,
     data: new Date().toISOString(), whatsapp:wa, dataPreferida:dataPref,
     qtdDesbloqueios:0, status:'aberto', finalizado:false, avaliado:false,
-    nomeCliente: nomeCli || null
+    nomeCliente: nomeCli || null,
+    fotos: fotosPedido && fotosPedido.length ? fotosPedido : []
   };
   pedidos.unshift(novo);
   // Vincula o pedido AO CLIENTE DESTE NAVEGADOR
   if (!meusPedidosClienteIds.includes(novo.id)) meusPedidosClienteIds.unshift(novo.id);
   clienteUltimosDados = { nome: nomeCli || null, whatsapp: wa, cidade:cid, bairro:bai };
   salvarTodosGlobaisNoStorage();
+  // (TASK 7/8) Escreve no Firestore para profissionais de outros dispositivos tb verem
+  try { _pedidoSyncFirestore(novo); } catch(e){}
+  // (TASK 8) Cria notificacoes para profissionais da mesma categoria/regiao
+  try { _notificarNovoPedidoParaProfissionais(novo); } catch(e){}
   renderMuralPedidos();
   document.getElementById('formSolicitarOrcamento').reset();
+  _pedidoResetarFotos();
   fecharModal('modal-solicitar-orcamento');
   const saudacao = nomeCli ? `${nomeCli.split(' ')[0]}, seu` : 'Seu';
   toast('success','Pedido publicado!',
@@ -3233,7 +4634,14 @@ function renderMuralPedidos() {
           ${ped.dataPreferida ? `<span class="ml-2 text-xs bg-primary-50 text-primary-600 font-bold px-2 py-0.5 rounded-full border border-primary-100">📅 ${new Date(ped.dataPreferida).toLocaleDateString('pt-BR')}</span>` : ''}
         </div>
         <p class="text-slate-700 text-sm leading-relaxed mb-4 line-clamp-4">${ped.descricao}</p>
+        ${Array.isArray(ped.fotos) && ped.fotos.length>0 ? `
+          <button onclick="event.stopPropagation(); abrirDetalhePedido('${ped.id}')" class="w-full mb-4 text-xs font-bold px-3 py-2 rounded-xl bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200 hover:from-fuchsia-100 hover:to-purple-50 hover:bg-gradient-to-r transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-images text-fuchsia-600"></i>📸 ${ped.fotos.length} foto(s) anexada(s) — clique para ver
+          </button>` : ''}
         <div class="mt-auto">
+          <button onclick="event.stopPropagation(); abrirDetalhePedido('${ped.id}')" class="w-full mb-3 text-xs sm:text-sm font-bold px-3 sm:px-4 py-2.5 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-magnifying-glass text-slate-500"></i>🔍 Ver detalhes do pedido
+          </button>
           <div class="bg-slate-50 rounded-xl px-4 py-3 mb-4 flex items-center gap-3 border border-slate-100">
             <div class="w-8 h-8 rounded-lg ${jaDesbloqueado ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'} flex items-center justify-center flex-shrink-0">
               <i class="fa-brands fa-whatsapp"></i>
@@ -4200,6 +5608,9 @@ function renderMeusPedidos() {
           ${minhaAvaliacao.comentario ? `<div class="text-sm text-emerald-900">"${minhaAvaliacao.comentario}"</div>`:''}
         </div>`:''}
       <div class="flex flex-wrap items-center gap-2 justify-end">
+        <button onclick="abrirDetalhePedido('${ped.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+          <i class="fa-solid fa-magnifying-glass text-slate-500"></i>🔍 Ver detalhes
+        </button>
         ${podeFinalizar ? `
           <button onclick="marcarFinalizadoEAvaliar('${ped.id}')" class="bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-bold px-5 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2">
             <i class="fa-solid fa-check-double"></i> Marcar como finalizado e avaliar
@@ -4387,6 +5798,8 @@ function submitCadastroProfissional(e) {
 
   // Login automático
   profissionalLogado = { ...novo };
+  // (TASK 8) Inicializa listener notificações em tempo real pós novo cadastro
+  try { setTimeout(function(){ try { inicializarNotificacoesProfissional(true); } catch(eNotif){} }, 800); } catch(eDly){}
   // Limpa dados pendentes
   profissionalGoogleFotoPending = null;
   profissionalGoogleIdPending = null;
@@ -4470,13 +5883,84 @@ function renderCidadesSelectPerfil() {
 function renderCategoriasCheckboxPerfil() {
   const cont = document.getElementById('perfilCategoriasContainer');
   if (!cont || cont.dataset.init === '1') return;
-  cont.innerHTML = CATEGORIAS_GLOBAIS.map(cat => `
-    <label class="inline-flex items-center gap-2 px-3 py-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer hover:bg-primary-50 hover:border-primary-300 transition">
-      <input type="checkbox" data-perfil-categoria value="${cat}" class="w-4 h-4 accent-primary-600">
-      <span class="text-xs font-bold text-slate-700">${cat}</span>
-    </label>
-  `).join('');
+  cont.innerHTML = CATEGORIAS_GRUPOS.map(function(grupo){
+    return `
+      <div class="mb-5">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br ${grupo.corBg} border ${grupo.corBorda} flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid ${grupo.iconeGrupo} text-slate-700 text-xs"></i>
+          </div>
+          <div class="font-black text-sm text-slate-800">${grupo.titulo}</div>
+          <div class="text-[10px] font-bold text-slate-400">${grupo.itens.length} profissões</div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          ${grupo.itens.map(function(it){
+            return `
+              <label class="inline-flex items-center gap-2 px-3 py-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer hover:bg-primary-50 hover:border-primary-300 transition">
+                <input type="checkbox" data-perfil-categoria value="${it.nome}" class="w-4 h-4 accent-primary-600">
+                <i class="fa-solid ${it.icone} text-xs ${it.cor||'text-slate-500'}"></i>
+                <span class="text-[11px] font-bold text-slate-700 leading-tight">${it.nome}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
   cont.dataset.init = '1';
+}
+
+function renderViewTodasCategorias(termoPesquisa) {
+  const container = document.getElementById('containerGruposCategoriasTodas');
+  if (!container) return;
+  termoPesquisa = (termoPesquisa || '').trim().toLowerCase();
+  const gruposHtml = CATEGORIAS_GRUPOS.map(function(grupo){
+    const itensFiltrados = grupo.itens.filter(function(it){
+      if (!termoPesquisa) return true;
+      return (it.nome || '').toLowerCase().indexOf(termoPesquisa) !== -1 || (grupo.titulo || '').toLowerCase().indexOf(termoPesquisa) !== -1;
+    });
+    if (itensFiltrados.length === 0) return '';
+    return `
+      <div class="bg-white rounded-3xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="px-6 sm:px-8 py-5 sm:py-6 bg-gradient-to-br ${grupo.corBg} border-b ${grupo.corBorda} flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-white/70 backdrop-blur-sm border border-white flex items-center justify-center shadow-sm">
+              <i class="fa-solid ${grupo.iconeGrupo} text-xl text-slate-800"></i>
+            </div>
+            <div>
+              <div class="font-black text-lg sm:text-xl text-slate-900">${grupo.titulo}</div>
+              <div class="text-xs font-semibold text-slate-600/90">${itensFiltrados.length} de ${grupo.itens.length} profissões</div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 sm:p-7 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+          ${itensFiltrados.map(function(it){
+            return `
+              <button onclick="setCategoria(${JSON.stringify(it.nome)})" class="group text-left p-4 rounded-2xl border border-slate-200 bg-white hover:border-primary-300 hover:bg-gradient-to-br hover:from-primary-50 hover:to-accent-50 hover:-translate-y-0.5 hover:shadow-lg transition active:scale-[0.99]">
+                <div class="flex items-start gap-3">
+                  <div class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 group-hover:bg-white/80 group-hover:border-primary-200 flex items-center justify-center flex-shrink-0 transition">
+                    <i class="fa-solid ${it.icone} text-lg ${it.cor||'text-slate-600'}"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="font-black text-slate-800 leading-tight truncate">${it.nome}</div>
+                    <div class="text-[10px] font-semibold text-slate-400 group-hover:text-primary-600 mt-0.5 flex items-center gap-1 transition">
+                      <span>Ver profissionais</span>
+                      <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).filter(Boolean).join('');
+  if (!gruposHtml) container.innerHTML = `<div class="bg-white rounded-3xl border border-slate-200 p-10 text-center"><div class="text-5xl mb-3">🔍</div><div class="font-bold text-slate-700 mb-1">Nenhuma profissão encontrada para "${termoPesquisa}"</div><div class="text-sm text-slate-500">Tente outra palavra ou <button onclick="document.getElementById('barraPesquisaCategorias').value='';filtrarCategoriasViewTodas('')" class="text-primary-600 font-bold underline">mostre todas</button>.</div></div>`;
+  else container.innerHTML = gruposHtml;
+}
+function filtrarCategoriasViewTodas(v){
+  renderViewTodasCategorias(v);
 }
 
 function atualizarBairrosPerfil(cidade) {
