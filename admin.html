@@ -364,6 +364,38 @@ tailwind.config = {
     </div>
   </div>
 
+  <!-- MODAL 2FA — SEGUNDA AUTENTICAÇÃO (antes de abrir documentos privados) -->
+  <div id="modalAdmin2FA" class="hidden fixed inset-0 z-[60] p-4">
+    <div class="absolute inset-0 modal-backdrop"></div>
+    <div class="relative max-w-lg w-full mx-auto my-12 max-h-[92vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+      <div class="px-6 sm:px-8 py-5 border-b border-slate-100 flex items-start gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-shield-keyhole text-white text-xl"></i></div>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-xl font-black text-slate-800">Segunda Autenticação</h3>
+          <p id="admin2faSubtitulo" class="text-sm text-slate-500 mt-0.5">Para abrir documentos privados, confirme o código enviado por e-mail.</p>
+        </div>
+        <button onclick="fecharModal('modalAdmin2FA')" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-6 sm:p-8 space-y-5">
+        <div id="admin2faStatusBox" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-[13px] text-slate-700 leading-relaxed">
+          Clique em <b>"Gerar código"</b> abaixo. Um código de 6 dígitos será enviado para o e-mail administrativo cadastrado.
+        </div>
+        <div class="space-y-2">
+          <label class="text-xs font-black text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-hashtag text-indigo-500"></i> Código recebido no e-mail</label>
+          <input id="admin2faCodigoInput" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="000000" class="w-full text-center tracking-[1em] text-3xl font-black py-3 px-4 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none bg-slate-50 text-slate-800" />
+          <div class="text-right"><button id="admin2faReenviarBtn" onclick="window.IIFE_admin2FA.gerarCodigo()" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition"><i class="fa-solid fa-paper-plane mr-1"></i> Gerar / reenviar código</button></div>
+        </div>
+        <div class="flex flex-col-reverse sm:flex-row items-stretch gap-3 pt-1">
+          <button onclick="fecharModal('modalAdmin2FA')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-3 rounded-xl transition">Cancelar</button>
+          <button id="admin2faValidarBtn" onclick="window.IIFE_admin2FA.validarCodigoEAvancar()" class="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-extrabold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2"><i class="fa-solid fa-key"></i> Validar e abrir documentos</button>
+        </div>
+        <div class="text-[11px] text-slate-400 leading-relaxed pt-1">
+          Código válido por 5 minutos · 6 tentativas · Uso único. Autorização expira automaticamente após 10 minutos.
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -1435,6 +1467,191 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
     aprovarAtual: aprovarAtual,
     abrirDialogRejeitar: abrirDialogRejeitar,
     setFiltro: setFiltro
+  };
+})();
+
+/* ============================================================
+   (2FA ADMIN DOCS — CLIENT SIDE) Integra com backend-pix
+   endpoints: /api/admin/2fa/docs/{gerar,validar,checar}
+   Intercepta IIFE_adminVerProf.abrirAnalise → exige 2FA
+   antes de abrir modal com documentos privados.
+   ============================================================ */
+(function IIFE_admin2FA_MAIN(){
+  const LS_KEY_TOKEN = 'ajeita_admin2fa_docs_token';
+  const LS_KEY_EXPIRA = 'ajeita_admin2fa_docs_expira_ms';
+  var _noncePendente = '';
+  var _proIdPendente = '';
+  var _abrirAnaliseOriginal = null;
+  function _backendPixUrl() {
+    if (typeof window.BACKEND_PIX_URL === 'string' && window.BACKEND_PIX_URL.length > 0) return String(window.BACKEND_PIX_URL);
+    window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    return window.BACKEND_PIX_URL;
+  }
+  function _setStatus(texto, corClasse) {
+    try {
+      const box = document.getElementById('admin2faStatusBox');
+      if (!box) return;
+      const base = 'rounded-2xl p-4 text-[13px] leading-relaxed border-2 ';
+      if (corClasse === 'erro') box.className = base + 'border-rose-200 bg-rose-50 text-rose-900';
+      else if (corClasse === 'sucesso') box.className = base + 'border-emerald-200 bg-emerald-50 text-emerald-900';
+      else if (corClasse === 'info') box.className = base + 'border-indigo-200 bg-indigo-50 text-indigo-900';
+      else box.className = base + 'border-slate-200 bg-slate-50 text-slate-700';
+      box.innerHTML = String(texto || '');
+    } catch(e){}
+  }
+  function lerTokenArmazenado() {
+    try {
+      const t = String(localStorage.getItem(LS_KEY_TOKEN) || '').trim();
+      const e = Number(localStorage.getItem(LS_KEY_EXPIRA) || '0');
+      if (!t || !e) return { token: '', expiraMs: 0 };
+      if (Date.now() > e) {
+        localStorage.removeItem(LS_KEY_TOKEN); localStorage.removeItem(LS_KEY_EXPIRA);
+        return { token: '', expiraMs: 0 };
+      }
+      return { token: t, expiraMs: e };
+    } catch(e){ return { token: '', expiraMs: 0 }; }
+  }
+  function salvarTokenArmazenado(token, expiraMs) {
+    try {
+      localStorage.setItem(LS_KEY_TOKEN, String(token || ''));
+      localStorage.setItem(LS_KEY_EXPIRA, String(Number(expiraMs) || '0'));
+    } catch(e){}
+  }
+  function limparTokenArmazenado() {
+    try { localStorage.removeItem(LS_KEY_TOKEN); localStorage.removeItem(LS_KEY_EXPIRA); } catch(e){}
+  }
+  async function checarSessaoAtivaBackend() {
+    try {
+      const { token, expiraMs } = lerTokenArmazenado();
+      if (!token) return { ok:false, msg:'Sem sessao.' };
+      const u = _backendPixUrl() + '/api/admin/2fa/docs/checar';
+      const r = await fetch(u, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+        body: JSON.stringify({ admin_senha: 'bolo2024', token: token })
+      }).catch(()=>null);
+      if (!r) return { ok:false, msg:'Sem conexao backend.' };
+      const d = await r.json().catch(()=>({ok:false, msg:'Erro parse resposta.'}));
+      if (d && d.ok === true) return { ok:true, token: token, expiraMs: Number(d.expiraMs || expiraMs) };
+      limparTokenArmazenado();
+      return { ok:false, msg: String(d && d.msg || 'Sessao 2FA invalida.') };
+    } catch(e){ return { ok:false, msg:'Erro checar sessao 2FA.' }; }
+  }
+  async function gerarCodigo() {
+    try {
+      _setStatus('Enviando código para o e-mail administrativo…', 'info');
+      const u = _backendPixUrl() + '/api/admin/2fa/docs/gerar';
+      const r = await fetch(u, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+        body: JSON.stringify({ admin_senha: 'bolo2024' })
+      }).catch(()=>null);
+      if (!r) { _setStatus('❌ Sem conexão com o backend. Verifique se o backend está online ou se a URL BACKEND_PIX_URL está correta.', 'erro'); return { ok:false }; }
+      const d = await r.json().catch(()=>({ok:false, msg:'Erro parse resposta.'}));
+      if (d && d.ok === true) {
+        _noncePendente = String(d.nonce || '');
+        const paraQuem = String(d.destMask || 'e-mail admin');
+        const valMin = Math.round(Number(d.validadeMs || 300000) / 60000);
+        _setStatus(`✅ Código enviado para <b>${paraQuem}</b>.<br>Verifique sua caixa de entrada (e span/promoções). Válido por ~${valMin} min · 6 tentativas · uso único.<br><span style="font-size:11px;opacity:0.85;">Não recebeu? Clique em "Gerar / reenviar código".</span>`, 'sucesso');
+        const inp = document.getElementById('admin2faCodigoInput');
+        if (inp) { inp.value = ''; inp.focus(); }
+        return { ok:true, nonce: _noncePendente };
+      }
+      _setStatus('❌ ' + String(d && d.msg || 'Falha ao gerar código. Verifique se SMTP está configurado no backend.'), 'erro');
+      return { ok:false };
+    } catch(e){
+      _setStatus('❌ Erro ao gerar código 2FA: ' + String(e && e.message ? e.message : e).substring(0, 200), 'erro');
+      return { ok:false };
+    }
+  }
+  async function validarCodigoEAvancar() {
+    try {
+      if (!_noncePendente) {
+        _setStatus('⚠️ Nenhum código pendente. Clique em "Gerar / reenviar código" primeiro.', 'info');
+        return { ok:false };
+      }
+      const inp = document.getElementById('admin2faCodigoInput');
+      const codigo = inp ? String(inp.value || '').trim() : '';
+      if (!/^\d{6}$/.test(codigo)) {
+        _setStatus('⚠️ Código inválido. Informe 6 dígitos numéricos (apenas números).', 'erro');
+        return { ok:false };
+      }
+      _setStatus('Validando código…', 'info');
+      const u = _backendPixUrl() + '/api/admin/2fa/docs/validar';
+      const r = await fetch(u, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+        body: JSON.stringify({ admin_senha: 'bolo2024', nonce: String(_noncePendente || ''), codigo: codigo })
+      }).catch(()=>null);
+      if (!r) { _setStatus('❌ Sem conexão backend.', 'erro'); return { ok:false }; }
+      const d = await r.json().catch(()=>({ok:false, msg:'Erro parse resposta.'}));
+      if (d && d.ok === true) {
+        salvarTokenArmazenado(String(d.token || ''), Number(d.expiraMs || 0));
+        _setStatus('✅ Código correto. Abrindo documentos…', 'sucesso');
+        try { fecharModal('modalAdmin2FA'); } catch(e){}
+        try { inp && (inp.value = ''); } catch(e){}
+        const proIdAberto = String(_proIdPendente || '');
+        _noncePendente = ''; _proIdPendente = '';
+        if (_abrirAnaliseOriginal && proIdAberto) setTimeout(function(){ _abrirAnaliseOriginal(proIdAberto); }, 220);
+        return { ok:true };
+      }
+      const restam = (d && typeof d.tentativasRestantes === 'number') ? Number(d.tentativasRestantes) : null;
+      let msgFinal = String(d && d.msg || 'Código incorreto.');
+      if (restam !== null) msgFinal += ` (${restam} tentativa${restam === 1 ? '' : 's'} restante${restam === 1 ? '' : 's'}.)`;
+      if (d && d.ok === false && String(d.msg || '').indexOf('expir') >= 0) {
+        _noncePendente = '';
+      }
+      _setStatus('❌ ' + msgFinal, 'erro');
+      return { ok:false };
+    } catch(e){
+      _setStatus('❌ Erro validar código: ' + String(e && e.message ? e.message : e).substring(0, 200), 'erro');
+      return { ok:false };
+    }
+  }
+  // ===== Wrapper: substitui IIFE_adminVerProf.abrirAnalise por versão com 2FA =====
+  function instalarWrapperAbrirAnalise() {
+    try {
+      if (typeof window.IIFE_adminVerProf !== 'object' || !window.IIFE_adminVerProf) return false;
+      if (typeof window.IIFE_adminVerProf.abrirAnalise !== 'function') return false;
+      if (_abrirAnaliseOriginal !== null) return true;
+      _abrirAnaliseOriginal = window.IIFE_adminVerProf.abrirAnalise;
+      window.IIFE_adminVerProf.abrirAnalise = function wrapperAbrirAnaliseCom2FA(proId) {
+        (async function(){
+          try {
+            if (!adminLogado) { toast('error','Acesso negado','Apenas administradores.'); return; }
+            if (!proId) { toast('warning','ID inválido','Profissional não encontrado.'); return; }
+            // 1) Checa sessão 2FA ativa (rapido localStorage depois backend)
+            const localT = lerTokenArmazenado();
+            if (localT.token) {
+              const v = await checarSessaoAtivaBackend();
+              if (v.ok === true) { _abrirAnaliseOriginal(String(proId)); return; }
+              limparTokenArmazenado();
+            }
+            // 2) Nao tem sessao 2FA ativa: abre modal 2FA, preenche id pendente, gera codigo automaticamente
+            _proIdPendente = String(proId);
+            _noncePendente = '';
+            const inp = document.getElementById('admin2faCodigoInput');
+            if (inp) inp.value = '';
+            abrirModal('modalAdmin2FA');
+            _setStatus('Preparando envio do código…', 'info');
+            // Tenta gerar codigo automaticamente. Se falhar, usuário pode clicar em Reenviar.
+            setTimeout(function(){ gerarCodigo(); }, 220);
+          } catch(eWrapper){ toast('error','Erro 2FA','Nao foi possivel validar segunda autenticacao.'); }
+        })();
+      };
+      return true;
+    } catch(eWrap){ console.warn('[IIFE_admin2FA] Falha instalar wrapper abrirAnalise:', eWrap && eWrap.message); return false; }
+  }
+  // Boot: tenta instalar o wrapper. Se IIFE_adminVerProf ainda nao estiver pronto, roda novamente em 60ms (ate 20x).
+  (function tentarInstalar(tentativa){
+    if (!tentativa) tentativa = 0;
+    const ok = instalarWrapperAbrirAnalise();
+    if (!ok && tentativa < 20) { setTimeout(function(){ tentarInstalar(tentativa + 1); }, 60); }
+  })();
+  window.IIFE_admin2FA = {
+    gerarCodigo: gerarCodigo,
+    validarCodigoEAvancar: validarCodigoEAvancar,
+    checarSessao: checarSessaoAtivaBackend
   };
 })();
 

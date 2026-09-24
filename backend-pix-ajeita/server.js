@@ -1197,6 +1197,279 @@ app.delete('/api/patrocinadores/admin/delete', async (req, res) => {
   }
 });
 
+/* ============================================================
+   (INFRA EMAIL — CENTRAL REUTILIZÁVEL)
+   Serviço único de envio de e-mail via SMTP + variáveis de ambiente.
+   NÃO LOGA credenciais, NÃO expõe senha em nenhuma resposta.
+   Exporta:
+     - sendEmail({ to, subject, html, text }) -> Promise<{ok, msg, info?}>
+   Variáveis de ambiente OBRIGATÓRIAS (SMTP):
+     SMTP_HOST=
+     SMTP_PORT=      (ex: 587 para STARTTLS, 465 para TLS)
+     SMTP_USER=
+     SMTP_PASSWORD=
+     EMAIL_FROM=     (ex: "AjeitaAí <no-reply@ajeitaai.com.br>")
+   Opcional:
+     SMTP_SECURE=    ("true" para porta 465, padrão "false"/porta 587 STARTTLS)
+     SMTP_ADMIN_2FA_TO= ti.mello.santos@gmail.com (e-mail destinatário código 2FA admin docs)
+   ============================================================ */
+var _emailTransportCached = null;
+var _emailStatus = { configurado: false, motivo: '' };
+(function _inicializarEmailStatus(){
+  const h = String(process.env.SMTP_HOST || '').trim();
+  const p = String(process.env.SMTP_PORT || '').trim();
+  const u = String(process.env.SMTP_USER || '').trim();
+  const s = String(process.env.SMTP_PASSWORD || '').trim();
+  const f = String(process.env.EMAIL_FROM || '').trim();
+  if (h && p && u && s && f) {
+    _emailStatus.configurado = true;
+    _emailStatus.motivo = 'SMTP configurado via variáveis de ambiente (prefixos [' + h.substring(0, Math.min(8, h.length)) + '..., port=' + p + ', user=' + u.substring(0, Math.min(6, u.length)) + '...]).';
+  } else {
+    const faltam = [];
+    if (!h) faltam.push('SMTP_HOST');
+    if (!p) faltam.push('SMTP_PORT');
+    if (!u) faltam.push('SMTP_USER');
+    if (!s) faltam.push('SMTP_PASSWORD');
+    if (!f) faltam.push('EMAIL_FROM');
+    _emailStatus.configurado = false;
+    _emailStatus.motivo = 'SMTP NAO configurado. Faltam variaveis de ambiente: ' + faltam.join(', ') + '. Instrucoes: configurar no Render > ajeita-backend-pix > Environment. Apenas administrador pode ver valores.';
+  }
+})();
+function _emailGetTransport(){
+  try {
+    if (_emailTransportCached) return _emailTransportCached;
+    if (!_emailStatus.configurado) return null;
+    const nodemailer = require('nodemailer');
+    const host = String(process.env.SMTP_HOST || '').trim();
+    const port = Number(String(process.env.SMTP_PORT || '0').trim() || '0');
+    const user = String(process.env.SMTP_USER || '').trim();
+    const pass = String(process.env.SMTP_PASSWORD || '').trim();
+    const secureRaw = String(process.env.SMTP_SECURE || '').trim().toLowerCase();
+    const secure = secureRaw === 'true' || String(port) === '465';
+    if (!host || !port || !user || !pass) return null;
+    const transporter = nodemailer.createTransport({
+      host: host,
+      port: port,
+      secure: secure,
+      auth: { user: user, pass: pass },
+      pool: false
+    });
+    _emailTransportCached = transporter;
+    return transporter;
+  } catch(eMailT){
+    console.warn('[EMAIL_SERVICE] Falha ao criar transporte SMTP (detalhe oculto por seguranca).');
+    _emailTransportCached = null;
+    return null;
+  }
+}
+async function sendEmail(opts){
+  try {
+    if (!_emailStatus.configurado) return { ok:false, msg: _emailStatus.motivo };
+    const to = (opts && opts.to) ? String(opts.to) : '';
+    const subject = (opts && opts.subject) ? String(opts.subject) : '(Sem Assunto)';
+    const html = (opts && typeof opts.html === 'string') ? String(opts.html) : '';
+    const text = (opts && typeof opts.text === 'string') ? String(opts.text) : (html ? String(html).replace(/<[^>]+>/g, ' ') : '');
+    if (!to) return { ok:false, msg:'Destinatario (to) ausente.' };
+    const from = String(process.env.EMAIL_FROM || '').trim();
+    if (!from) return { ok:false, msg:'EMAIL_FROM ausente.' };
+    const transp = _emailGetTransport();
+    if (!transp) return { ok:false, msg:'Transporte SMTP indisponivel. Verifique configuracao SMTP nas vars de ambiente.' };
+    const info = await transp.sendMail({ from: from, to: to, subject: subject, html: html || undefined, text: text || undefined });
+    const msgId = (info && info.messageId) ? String(info.messageId) : '';
+    return { ok:true, msgId: msgId ? msgId.substring(0, 120) : '', msg: 'Email enviado para SMTP com sucesso.' };
+  } catch(eSend){
+    console.warn('[EMAIL_SERVICE] sendEmail falhou. Erro mensagem (sem credenciais):', (eSend && eSend.message) ? String(eSend.message).substring(0, 400) : 'erro generico');
+    return { ok:false, msg: 'Falha ao enviar e-mail: ' + ((eSend && eSend.message) ? String(eSend.message).substring(0, 300) : 'erro interno.') };
+  }
+}
+app.get('/api/admin/email/status', (req, res) => {
+  const b = Object.assign({}, req.query || {}, req.body || {});
+  const senha = String(b.admin_senha || '').trim();
+  if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+  return res.json({ ok:true, configurado: Boolean(_emailStatus.configurado), resumo: String(_emailStatus.motivo || '') });
+});
+app.post('/api/admin/email/teste', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const senha = String(b.admin_senha || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const to = String(b.to || process.env.SMTP_ADMIN_2FA_TO || process.env.EMAIL_FROM || '').trim();
+    if (!to) return res.status(400).json({ ok:false, msg: 'Destinatario ausente. Informar {to} no body ou setar SMTP_ADMIN_2FA_TO / EMAIL_FROM nas vars de ambiente.' });
+    const assunto = 'Ajeitaí — teste de e-mail';
+    const corpoHtml = '<!doctype html><html><head><meta charset="utf-8"/></head><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a;"><h2 style="color:#7c3aed;">AjeitaAí</h2><p>Este é um teste do sistema de envio de e-mails do Ajeitaí.</p><p style="color:#64748b;font-size:12px;margin-top:32px;">Mensagem automática, não responder.</p></body></html>';
+    const r = await sendEmail({ to: to, subject: assunto, html: corpoHtml });
+    return res.json({ ok: Boolean(r.ok), msg: String(r.msg || ''), destinatarioMask: to.substring(0, 2) + '***@' + (to.split('@')[1] || '?').substring(0, 3) + '***' });
+  } catch(e){
+    console.error('/api/admin/email/teste erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno enviar email teste.' });
+  }
+});
+
+/* ============================================================
+   (2FA ADMIN — DOCUMENTOS DE VALIDAÇÃO / SEGUNDA AUTENTICAÇÃO)
+   Objetivo: exigir código de 6 dígitos via e-mail SOMENTE antes de
+   abrir/visualizar documentos privados de validação de profissionais
+   na aba "Verificações" do admin.html.
+
+   - Código válido por no máximo 5 minutos.
+   - Código de uso único.
+   - Armazenado como hash SHA256 no servidor (nunca texto puro em persistência de longa duração).
+   - Limitar tentativas incorretas (max 6 por código).
+   - Código NUNCA é devolvido no frontend, NUNCA em URL, NUNCA em logs.
+   - E-mail destinatário padrão: ti.mello.santos@gmail.com (sobrescreve SMTP_ADMIN_2FA_TO se existir).
+   - Admin libera acesso temporário de 10 minutos após validação bem-sucedida
+     (retorna token curto opaco para o frontend usar em requests subsequentes
+     para visualizar documentos ou abrir modal).
+   ============================================================ */
+const _2FA_DOCS_ADMIN = {
+  EMAIL_DESTINO: String(process.env.SMTP_ADMIN_2FA_TO || 'ti.mello.santos@gmail.com').trim() || 'ti.mello.santos@gmail.com',
+  TTL_CODIGO_MS: 5 * 60 * 1000,
+  TTL_SESSAO_MS: 10 * 60 * 1000,
+  MAX_TENTATIVAS: 6,
+  _pendentes: new Map(),      // key: nonce (opaco) -> { codigoHash, criadoEmMs, tentativasRestantes, usado }
+  _sessoes: new Map(),        // key: tokenOpcaco (string random 64 hex) -> { criadoEmMs, expiraMs }
+  _tokensPorAdmin: new Map()  // key: adminLogin (fixo admin10) -> tokenOpcaco atual
+};
+function _2FAGerarNonce(len){
+  try { return crypto.randomBytes(Math.max(16, Number(len) || 24)).toString('hex'); }
+  catch(e){ return 'nonce_' + Date.now() + '_' + Math.random().toString(36).substring(2); }
+}
+function _2FAGerarCodigo6Dig(){
+  try {
+    const raw = crypto.randomInt(0, 1000000);
+    return String(raw).padStart(6, '0');
+  } catch(e){
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+}
+function _2FAHashSha256(texto){
+  try { return crypto.createHash('sha256').update(String(texto || ''), 'utf8').digest('hex'); }
+  catch(e){ return String(texto || ''); }
+}
+function _2FALimparExpirados(){
+  try {
+    const agora = Date.now();
+    for (const [k, v] of _2FA_DOCS_ADMIN._pendentes.entries()) {
+      if (v.usado || (agora - (v.criadoEmMs || 0)) > _2FA_DOCS_ADMIN.TTL_CODIGO_MS) _2FA_DOCS_ADMIN._pendentes.delete(k);
+    }
+    for (const [k, v] of _2FA_DOCS_ADMIN._sessoes.entries()) {
+      if ((v.expiraMs || 0) < agora) {
+        _2FA_DOCS_ADMIN._sessoes.delete(k);
+        for (const [adm, tok] of _2FA_DOCS_ADMIN._tokensPorAdmin.entries()) {
+          if (tok === k) _2FA_DOCS_ADMIN._tokensPorAdmin.delete(adm);
+        }
+      }
+    }
+  } catch(eGarbage){}
+}
+setInterval(_2FALimparExpirados, 60 * 1000);
+function _2FACriarSessaoAprovada(){
+  const agora = Date.now();
+  const token = _2FAGerarNonce(32);
+  const expira = agora + _2FA_DOCS_ADMIN.TTL_SESSAO_MS;
+  _2FA_DOCS_ADMIN._sessoes.set(token, { criadoEmMs: agora, expiraMs: expira });
+  _2FA_DOCS_ADMIN._tokensPorAdmin.set('admin10', token);
+  return { token: token, expiraMs: expira, expiraEmIso: new Date(expira).toISOString() };
+}
+function _2FAValidarSessaoToken(token){
+  if (!token) return { ok:false, msg:'Token ausente.' };
+  const s = _2FA_DOCS_ADMIN._sessoes.get(String(token || ''));
+  if (!s) return { ok:false, msg:'Sessao 2FA nao existe ou expirou. Gere novo codigo.' };
+  if ((s.expiraMs || 0) < Date.now()) {
+    _2FA_DOCS_ADMIN._sessoes.delete(String(token || ''));
+    return { ok:false, msg:'Sessao 2FA expirou. Gere novo codigo.' };
+  }
+  return { ok:true, msg:'2FA ativo.', expiraMs: Number(s.expiraMs || 0) };
+}
+app.post('/api/admin/2fa/docs/gerar', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const senha = String(b.admin_senha || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    if (!_emailStatus.configurado) return res.status(503).json({ ok:false, msg: 'SMTP nao configurado. Impossivel enviar codigo 2FA por e-mail. ' + String(_emailStatus.motivo || '') });
+    _2FALimparExpirados();
+    const nonce = _2FAGerarNonce(20);
+    const codigo = _2FAGerarCodigo6Dig();
+    const codigoHash = _2FAHashSha256(codigo);
+    _2FA_DOCS_ADMIN._pendentes.set(nonce, {
+      codigoHash: codigoHash,
+      criadoEmMs: Date.now(),
+      tentativasRestantes: _2FA_DOCS_ADMIN.MAX_TENTATIVAS,
+      usado: false
+    });
+    const destino = _2FA_DOCS_ADMIN.EMAIL_DESTINO;
+    const assunto = 'AjeitaAí — Código de acesso aos Documentos de Validação';
+    const corpoHtml = '<!doctype html><html><head><meta charset="utf-8"/></head><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a;">' +
+      '<h2 style="color:#7c3aed;">AjeitaAí — Painel Admin</h2>' +
+      '<p>Você solicitou um código de segurança para acessar os <b>documentos de validação</b> de profissionais.</p>' +
+      '<p>Use este código apenas no painel administrativo. Ele é <b>válido por 5 minutos</b> e de uso único.</p>' +
+      '<div style="margin:28px auto;max-width:380px;padding:20px 16px;text-align:center;border-radius:16px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;">' +
+      '<div style="font-size:13px;opacity:0.95;margin-bottom:8px;">Código de segurança</div>' +
+      '<div style="font-size:38px;font-weight:900;letter-spacing:10px;">' + String(codigo) + '</div>' +
+      '</div>' +
+      '<p style="color:#64748b;font-size:13px;">Se você não solicitou este código, ignore este e-mail.</p>' +
+      '<p style="color:#94a3b8;font-size:11px;margin-top:40px;">Mensagem automática, não responder.</p>' +
+      '</body></html>';
+    const r = await sendEmail({ to: destino, subject: assunto, html: corpoHtml });
+    if (!r.ok) return res.status(502).json({ ok:false, msg: 'Falha ao enviar email com codigo 2FA. Detalhe (sem codigo): ' + String(r.msg || '') });
+    return res.json({ ok:true, nonce: nonce, destMask: destino.substring(0, 2) + '***@' + (destino.split('@')[1] || '?').substring(0, 3) + '***', validadeMs: _2FA_DOCS_ADMIN.TTL_CODIGO_MS });
+  } catch(e){
+    console.error('/api/admin/2fa/docs/gerar erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno ao gerar codigo 2FA docs.' });
+  }
+});
+app.post('/api/admin/2fa/docs/validar', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const senha = String(b.admin_senha || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const nonce = String(b.nonce || '').trim();
+    const codigoDigitado = String(b.codigo || '').trim();
+    if (!nonce || !codigoDigitado) return res.status(400).json({ ok:false, msg:'nonce e codigo sao obrigatorios.' });
+    if (!/^\d{6}$/.test(codigoDigitado)) return res.status(400).json({ ok:false, msg:'Codigo invalido (deve ser 6 digitos numericos).' });
+    _2FALimparExpirados();
+    const pend = _2FA_DOCS_ADMIN._pendentes.get(nonce);
+    if (!pend) return res.status(404).json({ ok:false, msg:'Codigo 2FA expirado ou nao encontrado. Gere um novo.' });
+    if (pend.usado) return res.status(409).json({ ok:false, msg:'Codigo 2FA ja utilizado. Gere um novo.' });
+    if ((Date.now() - (pend.criadoEmMs || 0)) > _2FA_DOCS_ADMIN.TTL_CODIGO_MS) {
+      _2FA_DOCS_ADMIN._pendentes.delete(nonce);
+      return res.status(410).json({ ok:false, msg:'Codigo 2FA expirou (5 min). Gere um novo.' });
+    }
+    if ((pend.tentativasRestantes || 0) <= 0) {
+      pend.usado = true;
+      _2FA_DOCS_ADMIN._pendentes.delete(nonce);
+      return res.status(429).json({ ok:false, msg:'Maximo de tentativas incorretas excedido. Gere um novo codigo.' });
+    }
+    const digitadoHash = _2FAHashSha256(codigoDigitado);
+    const match = (digitadoHash === String(pend.codigoHash || ''));
+    if (!match) {
+      pend.tentativasRestantes = Number(pend.tentativasRestantes || 0) - 1;
+      const restantes = Math.max(0, Number(pend.tentativasRestantes || 0));
+      if (restantes <= 0) { pend.usado = true; _2FA_DOCS_ADMIN._pendentes.delete(nonce); }
+      return res.status(401).json({ ok:false, msg:'Codigo 2FA incorreto.', tentativasRestantes: restantes });
+    }
+    pend.usado = true;
+    _2FA_DOCS_ADMIN._pendentes.delete(nonce);
+    const sessao = _2FACriarSessaoAprovada();
+    return res.json({ ok:true, msg:'2FA validado com sucesso. Acesso liberado aos documentos.', token: sessao.token, expiraMs: Number(sessao.expiraMs || 0), expiraEmIso: String(sessao.expiraEmIso || '') });
+  } catch(e){
+    console.error('/api/admin/2fa/docs/validar erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno ao validar codigo 2FA docs.' });
+  }
+});
+app.post('/api/admin/2fa/docs/checar', async (req, res) => {
+  try {
+    const b = Object.assign({}, req.query || {}, req.body || {});
+    const senha = String(b.admin_senha || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const token = String(b.token || '').trim();
+    const v = _2FAValidarSessaoToken(token);
+    return res.json({ ok: Boolean(v.ok), msg: String(v.msg || ''), expiraMs: Number(v.expiraMs || 0) });
+  } catch(e){
+    return res.status(500).json({ ok:false, msg:'Erro interno checar 2FA docs.' });
+  }
+});
+
 // ===================== (NOVO V11: HANDLERS FINAIS — 404 + ERROR GLOBAL — VEM SEMPRE DEPOIS DE TODAS AS ROTAS E ANTES DE app.listen) =====================
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
