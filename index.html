@@ -441,23 +441,344 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- 7) CARD DESTAQUE HORIZONTAL (Diarista, igual referência imagem 3!) -->
-    <div class="mb-10 sm:mb-12 group cursor-pointer" onclick="setCategoria('Diarista')">
-      <div class="overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-lg hover:shadow-2xl transition group-hover:-translate-y-0.5 duration-300">
-        <div class="relative aspect-[16/9] sm:aspect-[21/9] overflow-hidden bg-slate-100">
-          <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Happy%20female%20house%20cleaner%20blue%20apron%20rubber%20gloves%20cleaning%20supplies%20in%20modern%20living%20room%20professional%20photorealistic&image_size=landscape_16_9" alt="Diarista Profissional" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
-        </div>
-        <div class="flex items-center justify-between gap-5 p-5 sm:p-7">
-          <div class="flex-1 min-w-0">
-            <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Diarista</h3>
-            <p class="text-base sm:text-lg text-slate-600 leading-relaxed line-clamp-2 sm:line-clamp-none">Contratar diarista, faxineira, empregada mensal ou semanal para residências e empresas.</p>
+    <!-- 7) CARD DESTAQUE HORIZONTAL: 📢 PATROCINADORES (substitui card Diarista original)
+         - Carrossel cascata/loop 5 segundos (1 timer, 1 única requisição, sem polling)
+         - Swipe touch no celular, dots discretos, fade suave 500ms
+         - Se NENHUM patrocinador ativo → mostra placeholder neutro "Em breve"
+         - NÃO mostra profissionais mais avaliados aqui (ficam em sua seção própria) -->
+    <div id="patrocionariosDestaqueHome" class="mb-10 sm:mb-12">
+      <div class="overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-lg">
+        <div class="relative aspect-[16/9] sm:aspect-[21/9] overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
+          <!-- SLIDES (render via JS: carrosselPatrHomeSlidesWrap) -->
+          <div id="carrosselPatrHomeSlidesWrap" class="relative w-full h-full">
+            <!-- Placeholder neutro inicial (até o JS carregar) -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+              <div class="inline-flex items-center gap-2 bg-gradient-to-r from-fuchsia-50 to-purple-50 text-fuchsia-700 text-[11px] font-black uppercase tracking-[0.14em] px-3 py-1.5 rounded-full border border-fuchsia-200 mb-5">
+                📢 PATROCINADORES
+              </div>
+              <div class="text-5xl sm:text-6xl mb-4 text-slate-300"><i class="fa-solid fa-building"></i></div>
+              <h3 class="text-xl sm:text-2xl font-black text-slate-700 mb-1.5">Em breve</h3>
+              <p class="text-sm sm:text-base text-slate-500 max-w-lg">Empresas parceiras do AjeitaAí estarão aqui.</p>
+            </div>
           </div>
-          <button onclick="event.stopPropagation(); setCategoria('Diarista');" class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white flex items-center justify-center shadow-xl hover:shadow-2xl transition group-hover:scale-110 group-active:scale-95">
+          <!-- Dots indicadores (render via JS) -->
+          <div id="carrosselPatrHomeDots" class="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/50 shadow-sm"></div>
+        </div>
+        <!-- Rodapé (fora do aspect) — título 📢 PATROCINADORES + botão conhecer (igual proporção original do card Diarista) -->
+        <div class="flex items-center justify-between gap-5 p-5 sm:p-7 bg-white">
+          <div class="flex-1 min-w-0">
+            <div class="inline-flex items-center gap-2 bg-gradient-to-r from-fuchsia-50 to-purple-50 text-fuchsia-700 text-[11px] font-black uppercase tracking-[0.14em] px-3 py-1.5 rounded-full border border-fuchsia-200 mb-2">
+              📢 PATROCINADORES
+            </div>
+            <h3 id="carrosselPatrHomeTituloRodape" class="text-2xl sm:text-3xl font-black text-slate-900 mb-2 leading-tight truncate">Empresas parceiras do AjeitaAí</h3>
+            <p id="carrosselPatrHomeDescRodape" class="text-base sm:text-lg text-slate-600 leading-relaxed line-clamp-2 sm:line-clamp-none truncate">Marcas que apoiam nossa missão de conectar clientes aos melhores profissionais.</p>
+          </div>
+          <a id="carrosselPatrHomeBtnRodape" href="#view-home"
+             class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-fuchsia-600 to-purple-800 hover:from-fuchsia-700 hover:to-purple-900 text-white flex items-center justify-center shadow-xl hover:shadow-2xl transition group-hover:scale-110 group-active:scale-95"
+             onclick="event.preventDefault();var h=document.getElementById('patrocinadoresBannersContainer');if(h){h.scrollIntoView({behavior:'smooth',block:'center'});}else{navigateTo('view-home');}return false;"
+             title="Ver todos patrocinadores">
             <i class="fa-solid fa-arrow-right text-xl sm:text-2xl ml-0.5"></i>
-          </button>
+          </a>
         </div>
       </div>
     </div>
+    <script>
+    // ============================================================
+    // CARROSSEL CASCATA PATROCINADORES (home destaque - substituindo card Diarista)
+    // Regras (item 4,5,6,7,8,11):
+    //  - 5 segundos por slide (setInterval)
+    //  - Transição suave fade 500ms (CSS transition)
+    //  - Loop 1→2→3→4→1 sem recarregar página
+    //  - 1 timer apenas; limpa timer ao desmontar (navigateTo chama destroy)
+    //  - 1 requisição: reutiliza window._PATROCINIOS_ATIVOS_CACHE ou carrega do storage
+    //  - Swipe touch esquerda/direita mobile
+    //  - Dots discretos ● ○
+    //  - Limita até 5 patrocinadores
+    //  - Sem patrocinadores ativos → mostra placeholder neutro
+    // ============================================================
+    (function(){
+      var _slides = [];
+      var _idxAtual = 0;
+      var _timer = null;
+      var _touchStartX = 0;
+      var _touchDeltaX = 0;
+      var _timerHandleDestroyRef = null; // expõe limpeza para navigateTo externo
+
+      function _carrosselPatrIr(idx, animar) {
+        try {
+          if (!_slides || !_slides.length) return;
+          if (idx < 0) idx = _slides.length - 1;
+          if (idx >= _slides.length) idx = 0;
+          var wrap = document.getElementById('carrosselPatrHomeSlidesWrap');
+          var dotsEl = document.getElementById('carrosselPatrHomeDots');
+          var tit = document.getElementById('carrosselPatrHomeTituloRodape');
+          var desc = document.getElementById('carrosselPatrHomeDescRodape');
+          var btnR = document.getElementById('carrosselPatrHomeBtnRodape');
+          if (!wrap) return;
+          // Esconde todos, mostra o idx
+          var slidesEls = wrap.querySelectorAll('[data-patr-home-slide]');
+          for (var i = 0; i < slidesEls.length; i++) {
+            var s = slidesEls[i];
+            var num = Number(s.getAttribute('data-patr-home-slide'));
+            s.style.transition = (animar === false) ? 'none' : 'opacity 500ms ease, transform 500ms ease';
+            s.style.opacity = (num === idx) ? '1' : '0';
+            s.style.transform = (num === idx) ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.985)';
+            s.style.pointerEvents = (num === idx) ? 'auto' : 'none';
+          }
+          _idxAtual = idx;
+          // Dots
+          if (dotsEl) {
+            var dotEls = dotsEl.querySelectorAll('[data-patr-home-dot]');
+            for (var j = 0; j < dotEls.length; j++) {
+              var d = dotEls[j];
+              var n = Number(d.getAttribute('data-patr-home-dot'));
+              if (n === idx) {
+                d.classList.remove('bg-slate-300','w-2','h-2');
+                d.classList.add('bg-fuchsia-600','w-5','h-2');
+              } else {
+                d.classList.add('bg-slate-300','w-2','h-2');
+                d.classList.remove('bg-fuchsia-600','w-5','h-2');
+              }
+            }
+          }
+          // Atualiza rodapé (pega os dados do slide atual)
+          var atual = _slides[idx] || {};
+          if (tit) tit.textContent = String(atual.nome_empresa || 'Empresa parceira');
+          if (desc) {
+            var desct = String(atual.descricao || 'Confira os produtos e serviços desta empresa parceira.');
+            if (desct.length > 95) desct = desct.slice(0, 92) + '...';
+            desc.textContent = desct;
+          }
+          if (btnR) {
+            var href = '#';
+            if (atual.site) href = (String(atual.site).toLowerCase().startsWith('http') ? atual.site : 'https://' + String(atual.site));
+            else if (atual.whatsapp) href = 'https://wa.me/55' + String(atual.whatsapp).replace(/\D/g,'');
+            btnR.setAttribute('data-href', href);
+            btnR.setAttribute('href', href);
+            if (atual.site || atual.whatsapp) {
+              btnR.setAttribute('target','_blank');
+              btnR.setAttribute('rel','noopener');
+              btnR.setAttribute('title','Conhecer empresa');
+            }
+          }
+        } catch(e){}
+      }
+
+      function _iniciarTimer() {
+        _pararTimer();
+        if (!_slides || _slides.length <= 1) return;
+        _timer = setInterval(function(){
+          _carrosselPatrIr(_idxAtual + 1, true);
+        }, 5000);
+      }
+      function _pararTimer() {
+        if (_timer) {
+          clearInterval(_timer);
+          _timer = null;
+        }
+      }
+
+      function _bindTouch() {
+        var wrap = document.getElementById('carrosselPatrHomeSlidesWrap');
+        if (!wrap) return;
+        wrap.addEventListener('touchstart', function(e){
+          try { _pararTimer(); } catch(err){}
+          try {
+            var t0 = e && e.changedTouches && e.changedTouches[0];
+            if (t0) { _touchStartX = Number(t0.clientX || 0); _touchDeltaX = 0; }
+          } catch(es){}
+        }, {passive:true});
+        wrap.addEventListener('touchmove', function(e){
+          try {
+            var t1 = e && e.changedTouches && e.changedTouches[0];
+            if (t1) _touchDeltaX = Number(t1.clientX || 0) - _touchStartX;
+          } catch(em){}
+        }, {passive:true});
+        wrap.addEventListener('touchend', function(e){
+          try {
+            if (Math.abs(_touchDeltaX) > 40) {
+              if (_touchDeltaX < 0) _carrosselPatrIr(_idxAtual + 1, true); // swipe left → prox
+              else _carrosselPatrIr(_idxAtual - 1, true); // swipe right → ant
+            }
+            _touchStartX = 0; _touchDeltaX = 0;
+          } catch(ee){}
+          try { _iniciarTimer(); } catch(err){}
+        }, {passive:true});
+      }
+
+      function _renderCarrossel(lista) {
+        try {
+          var wrap = document.getElementById('carrosselPatrHomeSlidesWrap');
+          var dotsEl = document.getElementById('carrosselPatrHomeDots');
+          if (!wrap || !dotsEl) return;
+
+          // Remove o placeholder inicial, reseta
+          wrap.innerHTML = '';
+          dotsEl.innerHTML = '';
+
+          if (!lista || !lista.length) {
+            // ========== ESTADO VAZIO: "Em breve, empresas parceiras estarão aqui." ==========
+            wrap.innerHTML = `
+              <div data-patr-home-slide="-1" class="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+                <div class="text-5xl sm:text-6xl mb-4 text-slate-300"><i class="fa-solid fa-building"></i></div>
+                <h3 class="text-xl sm:text-2xl font-black text-slate-700 mb-1.5">Em breve</h3>
+                <p class="text-sm sm:text-base text-slate-500 max-w-lg">Empresas parceiras do AjeitaAí estarão aqui.</p>
+              </div>`;
+            dotsEl.innerHTML = '';
+            var tit = document.getElementById('carrosselPatrHomeTituloRodape');
+            var desc = document.getElementById('carrosselPatrHomeDescRodape');
+            if (tit) tit.textContent = 'Patrocinadores';
+            if (desc) desc.textContent = 'Em breve, empresas parceiras estarão aqui.';
+            _pararTimer();
+            return;
+          }
+
+          // Limita a 5 patrocinadores
+          _slides = (lista || []).slice(0, 5);
+
+          // Render slides (absoluto sobreposto, para fade cascata 500ms)
+          var slidesHtml = '';
+          for (var i = 0; i < _slides.length; i++) {
+            var p = _slides[i];
+            var bgLogo = (i % 4) === 0 ? 'from-rose-50 to-pink-50'
+                       : (i%4===1) ? 'from-amber-50 to-yellow-50'
+                       : (i%4===2) ? 'from-primary-50 to-accent-50'
+                       : 'from-emerald-50 to-teal-50';
+            var nome = String(p.nome_empresa || 'Empresa parceira');
+            var cat = p.categoria ? String(p.categoria) : '';
+            var iniciais = nome ? String(nome).charAt(0).toUpperCase() : '?';
+            var logoHtml = '';
+            if (p.logo) {
+              logoHtml = `<img src="${p.logo}" alt="Logo ${nome}" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')" class="max-w-full max-h-full object-contain drop-shadow-md">
+                          <div class="hidden w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/70 backdrop-blur-sm border-2 border-white flex items-center justify-center text-4xl sm:text-5xl font-black text-slate-700 shadow-md">${iniciais}</div>`;
+            } else {
+              logoHtml = `<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-white flex items-center justify-center text-4xl sm:text-5xl font-black text-slate-700 shadow-md">${iniciais}</div>`;
+            }
+            slidesHtml += `
+              <div data-patr-home-slide="${i}" class="absolute inset-0 flex items-center justify-center p-4 sm:p-8 bg-gradient-to-br ${bgLogo}">
+                <div class="w-full max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-8 items-center">
+                  <!-- Logo / cartão (esquerda) -->
+                  <div class="sm:col-span-5 flex items-center justify-center">
+                    <div class="w-full aspect-[4/3] sm:aspect-square max-w-[360px] rounded-3xl border-2 border-white/70 shadow-xl overflow-hidden bg-white/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
+                      ${logoHtml}
+                    </div>
+                  </div>
+                  <!-- Texto + botão ação (direita) -->
+                  <div class="sm:col-span-7 flex flex-col items-start gap-3 sm:gap-4">
+                    <div class="inline-flex items-center gap-1.5 bg-white/80 backdrop-blur-sm text-emerald-700 text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-200 shadow-sm">
+                      <i class="fa-solid fa-circle-check text-[10px]"></i> Parceiro AjeitaAí
+                    </div>
+                    <h3 class="text-2xl sm:text-4xl font-black text-slate-900 leading-tight">${nome}</h3>
+                    ${cat ? `<div class="text-[11px] sm:text-xs font-bold text-fuchsia-700 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-fuchsia-200 shadow-sm">${cat}</div>` : ''}
+                    <p class="text-sm sm:text-lg text-slate-700 leading-relaxed max-w-2xl min-h-[2.5em]">
+                      ${(String(p.descricao || 'Confira os produtos e serviços desta empresa parceira.').length > 180)
+                        ? String(p.descricao || '').slice(0,177)+'...'
+                        : String(p.descricao || 'Confira os produtos e serviços desta empresa parceira.')}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2 pt-2">
+                      ${ p.whatsapp ? `<a href="https://wa.me/55${String(p.whatsapp).replace(/\D/g,'')}" target="_blank" rel="noopener" class="w-11 h-11 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow-md transition flex-shrink-0" title="WhatsApp"><i class="fa-brands fa-whatsapp text-lg"></i></a>` : '' }
+                      ${ p.instagram ? `<a href="${String(p.instagram).toLowerCase().startsWith('http')?p.instagram:'https://instagram.com/'+String(p.instagram).replace(/^@/,'')}" target="_blank" rel="noopener" class="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-600 text-white flex items-center justify-center shadow-md transition flex-shrink-0" title="Instagram"><i class="fa-brands fa-instagram text-lg"></i></a>` : '' }
+                      ${ p.site ? `<a href="${String(p.site).toLowerCase().startsWith('http')?p.site:'https://'+String(p.site)}" target="_blank" rel="noopener" class="w-11 h-11 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition flex-shrink-0" title="Site"><i class="fa-solid fa-globe text-lg"></i></a>` : '' }
+                      <a href="${(p.site?(String(p.site).toLowerCase().startsWith('http')?p.site:'https://'+String(p.site)):(p.whatsapp?'https://wa.me/55'+String(p.whatsapp).replace(/\D/g,''):'#'))}"
+                         ${(p.site||p.whatsapp)?'target="_blank" rel="noopener"':''}
+                         class="inline-flex items-center gap-2 bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-700 hover:to-primary-900 text-white text-sm sm:text-base font-bold px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl shadow-md hover:shadow-lg transition">
+                        Conhecer empresa <i class="fa-solid fa-arrow-up-right-from-square text-[11px] sm:text-xs"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+          wrap.innerHTML = slidesHtml;
+
+          // Render dots
+          var dotsHtml = '';
+          for (var k = 0; k < _slides.length; k++) {
+            dotsHtml += `<button data-patr-home-dot="${k}" onclick="(function(){document.dispatchEvent(new CustomEvent('patrHomeDot',{detail:${k}}));})()"
+              class="rounded-full transition-all duration-300 bg-slate-300 w-2 h-2 hover:bg-fuchsia-400" aria-label="Patrocinador ${k+1}"></button>`;
+          }
+          dotsEl.innerHTML = dotsHtml;
+
+          // Listener dots
+          try { document.removeEventListener('patrHomeDot', _dotHandler); } catch(err){}
+          function _dotHandler(ev){
+            try {
+              var idxN = Number(ev && ev.detail);
+              if (!isNaN(idxN) && idxN >= 0) {
+                _carrosselPatrIr(idxN, true);
+                _iniciarTimer();
+              }
+            } catch(err){}
+          }
+          try { document.addEventListener('patrHomeDot', _dotHandler); } catch(err){}
+
+          // Mostra o 1º slide SEM animação, depois inicia o timer
+          _idxAtual = 0;
+          _carrosselPatrIr(0, false);
+          _bindTouch();
+          _iniciarTimer();
+
+          // Pausa no hover desktop (economiza processamento enquanto usuário lê)
+          try {
+            wrap.addEventListener('mouseenter', function(){ try { _pararTimer(); } catch(e){} });
+            wrap.addEventListener('mouseleave', function(){ try { _iniciarTimer(); } catch(e){} });
+          } catch(ehv){}
+        } catch(eGeral){
+          try { console.warn('[carrosselPatrHome render]', eGeral); } catch(eL){}
+        }
+      }
+
+      // ============================================================
+      // ENTRY POINT: usa CACHE (1 requisição TOTAL, compartilhada com banners acima!)
+      // 1. Tenta window._PATROCINIOS_ATIVOS_CACHE (carregarEBannersPatrocinadores já salvou aqui se rodou primeiro)
+      // 2. Se não tem, tenta localStorage ajeita_moeda_app_patrocinadores_publicos
+      // 3. Se não tem nem storage, dispara 1 fetch e salva cache + storage
+      // ============================================================
+      function _carregarDadosSeNecessario() {
+        try {
+          // 1. Cache em memória (rápido, sem requisição)
+          if (Array.isArray(window._PATROCINIOS_ATIVOS_CACHE) && window._PATROCINIOS_ATIVOS_CACHE.length) {
+            _renderCarrossel(window._PATROCINIOS_ATIVOS_CACHE);
+            return;
+          }
+          // 2. Storage (sem requisição, salvo de sessões anteriores ou do carregarEBannersPatrocinadores)
+          var doStorage = null;
+          try { doStorage = pegarDoStorage('patrocinadores_publicos', null); } catch(es){}
+          if (Array.isArray(doStorage) && doStorage.length) {
+            try { window._PATROCINIOS_ATIVOS_CACHE = doStorage.slice(); } catch(eW){}
+            _renderCarrossel(doStorage);
+            return;
+          }
+          // 3. ÚLTIMO recurso: 1 fetch único (não faz polling)
+          try {
+            if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+            fetch(BACKEND_PIX_URL + '/api/patrocinadores/ativos', { method:'GET', headers:{'Accept':'application/json'} })
+              .then(function(r){ return (r && r.ok) ? r.json().catch(function(){return {ok:false};}) : {ok:false}; })
+              .then(function(json){
+                var items = (json && json.ok && Array.isArray(json.items)) ? json.items : (Array.isArray(json && json.items) ? json.items : []);
+                if (Array.isArray(items) && items.length) {
+                  try { salvarNoStorage('patrocinadores_publicos', items); } catch(eS){}
+                  try { window._PATROCINIOS_ATIVOS_CACHE = items.slice(); } catch(eW){}
+                }
+                _renderCarrossel(items || []);
+              })
+              .catch(function(){ _renderCarrossel([]); });
+          } catch(eFetch){
+            _renderCarrossel([]);
+          }
+        } catch(eGeral){
+          try { _renderCarrossel([]); } catch(eR){}
+        }
+      }
+
+      // Expõe função de LIMPEZA no objeto window para navegação SPA limpar o timer
+      window.carrosselPatrHomeDestroy = function(){ try { _pararTimer(); } catch(e){} };
+
+      // Inicia após 400ms (após DOM, compartilha cache com o carregarEBannersPatrocinadores que roda em +800ms)
+      try { setTimeout(_carregarDadosSeNecessario, 400); } catch(eT){}
+    })();
+    </script>
 
     <!-- 8) SEÇÃO: ASSISTÊNCIA TÉCNICA + Ver Tudo + grid 3 colunas FOTOS -->
     <div class="mb-10 sm:mb-12">
@@ -3924,6 +4245,9 @@ function navigateTo(viewId) {
     navigateTo('view-profissional-cadastro');
     return;
   }
+  // ===== LIMPEZA TIMERS CARROSSEL (limpa setInterval do patrocinadores destaque home antes de mudar view) =====
+  try { if (typeof window.carrosselPatrHomeDestroy === 'function') window.carrosselPatrHomeDestroy(); } catch(e){}
+
   document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
   const alvo = document.getElementById(viewId);
   if (alvo) alvo.classList.add('active');
