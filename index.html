@@ -5581,6 +5581,23 @@ function renderMeusPedidos() {
       return primeiroDesb ? profissionais.find(p=>p.id===primeiroDesb.profissionalId) : null;
     })();
 
+    let _profRelHtml = '';
+    if (profissionalRel && typeof profissionalRel === 'object') {
+      profissionalRel.nome = String(profissionalRel.nome || 'Profissional');
+      profissionalRel.foto = profissionalRel.foto || '';
+      profissionalRel.whatsapp = String(profissionalRel.whatsapp || '');
+      const _relNomeEsc = profissionalRel.nome.replace(/'/g,"\\'");
+      _profRelHtml = `
+          <div class="flex items-center gap-3 bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
+            <img src="${profissionalRel.foto||FOTO_UI_AVATAR(profissionalRel.nome)}" onerror="imgErroAvatar(this,'${_relNomeEsc}')" class="w-11 h-11 rounded-xl object-cover border-2 border-white shadow">
+            <div>
+              <div class="text-xs text-slate-500 leading-none">${isCliente?'Profissional contratado':'Cliente'}</div>
+              <div class="font-bold text-slate-800 text-sm leading-tight">${profissionalRel.nome||'—'}</div>
+              <div class="text-[11px] text-slate-500 leading-tight">${formataWhatsAppBrasil(profissionalRel.whatsapp||'')}</div>
+            </div>
+          </div>`;
+    }
+
     return `
     <div class="bg-white rounded-3xl shadow-card border border-slate-100 p-5 sm:p-6 hover:shadow-pop transition">
       <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
@@ -5600,19 +5617,7 @@ function renderMeusPedidos() {
             </div>
           </div>
         </div>
-        ${profissionalRel ? (function(){
-          profissionalRel.nome = String(profissionalRel.nome || 'Profissional');
-          profissionalRel.foto = profissionalRel.foto || '';
-          const _relNomeEsc = profissionalRel.nome.replace(/'/g,"\\'");
-          return `
-          <div class="flex items-center gap-3 bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
-            <img src="${profissionalRel.foto||FOTO_UI_AVATAR(profissionalRel.nome)}" onerror="imgErroAvatar(this,'${_relNomeEsc}')" class="w-11 h-11 rounded-xl object-cover border-2 border-white shadow">
-            <div>
-              <div class="text-xs text-slate-500 leading-none">${isCliente?'Profissional contratado':'Cliente'}</div>
-              <div class="font-bold text-slate-800 text-sm leading-tight">${profissionalRel.nome||'—'}</div>
-              <div class="text-[11px] text-slate-500 leading-tight">${formataWhatsAppBrasil(profissionalRel.whatsapp||'')}</div>
-            </div>
-          </div>`:''}
+        ${_profRelHtml}
       </div>
       <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-4">
         <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Descrição do pedido</div>
