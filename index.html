@@ -1816,49 +1816,35 @@ function gerarTodasVariacoesRedirectUri() {
 // 2. Escolhe a MELHOR redirect_uri baseada na origin atual.
 function escolherRedirectUriDefinitiva() {
   // ============================================================
-  // ⚠️ FIX V5E: VALOR DO USUÁRIO SALVO NO STORAGE PRIORIDADE MÁXIMA (100% match)
-  // Se o usuário já abriu o modal e clicou em uma opcao, ESCOLHEMOS DIRETO,
-  // sem heuristica nenhuma. Garante 0 mismatch de agora em diante nesse navegador.
+  // ⚠️ ESTRATÉGIA ZERO-ADIVINHAÇÃO (ELIMINA redirect_uri_mismatch):
+  // NÃO usa storage, NÃO usa modal, NÃO usa heurística.
+  // O redirect_uri é SEMPRE a ORIGEM ATUAL da página (window.location.origin)
+  // + o pathname atual limpo (ou /index.html se for '/').
+  // É a URL que o usuário ESTÁ acessando neste exato momento.
+  // Funciona em QUALQUER domínio (ajeitaai.com.br, www, onrender, localhost)
+  // sem precisar de configuração manual por navegador.
   // ============================================================
-  var salvaStorage = pegarDoStorage('redirectUriEscolhida', null);
-  if (salvaStorage && typeof salvaStorage === 'string' && salvaStorage.length > 10) {
-    try {
-      DBG('H2','1407','escolherRedirectUriDefinitiva: USANDO VALOR SALVO NO STORAGE (FIX V5E, 0 mismatch garantido)', {
-        redirectUriSalva: salvaStorage
-      });
-    } catch(e){}
-    return salvaStorage;
-  }
-  const candidatas = gerarTodasVariacoesRedirectUri();
-  const originAtual = (window.location.origin || (window.location.protocol + '//' + window.location.host));
-  // Step A: primeiro candidatas que PERTENCEM À ORIGEM ATUAL (melhor match)
-  const daOriginAtual = candidatas.filter(function(u){ return u.indexOf(originAtual) === 0; });
-  // Step B: demais candidatas (fallback se origin atual nao for autorizada, ex: porta trocada)
-  const demais = candidatas.filter(function(u){ return u.indexOf(originAtual) !== 0; });
-  // Ordena candidatas da origin atual por preferencia:
-  //   1. origem limpa (sem path) → mais comum
-  //   2. /index.html
-  //   3. trailing slash
-  function pesoPreferencia(url){
-    const s = url.substring(originAtual.length);
-    if (s === '' || s === undefined) return 1;
-    if (s === '/index.html') return 2;
-    if (s === '/') return 3;
-    if (s === '/index.html/') return 4;
-    return 99;
-  }
-  daOriginAtual.sort(function(a,b){ return pesoPreferencia(a) - pesoPreferencia(b); });
-  const ordenadas = daOriginAtual.concat(demais);
-  // Log para debug
   try {
-    DBG('H2','1332','escolherRedirectUriDefinitiva: candidatas ordenadas (FIX V5D)', {
-      originAtual: originAtual,
-      candidatasQtd: ordenadas.length,
-      candidatasPrimeiras4: ordenadas.slice(0,4),
-      escolhida: ordenadas[0]
-    });
+    const origem = (window.location && window.location.origin)
+      ? String(window.location.origin)
+      : ((window.location.protocol + '//' + window.location.host));
+    const pathname = (window.location && window.location.pathname)
+      ? String(window.location.pathname)
+      : '/index.html';
+    let pathLimpo = (pathname || '').trim();
+    if (pathLimpo === '' || pathLimpo === '/') pathLimpo = '/index.html';
+    if (!pathLimpo.startsWith('/')) pathLimpo = '/' + pathLimpo;
+    const origemLimpa = origem.endsWith('/') ? origem.slice(0, -1) : origem;
+    if (origemLimpa && (origemLimpa.startsWith('http://') || origemLimpa.startsWith('https://'))) {
+      return origemLimpa + pathLimpo;
+    }
   } catch(e){}
-  return ordenadas[0]; // retorna a #1 da lista ordenada
+  // fallback de emergência
+  try {
+    return String(window.location.href).split('#')[0].split('?')[0];
+  } catch(e2){
+    return 'http://localhost:8000/index.html';
+  }
 }
 // 3. Helper: gera 4 variações de UMA ÚNICA origem (usado para UI do modal de selecao)
 function gerarVariacoesRedirectUriDeUmaOrigem(orig) {
@@ -2597,20 +2583,25 @@ function abrirLoginGoogle(tipoIntent) {
   });
   // #endregion
   // ============================================================
-  // ⚠️ FIX V5E CHECKPOINT OBRIGATÓRIO (1 vez só por navegador):
-  // Verifica se usuário JÁ SELECIONOU qual é a redirect_uri autorizada cadastrada
-  // no Google Cloud Console (modal de selecao). Se NÃO selecionou ainda,
-  // ABRE MODAL DE SELECAO e RETORNA (para o fluxo só seguir após a escolha).
-  // Elimina 100% dos redirect_uri_mismatch, não adivinhamos mais.
+  // ⚠️ ESTRATÉGIA ZERO-ADIVINHAÇÃO (sem modal, sem storage):
+  // escolherRedirectUriDefinitiva() SEMPRE retorna a URL ATUAL da página
+  // (window.location.origin + pathname), NÃO depende de usuário escolher opção.
+  // Limpa qualquer valor antigo de redirectUriEscolhida no storage que
+  // poderia estar "preso" em domínio antigo e causar redirect_uri_mismatch.
   // ============================================================
   try {
-    var temEscolhida = pegarDoStorage('redirectUriEscolhida', null);
-    if (!temEscolhida || typeof temEscolhida !== 'string' || temEscolhida.length < 10) {
-      DBG('H2','1844','abrirLoginGoogle: FIX V5E CHECKPOINT → SEM valor no storage. ABRINDO MODAL de selecao de URL autorizada.', { tipoIntent: tipoIntent });
-      abrirModalRedirectUriSelecao(tipoIntent);
-      return;
-    }
-    DBG('H2','1844','abrirLoginGoogle: FIX V5E CHECKPOINT OK → redirectUriEscolhida existe no storage.', { redirectUriSalva: temEscolhida });
+    try {
+      var temAntigo = pegarDoStorage('redirectUriEscolhida', null);
+      if (temAntigo && typeof temAntigo === 'string' && temAntigo.length) {
+        // Só limpa se o valor antigo NÃO for da origem atual (domínio trocou)
+        try {
+          var origemAtual = String(window.location.origin || '');
+          if (origemAtual && temAntigo.indexOf(origemAtual) !== 0) {
+            localStorage.removeItem(PREFIXO_STORAGE + 'redirectUriEscolhida');
+          }
+        } catch(eLimp){}
+      }
+    } catch(eCheck2){}
   } catch(eCheck){}
   if (!window.google || !window.google.accounts || !window.google.accounts.id) {
     // #region debug-point H5:gsi-objeto-nao-existe
@@ -2628,12 +2619,14 @@ function abrirLoginGoogle(tipoIntent) {
   try {
     const gsi = window.google.accounts.id;
     if (!_gsiInicializado) {
+      var lazyRedirectUri = escolherRedirectUriDefinitiva();
       gsi.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCredentialResponse,
         auto_select: false,
         cancel_on_tap_outside: true,
-        ux_mode: 'popup'
+        ux_mode: 'popup',
+        redirect_uri: lazyRedirectUri
       });
       _gsiInicializado = true;
       // #region debug-point H1:lazy-init
@@ -2802,12 +2795,14 @@ function inicializarGoogleIdentityBootstrap() {
     return;
   }
   try {
+    var redirectUriAtual = escolherRedirectUriDefinitiva();
     var gsiParams = {
       client_id: GOOGLE_CLIENT_ID,
       callback: handleGoogleCredentialResponse,
       auto_select: false,
       cancel_on_tap_outside: true,
-      ux_mode: 'popup'
+      ux_mode: 'popup',
+      redirect_uri: redirectUriAtual
     };
     // #region debug-point H1:gsi-initialize-call
     DBG('H1','1873','window.google.accounts.id.initialize ANTES', { clientId: gsiParams.client_id, clientIdMatchConst: gsiParams.client_id === GOOGLE_CLIENT_ID, callbackNome: 'handleGoogleCredentialResponse' });
