@@ -149,7 +149,7 @@ function _NomePacote(pkgKey) {
     case 'bronze': return 'Pacote Bronze (10 moedas)';
     case 'prata': return 'Pacote Prata (25 moedas)';
     case 'ouro': return 'Pacote Ouro (60 moedas)';
-    default: return 'Recarga de Moedas AjeitaAi';
+    default: return 'Recarga de Moedas AjeitaAí';
   }
 }
 /* ============================
@@ -260,7 +260,7 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
     const qtdMoedas = _QtdMoedasPorPacote(pacoteKey);
     const uidUsuario = String(b.uidUsuario || ('anon_' + Date.now()));
     const tipoUsuario = String(b.tipoUsuario || 'profissional');
-    const nomeUsuario = String(b.nomeUsuario || 'Usuario AjeitaAi');
+    const nomeUsuario = String(b.nomeUsuario || 'Usuario AjeitaAí');
     const emailUsuario = String(b.emailUsuario || 'cliente@ajeita.com.br');
     const externalRef = 'RECARGA_PRO_' + uidUsuario.substring(0,20) + '_' + Date.now();
 
@@ -308,14 +308,14 @@ app.post('/api/pix/criar-recarga-moedas', async (req, res) => {
       const cpfValidoAleatorio = _gerarCpfFakeValidoParaMp();
       const transactionAmountFormatado = Number(Number(precoBRL).toFixed(2));
       const first = (nomeUsuario.split(' ')[0] || 'Cliente').substring(0, 30);
-      const last = (nomeUsuario.split(' ').slice(1).join(' ') || 'AjeitaAi').substring(0, 60);
+      const last = (nomeUsuario.split(' ').slice(1).join(' ') || 'AjeitaAí').substring(0, 60);
       const emailPayer = emailUsuario || 'cliente@ajeita.com.br';
 
       // ====== BODY REST OFICIAL (igual documentacao Mercado Pago API v1/payments Pix) ======
       // Usamos o body MESMO tanto para SDK quanto para FETCH NATIVO (campos oficiais 100% documentados)
       const bodyCreate = {
         transaction_amount: transactionAmountFormatado,
-        description: (_NomePacote(pacoteKey) + ' - AjeitaAi Serviços Domésticos').substring(0, 120),
+        description: (_NomePacote(pacoteKey) + ' - AjeitaAí Serviços Domésticos').substring(0, 120),
         payment_method_id: 'pix',
         payer: {
           email: emailPayer,
@@ -999,7 +999,7 @@ app.post('/api/patrocinadores/criar-pagamento', async (req, res) => {
           preco_brl: precoBRL,
           uid_usuario: b.uid_criador ? String(b.uid_criador) : ('sponsor_' + String(patrocinadorDocId)),
           tipo_usuario: 'patrocinador',
-          nome_usuario: String(b.nome_empresa || 'Patrocinador AjeitaAi').substring(0,100),
+          nome_usuario: String(b.nome_empresa || 'Patrocinador AjeitaAí').substring(0,100),
           email_usuario: 'patrocinio@ajeita.com.br',
           status: 'pendente',
           mp_payment_id: null,
@@ -1013,7 +1013,7 @@ app.post('/api/patrocinadores/criar-pagamento', async (req, res) => {
 
     // --- Passo 2: Cria pagamento PIX no Mercado Pago (MESMISSIMA engine recarga-moedas SDK v2 + fallback) ---
     let qrCodeBase64 = null, copiaCola = null, mpPaymentId = null, tentouSdk = false, usouFetchFallback = false;
-    const descricaoMp = 'Patrocinio AjeitaAi Plano ' + planoKey.charAt(0).toUpperCase() + planoKey.slice(1) + ' - ' + String(b.nome_empresa || 'Empresa Parceira').substring(0,50);
+    const descricaoMp = 'Patrocinio AjeitaAí Plano ' + planoKey.charAt(0).toUpperCase() + planoKey.slice(1) + ' - ' + String(b.nome_empresa || 'Empresa Parceira').substring(0,50);
     const VALOR_CENTAVOS = Math.floor(Number(precoBRL) * 100);
     if (mercadopago) {
       tentouSdk = true;
@@ -1026,7 +1026,7 @@ app.post('/api/patrocinadores/criar-pagamento', async (req, res) => {
           payer: {
             email: 'patrocinio@ajeita.com.br',
             first_name: String(b.nome_empresa || 'Empresa').substring(0,30),
-            last_name: 'AjeitaAi',
+            last_name: 'AjeitaAí',
             identification: { type:'CNPJ', number:'00000000000000' }
           },
           notification_url: BACKEND_PUBLIC_URL ? (BACKEND_PUBLIC_URL + '/webhook-pix') : undefined,
@@ -1053,7 +1053,7 @@ app.post('/api/patrocinadores/criar-pagamento', async (req, res) => {
           description: descricaoMp.substring(0,60),
           payment_method_id: 'pix',
           external_reference: externalRef,
-          payer: { email: 'patrocinio@ajeita.com.br', first_name: 'Empresa', last_name: 'AjeitaAi', identification: { type: 'CNPJ', number: '00000000000000' } }
+          payer: { email: 'patrocinio@ajeita.com.br', first_name: 'Empresa', last_name: 'AjeitaAí', identification: { type: 'CNPJ', number: '00000000000000' } }
         };
         if (BACKEND_PUBLIC_URL) bodyNativo.notification_url = BACKEND_PUBLIC_URL + '/webhook-pix';
         bodyNativo.metadata = { origem: 'ajeita-patrocinio', plano: planoKey, sponsor_doc_id: patrocinadorDocId };
@@ -1201,7 +1201,7 @@ app.delete('/api/patrocinadores/admin/delete', async (req, res) => {
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
   if (res.headersSent) return;
-  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAi Pix Backend). Rotas validas: GET / (healthcheck), GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix' });
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck), GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix' });
 });
 // Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
 app.use((err, req, res, next) => {
