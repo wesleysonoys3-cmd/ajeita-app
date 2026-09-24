@@ -179,17 +179,21 @@ function uidDocLocal(idProfissionalOuCliente) { return 'local_' + String(idProfi
    ROTA RAIZ (Health Check / Render ping)
    ============================ */
 app.get('/', (req, res) => {
+  const _emailVarsOk = Number(Boolean(process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASSWORD && process.env.EMAIL_FROM));
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '1.92-producao-real-admin-liberar-alterar-preco-pacotes',
+    versao: '2.0-email-central-2fa-admin-docs',
+    build_tag: '20260924_teste_manual_get',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
     mp_fetch_nativo_habilitado: true,
     mp_webhook_hmac_configurado: !!MP_WEBHOOK_SECRET && MP_WEBHOOK_SECRET.length > 5,
     backend_url_publica: BACKEND_PUBLIC_URL,
-    backend_url_https_valida: Boolean(BACKEND_PUBLIC_URL && BACKEND_PUBLIC_URL.toLowerCase().startsWith('https://') && !BACKEND_PUBLIC_URL.includes('localhost') && !BACKEND_PUBLIC_URL.includes('127.0.0.1'))
+    backend_url_https_valida: Boolean(BACKEND_PUBLIC_URL && BACKEND_PUBLIC_URL.toLowerCase().startsWith('https://') && !BACKEND_PUBLIC_URL.includes('localhost') && !BACKEND_PUBLIC_URL.includes('127.0.0.1')),
+    rotas_count: 13,
+    recursos_email: { central_configurado: _emailVarsOk, possui_servico_sendEmail: typeof sendEmail === 'function', possui_rota_2fa_docs: true, possui_rota_teste_manual_get: true }
   });
 });
 
@@ -1213,6 +1217,40 @@ app.delete('/api/patrocinadores/admin/delete', async (req, res) => {
      SMTP_SECURE=    ("true" para porta 465, padrão "false"/porta 587 STARTTLS)
      SMTP_ADMIN_2FA_TO= ti.mello.santos@gmail.com (e-mail destinatário código 2FA admin docs)
    ============================================================ */
+function _emailSanitizeStr(v, max){
+  try {
+    let s = String(v == null ? '' : v);
+    s = s.replace(/[\r\n\t\0\x0B\x0C]/g, ' ').replace(/\s+/g, ' ').trim();
+    s = s.replace(/^["']+|["']+$/g, '').trim();
+    if (s.length > (Number(max) || 500)) s = s.substring(0, Number(max) || 500);
+    return s;
+  } catch(e){ return ''; }
+}
+function _emailSanitizeFrom(v){
+  try {
+    let s = String(v == null ? '' : v);
+    s = s.replace(/[\r\n\t\0]/g, ' ').replace(/\s+/g, ' ').trim();
+    s = s.replace(/^["]+|["]+$/g, '').trim();
+    const m = s.match(/<([^<>]+)>/);
+    if (m) {
+      const emailOnly = String(m[1] || '').replace(/\s+/g, '').trim();
+      const name = String(s.substring(0, m.index)).replace(/^["']+|["']+$/g, '').trim() || 'AjeitaAí';
+      return '"' + name.replace(/["]/g, '') + '" <' + emailOnly + '>';
+    }
+    return s.replace(/\s+/g, '');
+  } catch(e){ return ''; }
+}
+(function _aplicarSanitizeSMTPNasEnvsMemoria(){
+  try {
+    process.env.SMTP_HOST = _emailSanitizeStr(process.env.SMTP_HOST, 255);
+    process.env.SMTP_PORT = _emailSanitizeStr(process.env.SMTP_PORT, 10).replace(/[^\d]/g, '');
+    process.env.SMTP_USER = _emailSanitizeStr(process.env.SMTP_USER, 255).replace(/\s+/g, '');
+    process.env.SMTP_PASSWORD = String(process.env.SMTP_PASSWORD || '').replace(/\s+/g, '');
+    process.env.SMTP_SECURE = _emailSanitizeStr(process.env.SMTP_SECURE, 10).toLowerCase();
+    process.env.EMAIL_FROM = _emailSanitizeFrom(process.env.EMAIL_FROM);
+    if (process.env.SMTP_ADMIN_2FA_TO) process.env.SMTP_ADMIN_2FA_TO = _emailSanitizeStr(process.env.SMTP_ADMIN_2FA_TO, 255).replace(/\s+/g, '');
+  } catch(eSanitizeEnv){}
+})();
 var _emailTransportCached = null;
 var _emailStatus = { configurado: false, motivo: '' };
 (function _inicializarEmailStatus(){
@@ -1288,20 +1326,42 @@ app.get('/api/admin/email/status', (req, res) => {
   if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
   return res.json({ ok:true, configurado: Boolean(_emailStatus.configurado), resumo: String(_emailStatus.motivo || '') });
 });
+async function _emailExecutarTesteEnvio(to, res){
+  try {
+    const toLimpo = String(to || '').trim();
+    if (!toLimpo) return res.status(400).json({ ok:false, msg: 'Destinatario ausente. Informar {to} no body/query ou setar SMTP_ADMIN_2FA_TO / EMAIL_FROM nas vars de ambiente.' });
+    const assunto = 'Ajeitaí — teste de e-mail';
+    const corpoHtml = '<!doctype html><html><head><meta charset="utf-8"/></head><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a;"><h2 style="color:#7c3aed;">AjeitaAí</h2><p>Este é um teste do sistema de envio de e-mails do Ajeitaí.</p><p style="color:#64748b;font-size:12px;margin-top:32px;">Mensagem automática, não responder.</p></body></html>';
+    const r = await sendEmail({ to: toLimpo, subject: assunto, html: corpoHtml });
+    const mask = toLimpo.substring(0, Math.min(2, toLimpo.indexOf('@') >= 0 ? toLimpo.indexOf('@') : 2)) + '***@' + (toLimpo.split('@')[1] || '?').substring(0, 3) + '***';
+    return res.json({ ok: Boolean(r.ok), msg: String(r.msg || ''), destinatarioMask: mask, assunto: assunto, corpoResumo: 'Este é um teste do sistema de envio de e-mails do Ajeitaí.' });
+  } catch(e){
+    console.error('/api/admin/email/teste erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno enviar email teste.' });
+  }
+}
 app.post('/api/admin/email/teste', async (req, res) => {
   try {
     const b = req.body || {};
     const senha = String(b.admin_senha || '').trim();
     if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
     const to = String(b.to || process.env.SMTP_ADMIN_2FA_TO || process.env.EMAIL_FROM || '').trim();
-    if (!to) return res.status(400).json({ ok:false, msg: 'Destinatario ausente. Informar {to} no body ou setar SMTP_ADMIN_2FA_TO / EMAIL_FROM nas vars de ambiente.' });
-    const assunto = 'Ajeitaí — teste de e-mail';
-    const corpoHtml = '<!doctype html><html><head><meta charset="utf-8"/></head><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a;"><h2 style="color:#7c3aed;">AjeitaAí</h2><p>Este é um teste do sistema de envio de e-mails do Ajeitaí.</p><p style="color:#64748b;font-size:12px;margin-top:32px;">Mensagem automática, não responder.</p></body></html>';
-    const r = await sendEmail({ to: to, subject: assunto, html: corpoHtml });
-    return res.json({ ok: Boolean(r.ok), msg: String(r.msg || ''), destinatarioMask: to.substring(0, 2) + '***@' + (to.split('@')[1] || '?').substring(0, 3) + '***' });
+    return await _emailExecutarTesteEnvio(to, res);
   } catch(e){
     console.error('/api/admin/email/teste erro:', e && e.message);
     return res.status(500).json({ ok:false, msg:'Erro interno enviar email teste.' });
+  }
+});
+app.get('/api/admin/email/teste-manual', async (req, res) => {
+  try {
+    const b = Object.assign({}, req.query || {}, req.body || {});
+    const senha = String(b.admin_senha || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const to = String(b.to || process.env.SMTP_ADMIN_2FA_TO || process.env.EMAIL_FROM || '').trim();
+    return await _emailExecutarTesteEnvio(to, res);
+  } catch(e){
+    console.error('/api/admin/email/teste-manual erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno enviar email teste manual.' });
   }
 });
 
@@ -1474,7 +1534,7 @@ app.post('/api/admin/2fa/docs/checar', async (req, res) => {
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
   if (res.headersSent) return;
-  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck), GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix' });
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar.' });
 });
 // Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
 app.use((err, req, res, next) => {
