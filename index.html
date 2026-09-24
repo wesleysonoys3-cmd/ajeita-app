@@ -1179,15 +1179,19 @@ tailwind.config = {
           </div>
           <div>
             <label class="block text-sm font-bold text-slate-700 mb-3">Categorias de Serviço (selecione pelo menos 1) *</label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Pedreiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-trowel text-purple-500"></i>Pedreiro</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Eletricista" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-bolt text-fuchsia-500"></i>Eletricista</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Encanador" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-faucet text-teal-500"></i>Encanador</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Pintor" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-paint-roller text-pink-500"></i>Pintor</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Diarista" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-broom text-violet-500"></i>Diarista</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Marceneiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-hammer text-rose-500"></i>Marceneiro</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Chaveiro" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-key text-cyan-500"></i>Chaveiro</div></label>
-              <label class="cat-check cursor-pointer"><input type="checkbox" value="Técnico de Ar Condicionado" class="peer sr-only"><div class="px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2"><i class="fa-solid fa-snowflake text-indigo-400"></i>Ar Condic.</div></label>
+            <!-- ===== GRID 8 POPULARES (mantém layout original, render JS dinâmico com CATEGORIAS_POPULARES_HOME = 8 antigas) ===== -->
+            <div id="cadCategoriasPopularesGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+            <!-- ===== CONTAINER OCULTO (ainda DENTRO do form — submit L6115 pega automaticamente via querySelectorAll) ===== -->
+            <!--  Contém TODAS categorias EXTRAS que não estão no TOP 8 popular, com checkboxes sincronizados com o modal. -->
+            <!--  Assim, NÃO precisamos alterar a função submitCadastroProfissional — ela coleta tudo que está checked dentro do form. -->
+            <div id="cadCategoriasExtrasOcultasContainer" class="hidden sr-only" aria-hidden="true"></div>
+            <!-- ===== BOTÃO ABRIR MODAL VER TODAS ===== -->
+            <div class="mt-4 flex items-center justify-between gap-3 flex-wrap">
+              <p class="text-xs text-slate-500"><i class="fa-solid fa-circle-info text-slate-400 mr-1"></i> Não encontrou sua profissão? Temos <span id="cadTotalProfissoesDisp" class="font-bold text-primary-700">+60</span> opções.</p>
+              <button type="button" onclick="abrirModalTodasProfissoesCadastro()"
+                class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-primary-700 bg-gradient-to-r from-primary-50 to-fuchsia-50 hover:from-primary-100 hover:to-fuchsia-100 border border-primary-200 px-4 py-2.5 rounded-2xl shadow-sm hover:shadow-md transition">
+                <i class="fa-solid fa-briefcase text-[11px]"></i> Ver todas as profissões →
+              </button>
             </div>
           </div>
           <div class="bg-gradient-to-r from-purple-50 to-fuchsia-50 border border-fuchsia-200 rounded-2xl p-4 sm:p-5 flex items-start gap-4">
@@ -1648,6 +1652,76 @@ tailwind.config = {
         <i class="fa-solid fa-paper-plane mr-2"></i>Publicar Pedido de Orçamento
       </button>
     </form>
+  </div>
+</div>
+
+<!-- ============================================================
+  MODAL: ESCOLHER TODAS AS PROFISSÕES (CADASTRO PROFISSIONAL)
+  - Reutiliza listas CENTRALIZADAS existentes:
+      CATEGORIAS_GLOBAIS (~60+ flat), CATEGORIAS_ICONE (map nome→fa), CATEGORIAS_COR (map nome→cor)
+  - Barra busca 🔎 "Buscar profissão" (filtro em tempo real)
+  - Grid responsivo todas as profissões
+  - Sincroniza: ao marcar no modal, marca no GRID 8 populares ou no
+    container oculto (dentro do #formCadastroProfissional → submit já coleta)
+  ============================================================ -->
+<div id="modalEscolherTodasProfissoesCadastro" class="hidden fixed inset-0 z-50 p-3 sm:p-4">
+  <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modalEscolherTodasProfissoesCadastro')"></div>
+  <div class="relative max-w-3xl w-full mx-auto my-2 sm:my-4 max-h-[94vh] overflow-hidden bg-white rounded-3xl shadow-pop animate-popIn flex flex-col">
+    <!-- HEADER -->
+    <div class="px-5 sm:px-7 py-5 border-b border-slate-100 flex items-start justify-between gap-4 flex-shrink-0 bg-gradient-to-br from-primary-50 to-fuchsia-50">
+      <div class="flex-1 min-w-0">
+        <div class="inline-flex items-center gap-2 bg-white text-primary-700 text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border border-primary-200 shadow-sm mb-2">
+          <i class="fa-solid fa-briefcase text-[10px]"></i> Selecione suas profissões
+        </div>
+        <h3 class="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">Todas as profissões</h3>
+        <p class="text-sm sm:text-base text-slate-600 mt-1.5">
+          <span id="cadModalContSelecionadas" class="font-extrabold text-primary-700">0</span> selecionada(s) ·
+          <span id="cadModalContTotal" class="font-bold text-slate-700">0</span> disponíveis
+        </p>
+      </div>
+      <button onclick="fecharModal('modalEscolherTodasProfissoesCadastro')" class="flex-shrink-0 w-10 h-10 rounded-xl bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center shadow-sm transition" aria-label="Fechar">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+    <!-- BUSCA -->
+    <div class="px-5 sm:px-7 py-4 border-b border-slate-100 bg-white flex-shrink-0">
+      <div class="relative">
+        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+          <i class="fa-solid fa-magnifying-glass text-sm sm:text-base"></i>
+        </div>
+        <input id="cadBuscaProfissaoInput" type="text" autocomplete="off"
+          oninput="_filtrarProfissoesModalCadastro(this.value)"
+          placeholder="🔎 Buscar profissão (ex: gesso, limpeza, frete, arquiteto)"
+          class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 rounded-2xl text-sm sm:text-base outline-none transition">
+      </div>
+      <p class="text-[11px] sm:text-xs text-slate-500 mt-2.5 flex items-center gap-1.5">
+        <i class="fa-solid fa-lightbulb text-amber-500 text-[10px]"></i>
+        Dica: você pode selecionar mais de uma profissão. Ao fechar este modal, suas escolhas continuam salvas no formulário.
+      </p>
+    </div>
+    <!-- GRID TODAS PROFISSÕES (scroll) -->
+    <div id="cadModalTodasProfissoesGridScroll" class="flex-1 overflow-y-auto px-5 sm:px-7 py-5 bg-gradient-to-b from-slate-50/40 to-white">
+      <div id="cadModalTodasProfissoesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
+        <!-- render dinâmico por JS IIFE abaixo -->
+      </div>
+      <!-- Nenhum resultado (display none/flex via JS) -->
+      <div id="cadModalNenhumResultado" class="hidden flex-col items-center justify-center py-12 text-center">
+        <div class="text-5xl sm:text-6xl text-slate-300 mb-4"><i class="fa-solid fa-magnifying-glass"></i></div>
+        <h4 class="text-lg font-black text-slate-700 mb-1">Nenhuma profissão encontrada</h4>
+        <p class="text-sm text-slate-500 max-w-md mx-auto">Tente buscar com outras palavras ou volte para ver todas as opções.</p>
+      </div>
+    </div>
+    <!-- FOOTER -->
+    <div class="px-5 sm:px-7 py-4 border-t border-slate-100 bg-white flex items-center justify-between gap-3 flex-wrap flex-shrink-0">
+      <button type="button" onclick="_limparSelecaoProfissoesCadastro()"
+        class="text-xs sm:text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-2.5 rounded-xl transition flex items-center gap-1.5">
+        <i class="fa-solid fa-eraser text-[11px]"></i> Limpar seleção
+      </button>
+      <button type="button" onclick="fecharModal('modalEscolherTodasProfissoesCadastro')"
+        class="text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-700 hover:to-primary-900 px-5 sm:px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition flex items-center gap-2">
+        Confirmar e continuar <i class="fa-solid fa-check text-[11px]"></i>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2342,6 +2416,249 @@ const CATEGORIAS_GLOBAIS = CATEGORIAS_GRUPOS.reduce(function(acc, g){ return acc
 const CATEGORIAS_ICONE = CATEGORIAS_GRUPOS.reduce(function(acc, g){ g.itens.forEach(function(i){ acc[i.nome] = i.icone; }); return acc; }, {});
 const CATEGORIAS_COR = CATEGORIAS_GRUPOS.reduce(function(acc, g){ g.itens.forEach(function(i){ acc[i.nome] = i.cor; }); return acc; }, {});
 const CATEGORIAS_POPULARES_HOME = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
+
+// ============================================================
+// CADASTRO PROFISSIONAL: TODAS AS PROFISSÕES (~60+) + MODAL BUSCA + GRID POPULARES
+// - NÃO cria NENHUMA nova lista. Reutiliza 100%:
+//   * CATEGORIAS_GLOBAIS (flat, todas profissoes)
+//   * CATEGORIAS_ICONE (map nome -> fa icon class)
+//   * CATEGORIAS_COR (map nome -> cor text)
+//   * CATEGORIAS_POPULARES_HOME (8 antigas que apareciam hardcoded)
+//
+// - ESTRATÉGIA P/ NÃO ALTERAR submitCadastroProfissional (L6115):
+//   submit já coleta TUDO com:
+//     Array.from(document.querySelectorAll('#formCadastroProfissional input[type="checkbox"]:checked'))
+//   Então BASTA que TODOS os checkboxes (8 populares + extras ocultas)
+//   ESTEJAM DENTRO do #formCadastroProfissional → funciona automaticamente.
+//
+// - SINCRONISMO: 1 única fonte de verdade = checkboxes dentro do form
+//   (populares visíveis ou extras ocultas). Qualquer clique no modal ou
+//   no grid popular → atualiza o correspondente da outra parte (toggleChecked).
+// ============================================================
+(function IIFE_cadastroProfissoes(){
+  // Helpers --------------
+  var _POPULARES_SET = {};
+  (CATEGORIAS_POPULARES_HOME || []).forEach(function(n){ _POPULARES_SET[String(n)] = true; });
+
+  function _icone(nomeCat){
+    try { return (CATEGORIAS_ICONE && typeof CATEGORIAS_ICONE === 'object' && CATEGORIAS_ICONE[nomeCat]) ? String(CATEGORIAS_ICONE[nomeCat]) : 'fa-solid fa-briefcase'; }
+    catch(e){ return 'fa-solid fa-briefcase'; }
+  }
+  function _corClasse(nomeCat){
+    try {
+      var c = (CATEGORIAS_COR && typeof CATEGORIAS_COR === 'object' && CATEGORIAS_COR[nomeCat]) ? String(CATEGORIAS_COR[nomeCat]) : 'primary-600';
+      // CATEGORIAS_COR grava cor como "rose-500", "fuchsia-500" etc, mas se for o mesmo valor retorna; adicionamos prefixo text- se não existir.
+      if (c.indexOf('text-') === 0) return c;
+      return 'text-' + c;
+    } catch(e){ return 'text-primary-600'; }
+  }
+  // Constrói 1 checkbox label (mesma aparência original: cat-check, peer, border-primary-500, etc)
+  function _htmlCatCheckbox(nomeCat, compac){
+    var nomeLimpo = String(nomeCat || '');
+    if (!nomeLimpo) return '';
+    var ic = _icone(nomeLimpo);
+    var cor = _corClasse(nomeLimpo);
+    // Label que aparece para o usuário: se for "Técnico de Ar Condicionado" nas POPULARES (8 antigas), mostra o nome curto "Ar Condic." na grid pequena igual era no hardcoded original.
+    var ehArCond = (nomeLimpo === 'Técnico de Ar Condicionado');
+    var rotuloVisivel = (ehArCond && compac) ? 'Ar Condic.' : nomeLimpo;
+    var labelHtml = '';
+    if (compac) {
+      // grid 2 / 4 colunas (popular e modal grid pequeno): rotulo pode encurtar se muito longo
+      if (rotuloVisivel.length > 24) rotuloVisivel = rotuloVisivel.slice(0, 22) + '..';
+    }
+    labelHtml = String(rotuloVisivel).replace(/[<>&"']/g,'');
+    var nomeSafe = String(nomeLimpo).replace(/[<>&"']/g,'');
+    return (
+      '<label class="cat-check cursor-pointer w-full">' +
+        '<input type="checkbox" value="'+ nomeSafe +'" data-cat-nome="'+ nomeSafe +'" class="_cadCatInput peer sr-only">' +
+        '<div class="w-full px-3 py-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-xs sm:text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2 overflow-hidden">' +
+          '<i class="'+ ic +' '+ cor +' flex-shrink-0 w-4 text-center"></i>' +
+          '<span class="truncate">'+ labelHtml +'</span>' +
+        '</div>' +
+      '</label>'
+    );
+  }
+
+  // Achar o input correspondente DENTRO DO FORM (populares grid populares OR oculto extras)
+  function _todosInputsForm(){
+    var form = document.getElementById('formCadastroProfissional');
+    if (!form) return [];
+    try { return Array.prototype.slice.call(form.querySelectorAll('input[type="checkbox"][data-cat-nome]._cadCatInput'), 0); }
+    catch(e){ return []; }
+  }
+  function _encontrarInputPorNome(catNome){
+    var arr = _todosInputsForm();
+    for (var i = 0; i < arr.length; i++) if (arr[i] && arr[i].getAttribute('data-cat-nome') === String(catNome)) return arr[i];
+    return null;
+  }
+  function _encontrarInputModalPorNome(catNome){
+    var modalGrid = document.getElementById('cadModalTodasProfissoesGrid');
+    if (!modalGrid) return null;
+    var els = modalGrid.querySelectorAll('input[type="checkbox"][data-cat-nome]._cadCatInputModal');
+    for (var i = 0; i < els.length; i++) if (els[i] && els[i].getAttribute('data-cat-nome') === String(catNome)) return els[i];
+    return null;
+  }
+  function _atualizarContadorSelecionadas(){
+    try {
+      var sp = document.getElementById('cadModalContSelecionadas');
+      var form = document.getElementById('formCadastroProfissional');
+      if (!sp || !form) return;
+      var qtd = form.querySelectorAll('input[type="checkbox"]._cadCatInput:checked').length;
+      sp.textContent = String(qtd || 0);
+    } catch(e){}
+  }
+  // Quando um checkbox FORA do modal é clicado → sincroniza MODAL correspondente (e vice-versa)
+  function _syncCatNomeChecked(catNome, novoChecked){
+    try {
+      // 1) Form principal fonte de verdade (grid popular + oculto extras)
+      var inpForm = _encontrarInputPorNome(catNome);
+      if (inpForm) inpForm.checked = !!novoChecked;
+      // 2) Modal (mostrador apenas, sincroniza visual)
+      var inpModal = _encontrarInputModalPorNome(catNome);
+      if (inpModal) inpModal.checked = !!novoChecked;
+      // 3) Contador header modal
+      _atualizarContadorSelecionadas();
+    } catch(e){}
+  }
+  // Ao abrir modal: sincroniza TODOS checkboxes do modal a partir do form (fonte verdade)
+  function _sincronizarModalDoForm(){
+    try {
+      var todosForm = _todosInputsForm();
+      for (var i = 0; i < todosForm.length; i++){
+        var inpF = todosForm[i]; if (!inpF) continue;
+        var nm = inpF.getAttribute('data-cat-nome'); if (!nm) continue;
+        var inpM = _encontrarInputModalPorNome(nm);
+        if (inpM) inpM.checked = !!inpF.checked;
+      }
+      _atualizarContadorSelecionadas();
+    } catch(e){}
+  }
+
+  // Inicialização ----------------
+  window.inicializarCadastroProfCategorias = function(){
+    try {
+      // ---- 1) GRID 8 POPULARES VISÍVEIS (home do cadastro)
+      var popGrid = document.getElementById('cadCategoriasPopularesGrid');
+      if (popGrid) {
+        var htmlPop = '';
+        var popularesList = (Array.isArray(CATEGORIAS_POPULARES_HOME) ? CATEGORIAS_POPULARES_HOME.slice() : []);
+        for (var i = 0; i < popularesList.length; i++) htmlPop += _htmlCatCheckbox(popularesList[i], true);
+        popGrid.innerHTML = htmlPop;
+        // Bind change (clicado no popular)
+        var inpsPop = popGrid.querySelectorAll('input[type="checkbox"]._cadCatInput');
+        for (var k = 0; k < inpsPop.length; k++){
+          inpsPop[k].addEventListener('change', (function(catName){ return function(ev){
+            try { _syncCatNomeChecked(catName, ev.target.checked); } catch(e){}
+          }; })(inpsPop[k].getAttribute('data-cat-nome')));
+        }
+      }
+      // ---- 2) CONTAINER OCULTO EXTRAS (TODAS categorias NÃO populares — permanece DENTRO DO FORM)
+      var oculto = document.getElementById('cadCategoriasExtrasOcultasContainer');
+      if (oculto) {
+        var todosGlb = Array.isArray(CATEGORIAS_GLOBAIS) ? CATEGORIAS_GLOBAIS.slice() : [];
+        var extras = todosGlb.filter(function(n){ return !_POPULARES_SET[String(n)]; });
+        var htmlExt = '';
+        for (var j = 0; j < extras.length; j++) htmlExt += '<input type="checkbox" value="'+ String(extras[j]).replace(/[<>&"']/g,'') +'" data-cat-nome="'+ String(extras[j]).replace(/[<>&"']/g,'') +'" class="_cadCatInput sr-only hidden">';
+        oculto.innerHTML = htmlExt;
+      }
+      // ---- 3) MODAL GRID TODAS (visível ao abrir modal, separado do form, sincroniza por JS)
+      var modGrid = document.getElementById('cadModalTodasProfissoesGrid');
+      if (modGrid) {
+        var todosList = (Array.isArray(CATEGORIAS_GLOBAIS) ? CATEGORIAS_GLOBAIS.slice() : []);
+        // Dedup (precaução)
+        var vistos = {}; var uniq = [];
+        for (var m = 0; m < todosList.length; m++){ var n = String(todosList[m]); if (!vistos[n]) { vistos[n] = true; uniq.push(n); } }
+        var htmlMod = '';
+        for (var m2 = 0; m2 < uniq.length; m2++) {
+          var catNome = uniq[m2];
+          // Mesmo label visual mas classe input é _cadCatInputModal (fora do form)
+          var ic = _icone(catNome); var cor = _corClasse(catNome);
+          var nomeLimpo = String(catNome).replace(/[<>&"']/g,'');
+          var rotulo = nomeLimpo;
+          if (rotulo.length > 24) rotulo = rotulo.slice(0, 22) + '..';
+          htmlMod +=
+            '<label class="cat-check cursor-pointer w-full">' +
+              '<input type="checkbox" value="'+ nomeLimpo +'" data-cat-nome="'+ nomeLimpo +'" class="_cadCatInputModal peer sr-only">' +
+              '<div class="w-full px-3 py-3 rounded-xl border-2 border-slate-200 bg-white/70 peer-checked:border-primary-500 peer-checked:bg-primary-50 text-xs sm:text-sm font-medium text-slate-700 peer-checked:text-primary-700 transition flex items-center gap-2 overflow-hidden">' +
+                '<i class="'+ ic +' '+ cor +' flex-shrink-0 w-4 text-center"></i>' +
+                '<span class="truncate">'+ rotulo +'</span>' +
+              '</div>' +
+            '</label>';
+        }
+        modGrid.innerHTML = htmlMod;
+        // Bind change no modal (clicou no modal → sincroniza form PRINCIPAL)
+        var inpsMod = modGrid.querySelectorAll('input[type="checkbox"]._cadCatInputModal');
+        for (var m3 = 0; m3 < inpsMod.length; m3++){
+          inpsMod[m3].addEventListener('change', (function(catNameN){ return function(ev){
+            try { _syncCatNomeChecked(catNameN, ev.target.checked); } catch(e){}
+          }; })(inpsMod[m3].getAttribute('data-cat-nome')));
+        }
+      }
+      // ---- 4) Contador total disponível
+      try {
+        var spTotal = document.getElementById('cadTotalProfissoesDisp');
+        var spTotalM = document.getElementById('cadModalContTotal');
+        var qtdTotal = (Array.isArray(CATEGORIAS_GLOBAIS) ? CATEGORIAS_GLOBAIS.length : 0);
+        if (spTotal) spTotal.textContent = (qtdTotal > 9 ? '+'+qtdTotal : String(qtdTotal));
+        if (spTotalM) spTotalM.textContent = String(qtdTotal || 0);
+      } catch(e1){}
+      // Reset contador ao inicializar (não há nada marcado ainda no form novo)
+      _atualizarContadorSelecionadas();
+    } catch (eInit){
+      try { console.warn('[inicializarCadastroProfCategorias]', eInit); } catch(eL){}
+    }
+  };
+
+  // ABRIR MODAL (botão do form)
+  window.abrirModalTodasProfissoesCadastro = function(){
+    try {
+      // Antes de abrir, sincroniza estado modal ← form (fonte verdade)
+      _sincronizarModalDoForm();
+      // Limpa busca, mostra todos, esconde nenhum resultado
+      var inputBusca = document.getElementById('cadBuscaProfissaoInput');
+      if (inputBusca) inputBusca.value = '';
+      window._filtrarProfissoesModalCadastro('');
+      abrirModal('modalEscolherTodasProfissoesCadastro');
+    } catch(e){}
+  };
+  // LIMPAR SELEÇÃO
+  window._limparSelecaoProfissoesCadastro = function(){
+    try {
+      // 1) Form principal
+      var form = document.getElementById('formCadastroProfissional');
+      if (form) { var arr = form.querySelectorAll('input[type="checkbox"]._cadCatInput'); for (var i=0;i<arr.length;i++) arr[i].checked = false; }
+      // 2) Modal
+      var mod = document.getElementById('cadModalTodasProfissoesGrid');
+      if (mod) { var arr2 = mod.querySelectorAll('input[type="checkbox"]._cadCatInputModal'); for (var j=0;j<arr2.length;j++) arr2[j].checked = false; }
+      _atualizarContadorSelecionadas();
+      toast('info','Seleção limpa','Todas as profissões foram desmarcadas. Escolha novamente.', 2200);
+    } catch(e){}
+  };
+  // BUSCA (filtro no modal em tempo real)
+  window._filtrarProfissoesModalCadastro = function(termoRaw){
+    try {
+      var termo = String(termoRaw || '').trim().toLowerCase();
+      var grid = document.getElementById('cadModalTodasProfissoesGrid');
+      var nenhum = document.getElementById('cadModalNenhumResultado');
+      if (!grid) return;
+      var todos = grid.querySelectorAll('label.cat-check');
+      var mostraNenhum = true;
+      for (var i = 0; i < todos.length; i++){
+        var lab = todos[i]; if (!lab) continue;
+        var inp = lab.querySelector('input[type="checkbox"][data-cat-nome]'); if (!inp) { lab.style.display = 'none'; continue; }
+        var nm = String(inp.getAttribute('data-cat-nome') || '').toLowerCase();
+        var exibe = (!termo.length) ? true : (nm.indexOf(termo) !== -1);
+        lab.style.display = exibe ? '' : 'none';
+        if (exibe) mostraNenhum = false;
+      }
+      if (nenhum) {
+        if (mostraNenhum) { nenhum.classList.remove('hidden'); nenhum.classList.add('flex'); grid.classList.add('hidden'); }
+        else { nenhum.classList.add('hidden'); nenhum.classList.remove('flex'); grid.classList.remove('hidden'); }
+      }
+    } catch(e){}
+  };
+})();
+
 // ============================================================
 const BAIRROS_POR_CIDADE = {
   'Brasília (DF)': ['Asa Sul', 'Asa Norte', 'Sudoeste', 'Noroeste', 'Lago Sul', 'Lago Norte', 'Guará', 'Vicente Pires'],
@@ -6459,6 +6776,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(atualizarHeaderBoasVindasPorHora, 60000);
     renderizarBotoesGooglePlaceholders();
     atualizarHeaderPorSessao();
+    try { if (typeof inicializarCadastroProfCategorias === 'function') inicializarCadastroProfCategorias(); } catch(eCat){}
     renderCatalogoProfissionais();
     renderMuralPedidos();
     // Fallback URL: se usuario veio do OAuth redirect com #id_token=... (ux_mode redirect ou window.open fallback)
