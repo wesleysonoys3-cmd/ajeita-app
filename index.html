@@ -1172,6 +1172,10 @@ tailwind.config = {
                 <option>Ceilândia</option>
               </select>
             </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">CPF (apenas números, para verificação)</label>
+              <input id="cadCPF" type="text" inputmode="numeric" placeholder="000.000.000-00" oninput="mascaraInputCPF(this)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
             <div class="sm:col-span-2">
               <label class="block text-sm font-bold text-slate-700 mb-2">Bairro / Região *</label>
               <input required id="cadBairro" type="text" placeholder="Ex: Asa Sul, Samambaia Sul, QNN 14..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
@@ -1194,6 +1198,45 @@ tailwind.config = {
               </button>
             </div>
           </div>
+
+          <!-- ===== BLOCO ENVIO DOCUMENTOS P/ VERIFICAÇÃO (PRIVADO) ===== -->
+          <div class="bg-gradient-to-r from-slate-50 to-blue-50 border border-blue-100 rounded-2xl p-4 sm:p-5">
+            <div class="flex items-start gap-3 mb-3">
+              <div class="w-11 h-11 rounded-2xl bg-white shadow flex items-center justify-center text-2xl flex-shrink-0">🛡️</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-extrabold text-blue-900 text-base mb-0.5">Documentos para Verificação</div>
+                <div class="text-xs sm:text-sm text-blue-700/80 leading-relaxed">Opcional agora. Envie RG, comprovante de endereço e fotos de trabalhos para receber o selo <strong>✓ Profissional verificado</strong> e atrair mais clientes. <strong class="text-blue-900">Seus documentos NUNCA são exibidos publicamente</strong> — só administradores analisam.</div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="flex items-center gap-3 bg-white border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-xl p-3 cursor-pointer transition">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-id-card text-lg"></i></div>
+                <div class="flex-1 min-w-0">
+                  <div id="cadDocRGLbl" class="text-sm font-bold text-slate-800 leading-tight truncate">Documento de Identidade (RG/CNH)</div>
+                  <div class="text-[11px] text-slate-500 leading-tight">Frente e verso. Até 6MB · foto/PDF</div>
+                </div>
+                <input id="cadDocRGInput" type="file" accept="image/*,application/pdf" onchange="IIFE_validacaoProfissionais._uploadTempDoc(this,'rg_cnh')" class="sr-only">
+              </label>
+              <label class="flex items-center gap-3 bg-white border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-xl p-3 cursor-pointer transition">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-house-chimney text-lg"></i></div>
+                <div class="flex-1 min-w-0">
+                  <div id="cadDocEndLbl" class="text-sm font-bold text-slate-800 leading-tight truncate">Comprovante de Endereço</div>
+                  <div class="text-[11px] text-slate-500 leading-tight">Conta luz/água/Internet. Até 6MB · foto/PDF</div>
+                </div>
+                <input id="cadDocEndInput" type="file" accept="image/*,application/pdf" onchange="IIFE_validacaoProfissionais._uploadTempDoc(this,'comprovante_endereco')" class="sr-only">
+              </label>
+              <label class="sm:col-span-2 flex items-center gap-3 bg-white border-2 border-dashed border-fuchsia-200 hover:border-fuchsia-400 rounded-xl p-3 cursor-pointer transition">
+                <div class="w-10 h-10 rounded-xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-images text-lg"></i></div>
+                <div class="flex-1 min-w-0">
+                  <div id="cadDocTrabLbl" class="text-sm font-bold text-slate-800 leading-tight truncate">Fotos de Trabalhos Realizados (até 3)</div>
+                  <div class="text-[11px] text-slate-500 leading-tight">Antes/depois, portfólio. Até 3 arquivos, 6MB cada · imagens</div>
+                </div>
+                <input id="cadDocTrabInput" type="file" accept="image/*" multiple onchange="IIFE_validacaoProfissionais._uploadTempDoc(this,'fotos_trabalhos')" class="sr-only">
+              </label>
+            </div>
+            <div id="cadDocUploadStatus" class="mt-3 text-[11px] text-slate-500 text-center">Nenhum documento enviado ainda — pode enviar depois no Meu Perfil.</div>
+          </div>
+
           <div class="bg-gradient-to-r from-purple-50 to-fuchsia-50 border border-fuchsia-200 rounded-2xl p-4 sm:p-5 flex items-start gap-4">
             <div class="w-12 h-12 rounded-2xl bg-white shadow flex items-center justify-center text-2xl flex-shrink-0">🪙</div>
             <div class="flex-1">
@@ -1368,6 +1411,71 @@ tailwind.config = {
             </button>
           </div>
 
+          <!-- Selo Status Verificação (mostra resultado analise admin: pending/verified/rejected com motivo) -->
+          <div id="verificacaoProfStatusContainer" class="hidden"></div>
+
+          <!-- ÁREA DOCUMENTOS DE VERIFICAÇÃO (SECTION NOVA) -->
+          <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden mt-8">
+            <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-fuchsia-50 px-6 sm:px-8 py-5 border-b border-blue-100 flex items-start gap-3">
+              <div class="w-11 h-11 rounded-2xl bg-white shadow flex items-center justify-center text-2xl flex-shrink-0">🛡️</div>
+              <div class="flex-1">
+                <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                  Verificação do Profissional
+                  <span id="perfilBadgeVerificacao" class="hidden"></span>
+                </h3>
+                <p class="text-sm text-slate-600 mt-1">Envie seus documentos para receber o selo <strong class="text-emerald-700">✓ Profissional verificado</strong>. <strong>Seus documentos nunca são exibidos publicamente</strong> — apenas administradores autorizados analisam.</p>
+              </div>
+            </div>
+            <div class="p-6 sm:p-8 space-y-5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 mb-2">CPF</label>
+                  <input id="perfilCPF" type="text" inputmode="numeric" placeholder="000.000.000-00" oninput="mascaraInputCPF(this)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <p class="text-[11px] text-slate-500 mt-1">Usado apenas para verificação. Não é público.</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 mb-2">E-mail</label>
+                  <input id="perfilEmail" type="email" placeholder="voce@email.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="flex items-start gap-3 bg-slate-50 border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-2xl p-4 cursor-pointer transition">
+                  <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-id-card text-xl"></i></div>
+                  <div class="flex-1 min-w-0">
+                    <div id="perfilDocRGLbl" class="text-sm font-bold text-slate-800 leading-tight truncate">Documento de Identidade (RG / CNH)</div>
+                    <div id="perfilDocRGStatus" class="text-[11px] text-slate-500 leading-tight mt-1">Frente e verso. Até 6MB · foto ou PDF</div>
+                  </div>
+                  <input id="perfilDocRGInput" type="file" accept="image/*,application/pdf" onchange="IIFE_validacaoProfissionais._uploadDocPerfil(this,'rg_cnh')" class="sr-only">
+                </label>
+                <label class="flex items-start gap-3 bg-slate-50 border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-2xl p-4 cursor-pointer transition">
+                  <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-house-chimney text-xl"></i></div>
+                  <div class="flex-1 min-w-0">
+                    <div id="perfilDocEndLbl" class="text-sm font-bold text-slate-800 leading-tight truncate">Comprovante de Endereço</div>
+                    <div id="perfilDocEndStatus" class="text-[11px] text-slate-500 leading-tight mt-1">Conta luz/água/Internet. Até 6MB · foto ou PDF</div>
+                  </div>
+                  <input id="perfilDocEndInput" type="file" accept="image/*,application/pdf" onchange="IIFE_validacaoProfissionais._uploadDocPerfil(this,'comprovante_endereco')" class="sr-only">
+                </label>
+                <label class="sm:col-span-2 flex items-start gap-3 bg-fuchsia-50/50 border-2 border-dashed border-fuchsia-200 hover:border-fuchsia-400 rounded-2xl p-4 cursor-pointer transition">
+                  <div class="w-11 h-11 rounded-xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-images text-xl"></i></div>
+                  <div class="flex-1 min-w-0">
+                    <div id="perfilDocTrabLbl" class="text-sm font-bold text-slate-800 leading-tight truncate">Fotos de Trabalhos Realizados (até 3)</div>
+                    <div id="perfilDocTrabStatus" class="text-[11px] text-slate-500 leading-tight mt-1">Antes/depois, portfólio. Até 3 arquivos, 6MB cada · imagens JPG/PNG</div>
+                  </div>
+                  <input id="perfilDocTrabInput" type="file" accept="image/*" multiple onchange="IIFE_validacaoProfissionais._uploadDocPerfil(this,'fotos_trabalhos')" class="sr-only">
+                </label>
+              </div>
+
+              <!-- Botão Reenviar: salva tudo no obj profissional -> status PENDING e sincroniza -->
+              <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p class="text-xs text-slate-500 flex items-center gap-1.5"><i class="fa-solid fa-lock text-emerald-600"></i>Documentos são privados e visíveis apenas para você e administradores do AjeitaAí.</p>
+                <button onclick="IIFE_validacaoProfissionais.enviarSolicitacaoVerificacaoPerfil()" id="perfilBtnSolicitaVerif" class="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-black rounded-xl shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-paper-plane"></i>
+                  Enviar para Análise (solicitar verificação)
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1784,6 +1892,34 @@ tailwind.config = {
     </div>
     <div id="detalhePedidoBody" class="p-6 sm:p-8 space-y-6"></div>
     <div id="detalhePedidoFooter" class="px-6 sm:px-8 py-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl"></div>
+  </div>
+</div>
+
+<!-- MODAL ANÁLISE DE VERIFICAÇÃO (administrador) -->
+<div id="modalAdminVerificacaoProfissional" class="hidden fixed inset-0 z-50 p-4">
+  <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modalAdminVerificacaoProfissional')"></div>
+  <div class="relative max-w-3xl w-full mx-auto my-4 max-h-[94vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+    <div class="px-6 sm:px-8 py-5 border-b border-slate-100 flex items-start gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user-shield text-white text-xl"></i></div>
+      <div class="flex-1 min-w-0">
+        <h3 class="text-xl font-black text-slate-800 truncate">Análise de Verificação de Profissional</h3>
+        <p id="adminVerSubtitulo" class="text-sm text-slate-500 mt-0.5 truncate">Analise os documentos, aprove ou rejeite com justificativa.</p>
+      </div>
+      <button onclick="fecharModal('modalAdminVerificacaoProfissional')" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <div id="adminVerBody" class="p-6 sm:p-8 space-y-5">
+      <!-- Populado por JS via admin.html IIFE_adminVerificacao -->
+    </div>
+    <div class="px-6 sm:px-8 py-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex flex-col-reverse sm:flex-row items-stretch gap-3">
+      <button id="adminVerRejeitarBtn" onclick="IIFE_adminVerProf.abrirDialogRejeitar()" class="flex-1 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-extrabold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-circle-xmark"></i>
+        Rejeitar com Motivo
+      </button>
+      <button id="adminVerAprovarBtn" onclick="IIFE_adminVerProf.aprovarAtual()" class="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-circle-check"></i>
+        ✅ Aprovar (marcar VERIFIED)
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2656,6 +2792,319 @@ const CATEGORIAS_POPULARES_HOME = ['Pedreiro','Eletricista','Encanador','Pintor'
         else { nenhum.classList.add('hidden'); nenhum.classList.remove('flex'); grid.classList.remove('hidden'); }
       }
     } catch(e){}
+  };
+})();
+
+// ============================================================
+// SISTEMA DE VALIDAÇÃO DE PROFISSIONAIS — Alteraçao cirúrgica
+// Status: PENDING / VERIFIED / REJECTED
+// Isolamento estrito: _docs_validacao_privado — NUNCA exibido publicamente
+//                      (só profissional dono e administradores podem ver)
+// ============================================================
+(function IIFE_validacaoProfissionais_MAIN(){
+  // Estado temporario de upload (durante cadastro novo — antes de criar obj)
+  // Depois que profissional é criado, os docs ficam salvos em profissionalLogado._docs_validacao_privado
+  window._STATE_cadTemporario = window._STATE_cadTemporario || {
+    docs: { rg_cnh: null, comprovante_endereco: null, fotos_trabalhos: [] },
+    cpf: '',
+    email: ''
+  };
+  var STATE = window._STATE_cadTemporario;
+
+  // ---- Helpers internos ----
+  function _toISO() { try { return new Date().toISOString(); } catch(e){ return (new Date( Date.now() )).toISOString(); } }
+  function _podeVerDocPrivado(p) {
+    // Regra §10: só dono do perfil OU admin podem ver docs
+    try {
+      var euSouDono = profissionalLogado && profissionalLogado.id && p && p.id && String(profissionalLogado.id) === String(p.id);
+      var euSouAdmin = (typeof window.adminLogado !== 'undefined') && (window.adminLogado === true);
+      return !!euSouDono || !!euSouAdmin;
+    } catch(e){ return false; }
+  }
+  function _garanteVerificacao(p) {
+    if (!p || typeof p !== 'object') return p;
+    if (!p._docs_validacao_privado || typeof p._docs_validacao_privado !== 'object') {
+      p._docs_validacao_privado = { rg_cnh: null, comprovante_endereco: null, fotos_trabalhos: [], ultima_versao: 1 };
+    }
+    if (!p.verificacao || typeof p.verificacao !== 'object') {
+      p.verificacao = { status: 'PENDING', data_solicitacao: null, data_decicao: null, admin_responsavel: null, motivo_rejeicao: null, versao_envio: 0, inicializado: false };
+    }
+    return p;
+  }
+  function _validarArqSize(f) {
+    if (!f) return null;
+    if (f.size && Number(f.size) > 6 * 1024 * 1024) { toast('error','Arquivo muito grande','Escolha até 6MB por arquivo.'); return null; }
+    var t = String(f.type || '').toLowerCase();
+    if (t.indexOf('image') === -1 && t !== 'application/pdf') { toast('error','Formato inválido','Use imagem (JPG/PNG) ou PDF.'); return null; }
+    return f;
+  }
+  function _lerArquivoBase64(file) {
+    return new Promise(function(resolve,reject){
+      try {
+        var r = new FileReader();
+        r.onload = function(ev){ try { resolve(ev.target.result); } catch(e){ reject(e); } };
+        r.onerror = function(){ reject(new Error('erro ler arquivo')); };
+        r.readAsDataURL(file);
+      } catch(e){ reject(e); }
+    });
+  }
+  // Para imagens, usa _comprimirImagem existente; PDF salva direto como dataURL
+  async function _processarUmArquivo(f, comprimirMaxW, q) {
+    try {
+      var ok = _validarArqSize(f); if (!ok) return null;
+      var tip = String(f.type || '').toLowerCase();
+      if (tip === 'application/pdf') {
+        var d = await _lerArquivoBase64(f);
+        return { dataUrl: d, nome: String(f.name||'documento.pdf'), tipo: 'pdf', tamanhoBytesAprox: Math.round( (d||'').length*0.75 ) };
+      }
+      if (tip.indexOf('image') !== -1) {
+        var comprimido = null;
+        try {
+          if (typeof window._comprimirImagem === 'function') comprimido = await window._comprimirImagem(f, comprimirMaxW||1280, q||0.78);
+        } catch(eComp){ comprimido = null; }
+        if (!comprimido) {
+          var d2 = await _lerArquivoBase64(f);
+          return { dataUrl: d2, nome: String(f.name||'imagem.jpg'), tipo: 'imagem', tamanhoBytesAprox: Math.round((d2||'').length*0.75) };
+        }
+        return Object.assign({}, comprimido, { tipo: 'imagem' });
+      }
+      return null;
+    } catch(e){ console.warn(e); return null; }
+  }
+  function _salvarDocProfissionalLogado(campo, valor) {
+    // Escreve tanto em profissionalLogado quanto em array global profissionais[id]
+    try {
+      if (!profissionalLogado) return false;
+      _garanteVerificacao(profissionalLogado);
+      var docsPriv = profissionalLogado._docs_validacao_privado;
+      if (campo === 'fotos_trabalhos') {
+        if (!Array.isArray(docsPriv.fotos_trabalhos)) docsPriv.fotos_trabalhos = [];
+        if (Array.isArray(valor)) docsPriv.fotos_trabalhos = valor.slice(0,3);
+        else docsPriv.fotos_trabalhos = docsPriv.fotos_trabalhos.slice(0, Math.max(0,3-1)).concat([valor]).slice(0,3);
+      } else {
+        docsPriv[campo] = valor || null;
+      }
+      docsPriv.ultima_versao = (Number(docsPriv.ultima_versao)||0) + 1;
+      // Sincroniza com o array global
+      if (Array.isArray(profissionais)) {
+        var idG = profissionais.findIndex(function(pp){ return pp && String(pp.id) === String(profissionalLogado.id); });
+        if (idG >= 0) {
+          _garanteVerificacao(profissionais[idG]);
+          profissionais[idG]._docs_validacao_privado = JSON.parse(JSON.stringify(profissionalLogado._docs_validacao_privado));
+        }
+      }
+      if (typeof salvarTodosGlobaisNoStorage === 'function') salvarTodosGlobaisNoStorage();
+      if (typeof window.fbSyncAtualizarProfissional === 'function') { try { window.fbSyncAtualizarProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id)) })); } catch(e){} }
+      return true;
+    } catch(e){ console.warn(e); return false; }
+  }
+  function _htmlBadgeStatus(status) {
+    var s = String(status || '').toUpperCase();
+    if (s === 'VERIFIED') return `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 border-2 border-emerald-200"><i class="fa-solid fa-circle-check"></i>VERIFICADO</span>`;
+    if (s === 'REJECTED') return `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-gradient-to-r from-rose-50 to-red-50 text-rose-700 border-2 border-rose-200"><i class="fa-solid fa-circle-xmark"></i>REJEITADO — corrigir e reenviar</span>`;
+    return `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-800 border-2 border-amber-200"><i class="fa-solid fa-hourglass-half"></i>AGUARDANDO ANÁLISE (PENDING)</span>`;
+  }
+  function _atualizarBadgePerfil(status) {
+    var badge = document.getElementById('perfilBadgeVerificacao');
+    if (!badge) return;
+    var h = _htmlBadgeStatus(status || 'PENDING');
+    badge.innerHTML = h;
+    badge.classList.remove('hidden');
+  }
+  function _renderizarAreaDocUploaderPerfil(p) {
+    try {
+      _garanteVerificacao(p);
+      var v = p.verificacao;
+      var d = p._docs_validacao_privado;
+      var rgNome = d && d.rg_cnh && d.rg_cnh.nome ? d.rg_cnh.nome : 'Nenhum arquivo enviado';
+      var endNome = d && d.comprovante_endereco && d.comprovante_endereco.nome ? d.comprovante_endereco.nome : 'Nenhum arquivo enviado';
+      var trabQuant = d && Array.isArray(d.fotos_trabalhos) ? d.fotos_trabalhos.length : 0;
+      var lblRg = document.getElementById('perfilDocRGLbl');
+      var staRg = document.getElementById('perfilDocRGStatus');
+      var lblEnd = document.getElementById('perfilDocEndLbl');
+      var staEnd = document.getElementById('perfilDocEndStatus');
+      var lblTr = document.getElementById('perfilDocTrabLbl');
+      var staTr = document.getElementById('perfilDocTrabStatus');
+      if (lblRg) lblRg.textContent = d && d.rg_cnh ? '✅ RG / CNH enviado' : 'Documento de Identidade (RG / CNH)';
+      if (staRg) staRg.textContent = d && d.rg_cnh ? rgNome + (d.rg_cnh.tamanhoBytesAprox ? ' · ~' + Math.round(d.rg_cnh.tamanhoBytesAprox/1024) + ' KB' : '') : 'Frente e verso. Até 6MB · foto ou PDF';
+      if (lblEnd) lblEnd.textContent = d && d.comprovante_endereco ? '✅ Comprovante enviado' : 'Comprovante de Endereço';
+      if (staEnd) staEnd.textContent = d && d.comprovante_endereco ? endNome + (d.comprovante_endereco.tamanhoBytesAprox ? ' · ~' + Math.round(d.comprovante_endereco.tamanhoBytesAprox/1024) + ' KB' : '') : 'Conta luz/água/Internet. Até 6MB · foto ou PDF';
+      if (lblTr) lblTr.textContent = trabQuant > 0 ? `✅ ${trabQuant} foto(s) de trabalho(s) enviada(s)` : 'Fotos de Trabalhos Realizados (até 3)';
+      if (staTr) staTr.textContent = trabQuant > 0 ? `${trabQuant}/3 arquivos. Clique para substituir / adicionar mais` : 'Antes/depois, portfólio. Até 3 arquivos, 6MB cada · imagens JPG/PNG';
+    } catch(e){ console.warn(e); }
+  }
+  function _renderizarContainerStatusPerfil(p) {
+    try {
+      var box = document.getElementById('verificacaoProfStatusContainer');
+      if (!box) return;
+      _garanteVerificacao(p);
+      var v = p.verificacao;
+      var temDoc = !!( (p._docs_validacao_privado && p._docs_validacao_privado.rg_cnh) || (p._docs_validacao_privado && p._docs_validacao_privado.comprovante_endereco) || (p._docs_validacao_privado && Array.isArray(p._docs_validacao_privado.fotos_trabalhos) && p._docs_validacao_privado.fotos_trabalhos.length>0) );
+      if (!v.status) v.status = 'PENDING';
+      var htmlExtra = '';
+      if (v.status === 'REJECTED') {
+        var motivo = String(v.motivo_rejeicao || 'Informe os documentos novamente corretamente.').replace(/[<>&]/g,'');
+        htmlExtra += `<div class="mt-3 p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-800 text-sm space-y-2">
+          <div class="font-black flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i>Seu cadastro precisa de correção:</div>
+          <div class="bg-white rounded-xl p-3 text-slate-800 border border-rose-100 whitespace-pre-wrap">${motivo}</div>
+          <div class="text-[11px] text-rose-700/80">Corrija os documentos abaixo e clique em <strong>"Enviar para Análise"</strong> para nova solicitação. Será marcada como PENDING novamente.</div>
+        </div>`;
+      } else if (v.status === 'VERIFIED') {
+        htmlExtra += `<div class="mt-3 p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-emerald-900 text-sm">
+          <div class="font-black flex items-center gap-2"><i class="fa-solid fa-award"></i>Seu perfil foi verificado pelo AjeitaAí</div>
+          <div class="text-emerald-800 text-[12px] mt-1">Selo ✓ Profissional verificado exibido no seu perfil público. Avaliações de clientes continuam independentes.</div>
+          ${v.admin_responsavel ? `<div class="text-[11px] text-emerald-700/80 mt-1">Responsável pela análise: ${String(v.admin_responsavel).replace(/[<>&]/g,'')}${v.data_decicao ? ' · data ' + (v.data_decicao||'').slice(0,10) : ''}</div>` : ''}
+        </div>`;
+      } else if (temDoc) {
+        htmlExtra += `<div class="mt-3 p-4 rounded-2xl bg-amber-50 border-2 border-amber-200 text-amber-900 text-sm">
+          <div class="font-black flex items-center gap-2"><i class="fa-solid fa-hourglass-half"></i>Sua solicitação foi enviada e está aguardando análise (PENDING).</div>
+          <div class="text-[12px] text-amber-800 mt-1">Quando aprovado, você receberá o selo ✓ Profissional verificado automaticamente. Se rejeitado, informaremos o motivo aqui no perfil.</div>
+          ${v.data_solicitacao ? `<div class="text-[11px] text-amber-700/80 mt-1">Data da solicitação: ${String(v.data_solicitacao).slice(0,16).replace('T',' às ')}</div>` : ''}
+        </div>`;
+      }
+      if (!htmlExtra) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+      box.innerHTML = htmlExtra;
+      box.classList.remove('hidden');
+    } catch(e){ console.warn(e); }
+  }
+  // ---- Upload temp cadastro (novo profissional — sem login ainda) ----
+  async function _uploadTempDoc(input, campo) {
+    try {
+      if (!input || !input.files || input.files.length === 0) return;
+      var sts = document.getElementById('cadDocUploadStatus');
+      if (sts) sts.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-primary-600 mr-1"></i>Processando arquivos…`;
+      if (campo === 'fotos_trabalhos') {
+        var files = Array.from(input.files).slice(0,3);
+        var lista = [];
+        for (var i = 0; i < files.length; i++) {
+          var um = await _processarUmArquivo(files[i], 1280, 0.78);
+          if (um) lista.push(um);
+        }
+        if (lista.length) {
+          STATE.docs.fotos_trabalhos = lista.slice(0,3);
+          var qtd = STATE.docs.fotos_trabalhos.length;
+          var tr = document.getElementById('cadDocTrabLbl'); if (tr) tr.textContent = `✅ ${qtd} foto(s) de trabalho anexada(s)`;
+        }
+      } else {
+        var file = input.files[0];
+        var r = await _processarUmArquivo(file, 1280, 0.78);
+        if (r) {
+          STATE.docs[campo] = r;
+          var lbl = campo === 'rg_cnh' ? document.getElementById('cadDocRGLbl') : document.getElementById('cadDocEndLbl');
+          if (lbl) lbl.textContent = (campo==='rg_cnh' ? '✅ Documento de Identidade anexado' : '✅ Comprovante anexado') + (r.nome ? ` · ${r.nome.slice(0,26)}` : '');
+        }
+      }
+      if (sts) {
+        var total = (STATE.docs.rg_cnh?1:0)+(STATE.docs.comprovante_endereco?1:0)+(Array.isArray(STATE.docs.fotos_trabalhos)?STATE.docs.fotos_trabalhos.length:0);
+        sts.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i>${total} documento(s) anexado(s). Você pode enviar depois no Meu Perfil, se preferir.`;
+      }
+    } catch(e){
+      toast('error','Erro','Não foi possível anexar o documento. Tente novamente.');
+      var sts2 = document.getElementById('cadDocUploadStatus'); if (sts2) sts2.textContent = 'Erro ao anexar. Tente novamente.';
+    }
+  }
+  async function _uploadDocPerfil(input, campo) {
+    try {
+      if (!profissionalLogado) { toast('warning','Acesso restrito','Faça login para enviar documentos.'); return; }
+      if (!input || !input.files || input.files.length === 0) return;
+      toast('info','Processando…','Estamos preparando seus arquivos.');
+      if (campo === 'fotos_trabalhos') {
+        var files = Array.from(input.files).slice(0,3);
+        var acumulado = (profissionalLogado._docs_validacao_privado && Array.isArray(profissionalLogado._docs_validacao_privado.fotos_trabalhos)) ? profissionalLogado._docs_validacao_privado.fotos_trabalhos.slice() : [];
+        for (var i = 0; i < files.length; i++) {
+          var um = await _processarUmArquivo(files[i], 1280, 0.78);
+          if (um) acumulado.push(um);
+        }
+        acumulado = acumulado.slice(-3);
+        _salvarDocProfissionalLogado('fotos_trabalhos', acumulado);
+      } else {
+        var file = input.files[0];
+        var r = await _processarUmArquivo(file, 1280, 0.78);
+        if (r) _salvarDocProfissionalLogado(campo, r);
+      }
+      renderPerfilAreaDoc();
+      toast('success','Documento salvo!','Seus arquivos foram anexados com sucesso.');
+    } catch(e){
+      console.warn(e);
+      toast('error','Erro','Não foi possível salvar. Tente novamente.');
+    }
+  }
+  function renderPerfilAreaDoc() {
+    try {
+      if (!profissionalLogado) return;
+      _garanteVerificacao(profissionalLogado);
+      _atualizarBadgePerfil(profissionalLogado.verificacao.status || 'PENDING');
+      _renderizarContainerStatusPerfil(profissionalLogado);
+      _renderizarAreaDocUploaderPerfil(profissionalLogado);
+    } catch(e){ console.warn(e); }
+  }
+  function enviarSolicitacaoVerificacaoPerfil() {
+    try {
+      if (!profissionalLogado) { toast('error','Acesso restrito','Faça login primeiro.'); return; }
+      _garanteVerificacao(profissionalLogado);
+      var docs = profissionalLogado._docs_validacao_privado;
+      var tem = !!(docs && (docs.rg_cnh || docs.comprovante_endereco || (Array.isArray(docs.fotos_trabalhos) && docs.fotos_trabalhos.length > 0)));
+      if (!tem) { toast('warning','Envie pelo menos 1 documento','Anexe RG, comprovante de endereço ou fotos de trabalhos antes de enviar para análise.'); return; }
+      profissionalLogado.verificacao.status = 'PENDING';
+      profissionalLogado.verificacao.data_solicitacao = _toISO();
+      profissionalLogado.verificacao.data_decicao = null;
+      profissionalLogado.verificacao.admin_responsavel = null;
+      profissionalLogado.verificacao.motivo_rejeicao = null;
+      profissionalLogado.verificacao.versao_envio = (Number(profissionalLogado.verificacao.versao_envio) || 0) + 1;
+      if (Array.isArray(profissionais)) {
+        var idG = profissionais.findIndex(function(pp){ return pp && String(pp.id) === String(profissionalLogado.id); });
+        if (idG >= 0) {
+          _garanteVerificacao(profissionais[idG]);
+          profissionais[idG].verificacao = JSON.parse(JSON.stringify(profissionalLogado.verificacao));
+          profissionais[idG]._docs_validacao_privado = JSON.parse(JSON.stringify(profissionalLogado._docs_validacao_privado));
+        }
+      }
+      if (typeof salvarTodosGlobaisNoStorage === 'function') salvarTodosGlobaisNoStorage();
+      if (typeof window.fbSyncAtualizarProfissional === 'function') { try { window.fbSyncAtualizarProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id)) })); } catch(e){} }
+      renderPerfilAreaDoc();
+      if (typeof atualizarHeaderPorSessao === 'function') atualizarHeaderPorSessao();
+      if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais();
+      toast('success','Solicitação enviada! 📤','Sua verificação foi marcada como PENDING. Administradores do AjeitaAí irão analisar seus documentos em breve.',7500);
+    } catch(e){
+      console.warn(e);
+      toast('error','Erro','Não foi possível enviar. Tente novamente.');
+    }
+  }
+  function bootstrap() {
+    try {
+      // Se profissional já existia antes de ter status/verificacao, garante inicializacao em memoria (§1 backfill)
+      if (Array.isArray(profissionais)) {
+        var houveAlteracao = false;
+        for (var i = 0; i < profissionais.length; i++) {
+          if (!profissionais[i] || typeof profissionais[i] !== 'object') continue;
+          var antesStatus = profissionais[i].verificacao && profissionais[i].verificacao.status;
+          _garanteVerificacao(profissionais[i]);
+          if (!antesStatus) {
+            if (!profissionais[i].verificacao.data_solicitacao) {
+              profissionais[i].verificacao.data_solicitacao = profissionais[i].dataCadastro ? profissionais[i].dataCadastro : _toISO();
+            }
+            profissionais[i].verificacao.inicializado = true;
+            houveAlteracao = true;
+          }
+        }
+        if (houveAlteracao && typeof salvarTodosGlobaisNoStorage === 'function') {
+          try { salvarTodosGlobaisNoStorage(); } catch(e){}
+        }
+      }
+    } catch(e){ console.warn(e); }
+  }
+
+  // ---- Expõe funções globais ----
+  window.IIFE_validacaoProfissionais = {
+    _uploadTempDoc: _uploadTempDoc,
+    _uploadDocPerfil: _uploadDocPerfil,
+    renderPerfilAreaDoc: renderPerfilAreaDoc,
+    enviarSolicitacaoVerificacaoPerfil: enviarSolicitacaoVerificacaoPerfil,
+    bootstrap: bootstrap,
+    _podeVerDocPrivado: _podeVerDocPrivado,
+    _garanteVerificacao: _garanteVerificacao,
+    _htmlBadgeStatus: _htmlBadgeStatus,
+    _pegarDocsTempCadastro: function(){ return JSON.parse(JSON.stringify(STATE.docs || {})); }
   };
 })();
 
@@ -4910,6 +5359,14 @@ function mascaraInputTel(input) {
   else if (v.length > 0) input.value = `(${v.slice(0)}`;
   else input.value = '';
 }
+function mascaraInputCPF(input) {
+  let v = apenasNumeros(input.value);
+  if (v.length > 11) v = v.slice(0,11);
+  if (v.length > 9) input.value = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6,9)}-${v.slice(9)}`;
+  else if (v.length > 6) input.value = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6)}`;
+  else if (v.length > 3) input.value = `${v.slice(0,3)}.${v.slice(3)}`;
+  else input.value = v || '';
+}
 function mascararWhatsApp(wa) {
   const n = apenasNumeros(wa);
   if (n.length < 10) return '(**) *****-****';
@@ -5036,6 +5493,10 @@ function renderCatalogoProfissionais(fCat='', fCid='', fBai='', ordem='avaliacao
           ${htmlEstrelas(p.mediaAvaliacoes)}
           <span class="text-xs font-bold text-slate-700">(${p.qtdAvaliacoes||0})</span>
         </div>
+        ${ (p && p.verificacao && p.verificacao.status === 'VERIFIED') ? `<div class="absolute top-3 left-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-1.5 text-[11px] font-black tracking-wide">
+          <i class="fa-solid fa-circle-check"></i>
+          VERIFICADO
+        </div>` : '' }
       </div>
       <div class="p-5">
         <div class="flex items-start justify-between gap-2 mb-1">
@@ -5089,6 +5550,21 @@ function abrirPerfilProfissional(proId) {
     </div>`
   ).join('');
 
+  const statusVer = (p.verificacao && typeof p.verificacao.status === 'string') ? String(p.verificacao.status) : '';
+  const seloVerVerificadoHtml = statusVer === 'VERIFIED' ? `
+    <div class="mt-4 mb-5 inline-flex flex-col items-center gap-2">
+      <div class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 text-emerald-800 rounded-2xl px-5 py-2.5 shadow-sm">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500 text-white">
+          <i class="fa-solid fa-check text-lg"></i>
+        </span>
+        <div class="text-left">
+          <div class="font-black leading-tight text-sm">PROFISSIONAL VERIFICADO</div>
+          <div class="text-[11px] text-emerald-700 leading-tight">Identidade e documentos analisados pelo AjeitaAí</div>
+        </div>
+      </div>
+      <div class="text-[10px] text-emerald-700/80 font-medium">O selo de verificado confirma apenas que este profissional concluiu o processo de verificação do AjeitaAí. Avaliações de clientes são independentes.</div>
+    </div>` : '';
+
   cont.innerHTML = `
     <div class="relative h-72 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 overflow-hidden">
       <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 30% 40%, white 1px, transparent 1px); background-size: 50px 50px;"></div>
@@ -5102,6 +5578,7 @@ function abrirPerfilProfissional(proId) {
         <div class="flex items-center justify-center gap-2 text-slate-500 text-sm mb-3">
           <i class="fa-solid fa-map-location-dot text-primary-500"></i>${p.bairro} — ${p.cidade}
         </div>
+        ${seloVerVerificadoHtml}
         <div class="flex flex-wrap items-center justify-center gap-1.5 mb-4">${cats}</div>
         <div class="inline-flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3">
           <div class="flex items-center gap-1.5">
@@ -6443,18 +6920,37 @@ function submitCadastroProfissional(e) {
   const fotoFinal = _cadFotoBase64Temp || profissionalGoogleFotoPending || FOTO_UI_AVATAR(nome);
 
   const id = 'pro_' + Date.now();
+  const docs = (IIFE_validacaoProfissionais && IIFE_validacaoProfissionais._pegarDocsTempCadastro) ? IIFE_validacaoProfissionais._pegarDocsTempCadastro() : { rg_cnh: null, comprovante_endereco: null, fotos_trabalhos: [] };
+  const cpf = apenasNumeros(document.getElementById('cadCPF')?.value||'');
+  const temDocEnviado = !!(docs.rg_cnh || docs.comprovante_endereco || (Array.isArray(docs.fotos_trabalhos) && docs.fotos_trabalhos.length > 0));
   const novo = {
     id, nome, whatsapp:wa, cidade, bairro,
     email: email || null,
     emailGoogle: emailGoogle || null,
     googleId: googleId || null,
+    cpf: cpf || null,
     categorias: categoriasSelecionadas,
     foto: fotoFinal,
     sobre: `${nome.split(' ')[0]} é um profissional verificado pela plataforma AjeitaAí, especializado em ${categoriasSelecionadas.join(', ')}. Atende com qualidade e pontualidade em ${cidade}.`,
     mediaAvaliacoes: 0, qtdAvaliacoes: 0,
-    saldoMoedas: 10, // BÔNUS 10 moedas
+    saldoMoedas: 10,
     trabalhosAnteriores: [],
-    depoimentos: []
+    depoimentos: [],
+    _docs_validacao_privado: {
+      rg_cnh: docs.rg_cnh || null,
+      comprovante_endereco: docs.comprovante_endereco || null,
+      fotos_trabalhos: Array.isArray(docs.fotos_trabalhos) ? docs.fotos_trabalhos : [],
+      ultima_versao: 1
+    },
+    verificacao: {
+      status: temDocEnviado ? 'PENDING' : 'PENDING',
+      data_solicitacao: new Date().toISOString(),
+      data_decicao: null,
+      admin_responsavel: null,
+      motivo_rejeicao: null,
+      versao_envio: temDocEnviado ? 1 : 0,
+      inicializado: true
+    }
   };
   profissionais.unshift(novo);
 
@@ -6676,6 +7172,19 @@ function renderFormPerfilComDadosAtuais() {
     catCbs.forEach(cb => { cb.checked = p.categorias.includes(cb.value); });
   }
 
+  if (document.getElementById('perfilCPF')) {
+    const cpfRaw = apenasNumeros(p.cpf||'');
+    const inp = document.getElementById('perfilCPF');
+    inp.value = '';
+    if (cpfRaw) try { mascaraInputCPF(inp); inp.value = cpfRaw; mascaraInputCPF(inp); } catch(e){ inp.value = cpfRaw; }
+  }
+  if (document.getElementById('perfilEmail')) {
+    document.getElementById('perfilEmail').value = (p.email || p.emailGoogle || '');
+  }
+
+  // Atualiza area de verificacao, docs e status visual
+  try { if (typeof IIFE_validacaoProfissionais === 'object' && IIFE_validacaoProfissionais && typeof IIFE_validacaoProfissionais.renderPerfilAreaDoc === 'function') IIFE_validacaoProfissionais.renderPerfilAreaDoc(); } catch(e){}
+
   if (document.getElementById('perfilSobreCount')) {
     document.getElementById('perfilSobreCount').textContent = (p.sobre||'').length;
   }
@@ -6726,6 +7235,10 @@ function salvarAlteracoesPerfil() {
 
     const bairrosSelecionados = Array.from(document.querySelectorAll('[data-perfil-bairro]:checked')).map(cb => cb.value);
     const categoriasSelecionadas = Array.from(document.querySelectorAll('[data-perfil-categoria]:checked')).map(cb => cb.value);
+    const cpf = apenasNumeros(document.getElementById('perfilCPF')?.value||'');
+    const emailPerfil = (document.getElementById('perfilEmail')?.value||'').trim();
+    _STATE_cadTemporario.cpf = cpf;
+    _STATE_cadTemporario.email = emailPerfil;
 
     if (nome.length < 3) throw new Error('Nome deve ter pelo menos 3 caracteres.');
     if (whatsapp.length < 10) throw new Error('WhatsApp inválido (insira DDD + número).');
@@ -6746,6 +7259,9 @@ function salvarAlteracoesPerfil() {
       alvo.categorias = categoriasSelecionadas;
       alvo.foto = foto;
       alvo.sobre = sobre;
+      if (cpf) alvo.cpf = cpf;
+      if (emailPerfil) alvo.email = emailPerfil;
+      else if (!alvo.email) alvo.email = null;
     };
     atualiza(profissionalLogado);
     if (idxGlobal >= 0) atualiza(profissionais[idxGlobal]);
@@ -6777,6 +7293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderizarBotoesGooglePlaceholders();
     atualizarHeaderPorSessao();
     try { if (typeof inicializarCadastroProfCategorias === 'function') inicializarCadastroProfCategorias(); } catch(eCat){}
+    try { if (typeof IIFE_validacaoProfissionais === 'object' && IIFE_validacaoProfissionais && typeof IIFE_validacaoProfissionais.bootstrap === 'function') IIFE_validacaoProfissionais.bootstrap(); } catch(eVer){}
     renderCatalogoProfissionais();
     renderMuralPedidos();
     // Fallback URL: se usuario veio do OAuth redirect com #id_token=... (ux_mode redirect ou window.open fallback)

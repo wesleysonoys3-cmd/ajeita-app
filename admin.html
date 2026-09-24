@@ -232,11 +232,12 @@ tailwind.config = {
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 class="text-xl font-black text-slate-800">Gestão de Dados</h3>
-            <p class="text-sm text-slate-500">Acompanhe todos os pedidos e profissionais cadastrados.</p>
+            <p class="text-sm text-slate-500">Acompanhe todos os pedidos, profissionais e análises de verificação.</p>
           </div>
-          <div class="inline-flex bg-slate-100 rounded-xl p-1">
+          <div class="inline-flex bg-slate-100 rounded-xl p-1 flex-wrap">
             <button onclick="trocarTabAdmin('pedidos')" id="tabAdminPedidos" class="px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm">📋 Pedidos</button>
             <button onclick="trocarTabAdmin('profissionais')" id="tabAdminProfissionais" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">👥 Profissionais</button>
+            <button onclick="trocarTabAdmin('verificacao')" id="tabAdminVerificacao" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">🛡️ Verificações</button>
             <button onclick="trocarTabAdmin('patrocinadores')" id="tabAdminPatrocinadores" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">🤝 Patrocinadores</button>
           </div>
         </div>
@@ -300,6 +301,35 @@ tailwind.config = {
             </tbody>
           </table>
         </div>
+
+        <!-- ===== NOVA TAB 4: PROFISSIONAIS P/ VERIFICAÇÃO (alteraçao cirúrgica) ===== -->
+        <div id="adminTabelaVerificacaoContainer" class="hidden">
+          <div class="px-6 py-4 bg-blue-50/60 border-b border-blue-100 text-[12px] text-blue-900 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="fa-solid fa-shield-halved text-lg text-blue-600"></i>
+              <span class="font-bold text-base">🛡️ Profissionais para Verificar</span>
+              <span class="text-blue-700/80 hidden sm:inline">— Analise documentos, aprove ou rejeita com justificativa. Apenas aqui e no perfil privado do profissional os documentos são visíveis.</span>
+            </div>
+            <div id="adminVerFiltroTabs" class="inline-flex bg-white rounded-xl p-1 shadow-sm border border-blue-100">
+              <!-- popular por JS -->
+            </div>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Profissional</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Profissão(s)</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Cadastro</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Documentos</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Status</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="adminTabelaVerificacaoBody" class="divide-y divide-slate-100">
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </div>
   </section>
@@ -543,22 +573,26 @@ function fazerLogoutAdmin() {
 }
 
 /* Dashboard */
-let _tabAdminAtual = 'pedidos';
+var _tabAdminAtual = 'pedidos';
 let _adminCachePatrocinadores = [];
+var _adminVerFiltroStatus = 'PENDING';
 function trocarTabAdmin(tab) {
   _tabAdminAtual = tab;
   const btnPed = document.getElementById('tabAdminPedidos');
   const btnPro = document.getElementById('tabAdminProfissionais');
+  const btnVer = document.getElementById('tabAdminVerificacao');
   const btnPat = document.getElementById('tabAdminPatrocinadores');
   const tbPed = document.getElementById('adminTabelaPedidosContainer');
   const tbPro = document.getElementById('adminTabelaProfissionaisContainer');
+  const tbVer = document.getElementById('adminTabelaVerificacaoContainer');
   const tbPat = document.getElementById('adminTabelaPatrocinadoresContainer');
   const des = 'px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
   const atv = 'px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
-  [btnPed,btnPro,btnPat].forEach(b => b && (b.className = des));
-  [tbPed,tbPro,tbPat].forEach(t => t && t.classList.add('hidden'));
+  [btnPed,btnPro,btnVer,btnPat].forEach(b => b && (b.className = des));
+  [tbPed,tbPro,tbVer,tbPat].forEach(t => t && t.classList.add('hidden'));
   if (tab === 'pedidos') { btnPed && (btnPed.className = atv); tbPed && tbPed.classList.remove('hidden'); }
   else if (tab === 'profissionais') { btnPro && (btnPro.className = atv); tbPro && tbPro.classList.remove('hidden'); }
+  else if (tab === 'verificacao') { btnVer && (btnVer.className = atv); tbVer && tbVer.classList.remove('hidden'); if (typeof window.IIFE_adminVerProf === 'object' && window.IIFE_adminVerProf && typeof window.IIFE_adminVerProf.renderTabela === 'function') window.IIFE_adminVerProf.renderTabela(); }
   else if (tab === 'patrocinadores') { btnPat && (btnPat.className = atv); tbPat && tbPat.classList.remove('hidden'); adminCarregarPatrocinadores(); }
 }
 
@@ -978,7 +1012,375 @@ function excluirProfissionalPorAdmin(idProfissional) {
       }
     } catch(eAsyncDel){ console.error('fbDeleteProfissional erro:', eAsyncDel); }
   })();
-}
+
+// ============================================================
+// SISTEMA ADMIN DE VERIFICAÇÃO PROFISSIONAIS (alteração cirúrgica)
+// Reusa: listas profissionais / index.html helpers IIFE_validacaoProfissionais
+//        storage salvarTodosGlobaisNoStorage / Firestore fbSyncAtualizarProfissional
+// ============================================================
+(function IIFE_adminVerProf_MAIN(){
+  var _atualProId = null;
+  function _toISO() { try { return new Date().toISOString(); } catch(e){ return (new Date(Date.now())).toISOString(); } }
+  function _toDataStr(v) {
+    try {
+      if (!v) return '—';
+      var ms = null;
+      if (typeof v === 'number') ms = v;
+      else if (typeof v === 'string') ms = (new Date(v)).getTime();
+      else if (v && typeof v.toDate === 'function') ms = (new Date(v.toDate())).getTime();
+      else if (v && typeof v._seconds === 'number') ms = v._seconds * 1000;
+      if (!ms || Number.isNaN(ms)) return '—';
+      var d = new Date(ms);
+      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    } catch(e){ return '—'; }
+  }
+  function _statusColor(s) {
+    var st = String(s||'').toUpperCase();
+    if (st === 'VERIFIED') return { t:'✓ VERIFICADO', c:'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    if (st === 'REJECTED') return { t:'✗ REJEITADO', c:'bg-rose-50 text-rose-700 border-rose-200' };
+    return { t:'⏳ PENDING', c:'bg-amber-50 text-amber-800 border-amber-200' };
+  }
+  function _garante(p) {
+    if (typeof window.IIFE_validacaoProfissionais === 'object' && window.IIFE_validacaoProfissionais && typeof window.IIFE_validacaoProfissionais._garanteVerificacao === 'function') {
+      return window.IIFE_validacaoProfissionais._garanteVerificacao(p);
+    }
+    // fallback: garante localmente se IIFE_validacaoProfissionais nao carregou (admin standalone mesmo storage)
+    if (!p || typeof p !== 'object') return p;
+    if (!p._docs_validacao_privado || typeof p._docs_validacao_privado !== 'object') {
+      p._docs_validacao_privado = { rg_cnh: null, comprovante_endereco: null, fotos_trabalhos: [], ultima_versao: 1 };
+    }
+    if (!p.verificacao || typeof p.verificacao !== 'object') {
+      p.verificacao = { status: 'PENDING', data_solicitacao: null, data_decicao: null, admin_responsavel: null, motivo_rejeicao: null, versao_envio: 0, inicializado: false };
+    }
+    return p;
+  }
+  function _contaDocs(p) {
+    try {
+      if (!p || !p._docs_validacao_privado) return '0/3';
+      var d = p._docs_validacao_privado;
+      var q = 0;
+      if (d.rg_cnh) q++;
+      if (d.comprovante_endereco) q++;
+      if (Array.isArray(d.fotos_trabalhos) && d.fotos_trabalhos.length > 0) q++;
+      return `${q}/3`;
+    } catch(e){ return '0/3'; }
+  }
+  function renderTabela() {
+    try {
+      // Filtro tabs
+      var tabsContainer = document.getElementById('adminVerFiltroTabs');
+      if (tabsContainer) {
+        var statusSet = [
+          { k: 'PENDING',  l: '⏳ Pending',   d: 'Aguardando análise' },
+          { k: 'TODOS',    l: '👥 Todos',     d: 'Todos os profissionais' },
+          { k: 'VERIFIED', l: '✅ Verified',  d: 'Aprovados' },
+          { k: 'REJECTED', l: '❌ Rejected',  d: 'Rejeitados' }
+        ];
+        tabsContainer.innerHTML = statusSet.map(function(s){
+          var count = s.k === 'TODOS'
+            ? (Array.isArray(profissionais) ? profissionais.length : 0)
+            : (Array.isArray(profissionais) ? profissionais.filter(function(p){ _garante(p); return p.verificacao && String(p.verificacao.status).toUpperCase() === s.k; }).length : 0);
+          var ativo = (s.k === _adminVerFiltroStatus);
+          return `<button onclick="IIFE_adminVerProf.setFiltro('${s.k}')" class="px-3 py-1.5 rounded-lg text-[11px] font-black transition ${ativo ? 'bg-gradient-to-r from-primary-500 to-primary-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
+            ${s.l} <span class="opacity-70 font-bold ml-1">${count}</span>
+          </button>`;
+        }).join('');
+      }
+      // Body
+      var body = document.getElementById('adminTabelaVerificacaoBody');
+      if (!body) return;
+      if (!Array.isArray(profissionais) || profissionais.length === 0) {
+        body.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">Nenhum profissional cadastrado ainda.</td></tr>`;
+        return;
+      }
+      // backfill garante estrutura
+      for (var b = 0; b < profissionais.length; b++) _garante(profissionais[b]);
+      var lista = _adminVerFiltroStatus === 'TODOS'
+        ? profissionais.slice()
+        : profissionais.filter(function(p){ return p.verificacao && String(p.verificacao.status).toUpperCase() === String(_adminVerFiltroStatus).toUpperCase(); });
+      // Ordena: PENDING primeiro por data_solicitacao crescente (mais antiga na fila)
+      lista.sort(function(a,b){
+        try {
+          var sa = String(a.verificacao.status||'').toUpperCase();
+          var sb = String(b.verificacao.status||'').toUpperCase();
+          if (sa === 'PENDING' && sb !== 'PENDING') return -1;
+          if (sb === 'PENDING' && sa !== 'PENDING') return +1;
+          var da = (new Date(a.verificacao.data_solicitacao || a.id)).getTime() || 0;
+          var db = (new Date(b.verificacao.data_solicitacao || b.id)).getTime() || 0;
+          return da - db;
+        } catch(e){ return 0; }
+      });
+      if (lista.length === 0) {
+        body.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">Nenhum profissional com status "${_adminVerFiltroStatus}" encontrado.</td></tr>`;
+        return;
+      }
+      body.innerHTML = lista.map(function(p){
+        try {
+          p = _garante(p);
+          var v = p.verificacao;
+          var st = _statusColor(v.status);
+          var dataCad = (p.id && p.id.indexOf('pro_') === 0) ? _toDataStr( Number(p.id.replace('pro_','')) ) : _toDataStr( v.data_solicitacao || (p.dataCadastro ? p.dataCadastro : null) );
+          var escId = String(p.id||'').replace(/'/g,"\\'");
+          var foto = (p.foto && String(p.foto).length > 5) ? String(p.foto) : '';
+          var catHtml = Array.isArray(p.categorias) && p.categorias.length
+            ? `<div class="flex flex-wrap gap-1 max-w-[260px]">${p.categorias.slice(0,3).map(function(c){ return `<span class="inline-flex items-center gap-1 bg-primary-50 text-primary-700 text-[10px] font-bold px-2 py-1 rounded-lg border border-primary-100">${String(c).slice(0,22)}</span>`; }).join('')}${p.categorias.length > 3 ? `<span class="text-[10px] font-bold text-slate-500">+${p.categorias.length-3}</span>` : ''}</div>`
+            : `<span class="text-[10px] text-slate-400 italic">sem categoria</span>`;
+          return `
+          <tr class="hover:bg-slate-50 transition align-top">
+            <td class="px-6 py-3.5">
+              <div class="flex items-center gap-3 min-w-[220px]">
+                ${foto ? `<img src="${foto}" class="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm" onerror="this.style.display='none'">` : `<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-100 to-primary-200 text-primary-700 flex items-center justify-center text-lg font-black flex-shrink-0">${String(p.nome||'?').charAt(0).toUpperCase()}</div>`}
+                <div class="min-w-0">
+                  <div class="font-bold text-slate-800 text-sm leading-tight truncate max-w-[200px]">${(p.nome||'Profissional').toString().slice(0,40)}</div>
+                  <div class="text-[10px] text-slate-500 leading-tight">${p.whatsapp ? formataWhatsAppBrasil(p.whatsapp) : ''}${p.cpf ? ' · CPF ' + String(p.cpf).padStart(11,'0').slice(0,3)+'***.***'+String(p.cpf).padStart(11,'0').slice(-2) : ''}</div>
+                  <div class="text-[10px] text-slate-500 leading-tight truncate max-w-[200px]">${p.email||p.emailGoogle||'(sem e-mail)'}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-3.5 align-top">${catHtml}</td>
+            <td class="px-6 py-3.5 align-top text-xs text-slate-700 whitespace-nowrap">
+              <div><strong>${dataCad.slice(0,10)}</strong></div>
+              <div class="text-slate-400 text-[10px] mt-1">Solicitação: ${_toDataStr(v.data_solicitacao).slice(0,10)}</div>
+            </td>
+            <td class="px-6 py-3.5 text-center align-top">
+              <div class="inline-flex items-center gap-1 font-black text-sm text-slate-700 bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-1.5">
+                <i class="fa-solid fa-file-lines text-blue-500 text-xs"></i>
+                ${_contaDocs(p)}
+              </div>
+              ${v.motivo_rejeicao ? `<div class="mt-1 text-[10px] text-rose-700 font-semibold">com motivo rejeição</div>` : ''}
+            </td>
+            <td class="px-6 py-3.5 text-center align-top whitespace-nowrap">
+              <span class="text-[10px] font-black px-2.5 py-1 rounded-full border-2 ${st.c}">${st.t}</span>
+              ${v.admin_responsavel ? `<div class="text-[10px] text-slate-500 mt-1">por ${String(v.admin_responsavel).slice(0,22)}</div>` : ''}
+            </td>
+            <td class="px-6 py-3.5 text-center align-top">
+              <div class="inline-flex flex-col gap-1.5">
+                <button onclick="IIFE_adminVerProf.abrirAnalise('${escId}')" class="inline-flex items-center justify-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-black text-[11px] px-3.5 py-2 rounded-xl shadow-sm transition">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  Analisar documentos
+                </button>
+              </div>
+            </td>
+          </tr>`;
+        } catch(e) { console.warn(e); return ''; }
+      }).join('');
+    } catch(e){
+      console.error('[IIFE_adminVerProf renderTabela] erro:', e);
+      var body2 = document.getElementById('adminTabelaVerificacaoBody');
+      if (body2) body2.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-rose-500">Erro ao carregar: ${String(e.message||e).slice(0,120)}</td></tr>`;
+    }
+  }
+  function setFiltro(status) {
+    _adminVerFiltroStatus = String(status || 'TODOS').toUpperCase();
+    renderTabela();
+  }
+  function _htmlMiniaturaDoc(objDoc, rotulo) {
+    try {
+      if (!objDoc || typeof objDoc !== 'object') return `<div class="text-[11px] text-slate-400 italic">${rotulo} — não enviado.</div>`;
+      var nome = objDoc.nome || 'arquivo';
+      var kb = objDoc.tamanhoBytesAprox ? Math.round(Number(objDoc.tamanhoBytesAprox)/1024) : null;
+      var tipo = String(objDoc.tipo || '').toLowerCase();
+      if (objDoc.dataUrl && (tipo === 'imagem' || String(objDoc.dataUrl||'').indexOf('data:image') === 0)) {
+        return `<div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+          <div class="flex items-center justify-between mb-2 gap-2">
+            <div class="text-xs font-black text-slate-800 truncate">${rotulo} · ${nome}</div>
+            ${kb ? `<div class="text-[10px] text-slate-500">~${kb} KB</div>` : ''}
+          </div>
+          <a href="${objDoc.dataUrl}" target="_blank" rel="noopener noreferrer">
+            <img src="${objDoc.dataUrl}" class="w-full max-h-60 object-cover rounded-xl border border-slate-200 bg-white" alt="${rotulo}">
+          </a>
+          <div class="text-[10px] text-slate-500 mt-2">Clique na imagem para abrir em tamanho real.</div>
+        </div>`;
+      }
+      if (objDoc.dataUrl && (tipo === 'pdf' || String(objDoc.dataUrl||'').indexOf('data:application/pdf') === 0)) {
+        return `<div class="bg-rose-50 border border-rose-100 rounded-2xl p-3 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-rose-500 text-white flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-file-pdf text-lg"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-black text-slate-800 truncate">${rotulo} · ${nome}</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">${kb ? `~${kb} KB · `:''}PDF — clique para visualizar</div>
+          </div>
+          <a href="${objDoc.dataUrl}" target="_blank" rel="noopener noreferrer" class="flex-shrink-0 inline-flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-[11px] px-3 py-2 rounded-xl transition">
+            <i class="fa-solid fa-eye"></i> Abrir
+          </a>
+        </div>`;
+      }
+      return `<div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-600">${rotulo} · ${nome} ${kb? ' (~'+kb+' KB)':''}</div>`;
+    } catch(e) { return `<div class="text-[11px] text-rose-500">Erro ao exibir ${rotulo}.</div>`; }
+  }
+  function abrirAnalise(proId) {
+    try {
+      if (!adminLogado) { toast('error','Acesso negado','Apenas administradores.'); return; }
+      if (!proId) { toast('warning','ID inválido','Profissional não encontrado.'); return; }
+      var p = null;
+      if (Array.isArray(profissionais)) p = profissionais.find(function(x){ return x && String(x.id) === String(proId); });
+      if (!p) { toast('warning','Profissional não encontrado','Tente limpar cache.'); return; }
+      _garante(p);
+      _atualProId = String(proId);
+      // Atualiza modal
+      var subt = document.getElementById('adminVerSubtitulo');
+      if (subt) subt.textContent = `${p.nome||'Profissional'} · ${(p.cidade||'')} ${p.bairro ? '· '+p.bairro : ''}`;
+      var body = document.getElementById('adminVerBody');
+      if (!body) { toast('error','Erro UI','Elemento da análise não encontrado.'); return; }
+      var v = p.verificacao;
+      var docs = p._docs_validacao_privado;
+      var st = _statusColor(v.status);
+      var idEsc = String(p.id||'').replace(/'/g,"\\'");
+      var foto = (p.foto && String(p.foto).length>5) ? p.foto : '';
+      // Nota histórica rejeições passadas?
+      var motivo = v.motivo_rejeicao ? `<div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 text-rose-900 text-sm space-y-1">
+        <div class="font-black flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Último motivo de rejeição</div>
+        <div class="bg-white rounded-xl p-3 text-slate-800 whitespace-pre-wrap border border-rose-100">${String(v.motivo_rejeicao||'').replace(/[<>&]/g,'')}</div>
+        ${v.admin_responsavel ? `<div class="text-[11px] text-rose-700/80">Responsável pela rejeição: ${String(v.admin_responsavel).replace(/[<>&]/g,'')} · ${_toDataStr(v.data_decicao).slice(0,16)}</div>` : ''}
+      </div>` : '';
+      var htmlTrabalhos = '';
+      if (docs && Array.isArray(docs.fotos_trabalhos) && docs.fotos_trabalhos.length > 0) {
+        htmlTrabalhos = `<div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="text-xs font-black text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-images text-fuchsia-600"></i>Fotos de Trabalhos (${docs.fotos_trabalhos.length}/3)</div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${
+            docs.fotos_trabalhos.map(function(foto, idx){ return _htmlMiniaturaDoc(foto, 'Trabalho '+(idx+1)); }).join('')
+          }</div>
+        </div>`;
+      } else {
+        htmlTrabalhos = `<div class="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-3 text-[12px] text-slate-500 italic"><i class="fa-solid fa-images mr-1.5 text-slate-400"></i>Fotos de trabalhos — profissional não enviou.</div>`;
+      }
+      body.innerHTML = `
+        <!-- Resumo profissional -->
+        <div class="flex flex-col sm:flex-row gap-4 items-start">
+          <div class="flex items-center gap-3 min-w-0">
+            ${foto ? `<img src="${foto}" class="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-md" onerror="this.style.display='none'">` : `<div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 text-primary-700 flex items-center justify-center text-2xl font-black flex-shrink-0">${String(p.nome||'?').charAt(0).toUpperCase()}</div>`}
+            <div class="min-w-0">
+              <div class="font-black text-xl text-slate-800 truncate max-w-[380px]">${p.nome||''}</div>
+              <div class="text-[12px] text-slate-500 mt-0.5">${p.whatsapp?formataWhatsAppBrasil(p.whatsapp):''} · ${p.email||p.emailGoogle||''}</div>
+              <div class="mt-2">${st.t ? `<span class="text-[11px] font-black px-2.5 py-1 rounded-full border-2 ${st.c}">${st.t}</span>` : ''}</div>
+            </div>
+          </div>
+          <div class="flex-1 text-xs text-slate-600 space-y-1">
+            <div><strong>Cadastro em:</strong> ${(p.id && p.id.indexOf('pro_')===0) ? _toDataStr( Number(p.id.replace('pro_','')) ) : _toDataStr( v.data_solicitacao||null )}</div>
+            <div><strong>Solicitação verificação:</strong> ${_toDataStr(v.data_solicitacao)}</div>
+            ${v.data_decicao ? `<div><strong>Data decisão anterior:</strong> ${_toDataStr(v.data_decicao)}${v.admin_responsavel ? (' · por <strong>'+String(v.admin_responsavel)+'</strong>') : ''}</div>` : ''}
+            <div><strong>Localização:</strong> ${p.cidade||''}${p.bairro ? ' · '+p.bairro : ''}</div>
+            <div><strong>Categorias:</strong> ${Array.isArray(p.categorias) ? p.categorias.join(' · ') : ''}</div>
+            <div><strong>CPF:</strong> ${p.cpf ? String(p.cpf).padStart(11,'0').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4') : '<span class="text-slate-400 italic">não informado</span>'}</div>
+          </div>
+        </div>
+
+        ${motivo}
+
+        <div class="pt-2 border-t border-slate-100 space-y-3">
+          <div class="font-black text-slate-800 flex items-center gap-2"><i class="fa-solid fa-folder-open text-primary-600"></i> Documentos enviados</div>
+          ${_htmlMiniaturaDoc(docs ? docs.rg_cnh : null, 'RG / CNH')}
+          ${_htmlMiniaturaDoc(docs ? docs.comprovante_endereco : null, 'Comprovante de Endereço')}
+          ${htmlTrabalhos}
+        </div>
+
+        <div class="pt-2 text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3">
+          <i class="fa-solid fa-shield-halved text-emerald-600 mr-1.5"></i>
+          Os documentos acima são privados e NÃO são exibidos publicamente, nem para outros profissionais, nem para clientes. Somente o próprio profissional e administradores autorizados do AjeitaAí têm acesso.
+        </div>
+
+        <div class="pt-2">
+          <label class="block text-xs font-black text-slate-700 mb-1.5">ID do profissional</label>
+          <input type="text" readonly value="${idEsc}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-mono text-slate-600 select-all">
+        </div>
+      `;
+      // Habilita botoes conforme status atual
+      var btnAprovar = document.getElementById('adminVerAprovarBtn');
+      var btnRejeitar = document.getElementById('adminVerRejeitarBtn');
+      if (btnAprovar) btnAprovar.disabled = false;
+      if (btnRejeitar) btnRejeitar.disabled = false;
+      abrirModal('modalAdminVerificacaoProfissional');
+    } catch(e){
+      console.error(e);
+      toast('error','Erro ao abrir análise', String(e.message||e).slice(0,120));
+    }
+  }
+  function _persistirEnotificar(pId, novosDadosVerificacao, msgToast, tituloToast) {
+    try {
+      if (!adminLogado) { toast('error','Acesso negado','Faça login como admin.'); return false; }
+      if (!pId || !Array.isArray(profissionais)) return false;
+      var idxG = profissionais.findIndex(function(pp){ return pp && String(pp.id) === String(pId); });
+      if (idxG < 0) { toast('error','Profissional não encontrado','Tente limpar cache e atualizar a página.'); return false; }
+      _garante(profissionais[idxG]);
+      profissionais[idxG].verificacao = Object.assign({}, profissionais[idxG].verificacao || {}, novosDadosVerificacao);
+      // Sync Firestore
+      try {
+        if (typeof window.fbSyncAtualizarProfissional === 'function') {
+          window.fbSyncAtualizarProfissional(Object.assign({}, profissionais[idxG], { uid: ('local_' + String(profissionais[idxG].id)) }));
+        }
+      } catch(eFbSync){ console.warn(eFbSync); }
+      if (typeof salvarTodosGlobaisNoStorage === 'function') salvarTodosGlobaisNoStorage();
+      toast(tituloToast || 'success', msgToast || 'Salvo.', msgToast, 6000);
+      return true;
+    } catch(e){
+      console.error(e);
+      toast('error','Erro ao salvar', String(e.message||e).slice(0,120));
+      return false;
+    }
+  }
+  function aprovarAtual() {
+    try {
+      if (!adminLogado) { toast('error','Acesso negado','Apenas administradores.'); return; }
+      if (!_atualProId) { toast('warning','Nenhum profissional aberto','Abra uma análise primeiro.'); return; }
+      var ok = window.confirm('Aprovar verificação deste profissional? Isso marcará status como VERIFIED e exibirá o selo "Profissional verificado" no perfil público.');
+      if (!ok) return;
+      var novosDados = {
+        status: 'VERIFIED',
+        data_decicao: _toISO(),
+        admin_responsavel: 'admin10',
+        motivo_rejeicao: null
+      };
+      var salvou = _persistirEnotificar(_atualProId, novosDados, '✅ Profissional marcado como VERIFIED. Selo ✓ Profissional verificado exibido no perfil público.', 'Sucesso');
+      if (salvou) {
+        try { fecharModal('modalAdminVerificacaoProfissional'); } catch(e){}
+        _atualProId = null;
+        renderTabela();
+        try { if (typeof renderAdminDashboard === 'function') renderAdminDashboard(); } catch(e){}
+      }
+    } catch(e){
+      console.error(e);
+      toast('error','Erro ao aprovar', String(e.message||e).slice(0,120));
+    }
+  }
+  function abrirDialogRejeitar() {
+    try {
+      if (!adminLogado) { toast('error','Acesso negado','Apenas administradores.'); return; }
+      if (!_atualProId) { toast('warning','Nenhum profissional aberto','Abra uma análise primeiro.'); return; }
+      var m = window.prompt('Informe o MOTIVO da rejeição (será exibido ao profissional para que ele corrija e reenvie).\n\nMínimo 8 caracteres.', '');
+      if (m === null) return;
+      m = String(m || '').trim();
+      if (m.length < 8) { toast('warning','Motivo muito curto','Informe pelo menos 8 caracteres para o profissional entender o que corrigir.'); return; }
+      var confirma = window.confirm('Confirmar rejeição? O profissional será marcado como REJECTED e receberá o seguinte motivo:\n\n"' + m + '"');
+      if (!confirma) return;
+      var novosDados = {
+        status: 'REJECTED',
+        data_decicao: _toISO(),
+        admin_responsavel: 'admin10',
+        motivo_rejeicao: m
+      };
+      var salvou = _persistirEnotificar(_atualProId, novosDados, '❌ Profissional REJEITADO. Motivo registrado e visível no perfil do profissional para correção.', 'Feito');
+      if (salvou) {
+        try { fecharModal('modalAdminVerificacaoProfissional'); } catch(e){}
+        _atualProId = null;
+        renderTabela();
+        try { if (typeof renderAdminDashboard === 'function') renderAdminDashboard(); } catch(e){}
+      }
+    } catch(e){
+      console.error(e);
+      toast('error','Erro ao rejeitar', String(e.message||e).slice(0,120));
+    }
+  }
+
+  // Expor publico
+  window.IIFE_adminVerProf = {
+    renderTabela: renderTabela,
+    abrirAnalise: abrirAnalise,
+    aprovarAtual: aprovarAtual,
+    abrirDialogRejeitar: abrirDialogRejeitar,
+    setFiltro: setFiltro
+  };
+})();
 
 /* Boot */
 (function boot() {
