@@ -59,6 +59,8 @@ tailwind.config = {
   ::-webkit-scrollbar-track { background: #faf5ff; }
   ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 8px; }
   ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
+  .modal-backdrop { background-color: rgba(15,23,42,0.55); backdrop-filter: blur(2px); }
+  [id^="modal-"] > .modal-backdrop { position: absolute; inset: 0; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
@@ -334,6 +336,34 @@ tailwind.config = {
     </div>
   </section>
 
+  <!-- MODAL ANÁLISE DE VERIFICAÇÃO (administrador) -->
+  <div id="modalAdminVerificacaoProfissional" class="hidden fixed inset-0 z-50 p-4">
+    <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modalAdminVerificacaoProfissional')"></div>
+    <div class="relative max-w-3xl w-full mx-auto my-4 max-h-[94vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+      <div class="px-6 sm:px-8 py-5 border-b border-slate-100 flex items-start gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user-shield text-white text-xl"></i></div>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-xl font-black text-slate-800 truncate">Análise de Verificação de Profissional</h3>
+          <p id="adminVerSubtitulo" class="text-sm text-slate-500 mt-0.5 truncate">Analise os documentos, aprove ou rejeite com justificativa.</p>
+        </div>
+        <button onclick="fecharModal('modalAdminVerificacaoProfissional')" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div id="adminVerBody" class="p-6 sm:p-8 space-y-5">
+        <!-- Populado por JS via IIFE_adminVerProf -->
+      </div>
+      <div class="px-6 sm:px-8 py-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex flex-col-reverse sm:flex-row items-stretch gap-3">
+        <button id="adminVerRejeitarBtn" onclick="IIFE_adminVerProf.abrirDialogRejeitar()" class="flex-1 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-extrabold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-circle-xmark"></i>
+          Rejeitar com Motivo
+        </button>
+        <button id="adminVerAprovarBtn" onclick="IIFE_adminVerProf.aprovarAtual()" class="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-circle-check"></i>
+          ✅ Aprovar (marcar VERIFIED)
+        </button>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -549,7 +579,19 @@ function navigateTo(viewId) {
   if (viewId === 'view-admin-dashboard') renderAdminDashboard();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
+function abrirModal(id) {
+  const m = document.getElementById(id);
+  if (!m) return;
+  m.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function fecharModal(id) {
+  const m = document.getElementById(id);
+  if (!m) return;
+  m.classList.add('hidden');
+  const qualquerAberto = document.querySelectorAll('[id^="modal-"]:not(.hidden)');
+  if (qualquerAberto.length === 0) document.body.style.overflow = '';
+}
 /* Auth admin */
 function submitAdminLogin(e) {
   if (e) e.preventDefault();
@@ -1012,6 +1054,20 @@ function excluirProfissionalPorAdmin(idProfissional) {
       }
     } catch(eAsyncDel){ console.error('fbDeleteProfissional erro:', eAsyncDel); }
   })();
+}
+
+/* Firestore sync: atualiza profissional doc (via uid se tiver, senão por inner id). Sem side effects, seguro. */
+window.fbSyncAtualizarProfissional = function(objProfissional) {
+  try {
+    if (!window.mods || !window.FbDb || !objProfissional) return;
+    const mods = window.mods;
+    const uid = objProfissional.uid || (objProfissional.id ? ('local_' + String(objProfissional.id)) : null);
+    if (!uid) return;
+    const safe = Object.assign({}, objProfissional);
+    if (safe.uid) delete safe.uid;
+    mods.setDoc(mods.doc(window.FbDb, 'profissionais', String(uid)), safe, { merge: true }).catch(function(err){ console.warn('fbSyncAtualizarProfissional warn:', err && err.message); });
+  } catch(eSync){ console.warn('fbSyncAtualizarProfissional fail:', eSync && eSync.message); }
+};
 
 // ============================================================
 // SISTEMA ADMIN DE VERIFICAÇÃO PROFISSIONAIS (alteração cirúrgica)
