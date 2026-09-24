@@ -4379,7 +4379,9 @@ function renderCatalogoProfissionais(fCat='', fCid='', fBai='', ordem='avaliacao
     return;
   }
 
-  container.innerHTML = lista.map(p => {
+  container.innerHTML = lista.filter(p => p && typeof p === 'object').map(p => {
+    p.nome = String(p.nome || 'Profissional');
+    const _pNomeEsc = p.nome.replace(/'/g, "\\'");
     const badgeCats = (p.categorias||[]).slice(0,3).map(c =>
       `<span class="inline-flex items-center gap-1 bg-primary-50 text-primary-700 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-primary-100">
         <i class="fa-solid ${CATEGORIAS_ICONE[c]||'fa-check'} text-[10px]"></i>${c}</span>`
@@ -4388,7 +4390,7 @@ function renderCatalogoProfissionais(fCat='', fCid='', fBai='', ordem='avaliacao
     return `
     <div class="bg-white rounded-3xl shadow-card border border-slate-100 overflow-hidden group hover:shadow-pop transition duration-300">
       <div class="relative h-52 overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200">
-        <img src="${p.foto || FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${p.nome.replace(/'/g,"\\'")}')" alt="${p.nome}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <img src="${p.foto || FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${_pNomeEsc}')" alt="${p.nome}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
         <div class="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-sm flex items-center gap-1 text-xs">
           <span class="font-extrabold text-amber-600">🪙 ${p.saldoMoedas || 0}</span>
         </div>
@@ -4418,10 +4420,17 @@ function renderCatalogoProfissionais(fCat='', fCid='', fBai='', ordem='avaliacao
 function abrirPerfilProfissional(proId) {
   const p = profissionais.find(x => x.id === proId);
   if (!p) { toast('error','Ops','Profissional não encontrado.'); return; }
+  // Garante que p tem valores válidos (evita "undefined is not an object p.nome.replace" / p.nome.split em objetos corrompidos)
+  p.nome = String(p.nome || 'Profissional');
+  p.bairro = String(p.bairro || '');
+  p.cidade = String(p.cidade || '');
+  p.sobre = String(p.sobre || `Profissional verificado pela plataforma AjeitaAí.`);
   const cont = document.getElementById('modalPerfilConteudo');
   const numWa = numeroLimpoWaLink(p.whatsapp);
-  const msgWa = encodeURIComponent(`Olá ${p.nome.split(' ')[0]}! Vi seu perfil no AjeitaAí e gostaria de um orçamento.`);
+  const _primeiroNomeP = (String(p.nome).split(' ')[0]) || 'Profissional';
+  const msgWa = encodeURIComponent(`Olá ${_primeiroNomeP}! Vi seu perfil no AjeitaAí e gostaria de um orçamento.`);
   const waLink = `https://wa.me/55${numWa}?text=${msgWa}`;
+  const _pNomeEsc = p.nome.replace(/'/g, "\\'");
 
   const cats = (p.categorias||[]).map(c =>
     `<span class="inline-flex items-center gap-1.5 bg-primary-50 text-primary-700 text-xs font-bold px-3 py-1.5 rounded-full border border-primary-100">
@@ -4446,7 +4455,7 @@ function abrirPerfilProfissional(proId) {
     <div class="relative h-72 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 overflow-hidden">
       <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 30% 40%, white 1px, transparent 1px); background-size: 50px 50px;"></div>
       <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-36 h-36 rounded-full border-4 border-white shadow-pop overflow-hidden bg-white">
-        <img src="${p.foto || FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${p.nome.replace(/'/g,"\\'")}')" class="w-full h-full object-cover">
+        <img src="${p.foto || FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${_pNomeEsc}')" class="w-full h-full object-cover">
       </div>
     </div>
     <div class="pt-20 px-6 sm:px-8 pb-8">
@@ -4470,13 +4479,13 @@ function abrirPerfilProfissional(proId) {
           </div>
         </div>
       </div>
-      <div class="mb-6"><p class="text-slate-600 leading-relaxed">${p.sobre||'Profissional verificado pela plataforma AjeitaAí.'}</p></div>
+      <div class="mb-6"><p class="text-slate-600 leading-relaxed">${p.sobre}</p></div>
       <div class="mb-8 text-center">
         <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-extrabold px-8 py-3.5 rounded-2xl shadow-card hover:shadow-pop transition">
           <i class="fa-brands fa-whatsapp text-xl"></i>
           Chamar no WhatsApp
         </a>
-        <div class="text-xs text-slate-400 mt-2">Atendimento direto com ${p.nome.split(' ')[0]}</div>
+        <div class="text-xs text-slate-400 mt-2">Atendimento direto com ${_primeiroNomeP}</div>
       </div>
       ${trabalhos ? `
       <div class="mb-8">
@@ -4583,7 +4592,13 @@ function renderMuralPedidos() {
   }
   const custoDesbloq = (configEconomia && configEconomia.custoMoedasPorDesbloqueio) || 2;
 
-  container.innerHTML = pedidos.map(ped => {
+  container.innerHTML = (Array.isArray(pedidos)?pedidos:[]).filter(ped => ped && typeof ped === 'object').map(ped => {
+    ped.categoria = String(ped.categoria || 'Serviço Geral');
+    ped.bairro = String(ped.bairro || '');
+    ped.cidade = String(ped.cidade || '');
+    ped.descricao = String(ped.descricao || '');
+    ped.whatsapp = String(ped.whatsapp || '');
+    ped.data = ped.data || new Date().toISOString();
     const fechado = (ped.qtdDesbloqueios||0) >= 4;
     const jaDesbloqueado = euJaDesbloquei(ped.id);
     const waExibir = jaDesbloqueado ? formataWhatsAppBrasil(ped.whatsapp) : mascararWhatsApp(ped.whatsapp);
@@ -5585,9 +5600,13 @@ function renderMeusPedidos() {
             </div>
           </div>
         </div>
-        ${profissionalRel ? `
+        ${profissionalRel ? (function(){
+          profissionalRel.nome = String(profissionalRel.nome || 'Profissional');
+          profissionalRel.foto = profissionalRel.foto || '';
+          const _relNomeEsc = profissionalRel.nome.replace(/'/g,"\\'");
+          return `
           <div class="flex items-center gap-3 bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
-            <img src="${profissionalRel.foto||FOTO_UI_AVATAR(profissionalRel.nome)}" onerror="imgErroAvatar(this,'${profissionalRel.nome.replace(/'/g,"\\'")}')" class="w-11 h-11 rounded-xl object-cover border-2 border-white shadow">
+            <img src="${profissionalRel.foto||FOTO_UI_AVATAR(profissionalRel.nome)}" onerror="imgErroAvatar(this,'${_relNomeEsc}')" class="w-11 h-11 rounded-xl object-cover border-2 border-white shadow">
             <div>
               <div class="text-xs text-slate-500 leading-none">${isCliente?'Profissional contratado':'Cliente'}</div>
               <div class="font-bold text-slate-800 text-sm leading-tight">${profissionalRel.nome||'—'}</div>

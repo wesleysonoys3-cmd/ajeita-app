@@ -1,0 +1,10 @@
+{
+  "name": "ajeita-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AjeitaAí — Site estático (index.html + admin.html). Não há dependências de build.",
+  "scripts": {
+    "build": "echo \"Nada para compilar. Site estático com arquivos HTML puros.\"",
+    "start": "echo \"Serviço estático, não usa start Node.\""
+  }
+}

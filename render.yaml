@@ -28,3 +28,17 @@ services:
         condition:
           - type: file-not-found
             value: true
+
+  - type: web
+    name: ajeita-backend-pix
+    env: node
+    rootDir: backend-pix-ajeita
+    buildCommand: npm install
+    startCommand: node server.js
+    region: sao-paulo
+    plan: starter
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: PORT
+        value: "10000"
