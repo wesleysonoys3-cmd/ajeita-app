@@ -1792,7 +1792,9 @@ const GOOGLE_CLIENT_ID = '709414286122-tu642dhpa9dnp158keo816ln1a52npu6.apps.goo
 //   3. Se por acaso nenhuma bater, usamos heurística final (origin limpa).
 // Lista das origens AUTORIZADAS cadastradas no Google Cloud Console (PERMANENTE):
 const GOOGLE_ORIGINS_AUTORIZADAS = [
-  'https://ajeita-app.onrender.com',      // produção Render
+  'https://ajeitaai.com.br',               // domínio oficial produção
+  'https://www.ajeitaai.com.br',           // domínio oficial produção (subdomínio www)
+  'https://ajeita-app.onrender.com',      // produção Render fallback
   'http://127.0.0.1:8000',                // dev local (endereço IP)
   'http://localhost:8000'                 // dev local (hostname)
 ];
