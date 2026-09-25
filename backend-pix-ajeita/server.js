@@ -1571,9 +1571,47 @@ app.listen(PORTA, '0.0.0.0', () => {
   //   - Regras Firestore estiverem ERRADAS (cron roda no backend, ignora regras client-side)
   //   - Frontend NÃO esteja deployado com polling novo (codigo antigo)
   // =============================================================
+  // CORRECAO CIRURGICA: backoff progressivo para RESOURCE_EXHAUSTED (gRPC codigo 8)
+  // Evita retentar a cada 15s e bater ainda mais a cota enquanto a API esta bloqueada.
+  var _cronBackoffFalhasConsec = 0;
+  var _cronBackoffAteTimestampMs = 0;
+  var _cronBackoffUltimoLogMs = 0;
+  function _cronIsResourceExhaustedError(e) {
+    if (!e) return false;
+    if (typeof e.code === 'number' && e.code === 8) return true;
+    var s = String((e && e.message) || '').toUpperCase() + ' ' + String((e && e.code) || '').toUpperCase();
+    return s.indexOf('RESOURCE_EXHAUSTED') >= 0;
+  }
+  function _cronCalcularBackoffMs(qtdFalhas) {
+    if (qtdFalhas <= 0) return 0;
+    if (qtdFalhas === 1) return   1 * 60 * 1000; // 1 minuto
+    if (qtdFalhas === 2) return   5 * 60 * 1000; // 5 minutos
+    if (qtdFalhas === 3) return  15 * 60 * 1000; // 15 minutos
+    return                     30 * 60 * 1000;    // 30 minutos (>=4 falhas consecutivas)
+  }
+  function _fmtBackoffAte(tsMs) {
+    try {
+      var d = new Date(tsMs);
+      function z(n){ return n < 10 ? ('0' + n) : '' + n; }
+      return z(d.getDate()) + '/' + z(d.getMonth() + 1) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds());
+    } catch (e) { return ''; }
+  }
   if (dbFirestore && MP_ACCESS_TOKEN) {
     console.log(`[CRON_APROVACAO_AUTOMATICA] ✅ Iniciando varredura automatica a cada 15s por pagamentos pendentes no Firestore. (FILTRO FEITO NO NODE — SEM NECESSIDADE DE INDICE FIREBASE COMPOSTO)`);
     setInterval(async () => {
+      // BACKOFF ANTES DE TUDO: se estamos em periodo de espera por quota, pule rodada
+      try {
+        if (_cronBackoffAteTimestampMs > 0 && Date.now() < _cronBackoffAteTimestampMs) {
+          var faltamMs = _cronBackoffAteTimestampMs - Date.now();
+          var faltamMin = Math.max(1, Math.ceil(faltamMs / 60000));
+          var agora = Date.now();
+          if (agora - _cronBackoffUltimoLogMs > 60 * 1000) { // loga no maximo 1 vez por minuto para nao poluir logs
+            _cronBackoffUltimoLogMs = agora;
+            console.log(`[CRON_APROVACAO_AUTOMATICA] Quota da IA excedida. Retry em ${faltamMin} minutos. Proxima tentativa em ${_fmtBackoffAte(_cronBackoffAteTimestampMs)}.`);
+          }
+          return;
+        }
+      } catch(_eBo){}
       try {
         // (FIX V1.91) NÃO USA MAIS where != aprovado + orderBy (precisa de índice composto, dava FAILED_PRECONDITION)
         // Agora: lista TODOS os docs da collection, ordena por criado_em DESC e filtra PENDENTES no Node.js (100% permitido sem índice)
@@ -1695,8 +1733,34 @@ app.listen(PORTA, '0.0.0.0', () => {
           }
         } catch(eExpGeral) { console.warn('[CRON_PATROCINIO_EXPIRACAO] Geral erro (ignora proxima):', eExpGeral && eExpGeral.message); }
 
+        // =============================================================
+        // (CORRECAO CIRURGICA backoff quota) SUCESSO rodada completa → reseta contador falhas
+        // =============================================================
+        try {
+          if (_cronBackoffFalhasConsec > 0 || _cronBackoffAteTimestampMs > 0) {
+            var rodadasAnteriores = _cronBackoffFalhasConsec;
+            _cronBackoffFalhasConsec = 0;
+            _cronBackoffAteTimestampMs = 0;
+            _cronBackoffUltimoLogMs = 0;
+            console.log(`[CRON_APROVACAO_AUTOMATICA] ✅ Rodada OK apos backoff. Contador de falhas resetado (era=${rodadasAnteriores}). Volta ao intervalo normal de 15s.`);
+          }
+        } catch(_eRe){}
+
       } catch (eGeral) {
-        console.warn('[CRON_APROVACAO_AUTOMATICA] Erro GERAL rodada cron (ignora, proxima em 15s):', eGeral && eGeral.message);
+        var isQuota = _cronIsResourceExhaustedError(eGeral);
+        if (isQuota) {
+          // (CORREÇÃO) RESOURCE_EXHAUSTED gRPC codigo 8: aplica backoff progressivo — NAO retenta em 15s
+          _cronBackoffFalhasConsec += 1;
+          if (_cronBackoffFalhasConsec < 1) _cronBackoffFalhasConsec = 1;
+          var backoffMs = _cronCalcularBackoffMs(_cronBackoffFalhasConsec);
+          _cronBackoffAteTimestampMs = Date.now() + backoffMs;
+          var backoffMin = Math.round(backoffMs / 60000);
+          _cronBackoffUltimoLogMs = Date.now();
+          console.log(`[CRON_APROVACAO_AUTOMATICA] Quota da IA excedida. Retry em ${backoffMin} minutos. Proxima tentativa em ${_fmtBackoffAte(_cronBackoffAteTimestampMs)}. (falhas consecutivas=${_cronBackoffFalhasConsec})`);
+        } else {
+          // erro normal (nao e quota): log antigo, retenta normalmente em 15s
+          console.warn('[CRON_APROVACAO_AUTOMATICA] Erro GERAL rodada cron (ignora, proxima em 15s):', eGeral && eGeral.message);
+        }
       }
     }, 15000); // 15 segundos — aprovacao MAXIMA latencia 15s apos pagamento, 100% automatica
   } else {
