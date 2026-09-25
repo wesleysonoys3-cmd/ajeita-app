@@ -183,8 +183,8 @@ app.get('/', (req, res) => {
   res.json({
     ok: true,
     app: 'ajeita-pix-backend',
-    versao: '2.0-email-central-2fa-admin-docs',
-    build_tag: '20260924_teste_manual_get',
+    versao: '2.3-smtp-sendgrid-render-timeout-fallback',
+    build_tag: '20260924_smtp_sendgrid_587_2525_465_fallback_timeout',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -1251,7 +1251,6 @@ function _emailSanitizeFrom(v){
     if (process.env.SMTP_ADMIN_2FA_TO) process.env.SMTP_ADMIN_2FA_TO = _emailSanitizeStr(process.env.SMTP_ADMIN_2FA_TO, 255).replace(/\s+/g, '');
   } catch(eSanitizeEnv){}
 })();
-var _emailTransportCached = null;
 var _emailStatus = { configurado: false, motivo: '' };
 (function _inicializarEmailStatus(){
   const h = String(process.env.SMTP_HOST || '').trim();
@@ -1260,8 +1259,10 @@ var _emailStatus = { configurado: false, motivo: '' };
   const s = String(process.env.SMTP_PASSWORD || '').trim();
   const f = String(process.env.EMAIL_FROM || '').trim();
   if (h && p && u && s && f) {
+    const hMask = h.substring(0, Math.min(8, h.length));
+    const uMask = u.substring(0, Math.min(6, u.length));
     _emailStatus.configurado = true;
-    _emailStatus.motivo = 'SMTP configurado via variáveis de ambiente (prefixos [' + h.substring(0, Math.min(8, h.length)) + '..., port=' + p + ', user=' + u.substring(0, Math.min(6, u.length)) + '...]).';
+    _emailStatus.motivo = 'SMTP configurado via variaveis de ambiente (prefixos [' + hMask + '...], port=' + p + ', user=[' + uMask + '...]). Timeouts: 6s conectar / 8s greeting / 15s socket. Fallback portas: 587 -> 2525 -> 465 (SendGrid).';
   } else {
     const faltam = [];
     if (!h) faltam.push('SMTP_HOST');
@@ -1273,30 +1274,82 @@ var _emailStatus = { configurado: false, motivo: '' };
     _emailStatus.motivo = 'SMTP NAO configurado. Faltam variaveis de ambiente: ' + faltam.join(', ') + '. Instrucoes: configurar no Render > ajeita-backend-pix > Environment. Apenas administrador pode ver valores.';
   }
 })();
-function _emailGetTransport(){
+var _emailTransportCached = null;
+var _emailTransportCachedPort = 0;
+var _emailUltimaTentativaConectada = null; // para relatorio de testes
+function _emailIsTimeoutLikeError(e){
   try {
-    if (_emailTransportCached) return _emailTransportCached;
+    if (!e) return false;
+    var m = String((e && e.message) || '').toLowerCase() + ' ' + String((e && e.code) || '').toLowerCase();
+    if (m.indexOf('timeout') >= 0) return true;
+    if (m.indexOf('etimedout') >= 0) return true;
+    if (m.indexOf('esockettimedout') >= 0) return true;
+    if (m.indexOf('econnrefused') >= 0) return true;
+    if (m.indexOf('econnreset') >= 0) return true;
+    if (m.indexOf('eai_again') >= 0) return true;
+    if (m.indexOf('enotfound') >= 0) return true;
+    if (m.indexOf('getaddrinf') >= 0) return true;
+    return false;
+  } catch(e1){ return false; }
+}
+function _emailCreateTransporteForPort(targetPort){
+  try {
     if (!_emailStatus.configurado) return null;
     const nodemailer = require('nodemailer');
-    const host = String(process.env.SMTP_HOST || '').trim();
-    const port = Number(String(process.env.SMTP_PORT || '0').trim() || '0');
+    const host0 = String(process.env.SMTP_HOST || '').trim();
+    const host = (host0 && /^sendgrid$/i.test(host0.replace(/[^\w]/g,''))) ? 'smtp.sendgrid.net' : host0;
+    const port = Number(targetPort) || Number(String(process.env.SMTP_PORT || '0').trim() || '0') || 587;
     const user = String(process.env.SMTP_USER || '').trim();
     const pass = String(process.env.SMTP_PASSWORD || '').trim();
     const secureRaw = String(process.env.SMTP_SECURE || '').trim().toLowerCase();
-    const secure = secureRaw === 'true' || String(port) === '465';
+    const secure = secureRaw === 'true' || Number(port) === 465;
+    const requireTls = (!secure) ? true : undefined; // porta 587/2525: obrigatorio STARTTLS
+    const connectionTimeout = 6 * 1000;   // 6s por tentativa (rapido para fallback nao demorar)
+    const greetingTimeout   = 8 * 1000;   // 8s
+    const socketTimeout     = 15 * 1000;  // 15s max geral conexao
     if (!host || !port || !user || !pass) return null;
-    const transporter = nodemailer.createTransport({
+    const userMask = user.substring(0, Math.min(6, user.length));
+    const hostMask = host.substring(0, Math.min(10, host.length));
+    console.log('[EMAIL_SERVICE] Criando transporte SMTP (sem credenciais nos logs): host=[' + hostMask + '...], port=' + port + ', secure=' + Boolean(secure) + ', requireTls=' + Boolean(requireTls) + ', auth.user=[' + userMask + '...].');
+    const tr = nodemailer.createTransport({
       host: host,
-      port: port,
-      secure: secure,
-      auth: { user: user, pass: pass },
-      pool: false
+      port: Number(port),
+      secure: Boolean(secure),
+      auth: { user: String(user), pass: String(pass) },
+      pool: false,
+      requireTLS: requireTls,
+      tls: {
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2',
+        servername: host
+      },
+      connectionTimeout: connectionTimeout,
+      greetingTimeout: greetingTimeout,
+      socketTimeout: socketTimeout,
+      logger: false,
+      debug: false
     });
-    _emailTransportCached = transporter;
-    return transporter;
+    return { transporter: tr, usedPort: Number(port), usedHost: String(host), usedSecure: Boolean(secure), usedRequireTls: Boolean(requireTls) };
   } catch(eMailT){
     console.warn('[EMAIL_SERVICE] Falha ao criar transporte SMTP (detalhe oculto por seguranca).');
     _emailTransportCached = null;
+    _emailTransportCachedPort = 0;
+    return null;
+  }
+}
+function _emailGetTransport(){
+  try {
+    if (_emailTransportCached) return _emailTransportCached;
+    const primPort = Number(String(process.env.SMTP_PORT || '0').trim() || '0') || 587;
+    const created = _emailCreateTransporteForPort(primPort);
+    if (!created || !created.transporter) return null;
+    _emailTransportCached = created.transporter;
+    _emailTransportCachedPort = Number(created.usedPort) || Number(primPort);
+    return _emailTransportCached;
+  } catch(eGet){
+    console.warn('[EMAIL_SERVICE] _emailGetTransport falhou (detalhe oculto).');
+    _emailTransportCached = null;
+    _emailTransportCachedPort = 0;
     return null;
   }
 }
@@ -1310,11 +1363,98 @@ async function sendEmail(opts){
     if (!to) return { ok:false, msg:'Destinatario (to) ausente.' };
     const from = String(process.env.EMAIL_FROM || '').trim();
     if (!from) return { ok:false, msg:'EMAIL_FROM ausente.' };
-    const transp = _emailGetTransport();
-    if (!transp) return { ok:false, msg:'Transporte SMTP indisponivel. Verifique configuracao SMTP nas vars de ambiente.' };
-    const info = await transp.sendMail({ from: from, to: to, subject: subject, html: html || undefined, text: text || undefined });
-    const msgId = (info && info.messageId) ? String(info.messageId) : '';
-    return { ok:true, msgId: msgId ? msgId.substring(0, 120) : '', msg: 'Email enviado para SMTP com sucesso.' };
+
+    // Portas padrao SendGrid documentadas: 587 (STARTTLS), 2525 (STARTTLS alt), 465 (TLS direto)
+    const portasFallback = [587, 2525, 465];
+    const portaPrimaria = Number(String(process.env.SMTP_PORT || '0').trim() || '0') || 587;
+    const ordemTentativas = [];
+    ordemTentativas.push(portaPrimaria);
+    for (const p of portasFallback){ if (!ordemTentativas.includes(Number(p))) ordemTentativas.push(Number(p)); }
+
+    let ultimoErroGeral = null;
+    let tentativasRealizadas = 0;
+    let portaBemSucedida = null;
+    let conexaoEstabelecida = false;
+    let messageId = '';
+    let transportInfoUltima = null;
+
+    for (const pT of ordemTentativas) {
+      tentativasRealizadas += 1;
+      let tObj = null;
+      // Reusar cache se a porta da vez bater com a cacheada; senao recria transporte especifico
+      if (_emailTransportCached && Number(_emailTransportCachedPort) === Number(pT)) {
+        tObj = { transporter: _emailTransportCached, usedPort: Number(pT) };
+      } else {
+        const novo = _emailCreateTransporteForPort(Number(pT));
+        if (novo && novo.transporter) {
+          _emailTransportCached = novo.transporter;
+          _emailTransportCachedPort = Number(novo.usedPort) || Number(pT);
+          tObj = novo;
+        }
+      }
+      if (!tObj || !tObj.transporter) { ultimoErroGeral = new Error('transporte_indisponivel_porta_' + Number(pT)); continue; }
+      transportInfoUltima = { usedPort: Number(pT), usedHost: String(tObj.usedHost || process.env.SMTP_HOST || 'smtp.sendgrid.net'), usedSecure: Boolean(tObj.usedSecure || (Number(pT) === 465)), usedRequireTls: Boolean(tObj.usedRequireTls !== false) };
+
+      try {
+        const info = await tObj.transporter.sendMail({ from: from, to: to, subject: subject, html: html || undefined, text: text || undefined });
+        conexaoEstabelecida = true;
+        portaBemSucedida = Number(pT);
+        _emailUltimaTentativaConectada = { ok: true, porta: Number(pT), ts: Date.now() };
+        messageId = (info && info.messageId) ? String(info.messageId) : '';
+        break;
+      } catch(eTentativa){
+        ultimoErroGeral = eTentativa;
+        const ehTime = _emailIsTimeoutLikeError(eTentativa);
+        // Nao repete tentativas infinitas: se nao for timeout (erro de autenticacao, por exemplo), NAO tenta outras portas.
+        if (!ehTime) break;
+        // Timeout: invalida cache dessa porta e continua para proxima da lista
+        if (_emailTransportCachedPort === Number(pT)) { try { _emailTransportCached && typeof _emailTransportCached.close === 'function' && _emailTransportCached.close(); } catch(_x){} _emailTransportCached = null; _emailTransportCachedPort = 0; }
+        console.warn('[EMAIL_SERVICE] Tentativa SMTP porta=' + Number(pT) + ' falhou com timeout/conexao recusada. Seguindo para proxima porta fallback (se houver).');
+      }
+    }
+
+    if (portaBemSucedida !== null && conexaoEstabelecida === true) {
+      // Sucesso: mantem transporte cacheado para esta porta
+      _emailTransportCachedPort = Number(portaBemSucedida) || Number(_emailTransportCachedPort);
+      return {
+        ok: true,
+        msg: 'Email enviado para SMTP com sucesso.',
+        msgId: messageId ? messageId.substring(0, 120) : '',
+        smtp: transportInfoUltima ? {
+          porta: Number(transportInfoUltima.usedPort),
+          host: (String(transportInfoUltima.usedHost || '').substring(0, 12) + '...'),
+          secure: Boolean(transportInfoUltima.usedSecure),
+          requireTls: Boolean(transportInfoUltima.usedRequireTls),
+          tentativas: Number(tentativasRealizadas)
+        } : undefined
+      };
+    }
+
+    // Falha: relatorio sem credenciais
+    const erroSemCred = ultimoErroGeral && ultimoErroGeral.message ? String(ultimoErroGeral.message).substring(0, 400) : 'erro interno';
+    console.warn('[EMAIL_SERVICE] sendEmail falhou. Erro mensagem (sem credenciais):', erroSemCred);
+    const isTimeoutFinal = _emailIsTimeoutLikeError(ultimoErroGeral);
+    const detalheConexao = (isTimeoutFinal === true)
+      ? 'Conexao SMTP expirou antes do handshake (nenhuma das portas tentadas 587/2525/465 respondeu a tempo). Timeout explicito=6s conectar / 8s greeting / 15s socket.'
+      : 'Conexao chegou a ser estabelecida mas o servidor SMTP retornou erro durante autenticacao ou envio.';
+    // Relatorio completo de transporte utilizado (SEM CREDENCIAIS):
+    const relTransp = transportInfoUltima ? {
+      host_mask: String(transportInfoUltima.usedHost || process.env.SMTP_HOST || 'smtp.sendgrid.net').substring(0, 16) + '...',
+      portas_tentadas: ordemTentativas.map(n => Number(n)),
+      porta_ultima_tentativa: Number(transportInfoUltima.usedPort),
+      secure: Boolean(transportInfoUltima.usedSecure),
+      requireTls: Boolean(transportInfoUltima.usedRequireTls !== false),
+      tentativas: Number(tentativasRealizadas)
+    } : undefined;
+    return {
+      ok: false,
+      msg: 'Falha ao enviar e-mail: ' + erroSemCred,
+      conexao: {
+        chegou_a_estabelecer: (isTimeoutFinal === false),
+        descricao: detalheConexao
+      },
+      transporte_utilizado_sem_credenciais: relTransp
+    };
   } catch(eSend){
     console.warn('[EMAIL_SERVICE] sendEmail falhou. Erro mensagem (sem credenciais):', (eSend && eSend.message) ? String(eSend.message).substring(0, 400) : 'erro generico');
     return { ok:false, msg: 'Falha ao enviar e-mail: ' + ((eSend && eSend.message) ? String(eSend.message).substring(0, 300) : 'erro interno.') };
