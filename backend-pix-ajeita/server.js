@@ -67,7 +67,31 @@ try {
 
 const BACKEND_PUBLIC_URL = String(process.env.BACKEND_PUBLIC_URL || 'http://127.0.0.1:7001').trim(); // ← (BUG FIX NEWLINE) .trim() remove \n espacos enter se user colou ENV errado no Render
 const PORTA = Number(process.env.PORT || '7001');
+
+/* ============================
+   LEGAL / TERMOS & PRIVACIDADE — Versionamento e Validação Backend
+   - Mesmas versões do frontend (index.html). Atualizar JUNTOS quando publicar nova versão.
+   - Novas versões solicitam novo aceite no frontend; backend recusa operações que exigem consentimento (liberar moedas, etc.) sem aceite válido.
+   ============================ */
+const TERMS_VERSION = '1.0';
+const PRIVACY_VERSION = '1.0';
+function _validarAceiteTermosBackend(profDoc) {
+  if (!profDoc || typeof profDoc !== 'object') return { ok:false, motivo:'doc_profissional_vazio' };
+  const aceite = profDoc.aceite_termos || profDoc.aceite || null;
+  if (!aceite || typeof aceite !== 'object') return { ok:false, motivo:'aceite_nao_registrado', detalhe:'Nenhum registro de aceite de Termos/Política encontrado no perfil.' };
+  const tv = String(aceite.termos_version || '');
+  const pv = String(aceite.privacidade_version || '');
+  if (tv !== TERMS_VERSION) return { ok:false, motivo:'versao_termos_desatualizada', esperado:TERMS_VERSION, encontrado:tv };
+  if (pv !== PRIVACY_VERSION) return { ok:false, motivo:'versao_privacidade_desatualizada', esperado:PRIVACY_VERSION, encontrado:pv };
+  const dth = String(aceite.data_hora_aceite || '').trim();
+  if (!dth || dth.length < 10) return { ok:false, motivo:'data_hora_aceite_faltante', detalhe:'O aceite existe mas não possui data/hora de registro.' };
+  return { ok:true, motivo:'aceite_valido', versao_termos:tv, versao_privacidade:pv, data_hora:dth };
+}
 const app = express();
+// ===== Ajeitaí Security Agent ===== (3 linhas)
+const secAgent = require('./security');
+if (secAgent && typeof secAgent.middleware === 'function') app.use(secAgent.middleware);
+// ===== Fim Security Agent middleware =====
 app.use(cors({ origin: true }));
 // (NOVO V11 WEBHOOK SEGURO — FORMA CORRETA NO EXPRESS) Preservar raw body string SEM quebrar express.json
 // Usamos a opcao `verify` do proprio express.json que devolve o Buffer intacto para o HMAC
@@ -80,6 +104,12 @@ app.use(express.json({
   }
 }));
 app.use(morgan('combined'));
+// Security Agent routes + dashboard (6 linhas)
+try {
+  if (secAgent && typeof secAgent.registerRoutes === 'function') secAgent.registerRoutes(app);
+  if (secAgent && typeof secAgent.errorHandler === 'function') app.use(secAgent.errorHandler);
+} catch (eSecInit) { console.warn('[SECURITY_AGENT] init falhou, modo OFF seguro.', String((eSecInit && eSecInit.message) || eSecInit).substring(0, 300)); }
+// ===== Fim Security Agent routes =====
 
 /* ============================
    (NOVO V11 WEBHOOK HMAC) Helper valida assinatura secreta Mercado Pago
@@ -761,7 +791,108 @@ async function processarAprovacaoPix(payload) {
       const docRef = dbFirestore.collection('profissionais').doc(docId);
       const snapPro = await docRef.get();
       const atual = snapPro.exists ? (snapPro.data() || {}) : {};
-      const novoSaldo = Number(atual.saldoMoedas || 0) + qtdMoedas;
+      // ======================== (VALIDACAO ACEITE TERMOS BACKEND §9) ========================
+      // Não credita moedas se o profissional ainda não aceitou os Termos de Uso / Política de Privacidade da versão atual.
+      // Não apaga transação (dinheiro recebido fica gravado como aprovado em pix_transacoes para auditoria);
+      // moedas ficam "pendentes" e serão creditadas automaticamente no próximo webhook/aprovação manual
+      // ASSIM QUE o profissional aceitar os termos no frontend.
+      const validAceite = _validarAceiteTermosBackend(atual);
+      if (!validAceite.ok) {
+        const redacaoUid = String(uidUsuario||'?').substring(0, 14) + '***';
+        const redacaoNome = (String(transacao.nome_usuario||'?').length > 2) ? (String(transacao.nome_usuario)[0] + '***' + String(transacao.nome_usuario).slice(-1)) : '***';
+        console.warn(`[ACEITE_TERMOS_BLOQUEIO_LIBERAR_MOEDAS] ⚠️ external_ref=${externalRef} uid=${redacaoUid} nome=${redacaoNome} motivo=${validAceite.motivo} esperado_termos=${validAceite.esperado||TERMS_VERSION} encontrado_termos=${validAceite.encontrado||'nulo'}. MOEDAS NAO CREDITADAS (aguarda aceite frontend).`);
+        try {
+          await dbFirestore.collection('pix_transacoes').doc(externalRef).set({
+            bloqueado_por_aceite_pendente: true,
+            bloqueado_aceite_motivo: String(validAceite.motivo || ''),
+            bloqueado_aceite_esperado_termos_v: String(validAceite.esperado || TERMS_VERSION),
+            bloqueado_aceite_encontrado_termos_v: String(validAceite.encontrado || '(nulo)'),
+            bloqueado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString()
+          }, { merge: true });
+        } catch(eBloq){}
+        return false;
+      }
+      const saldoAntesFirestore = Number(atual.saldoMoedas || 0);
+      const novoSaldo = saldoAntesFirestore + qtdMoedas;
+      // ============ (ALERTA SALDO BAIXO MOEDAS - FIRESTORE STATE) ============
+      // Persiste o estado de alertas disparados em PROFISSIONAIS._alerta_saldo (não expõe e-mail)
+      // Regras: (a) faixas [20,10,5,2,0] (b) 1 alerta por faixa por ciclo (c) reset no próximo ciclo ao recarregar E ultrapassar 20.
+      try {
+        const estado = atual._alerta_saldo && typeof atual._alerta_saldo === 'object'
+          ? JSON.parse(JSON.stringify(atual._alerta_saldo))
+          : { ultimoSaldo: null, faixasDisparadas: {}, cicloAtual: 1 };
+        const ehRecarga = true;
+        if (ehRecarga && novoSaldo > 20) {
+          estado.faixasDisparadas = {};
+          estado.cicloAtual = (Number(estado.cicloAtual) || 1) + 1;
+        }
+        const FAIXAS = Object.freeze([20, 10, 5, 2, 0]);
+        const ant = Number.isFinite(+saldoAntesFirestore) ? Math.max(0, Math.floor(+saldoAntesFirestore)) : null;
+        const atu = Math.max(0, Math.floor(novoSaldo));
+        let faixaDispararFirestore = null;
+        for (let ixF = 0; ixF < FAIXAS.length; ixF++) {
+          const fx = FAIXAS[ixF];
+          const entrou = (ant == null) ? (atu === fx) : (ant > fx) && (atu <= fx);
+          if (entrou) { faixaDispararFirestore = fx; break; }
+        }
+        estado.ultimoSaldo = atu;
+        let disparouNotifFirestore = false;
+        let puladoDuplicado = false;
+        if (faixaDispararFirestore != null) {
+          if (estado.faixasDisparadas[String(faixaDispararFirestore)] === true) {
+            puladoDuplicado = true;
+          } else {
+            estado.faixasDisparadas[String(faixaDispararFirestore)] = true;
+            disparouNotifFirestore = true;
+            // (i) Notificação na coleção "notificacoes" (sistema existente)
+            try {
+              const nomeProf = (atual.nome || atual.primeiroNome || 'Profissional').toString().trim() || 'Profissional';
+              const ehZero = faixaDispararFirestore === 0;
+              const titulo = ehZero ? '🪙 Saldo esgotado' : `🪙 Saldo baixo (${faixaDispararFirestore} moedas)`;
+              const msg = ehZero
+                ? 'Seu saldo de moedas chegou a 0. Recarregue para continuar utilizando os recursos que consomem moedas.'
+                : `Você está com ${faixaDispararFirestore} moedas. Recarregue seu saldo para continuar utilizando o Ajeitaí.`;
+              const idn = 'not_sb_fs_' + faixaDispararFirestore + '_' + String(uidUsuario) + '_' + Math.floor(Date.now()/1000);
+              const notifFs = {
+                id: idn, usuario_id_alvo: String(uidUsuario), tipo_usuario_alvo: 'profissional',
+                tipo: 'saldo_moedas', subtipo: ehZero ? 'saldo_esgotado' : 'saldo_baixo',
+                faixa_saldo: faixaDispararFirestore, saldo_atual: atu,
+                titulo: titulo, mensagem: msg, lida: false,
+                criado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),
+                origem: 'alerta_saldo_baixo_firestore_backend', syncWebhook: payload.aprovado_via || '?',
+                _v: 1
+              };
+              try { await dbFirestore.collection('notificacoes').doc(idn).set(notifFs, { merge: true }); } catch(eNotFs){}
+              // (ii) E-mail SOMENTE ao DONO do saldo (profissional.email)
+              try {
+                const emailDest = (atual.email || atual.emailGoogle || atual.emailLogin || '').toString().trim();
+                if (emailDest && emailDest.indexOf('@') > 1 && typeof sendEmail === 'function') {
+                  const assunto = ehZero
+                    ? 'Ajeitaí — seu saldo de moedas chegou a 0'
+                    : 'Ajeitaí — seu saldo de moedas está baixo';
+                  const corpoTxt = ehZero
+                    ? (`Olá, ${nomeProf}.\n\nSeu saldo de moedas no Ajeitaí chegou a 0.\n\nRecarregue seu saldo para continuar utilizando os recursos que consomem moedas.`)
+                    : (`Olá, ${nomeProf}.\n\nSeu saldo no Ajeitaí está em ${faixaDispararFirestore} moedas.\n\nPara continuar utilizando os recursos que consomem moedas, você pode recarregar seu saldo.\n\nO botão de comprar moedas já está disponível no seu painel.`);
+                  try {
+                    await sendEmail({
+                      to: emailDest,
+                      subject: assunto,
+                      text: corpoTxt,
+                      html: null
+                    });
+                  } catch(eSend){
+                    console.log('[ALERTA_SALDO_BACKEND] sendEmail falhou (continua sem bloquear fluxo). external_ref='+externalRef+' err='+String(eSend&&eSend.message||eSend).substring(0,200));
+                  }
+                }
+              } catch(eMail){}
+            } catch(eDisparo){}
+          }
+        }
+        atual._alerta_saldo = estado;
+        console.log(`[ALERTA_SALDO_BACKEND] uid=${uidUsuario} saldoAntes=${saldoAntesFirestore} novoSaldo=${novoSaldo} faixaDisparar=${faixaDispararFirestore} disparou=${disparouNotifFirestore} dup=${puladoDuplicado} ciclo=${estado.cicloAtual}`);
+      } catch(eSbPrep){
+        console.error('[ALERTA_SALDO_BACKEND] erro preparar estado (continuando fluxo liberar moedas):', String(eSbPrep && eSbPrep.message || eSbPrep).substring(0,300));
+      }
       await docRef.set(Object.assign({}, atual, {
         saldoMoedas: novoSaldo,
         ultimaRecargaEm: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),

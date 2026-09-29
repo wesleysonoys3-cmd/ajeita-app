@@ -411,7 +411,7 @@ tailwind.config = {
     <div class="mb-10 sm:mb-12">
       <div class="flex items-center justify-between mb-5 sm:mb-6 px-1">
         <h2 class="text-2xl sm:text-2.5xl font-black text-slate-900 tracking-tight">Reformas e Reparos</h2>
-        <button onclick="document.getElementById('filtroCategoria').value='Pedreiro'; aplicarFiltrosCatalogo();" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
+        <button onclick="setCategoria('Pedreiro')" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
       </div>
       <div class="grid grid-cols-3 gap-3 sm:gap-5">
         <button onclick="setCategoria('Eletricista')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
@@ -784,7 +784,7 @@ tailwind.config = {
     <div class="mb-10 sm:mb-12">
       <div class="flex items-center justify-between mb-5 sm:mb-6 px-1">
         <h2 class="text-2xl sm:text-2.5xl font-black text-slate-900 tracking-tight">Assistência Técnica</h2>
-        <button onclick="document.getElementById('filtroCategoria').value='Técnico de Ar Condicionado'; aplicarFiltrosCatalogo();" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
+        <button onclick="setCategoria('Técnico de Ar Condicionado')" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
       </div>
       <div class="grid grid-cols-3 gap-3 sm:gap-5">
         <button onclick="setCategoria('Técnico de Ar Condicionado')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
@@ -882,13 +882,7 @@ tailwind.config = {
         <option value="Chaveiro">Chaveiro</option>
         <option value="Técnico de Ar Condicionado">Ar Condicionado</option>
       </select>
-      <select id="filtroCidade">
-        <option value="">Todas as cidades</option>
-        <option value="Brasília">Brasília (DF)</option>
-        <option value="Taguatinga">Taguatinga</option>
-        <option value="Samambaia">Samambaia</option>
-        <option value="Ceilândia">Ceilândia</option>
-      </select>
+      <input id="filtroCidade" type="text" list="cidadesBrasileiras" autocomplete="off" placeholder="Todas as cidades" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
       <input id="filtroBairro" type="text">
     </div>
   </section>
@@ -1164,13 +1158,7 @@ tailwind.config = {
             </div>
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-2">Cidade *</label>
-              <select required id="cadCidade" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                <option value="">Selecione a cidade</option>
-                <option>Brasília (DF)</option>
-                <option>Taguatinga</option>
-                <option>Samambaia</option>
-                <option>Ceilândia</option>
-              </select>
+              <input required id="cadCidade" type="text" list="cidadesBrasileiras" autocomplete="off" placeholder="Selecione ou digite sua cidade" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
             </div>
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-2">CPF (apenas números, para verificação)</label>
@@ -1244,7 +1232,23 @@ tailwind.config = {
               <div class="text-sm text-fuchsia-700">Ao concluir o cadastro, você recebe automaticamente <strong>10 Moedas</strong> para desbloquear seus primeiros clientes.</div>
             </div>
           </div>
-          <button type="submit" class="w-full bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-extrabold py-4 rounded-xl shadow-card hover:shadow-pop transition text-base flex items-center justify-center gap-2">
+
+          <label class="flex items-start gap-3 p-4 sm:p-5 bg-slate-50 hover:bg-primary-50/40 border-2 rounded-2xl transition cursor-pointer select-none group" style="border-color:var(--tw-border-opacity);">
+            <input id="cadAceiteTermos" type="checkbox" onchange="document.getElementById('btnCadastroProfSubmit').disabled = !this.checked;" class="mt-0.5 w-5 h-5 accent-primary-600 rounded cursor-pointer" required>
+            <div class="flex-1 text-sm text-slate-700 leading-relaxed">
+              <div class="font-bold text-slate-800 mb-0.5">Li e concordo com os documentos legais obrigatórios *</div>
+              <div class="text-xs sm:text-sm">
+                Declaro que li, entendi e concordo integralmente com os
+                <span onclick="event.preventDefault();abrirTermosDeUso()" class="inline-block font-bold text-primary-700 underline hover:text-primary-900 cursor-pointer decoration-2 underline-offset-2 group-hover:text-primary-900 transition">Termos de Uso</span>
+                (v${TERMS_VERSION}) e com a
+                <span onclick="event.preventDefault();abrirPoliticaPrivacidade()" class="inline-block font-bold text-emerald-700 underline hover:text-emerald-900 cursor-pointer decoration-2 underline-offset-2 group-hover:text-emerald-900 transition">Política de Privacidade</span>
+                (v${PRIVACY_VERSION}) do AjeitaAí.
+              </div>
+            </div>
+            <i class="fa-solid fa-circle-info text-slate-300 group-hover:text-primary-500 mt-1 transition text-sm"></i>
+          </label>
+
+          <button id="btnCadastroProfSubmit" type="submit" disabled class="w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:grayscale bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-extrabold py-4 rounded-xl shadow-card hover:shadow-pop transition text-base flex items-center justify-center gap-2">
             <i class="fa-solid fa-rocket"></i>
             Criar minha conta e ganhar 10 Moedas BÔNUS
           </button>
@@ -1477,6 +1481,43 @@ tailwind.config = {
             </div>
           </div>
         </div>
+
+        <!-- CARD 3: TERMOS E PRIVACIDADE / ÁREA LEGAL -->
+        <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden mt-8">
+          <div class="bg-gradient-to-r from-indigo-50 via-primary-50 to-emerald-50 px-6 sm:px-8 py-5 border-b border-slate-100 flex items-start gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-white shadow flex items-center justify-center text-2xl flex-shrink-0">📜</div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-xl font-black text-slate-800 flex items-center gap-2">Legal · Termos e Privacidade</h3>
+              <p class="text-sm text-slate-600 mt-1">Documentos oficiais da plataforma, registro do seu aceite e versões vigentes.</p>
+            </div>
+          </div>
+          <div class="p-6 sm:p-8 space-y-6">
+
+            <!-- Versões vigentes -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <button type="button" onclick="navigateTo('view-termos-de-uso')" class="flex items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-primary-50 to-indigo-50 hover:from-primary-100 hover:to-indigo-100 border border-primary-200 hover:border-primary-400 text-left transition group">
+                <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm flex-shrink-0 text-primary-700 text-lg"><i class="fa-solid fa-file-contract"></i></span>
+                <div class="flex-1 min-w-0">
+                  <div class="font-black text-slate-800 flex items-center gap-2">Termos de Uso <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white text-primary-700 border border-primary-200">v${TERMS_VERSION}</span></div>
+                  <div class="text-xs text-slate-600 mt-0.5">Regras de uso da plataforma, responsabilidades e condições contratuais. Abrir no app →</div>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs text-primary-600 mt-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition"></i>
+              </button>
+              <button type="button" onclick="navigateTo('view-politica-de-privacidade')" class="flex items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-200 hover:border-emerald-400 text-left transition group">
+                <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm flex-shrink-0 text-emerald-700 text-lg"><i class="fa-solid fa-shield-halved"></i></span>
+                <div class="flex-1 min-w-0">
+                  <div class="font-black text-slate-800 flex items-center gap-2">Política de Privacidade <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white text-emerald-700 border border-emerald-200">v${PRIVACY_VERSION} · LGPD</span></div>
+                  <div class="text-xs text-slate-600 mt-0.5">Como seus dados são coletados, tratados, protegidos e compartilhados (conforme LGPD 13.709/2018). Abrir no app →</div>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs text-emerald-600 mt-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition"></i>
+              </button>
+            </div>
+
+            <!-- Status do aceite -->
+            <div id="perfilLegalStatusAceite" class="rounded-2xl border-2 border-dashed border-slate-200 p-4 sm:p-5"></div>
+
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1538,6 +1579,17 @@ tailwind.config = {
           <p id="loginCardSubtitulo" class="text-slate-500 text-sm mt-1.5">Acesse para pedir serviços e acompanhar seus pedidos.</p>
         </div>
 
+        <!-- ===== BOTÃO GOOGLE ACIMA DOS CAMPOS (visível imediatamente sem scroll em mobile) ===== -->
+        <!-- Botao Google (wrapper JS injeta htmlBotaoContinuarComGoogle) -->
+        <div id="loginBtnGoogleContainer"></div>
+
+        <!-- Separador "ou use e-mail/senha" -->
+        <div class="relative flex items-center gap-3 py-0.5 -mt-1">
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <span class="text-[11px] uppercase font-black tracking-widest text-slate-400">ou use e-mail e senha</span>
+          <div class="flex-1 h-px bg-slate-200"></div>
+        </div>
+
         <!-- Campo Email -->
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">E-mail</label>
@@ -1551,7 +1603,7 @@ tailwind.config = {
         <div>
           <div class="flex items-center justify-between mb-2">
             <label class="block text-sm font-bold text-slate-700">Senha</label>
-            <button type="button" onclick="toast('info','Redefinir senha','Em breve: link para recuperar sua senha por e-mail. Enquanto isso, use o botão Google abaixo (login sem senha!).','4500');" class="text-[12px] font-bold text-primary-700 hover:text-primary-800 transition">Esqueceu a senha?</button>
+            <button type="button" onclick="toast('info','Redefinir senha','Em breve: link para recuperar sua senha por e-mail. Enquanto isso, use o botão Google acima (login sem senha!).','4500');" class="text-[12px] font-bold text-primary-700 hover:text-primary-800 transition">Esqueceu a senha?</button>
           </div>
           <div class="relative">
             <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -1564,29 +1616,186 @@ tailwind.config = {
           <i class="fa-solid fa-right-to-bracket mr-2"></i>Acessar Painel
         </button>
 
-        <!-- Separador "ou acesse com" -->
-        <div class="relative flex items-center gap-3 py-0.5">
-          <div class="flex-1 h-px bg-slate-200"></div>
-          <span class="text-[11px] uppercase font-black tracking-widest text-slate-400">ou acesse com</span>
-          <div class="flex-1 h-px bg-slate-200"></div>
-        </div>
-
-        <!-- Botao Google (wrapper JS injeta htmlBotaoContinuarComGoogle) -->
-        <div id="loginBtnGoogleContainer"></div>
-
-        <!-- Separador "ou cadastre-se" -->
-        <div class="pt-4 mt-2 border-t border-slate-100 space-y-3">
-          <div class="text-xs text-slate-500 text-center">Ainda não tem conta?</div>
-          <button type="button" id="loginBtnCadastrar" onclick="navigateTo('view-home')" class="w-full flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 text-slate-700 font-bold py-3 rounded-xl shadow-sm hover:shadow transition text-sm">
-            <i class="fa-solid fa-user-plus"></i>
-            <span id="loginBtnCadastrarLabel">Começar a pedir serviços (Cliente)</span>
-          </button>
+        <!-- Rodapé: "Não tem conta? Crie aqui" (IDs preservados para trocarAbaLogin atualizar texto/onclick) -->
+        <div class="pt-4 mt-2 border-t border-slate-100 text-center text-sm text-slate-600">
+          Não tem conta? <span id="loginBtnCadastrar" onclick="navigateTo('view-home')" class="font-extrabold text-primary-700 hover:text-primary-900 underline underline-offset-2 cursor-pointer transition"><span id="loginBtnCadastrarLabel">Crie aqui</span></span>
         </div>
       </form>
     </div>
   </section>
 
+  <!-- =============== VIEW TERMOS DE USO (OFICIAL v1.0 · TELA INTEGRADA AO APP) =============== -->
+  <section id="view-termos-de-uso" class="view-section">
+    <!-- HEADER CABEÇALHO: voltar + logo + versão (experiência app, mesmo padrão view-login) -->
+    <div class="flex items-center justify-between mb-6 sm:mb-8">
+      <button onclick="history.length > 1 ? history.back() : navigateTo('view-home')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition active:scale-95">
+        <i class="fa-solid fa-arrow-left text-lg"></i>
+      </button>
+      <div class="flex items-center gap-2.5 group pointer-events-none select-none">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center shadow-card">
+          <i class="fa-solid fa-file-contract text-white text-lg"></i>
+        </div>
+        <div class="text-left">
+          <div class="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-primary-700 bg-clip-text text-transparent leading-tight">Termos de Uso</div>
+          <div class="text-[11px] text-slate-500 font-medium -mt-0.5 flex items-center gap-1.5">
+            <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-200 font-black uppercase tracking-wider text-[9px]">v${TERMS_VERSION}</span>
+            <span>AjeitaAí · Documento Oficial</span>
+          </div>
+        </div>
+      </div>
+      <button onclick="navigateTo('view-home')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition active:scale-95" title="Início">
+        <i class="fa-solid fa-house text-lg"></i>
+      </button>
+    </div>
+
+    <!-- HERO DESTAQUE (mesmo visual do card 2 perfil verificado) -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-500 via-indigo-600 to-primary-700 text-white px-6 sm:px-8 py-7 sm:py-8 mb-6 sm:mb-8 shadow-card">
+      <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_60%)]"></div>
+      <div class="relative flex items-start gap-4 sm:gap-5">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center flex-shrink-0 shadow-inner">
+          <i class="fa-solid fa-scale-balanced text-3xl sm:text-4xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/25 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider mb-2.5">
+            <i class="fa-solid fa-shield-halved"></i> Contrato de Uso da Plataforma
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-black leading-tight mb-1.5">Termos e Condições Gerais</h1>
+          <p class="text-white/90 text-sm sm:text-base leading-relaxed">Ao continuar utilizando o AjeitaAí, você concorda com as regras abaixo. Em caso de dúvidas, entre em contato pelo suporte oficial.</p>
+          <div class="mt-4 flex flex-wrap items-center gap-2 text-[11px] sm:text-xs">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20"><i class="fa-solid fa-calendar-check"></i> Publicação: <span class="font-bold">[PREENCHER: data]</span></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20"><i class="fa-solid fa-file-signature"></i> Aceite registrado via sua conta</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL: card branco com scroll AUTOMÁTICO, rodapé em pb-safe para nunca ficar abaixo do bottomNav -->
+    <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+      <div id="viewTermosConteudoContainer" class="p-6 sm:p-8 space-y-7 text-sm text-slate-700 leading-relaxed overflow-y-auto max-h-none pb-[calc(env(safe-area-inset-bottom)+128px)] sm:pb-28"></div>
+    </div>
+  </section>
+
+  <!-- =============== VIEW POLÍTICA DE PRIVACIDADE (OFICIAL v1.0 · TELA INTEGRADA AO APP) =============== -->
+  <section id="view-politica-de-privacidade" class="view-section">
+    <!-- HEADER CABEÇALHO: voltar + logo + versão LGPD -->
+    <div class="flex items-center justify-between mb-6 sm:mb-8">
+      <button onclick="history.length > 1 ? history.back() : navigateTo('view-home')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition active:scale-95">
+        <i class="fa-solid fa-arrow-left text-lg"></i>
+      </button>
+      <div class="flex items-center gap-2.5 group pointer-events-none select-none">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-green-700 flex items-center justify-center shadow-card">
+          <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+        </div>
+        <div class="text-left">
+          <div class="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-emerald-600 via-teal-600 to-green-700 bg-clip-text text-transparent leading-tight">Política de Privacidade</div>
+          <div class="text-[11px] text-slate-500 font-medium -mt-0.5 flex items-center gap-1.5">
+            <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-black uppercase tracking-wider text-[9px]">v${PRIVACY_VERSION} · LGPD</span>
+            <span>AjeitaAí · Lei 13.709/2018</span>
+          </div>
+        </div>
+      </div>
+      <button onclick="navigateTo('view-home')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition active:scale-95" title="Início">
+        <i class="fa-solid fa-house text-lg"></i>
+      </button>
+    </div>
+
+    <!-- HERO DESTAQUE PRIVACIDADE -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-teal-600 to-green-700 text-white px-6 sm:px-8 py-7 sm:py-8 mb-6 sm:mb-8 shadow-card">
+      <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_60%)]"></div>
+      <div class="relative flex items-start gap-4 sm:gap-5">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center flex-shrink-0 shadow-inner">
+          <i class="fa-solid fa-user-lock text-3xl sm:text-4xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/25 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider mb-2.5">
+            <i class="fa-solid fa-lock"></i> Conformidade com a LGPD
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-black leading-tight mb-1.5">Seus dados, sua privacidade</h1>
+          <p class="text-white/90 text-sm sm:text-base leading-relaxed">Esta página explica exatamente como coletamos, usamos, armazenamos e protegemos suas informações pessoais, nos termos da Lei Geral de Proteção de Dados.</p>
+          <div class="mt-4 flex flex-wrap items-center gap-2 text-[11px] sm:text-xs">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20"><i class="fa-solid fa-scale-balanced"></i> Lei nº 13.709/2018</span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20"><i class="fa-solid fa-envelope"></i> DPO/LGPD: <span class="font-bold">[PREENCHER email]</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL com rodapé de área segura (nunca fica abaixo do bottomNav) -->
+    <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+      <div id="viewPrivacidadeConteudoContainer" class="p-6 sm:p-8 space-y-7 text-sm text-slate-700 leading-relaxed overflow-y-auto max-h-none pb-[calc(env(safe-area-inset-bottom)+128px)] sm:pb-28"></div>
+    </div>
+  </section>
+
 </main>
+
+<!-- =============== DATALIST CIDADES BRASILEIRAS (UX: pesquisa texto + sugestões + aceita cidades fora da lista) =============== -->
+<datalist id="cidadesBrasileiras">
+  <option value="Brasília (DF)">
+  <option value="Taguatinga (DF)">
+  <option value="Samambaia (DF)">
+  <option value="Ceilândia (DF)">
+  <option value="Aracaju (SE)">
+  <option value="Belém (PA)">
+  <option value="Belo Horizonte (MG)">
+  <option value="Boa Vista (RR)">
+  <option value="Campina Grande (PB)">
+  <option value="Campinas (SP)">
+  <option value="Campo Grande (MS)">
+  <option value="Cascavel (PR)">
+  <option value="Contagem (MG)">
+  <option value="Cuiabá (MT)">
+  <option value="Curitiba (PR)">
+  <option value="Duque de Caxias (RJ)">
+  <option value="Feira de Santana (BA)">
+  <option value="Florianópolis (SC)">
+  <option value="Fortaleza (CE)">
+  <option value="Goiânia (GO)">
+  <option value="Guarulhos (SP)">
+  <option value="Imperatriz (MA)">
+  <option value="João Pessoa (PB)">
+  <option value="Jundiaí (SP)">
+  <option value="Juiz de Fora (MG)">
+  <option value="Londrina (PR)">
+  <option value="Macapá (AP)">
+  <option value="Maceió (AL)">
+  <option value="Manaus (AM)">
+  <option value="Marabá (PA)">
+  <option value="Marília (SP)">
+  <option value="Natal (RN)">
+  <option value="Niterói (RJ)">
+  <option value="Olinda (PE)">
+  <option value="Osasco (SP)">
+  <option value="Palmas (TO)">
+  <option value="Passo Fundo (RS)">
+  <option value="Pelotas (RS)">
+  <option value="Petrópolis (RJ)">
+  <option value="Piracicaba (SP)">
+  <option value="Ponta Grossa (PR)">
+  <option value="Porto Alegre (RS)">
+  <option value="Porto Velho (RO)">
+  <option value="Recife (PE)">
+  <option value="Ribeirão Preto (SP)">
+  <option value="Rio Branco (AC)">
+  <option value="Rio de Janeiro (RJ)">
+  <option value="Salvador (BA)">
+  <option value="Santa Maria (RS)">
+  <option value="Santos (SP)">
+  <option value="São Bernardo do Campo (SP)">
+  <option value="São Gonçalo (RJ)">
+  <option value="São José dos Campos (SP)">
+  <option value="São José do Rio Preto (SP)">
+  <option value="São José de Ribamar (MA)">
+  <option value="São Luís (MA)">
+  <option value="São Paulo (SP)">
+  <option value="Serra (ES)">
+  <option value="Sorocaba (SP)">
+  <option value="Teresina (PI)">
+  <option value="Uberaba (MG)">
+  <option value="Uberlândia (MG)">
+  <option value="Vitória (ES)">
+  <option value="Vila Velha (ES)">
+  <option value="Volta Redonda (RJ)">
+</datalist>
 
 <!-- =============== BOTTOM NAVIGATION BAR FIXA =============== -->
 <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 pb-safe sm:pb-2 pt-2 shadow-[0_-4px_20px_rgba(15,23,42,0.05)] sm:max-w-2xl sm:left-1/2 sm:-translate-x-1/2 sm:bottom-4 sm:rounded-3xl sm:border sm:shadow-2xl">
@@ -1655,6 +1864,107 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- MODAL TERMOS DE USO -->
+<div id="modal-termos-uso" class="hidden fixed inset-0 z-50 p-3 sm:p-4">
+  <div class="absolute inset-0 modal-backdrop" onclick="fecharTermosDeUso()"></div>
+  <div class="relative max-w-3xl w-full mx-auto my-2 sm:my-4 max-h-[94vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+    <button onclick="fecharTermosDeUso()" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/95 backdrop-blur-sm border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center shadow-sm transition">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+    <div id="modalTermosConteudo"></div>
+    <div class="sticky bottom-0 inset-x-0 border-t border-slate-100 bg-gradient-to-t from-white via-white to-white/80 backdrop-blur px-6 sm:px-8 py-4 flex items-center justify-between gap-3">
+      <p class="text-[11px] sm:text-xs text-slate-500 flex items-center gap-1.5">
+        <i class="fa-solid fa-circle-info text-primary-500"></i>
+        Ao clicar em <strong>"Concordo"</strong> no cadastro, você aceita formalmente este documento.
+      </p>
+      <button onclick="fecharTermosDeUso()" class="flex-shrink-0 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-card hover:shadow-pop transition text-sm">
+        Entendido · Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL POLÍTICA DE PRIVACIDADE -->
+<div id="modal-privacidade" class="hidden fixed inset-0 z-50 p-3 sm:p-4">
+  <div class="absolute inset-0 modal-backdrop" onclick="fecharPoliticaPrivacidade()"></div>
+  <div class="relative max-w-3xl w-full mx-auto my-2 sm:my-4 max-h-[94vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+    <button onclick="fecharPoliticaPrivacidade()" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/95 backdrop-blur-sm border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center shadow-sm transition">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+    <div id="modalPrivacidadeConteudo"></div>
+    <div class="sticky bottom-0 inset-x-0 border-t border-slate-100 bg-gradient-to-t from-white via-white to-white/80 backdrop-blur px-6 sm:px-8 py-4 flex items-center justify-between gap-3">
+      <p class="text-[11px] sm:text-xs text-slate-500 flex items-center gap-1.5">
+        <i class="fa-solid fa-lock text-emerald-600"></i>
+        Documento em conformidade com a <strong>LGPD nº 13.709/2018</strong>.
+      </p>
+      <button onclick="fecharPoliticaPrivacidade()" class="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold rounded-xl shadow-card hover:shadow-pop transition text-sm">
+        Entendido · Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACEITE PENDENTE (USUÁRIOS EXISTENTES / VERSÃO NOVA) -->
+<div id="modal-aceite-pendente" class="hidden fixed inset-0 z-[60] p-3 sm:p-4">
+  <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
+  <div class="relative max-w-2xl w-full mx-auto my-2 sm:my-8 max-h-[92vh] overflow-y-auto bg-white rounded-3xl shadow-2xl animate-popIn">
+    <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 px-6 sm:px-8 py-6 sm:py-7 text-white relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_60%)]"></div>
+      <div class="relative flex items-start gap-3 sm:gap-4">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border border-white/20">
+          <i class="fa-solid fa-triangle-exclamation text-2xl sm:text-3xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider mb-2">
+            <i class="fa-solid fa-shield-halved"></i> Ação obrigatória · LGPD
+          </div>
+          <h3 class="text-xl sm:text-2xl font-black leading-tight">Para continuar, aceite os Termos e a Política de Privacidade</h3>
+          <p class="text-white/90 text-sm sm:text-base mt-1.5 leading-relaxed">Atualizamos nossos documentos legais. É preciso ler e confirmar o aceite antes de usar funcionalidades que envolvem dados, moedas ou contato com clientes.</p>
+        </div>
+      </div>
+    </div>
+    <div class="px-6 sm:px-8 py-6 sm:py-7 space-y-5 sm:space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <button type="button" onclick="abrirTermosDeUso()" class="flex items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-primary-50 to-indigo-50 hover:from-primary-100 hover:to-indigo-100 border border-primary-200 hover:border-primary-400 text-left transition group">
+          <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm flex-shrink-0 text-primary-700 text-lg"><i class="fa-solid fa-file-contract"></i></span>
+          <div class="flex-1 min-w-0">
+            <div class="font-black text-slate-800 flex items-center gap-2">Termos de Uso <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white text-primary-700 border border-primary-200">v${TERMS_VERSION}</span></div>
+            <div class="text-xs text-slate-600 mt-0.5">Regras de uso, responsabilidades e condições contratuais. Clique para abrir.</div>
+          </div>
+          <i class="fa-solid fa-arrow-up-right-from-square text-xs text-primary-600 mt-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition"></i>
+        </button>
+        <button type="button" onclick="abrirPoliticaPrivacidade()" class="flex items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-200 hover:border-emerald-400 text-left transition group">
+          <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm flex-shrink-0 text-emerald-700 text-lg"><i class="fa-solid fa-shield-halved"></i></span>
+          <div class="flex-1 min-w-0">
+            <div class="font-black text-slate-800 flex items-center gap-2">Política de Privacidade <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white text-emerald-700 border border-emerald-200">v${PRIVACY_VERSION} · LGPD</span></div>
+            <div class="text-xs text-slate-600 mt-0.5">Como seus dados são tratados e protegidos (conforme LGPD 13.709/2018).</div>
+          </div>
+          <i class="fa-solid fa-arrow-up-right-from-square text-xs text-emerald-600 mt-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition"></i>
+        </button>
+      </div>
+      <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 sm:p-5">
+        <label class="flex items-start gap-3 cursor-pointer group select-none">
+          <input id="modalAceitePendenteCheckbox" type="checkbox" class="mt-0.5 w-5 h-5 accent-amber-600 rounded cursor-pointer">
+          <div class="flex-1 text-sm text-amber-900 leading-relaxed">
+            <div class="font-black mb-0.5">Confirmação obrigatória *</div>
+            <div>Declaro que <strong>li, entendi e concordo integralmente</strong> com os <span onclick="event.preventDefault();abrirTermosDeUso()" class="font-bold text-primary-800 underline hover:text-primary-900 cursor-pointer decoration-2 underline-offset-2">Termos de Uso</span> (v${TERMS_VERSION}) e com a <span onclick="event.preventDefault();abrirPoliticaPrivacidade()" class="font-bold text-emerald-800 underline hover:text-emerald-900 cursor-pointer decoration-2 underline-offset-2">Política de Privacidade</span> (v${PRIVACY_VERSION}) do AjeitaAí.</div>
+          </div>
+        </label>
+      </div>
+      <div class="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 items-stretch pt-2">
+        <div class="flex-1 text-[11px] sm:text-xs text-slate-500 leading-relaxed flex items-center gap-2">
+          <i class="fa-solid fa-lock text-emerald-600 flex-shrink-0"></i>
+          <span>Seu aceite é registrado com data, horário, versão dos documentos e identificação da sua conta, conforme LGPD Art. 7º, incisos I e II.</span>
+        </div>
+        <button id="modalAceitePendenteBtnRegistrar" onclick="_registrarAceiteTermosUsuarioAtual('modal_bloqueante_aceite_pendente')" disabled class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-700 hover:via-orange-700 hover:to-red-700 text-white font-black rounded-2xl shadow-lg shadow-amber-600/25 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:grayscale disabled:active:scale-100">
+          <i class="fa-solid fa-signature"></i>
+          Li, concordo e quero continuar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL SOLICITAR ORÇAMENTO (CLIENTE) -->
 <div id="modal-solicitar-orcamento" class="hidden fixed inset-0 z-50 p-4">
   <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modal-solicitar-orcamento')"></div>
@@ -1693,19 +2003,21 @@ tailwind.config = {
       </div>
       <div>
         <label class="block text-sm font-bold text-slate-700 mb-2">Categoria do serviço *</label>
-        <select required id="solicCategoria" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
+        <select required id="solicCategoria" onchange="_solicOrcOutrosToggle(this.value)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
           <option value="">Selecione a categoria</option>
           <option>Pedreiro</option><option>Eletricista</option><option>Encanador</option><option>Pintor</option>
           <option>Diarista</option><option>Marceneiro</option><option>Chaveiro</option><option>Técnico de Ar Condicionado</option>
+          <option value="Outros">Outros (não achei o que procuro)</option>
         </select>
+        <div id="solicOutrosWrap" class="hidden mt-3">
+          <label class="block text-xs font-bold text-accent-700 mb-1.5"><i class="fa-solid fa-pen-to-square mr-1"></i>Qual serviço você precisa?</label>
+          <input id="solicOutrosTexto" type="text" maxlength="80" placeholder="Ex: Instalador de cerca elétrica, Limpeza de caixa d'água..." class="w-full px-4 py-2.5 bg-accent-50/50 border-2 border-accent-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm">
+        </div>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">Cidade *</label>
-          <select required id="solicCidade" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
-            <option value="">Selecione</option>
-            <option>Brasília (DF)</option><option>Taguatinga</option><option>Samambaia</option><option>Ceilândia</option>
-          </select>
+          <input required id="solicCidade" type="text" list="cidadesBrasileiras" autocomplete="off" placeholder="Selecione ou digite a cidade" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500">
         </div>
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">Bairro *</label>
@@ -2199,6 +2511,8 @@ function fbInit() {
     FB_FIRESTORE_DISPONIVEL = !!FbDb;
     DBG('FB', '1410', 'Firebase Firestore INICIALIZADO COM SUCESSO ✅. Agora sincronizando profissionais em tempo real.', { projectId: FIREBASE_CONFIG.projectId, disponivel: FB_FIRESTORE_DISPONIVEL });
     fbSyncProfissionaisRealtime();
+    fbSyncPedidosRealtimeENotificar();
+    try { fbInitCarregarConfigEconomiaGlobal(); } catch(eEcoLoad){ DBG('FB', '1413', 'fbInitCarregarConfigEconomiaGlobal erro (seguro continuar): ' + String(eEcoLoad && eEcoLoad.message || eEcoLoad), {}); }
     // (TASK 8) Inicializa listener realtime notificações SE já tem profissional logado no carregamento inicial (bootstrap login)
     try { setTimeout(function(){ try { inicializarNotificacoesProfissional(false); } catch(eNotif){} }, 1800); } catch(eDly){}
   } catch (e) {
@@ -2215,6 +2529,56 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function(){ try { carregarEBannersPatrocinadores(); } catch(e){} }, 800);
   } catch(eDCL){}
 });
+
+/* Carrega configEconomia global do Firestore (configs/economia_global) e aplica em memória/storage.
+   Fallback: usa CONFIG_ECONOMIA_PADRAO ou valor atual do storage se doc não existir. */
+async function fbInitCarregarConfigEconomiaGlobal() {
+  try {
+    if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules || !FbDb) return { ok: false, reason: 'firestore_unavailable' };
+    const mods = window.__fbModules;
+    const docRef = mods.doc(FbDb, 'configs', 'economia_global');
+    const snap = await mods.getDoc(docRef);
+    if (!snap || !snap.exists) {
+      DBG('FB', '1414', 'fbInitCarregarConfigEconomiaGlobal: doc configs/economia_global NAO EXISTE. Usando valores locais/default.', {});
+      return { ok: true, applied: false, reason: 'doc_not_found' };
+    }
+    try {
+      const data = snap.data() || {};
+      if (data && typeof data === 'object' && data.pacotes && typeof data.pacotes === 'object') {
+        const pacotesValid = {};
+        Object.entries(data.pacotes).forEach(function([pk, pv]) {
+          if (pv && typeof pv === 'object') {
+            pacotesValid[pk] = {
+              qtd: Math.max(1, Math.round(Number(pv.qtd) || 0) || (configEconomia && configEconomia.pacotes && configEconomia.pacotes[pk] ? Number(configEconomia.pacotes[pk].qtd) : 1)),
+              preco: Math.max(0, Number(pv.preco) || 0)
+            };
+          }
+        });
+        if (Object.keys(pacotesValid).length >= 1) {
+          configEconomia.pacotes = Object.assign({}, configEconomia.pacotes, pacotesValid);
+        }
+      }
+      if (data && typeof data.custoMoedasPorDesbloqueio !== 'undefined') {
+        const custo = Math.round(Number(data.custoMoedasPorDesbloqueio) || 0);
+        if (custo >= 1) configEconomia.custoMoedasPorDesbloqueio = custo;
+      }
+      try { salvarTodosGlobaisNoStorage(); } catch(eSave){}
+      try { if (typeof renderLojaPacotes === 'function') renderLojaPacotes(); } catch(eRLP){}
+      try { if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais(); } catch(eRCP){}
+      DBG('FB', '1415', '✅ ConfigEconomia GLOBAL carregada do Firestore e aplicada com sucesso.', {
+        pacotesKeys: Object.keys(configEconomia.pacotes || {}),
+        custoDesbloqueio: configEconomia.custoMoedasPorDesbloqueio
+      });
+      return { ok: true, applied: true };
+    } catch(eParseEco){
+      console.warn('fbInitCarregarConfigEconomiaGlobal parse erro:', eParseEco && eParseEco.message);
+      return { ok: false, error: eParseEco && eParseEco.message };
+    }
+  } catch(eEcoFatal){
+    console.warn('fbInitCarregarConfigEconomiaGlobal fatal:', eEcoFatal && eEcoFatal.message);
+    return { ok: false, error: eEcoFatal && eEcoFatal.message };
+  }
+}
 
 function fbSyncAddProfissional(novoProfissional) {
   return new Promise(function(resolve, reject) {
@@ -2274,12 +2638,10 @@ function fbSyncProfissionaisRealtime() {
           novoArray.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
         });
         profissionais = novoArray;
-        try {
-          salvarTodosGlobaisNoStorage();
+        try { salvarTodosGlobaisNoStorage();
           if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais();
           if (typeof renderMuralPedidos === 'function') renderMuralPedidos();
         } catch(ePersist){}
-        if (totalMudancas > 0) toast('info','Atualização recebida!','Foram sincronizados '+totalMudancas+' profissionais do banco central.',2500);
       } catch(eInner) {
         DBG('FB', '1503', 'Erro interno onSnapshot handler: ' + String(eInner && eInner.message || eInner), {});
       }
@@ -2288,6 +2650,64 @@ function fbSyncProfissionaisRealtime() {
     });
   } catch(eQry) {
     DBG('FB', '1510', 'Exception fbSyncProfissionaisRealtime: ' + String(eQry && eQry.message || eQry), {});
+  }
+}
+
+var FB_PEDIDOS_UNSUBSCRIBE = null;
+var FB_PEDIDOS_ULTIMOS_IDS_PROCESSADOS = {};
+function fbSyncPedidosRealtimeENotificar() {
+  if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules) return;
+  if (typeof FB_PEDIDOS_UNSUBSCRIBE === 'function') { try { FB_PEDIDOS_UNSUBSCRIBE(); } catch(eU){} FB_PEDIDOS_UNSUBSCRIBE = null; }
+  const mods = window.__fbModules;
+  try {
+    const q = mods.query(mods.collection(FbDb, 'pedidos'), mods.orderBy('data', 'desc'), mods.limit(50));
+    FB_PEDIDOS_UNSUBSCRIBE = mods.onSnapshot(q, function(snapshot){
+      try {
+        if (!snapshot || !snapshot.docs) return;
+
+        // 1) SEMPRE sincroniza array global completo com Firestore (independentemente de added/modified/removed)
+        //    Substitui por completo para: pegar updates (status, qtd desbloqueios), remoções e evitar duplicatas.
+        try {
+          var arrPedFull = [];
+          snapshot.forEach(function(ds){ if (ds && ds.exists) arrPedFull.push(Object.assign({}, ds.data() || {}, { id: ds.id })); });
+          if (arrPedFull.length > 0) pedidos = arrPedFull;
+        } catch(eFull){}
+        // 2) SEMPRE re-renderiza mural (modificações e remoções também precisam aparecer)
+        try { salvarTodosGlobaisNoStorage(); } catch(eStor){}
+        try { if (typeof renderMuralPedidos === 'function') renderMuralPedidos(); } catch(eRend){}
+        try { if (typeof renderMeusPedidos === 'function' && document.getElementById('view-meus-pedidos') && document.getElementById('view-meus-pedidos').classList.contains('active')) renderMeusPedidos(); } catch(eMeus){}
+
+        // 3) Notificações/toasts: SÓ para ADICIONADOS RECENTES (<60s) — não deve re-disparar em reloads ou dados antigos.
+        var mudancas = snapshot.docChanges() || [];
+        var adicionados = mudancas.filter(function(c){ return c && c.type === 'added'; });
+        if (!adicionados.length) return;
+        adicionados.forEach(function(ch){
+          try {
+            const doc = ch && ch.doc;
+            if (!doc || !doc.exists) return;
+            const ped = Object.assign({}, doc.data() || {}, { id: doc.id });
+            if (!ped || !ped.id || !ped.categoria) return;
+            // Evita reprocessar o mesmo pedido múltiplas vezes (onSnapshot reinicia no reload)
+            if (FB_PEDIDOS_ULTIMOS_IDS_PROCESSADOS[ped.id]) return;
+            FB_PEDIDOS_ULTIMOS_IDS_PROCESSADOS[ped.id] = Date.now();
+            // Limpa cache antigo (> 500 ids = ~2MB memória)
+            const keysProc = Object.keys(FB_PEDIDOS_ULTIMOS_IDS_PROCESSADOS);
+            if (keysProc.length > 500) { keysProc.slice(0, 100).forEach(function(k){ delete FB_PEDIDOS_ULTIMOS_IDS_PROCESSADOS[k]; }); }
+            // Só considera pedido RECÉM criado (últimos 60s) para não gerar notificações de pedidos antigos ao abrir o app
+            const criadoMs = ped.data ? (new Date(String(ped.data)).getTime()||0) : (ped._syncedAt||0);
+            if (criadoMs > 0 && Date.now() - criadoMs > 60 * 1000) return;
+            // Notifica profissionais compatíveis (push/toast/sonoro) — a atualização do array/mural já foi feita acima.
+            try { _notificarNovoPedidoParaProfissionais(ped); } catch(eN){}
+          } catch(eCh){}
+        });
+      } catch(eInner){
+        DBG('FB','1599','fbSyncPedidosRealtime inner erro: ' + String(eInner && eInner.message || eInner), {});
+      }
+    }, function(errSnap){
+      DBG('FB','1603','fbSyncPedidosRealtime onSnapshot erro: ' + String(errSnap && errSnap.message || errSnap), {});
+    });
+  } catch(eQry){
+    DBG('FB','1607','Exception fbSyncPedidosRealtime: ' + String(eQry && eQry.message || eQry), {});
   }
 }
 
@@ -2552,6 +2972,193 @@ const CATEGORIAS_GLOBAIS = CATEGORIAS_GRUPOS.reduce(function(acc, g){ return acc
 const CATEGORIAS_ICONE = CATEGORIAS_GRUPOS.reduce(function(acc, g){ g.itens.forEach(function(i){ acc[i.nome] = i.icone; }); return acc; }, {});
 const CATEGORIAS_COR = CATEGORIAS_GRUPOS.reduce(function(acc, g){ g.itens.forEach(function(i){ acc[i.nome] = i.cor; }); return acc; }, {});
 const CATEGORIAS_POPULARES_HOME = ['Pedreiro','Eletricista','Encanador','Pintor','Diarista','Marceneiro','Chaveiro','Técnico de Ar Condicionado'];
+
+// ============================================================
+// TERMOS DE USO E POLÍTICA DE PRIVACIDADE (v1.0)
+const TERMS_VERSION = '1.0';
+const PRIVACY_VERSION = '1.0';
+
+function _buildHtmlTermosDeUso() {
+  const hoje = '[PREENCHER: DATA DE PUBLICAÇÃO — EX: 29 de setembro de 2026]';
+  return `
+    <div class="px-6 sm:px-8 py-6 border-b border-slate-100 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0 text-white">
+        <i class="fa-solid fa-file-contract text-xl"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h3 class="text-xl font-black text-slate-800 leading-tight">Termos de Uso</h3>
+        <p class="text-xs text-slate-500 mt-1">Versão ${TERMS_VERSION} · Publicação: ${hoje}</p>
+      </div>
+      <span class="inline-flex items-center gap-1.5 bg-primary-50 text-primary-700 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-primary-200 flex-shrink-0">
+        <i class="fa-solid fa-shield-halved"></i> Oficial
+      </span>
+    </div>
+    <div class="px-6 sm:px-8 py-7 space-y-7 text-sm text-slate-700 leading-relaxed">
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">1</span> ACEITAÇÃO DOS TERMOS</h4>
+        <p>Ao acessar, criar conta ou utilizar a plataforma <strong>AjeitaAí</strong>, você declara que leu, compreendeu e concorda integralmente com estes Termos de Uso, com a Política de Privacidade (versão ${PRIVACY_VERSION}) e com todas as demais políticas e regras publicadas no aplicativo.</p>
+        <p>Caso não concorde com qualquer disposição abaixo, você <strong>não deve</strong> utilizar a plataforma.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">2</span> SOBRE A PLATAFORMA</h4>
+        <p><strong>Razão Social:</strong> [PREENCHER: RAZÃO SOCIAL DA EMPRESA PROPRIETÁRIA DO AJEITAAÍ]</p>
+        <p><strong>CNPJ:</strong> [PREENCHER: CNPJ DA EMPRESA (APENAS NÚMEROS OU FORMATADO)]</p>
+        <p><strong>Endereço sede:</strong> [PREENCHER: ENDEREÇO COMPLETO — RUA, NÚMERO, BAIRRO, CIDADE/UF, CEP]</p>
+        <p><strong>E-mail contato legal / SAC:</strong> [PREENCHER: E-MAIL PARA CONTATO JURÍDICO OU SAC]</p>
+        <p>O AjeitaAí atua como <strong>intermediador de contatos</strong> entre <em>clientes</em> (pessoas que buscam serviços domésticos, prediais, reparos e afins) e <em>profissionais autônomos/prestadores</em> (pessoas físicas ou jurídicas que oferecem serviços). A plataforma não executa serviços, não contrata profissionais e não substitui a negociação direta entre as partes.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">3</span> CADASTRO E CONTA DE USUÁRIO</h4>
+        <p>Para acessar funcionalidades exclusivas (criar perfil profissional, solicitar orçamentos, desbloquear leads, comprar moedas, enviar documentos para verificação etc.), você precisará informar dados pessoais verdadeiros, atuais e completos.</p>
+        <p>Você é <strong>exclusivamente responsável</strong> pela guarda segura de sua conta (credenciais, login Google, WhatsApp vinculado) e por todas as ações realizadas por meio dela.</p>
+        <p>É proibido: (a) cadastrar conta em nome de terceiros sem autorização; (b) compartilhar credenciais de acesso; (c) utilizar robôs, crawlers ou meios automatizados para acessar a plataforma; (d) criar contas falsas, fictícias ou para burlar limites operacionais.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">4</span> MOEDAS, PAGAMENTOS E REEMBOLSOS</h4>
+        <p>Algumas funcionalidades exigem <strong>Moedas AjeitaAí</strong>, moeda virtual interna da plataforma com valor unitário definido em R$. Moedas não são dinheiro real, não geram rendimento, não são transferíveis entre contas e, salvo disposição legal contrária, <strong>não são reembolsáveis</strong> após serem consumidas ou expirarem.</p>
+        <p>Recargas e compra de pacotes são processadas por meio do Mercado Pago (Pix, cartão, boleto) e sujeitas às regras do provedor. Reembolsos, quando previstos em lei, seguirão o mesmo método de pagamento utilizado na compra e o prazo do meio de pagamento.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">5</span> VERIFICAÇÃO DE PROFISSIONAIS E SELOS</h4>
+        <p>O selo <strong>“✓ Profissional Verificado · Sela AjeitaAí”</strong> indica apenas que a equipe administrativa analisou, em determinado momento, documentos de identidade, endereço e/ou trabalhos anteriores enviados pelo profissional. O selo <strong>não configura garantia contratual</strong>, não endossa a qualidade do serviço e não substitui a avaliação própria do cliente. Você concorda que o processo de verificação pode ser cancelado, negado ou revogado a qualquer tempo sem aviso prévio.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">6</span> CONTEÚDO PUBLICADO, AVALIAÇÕES E CONDUTA PROIBIDA</h4>
+        <p>Ao publicar fotos, depoimentos, descrições, mensagens ou qualquer conteúdo na plataforma, você declara ser o titular ou possuir autorização para fazê-lo e concede ao AjeitaAí licença não exclusiva, gratuita e mundial para exibir, reproduzir, adaptar e distribuir esse conteúdo dentro do propósito da plataforma.</p>
+        <p>É expressamente proibido publicar conteúdo ofensivo, discriminatório, racista, xenofóbico, sexualmente explícito, difamatório, falso, enganoso, que viole propriedade intelectual ou que incite violência ou ilegalidade. Violações resultarão em suspensão ou exclusão imediata da conta, sem prejuízo de outras medidas legais.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">7</span> LIMITAÇÃO DE RESPONSABILIDADE</h4>
+        <p>O AjeitaAí atua apenas como <em>veículo de conexão e anúncios</em>. NÃO SOMOS RESPONSÁVEIS: (a) pela qualidade, pontualidade, entrega, danos ou preço do serviço contratado diretamente das partes; (b) por atos, omissões, fraudes ou condutas de clientes e profissionais; (c) por danos indiretos, incidentais, especiais, punitivos ou lucros cessantes, mesmo que avisados da possibilidade.</p>
+        <p>Você se compromete a isentar e indenizar o AjeitaAí, seus administradores, colaboradores e parceiros de todo e qualquer prejuízo, multa, ônus ou demanda de terceiros decorrentes de sua conduta, do conteúdo que publicou ou do não cumprimento destes termos.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">8</span> ALTERAÇÕES, SUSPENSÃO E TÉRMINO</h4>
+        <p>Podemos alterar estes Termos de Uso a qualquer momento, mediante publicação de nova versão numerada neste mesmo local. Quando a alteração for material, solicitaremos novo aceite expresso. Continuar utilizando a plataforma após publicado o aviso ou aceite significa concordância com as novas regras.</p>
+        <p>Podemos também, unilateralmente e sem indenizar, suspender, cancelar, bloquear ou restringir permanentemente o acesso de qualquer usuário que violar estes termos ou a legislação vigente.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs">9</span> DISPOSIÇÕES FINAIS E FORO</h4>
+        <p>Se qualquer cláusula destes Termos for considerada nula ou inaplicável, as demais permanecem íntegras e em pleno vigor. Fica eleito o foro da Comarca de [PREENCHER: CIDADE/UF DA SEDE] — [PREENCHER: UF] para dirimir dúvidas ou litígios oriundos destes Termos de Uso, com renúncia expressa a qualquer outro, por mais privilegiado que seja.</p>
+        <p class="pt-2 border-t border-slate-100 text-xs text-slate-500">⚠️ Campos marcados com <code class="bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200 font-mono">[PREENCHER]</code> são dados jurídicos obrigatórios que devem ser completados pelo administrador do projeto antes da publicação em produção.</p>
+      </section>
+    </div>`;
+}
+
+function _buildHtmlPoliticaPrivacidade() {
+  const hoje = '[PREENCHER: DATA DE PUBLICAÇÃO — EX: 29 de setembro de 2026]';
+  return `
+    <div class="px-6 sm:px-8 py-6 border-b border-slate-100 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center flex-shrink-0 text-white">
+        <i class="fa-solid fa-shield-halved text-xl"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h3 class="text-xl font-black text-slate-800 leading-tight">Política de Privacidade</h3>
+        <p class="text-xs text-slate-500 mt-1">Versão ${PRIVACY_VERSION} · Conforme Lei LGPD nº 13.709/2018 · Publicação: ${hoje}</p>
+      </div>
+      <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-emerald-200 flex-shrink-0">
+        <i class="fa-solid fa-lock"></i> LGPD
+      </span>
+    </div>
+    <div class="px-6 sm:px-8 py-7 space-y-7 text-sm text-slate-700 leading-relaxed">
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">1</span> COMPROMISSO COM A PRIVACIDADE</h4>
+        <p>Esta Política de Privacidade explica como a plataforma <strong>AjeitaAí</strong> coleta, trata, armazena, compartilha e protege seus dados pessoais, em conformidade com a <strong>Lei Geral de Proteção de Dados Pessoais (LGPD — Lei nº 13.709/2018)</strong>, o Marco Civil da Internet (Lei nº 12.965/2014) e demais normas brasileiras aplicáveis.</p>
+        <p>Ao utilizar a plataforma e aceitar estes termos, você consente expressamente com as práticas descritas abaixo.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">2</span> CONTROLADOR, ENCARREGADO E CONTATO</h4>
+        <div class="bg-emerald-50/50 border border-emerald-200 rounded-2xl p-4 space-y-2 text-xs sm:text-sm">
+          <p><strong>Controlador dos dados:</strong> [PREENCHER: RAZÃO SOCIAL DA EMPRESA PROPRIETÁRIA DO AJEITAAÍ]</p>
+          <p><strong>CNPJ:</strong> [PREENCHER: CNPJ DA EMPRESA]</p>
+          <p><strong>Endereço:</strong> [PREENCHER: ENDEREÇO COMPLETO SEDE — CIDADE/UF/CEP]</p>
+          <p><strong>Encarregado(a) de Proteção de Dados (DPO / LGPD):</strong> [PREENCHER: NOME COMPLETO OU CARGO DO ENCARREGADO(A)]</p>
+          <p><strong>E-mail de contato LGPD / Exercício de direitos:</strong> [PREENCHER: E-MAIL DPO@EXEMPLO.COM.BR]</p>
+        </div>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">3</span> QUAIS DADOS COLETAMOS</h4>
+        <p>Coletamos apenas os dados estritamente necessários para viabilizar a plataforma e entregar o serviço contratado, sendo:</p>
+        <ul class="list-disc pl-6 space-y-1.5">
+          <li><strong>Cadastro e perfil:</strong> nome completo, e-mail, foto de perfil, WhatsApp/telefone, CPF (apenas para verificação de profissionais — não é público), cidade, bairro, categorias de serviço atendidas, taxa/hora, descrição “sobre mim”, avaliações e trabalhos anteriores.</li>
+          <li><strong>Documentos de verificação (privados, nunca públicos):</strong> RG/CNH, comprovante de endereço e fotos de trabalhos enviados para análise administrativa (armazenados como Base64 inline no Firestore <em>privado</em> ou Storage privado).</li>
+          <li><strong>Solicitações/orçamentos:</strong> nome do cliente, WhatsApp, categoria do serviço, descrição, localidade.</li>
+          <li><strong>Financeiro e pagamentos:</strong> histórico de recargas de moedas e transações processadas pelo Mercado Pago (ID de transação, data, valor, status — não armazenamos dados completos de cartão).</li>
+          <li><strong>Autenticação Google OAuth:</strong> Google ID, e-mail Google e foto do perfil Google (apenas se você optar pelo login social).</li>
+          <li><strong>Uso e dispositivo:</strong> logs técnicos de segurança (IP ofuscado, user-agent, timestamps), eventos de segurança e dados de health check coletados pelo módulo <em>AjeitaAí Security Agent</em> em modo monitoramento ou proteção.</li>
+        </ul>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">4</span> BASES LEGAIS E FINALIDADES DO TRATAMENTO</h4>
+        <p>Tratamos seus dados pessoais com fundamento nas seguintes bases legais da LGPD:</p>
+        <ul class="list-disc pl-6 space-y-1.5">
+          <li><strong>Art. 7º, I — Consentimento:</strong> ao marcar o aceite no cadastro ou ao aceitar nova versão destes documentos.</li>
+          <li><strong>Art. 7º, II — Execução de contrato:</strong> para viabilizar o funcionamento da plataforma, intermediação de contatos, compra e consumo de moedas e envio de comunicações operacionais.</li>
+          <li><strong>Art. 7º, VI — Exercício regular de direitos:</strong> defesa em processo judicial, administrativo ou arbitral.</li>
+          <li><strong>Art. 7º, X — Legítimo interesse:</strong> segurança da plataforma, detecção de anomalias, melhorias de UX e comunicações de novidades (com opção de cancelamento).</li>
+        </ul>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">5</span> COMPARTILHAMENTO DE DADOS</h4>
+        <p>Compartilhamos seus dados <strong>somente</strong> nas hipóteses abaixo:</p>
+        <ul class="list-disc pl-6 space-y-1.5">
+          <li><strong>Exibição pública de perfil profissional:</strong> nome, foto, cidade, bairro, categorias, avaliações, taxa/hora, sobre mim, trabalhos anteriores e selos de verificação. <strong>CPF, documentos privados, saldo de moedas, WhatsApp completo e e-mail NUNCA são exibidos publicamente.</strong></li>
+          <li><strong>Intermediação de contato:</strong> nome completo do cliente e WhatsApp são compartilhados <strong>apenas</strong> com o profissional após desbloqueio do lead por pagamento com moedas.</li>
+          <li><strong>Parceiros obrigatórios:</strong> Mercado Pago (pagamentos), SendGrid/Mailer (envio de e-mails transacionais e 2FA), Google (OAuth login e Firebase/Hosting).</li>
+          <li><strong>Obrigação legal ou requisição judicial:</strong> mediante ordem fundamentada de autoridade competente (polícia, judiciário, ANPD, etc.).</li>
+        </ul>
+        <p class="pt-2"><strong>NÃO vendemos, não alugamos e não comercializamos listas de dados pessoais de usuários para terceiros.</strong></p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">6</span> ARMAZENAMENTO, SEGURANÇA E RETENÇÃO</h4>
+        <p>Armazenamos seus dados no <strong>Firebase/Firestore (Google Cloud Platform, região [PREENCHER: REGIÃO FIREBASE — EX: southamerica-east1 (São Paulo)])</strong>, com criptografia em repouso (AES-256), autenticação forte e regras de segurança. Documentos sensíveis de validação profissional são armazenados em documento ou Storage privado com regras de acesso <em>owner-only + admin</em>.</p>
+        <p>A segurança técnica também conta com: (a) módulo <em>AjeitaAí Security Agent</em> monitorando anomalias em tempo real (17 regras locais de scoring); (b) logs redigidos/mascarados para evitar exposição de PII em depuração; (c) proteção SSRF, rate limit e bloqueio temporário de IP suspeito; (d) obrigatoriedade de 2FA via e-mail para acesso a documentos administrativos sensíveis.</p>
+        <p>Prazo de retenção: mantemos os dados pelo período necessário à execução dos serviços + cumprimento de obrigações legais (ex: 5 anos conforme Art. 183 do Código Civil; 10 anos para obrigações tributárias; prazo prescricional para litígios). Quando você pede exclusão e não há mais obrigação legal de retenção, eliminamos os dados de forma segura e irreversível.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">7</span> SEUS DIREITOS COMO TITULAR (LGPD ART. 18 AO 21)</h4>
+        <p>Você pode exercer, a qualquer tempo e gratuitamente, os seguintes direitos junto ao nosso DPO/Encarregado(a):</p>
+        <ul class="list-disc pl-6 space-y-1.5">
+          <li><strong>Confirmação e acesso (Art. 18, I e II):</strong> confirmar tratamento e solicitar cópia dos dados.</li>
+          <li><strong>Correção (Art. 18, III):</strong> solicitar atualização de dados incompletos, inexatos ou desatualizados.</li>
+          <li><strong>Anonimização, bloqueio ou eliminação (Art. 18, IV):</strong> quando desnecessários, excessivos ou contrários à LGPD.</li>
+          <li><strong>Portabilidade (Art. 18, V):</strong> receber seus dados estruturados em formato interoperável.</li>
+          <li><strong>Eliminação dos dados pessoais (Art. 18, VI — “direito ao esquecimento”):</strong> quando o tratamento se basear apenas em consentimento e não houver base legal que obrigue a retenção.</li>
+          <li><strong>Informação sobre compartilhamento (Art. 18, VII);</strong></li>
+          <li><strong>Informação sobre consequências de não fornecer consentimento (Art. 18, VIII);</strong></li>
+          <li><strong>Revogação do consentimento (Art. 8º, § 2º):</strong> a qualquer momento, por manifestação livre e inequívoca.</li>
+        </ul>
+        <p>Para exercer seus direitos, envie e-mail para <strong>[PREENCHER: E-MAIL DPO]</strong> informando nome completo, CPF, assunto e cópia de documento de identidade. Respondemos em até 15 dias úteis, conforme Art. 19, §7º da LGPD.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">8</span> COOKIES E TECNOLOGIAS DE RASTREAMENTO</h4>
+        <p>Utilizamos <em>cookies</em> e armazenamento local (<code class="bg-slate-100 px-1.5 py-0.5 rounded text-[11px] font-mono">localStorage</code>) para: (a) manter sessão de login, (b) persistir preferências e filtros de busca, (c) sincronizar cache de catálogo e pedidos, (d) identificar anomalias de segurança. Não utilizamos cookies de publicidade comportamental terceirizada.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">9</span> REGISTRO DO ACEITE E VERSIONAMENTO</h4>
+        <p>Seu aceite destes Termos de Uso (v${TERMS_VERSION}) e desta Política de Privacidade (v${PRIVACY_VERSION}) é registrado de forma íntegra e imutável em nosso sistema, contendo: (a) identificador do usuário, (b) data e horário UTC do aceite, (c) versão exata de cada documento aceita. O registro do aceite é armazenado juntamente ao seu perfil de profissional e replicado para o nosso banco central para fins de auditoria.</p>
+        <p>Quando publicarmos uma <strong>nova versão numerada</strong> de qualquer dos dois documentos, o sistema lhe solicitará um <em>novo aceite expresso</em> antes de continuar utilizando funcionalidades que dependam do consentimento. Você permanece livre para não aceitar; nesse caso, algumas funcionalidades poderão ficar indisponíveis.</p>
+      </section>
+      <section class="space-y-3">
+        <h4 class="font-black text-slate-900 text-base flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">10</span> DISPOSIÇÕES FINAIS</h4>
+        <p>Em caso de incidente de segurança que possa acarretar risco relevante aos titulares, comunicaremos os afetados e a ANPD, nos termos do Art. 48 da LGPD, dentro dos prazos e formalidades legais. Esta Política de Privacidade pode ser atualizada periodicamente; em caso de alteração material, divulgaremos aviso proeminente no aplicativo e solicitaremos novo aceite quando legalmente exigido.</p>
+        <p class="pt-2 border-t border-slate-100 text-xs text-slate-500">⚠️ Campos marcados com <code class="bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200 font-mono">[PREENCHER]</code> são dados jurídicos obrigatórios e devem ser completados pelo administrador do projeto ANTES da publicação em produção para conformidade com a LGPD.</p>
+      </section>
+    </div>`;
+}
+
+function abrirTermosDeUso() {
+  const wrap = document.getElementById('modalTermosConteudo');
+  if (wrap) wrap.innerHTML = _buildHtmlTermosDeUso();
+  abrirModal('modal-termos-uso');
+}
+function abrirPoliticaPrivacidade() {
+  const wrap = document.getElementById('modalPrivacidadeConteudo');
+  if (wrap) wrap.innerHTML = _buildHtmlPoliticaPrivacidade();
+  abrirModal('modal-privacidade');
+}
+function fecharTermosDeUso() { fecharModal('modal-termos-uso'); }
+function fecharPoliticaPrivacidade() { fecharModal('modal-privacidade'); }
 
 // ============================================================
 // CADASTRO PROFISSIONAL: TODAS AS PROFISSÕES (~60+) + MODAL BUSCA + GRID POPULARES
@@ -2900,7 +3507,7 @@ const CATEGORIAS_POPULARES_HOME = ['Pedreiro','Eletricista','Encanador','Pintor'
   }
   function _htmlBadgeStatus(status) {
     var s = String(status || '').toUpperCase();
-    if (s === 'VERIFIED') return `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 border-2 border-emerald-200"><i class="fa-solid fa-circle-check"></i>VERIFICADO</span>`;
+    if (s === 'VERIFIED') return `<span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-black tracking-wide bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white border-2 border-white shadow-lg shadow-emerald-500/25 animate-[pulse_2.5s_ease-in-out_infinite]"><i class="fa-solid fa-circle-check text-white"></i>✓ PROFISSIONAL VERIFICADO</span>`;
     if (s === 'REJECTED') return `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-gradient-to-r from-rose-50 to-red-50 text-rose-700 border-2 border-rose-200"><i class="fa-solid fa-circle-xmark"></i>REJEITADO — corrigir e reenviar</span>`;
     return `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-800 border-2 border-amber-200"><i class="fa-solid fa-hourglass-half"></i>AGUARDANDO ANÁLISE (PENDING)</span>`;
   }
@@ -3340,7 +3947,168 @@ function salvarTodosGlobaisNoStorage() {
   salvarNoStorage('meusPedidosClienteIds', meusPedidosClienteIds);
   salvarNoStorage('clienteUltimosDados', clienteUltimosDados);
   salvarNoStorage('clienteGoogleLogado', clienteGoogleLogado);
+  // Alerta saldo baixo moedas: estado (faixas já disparadas no ciclo atual)
+  if (typeof _ALERTA_SALDO !== 'undefined' && _ALERTA_SALDO && typeof salvarNoStorage === 'function') {
+    try { salvarNoStorage('_alerta_saldo_baixo_prof', _ALERTA_SALDO); } catch(e){}
+  }
 }
+// ========================= ALERTA DE SALDO BAIXO DE MOEDAS =========================
+// Faixas em ordem DECRESCENTE para checagem top→down.
+const _ALERTA_SALDO_FAIXAS = Object.freeze([20, 10, 5, 2, 0]);
+// Estado singleton persistido no storage: { [profissionalId]: { ultimoSaldo:number, faixasDisparadas:{ 20:true, ... }, cicloAtual:number } }
+var _ALERTA_SALDO = null;
+function _alertaSaldoCarregar() {
+  if (_ALERTA_SALDO && typeof _ALERTA_SALDO === 'object') return _ALERTA_SALDO;
+  try {
+    const raw = pegarDoStorage('_alerta_saldo_baixo_prof');
+    if (raw && typeof raw === 'object') _ALERTA_SALDO = raw;
+  } catch(e){ _ALERTA_SALDO = null; }
+  if (!_ALERTA_SALDO || typeof _ALERTA_SALDO !== 'object') _ALERTA_SALDO = {};
+  return _ALERTA_SALDO;
+}
+function _alertaSaldoPegarEstado(profId) {
+  const root = _alertaSaldoCarregar();
+  if (!root[String(profId)] || typeof root[String(profId)] !== 'object') {
+    root[String(profId)] = { ultimoSaldo: null, faixasDisparadas: {}, cicloAtual: 1 };
+  }
+  return root[String(profId)];
+}
+function _alertaSaldoPersistir() {
+  try { salvarNoStorage('_alerta_saldo_baixo_prof', _ALERTA_SALDO); } catch(e){}
+}
+// Determina qual faixa (se houver) foi ATINGIDA pela transicao `anterior → atual`.
+// Regra: alerta SOMENTE se `anterior > fx` e `atual <= fx` (entrou na faixa).
+function _alertaSaldoFaixaAtingida(anterior, atual) {
+  const ant = Number.isFinite(+anterior) ? Math.max(0, Math.floor(+anterior)) : null;
+  const atu = Number.isFinite(+atual) ? Math.max(0, Math.floor(+atual)) : 0;
+  for (let i = 0; i < _ALERTA_SALDO_FAIXAS.length; i++) {
+    const fx = _ALERTA_SALDO_FAIXAS[i];
+    const entrou = (ant == null) ? (atu === fx) : (ant > fx) && (atu <= fx);
+    if (entrou) return fx;
+  }
+  return null;
+}
+// Monta a notificação interna (sistema existente de notificações) + dispara email via backend
+async function _alertaSaldoDisparar(profissional, faixa, saldoAtual) {
+  try {
+    if (!profissional || !profissional.id) return;
+    const nome = (profissional.nome || profissional.primeiroNome || 'Profissional').toString().trim() || 'Profissional';
+    const saldo = Number.isFinite(+saldoAtual) ? Math.floor(+saldoAtual) : 0;
+    const ehZero = faixa === 0;
+    // 1) Notificação no painel (usa sistema existente _salvarNotificacaoFirestore)
+    try {
+      const titulo = ehZero ? '🪙 Saldo esgotado' : `🪙 Saldo baixo (${saldo} moedas)`;
+      const msg = ehZero
+        ? 'Seu saldo de moedas chegou a 0. Recarregue para continuar utilizando os recursos que consomem moedas.'
+        : `Você está com ${saldo} moedas. Recarregue seu saldo para continuar utilizando o Ajeitaí.`;
+      const idn = 'not_sb_' + faixa + '_' + String(profissional.id) + '_' + (Math.floor(Date.now() / 1000));
+      const not = {
+        id: idn, usuario_id_alvo: String(profissional.id), tipo_usuario_alvo: 'profissional',
+        tipo: 'saldo_moedas', subtipo: (faixa === 0) ? 'saldo_esgotado' : 'saldo_baixo',
+        faixa_saldo: faixa, saldo_atual: saldo,
+        titulo: titulo, mensagem: msg, lida: false, criado_em: new Date().toISOString(),
+        origem: 'alerta_saldo_baixo', _v: 1
+      };
+      if (typeof _salvarNotificacaoFirestore === 'function') try { _salvarNotificacaoFirestore(not); } catch(e){}
+      // Exibe toast para o DONO da sessão (se profissional logado = este)
+      const eLogado = profissionalLogado && String(profissionalLogado.id || '') === String(profissional.id || '');
+      if (eLogado && typeof toast === 'function') try {
+        toast(ehZero ? 'error' : 'warning', titulo, msg, ehZero ? 9000 : 6500);
+      } catch(e){}
+    } catch(eNot){}
+    // 2) E-mail via endpoint infraexistente do backend SendGrid (não cria novo serviço)
+    try {
+      const emailDest = (profissional.email || profissional.emailGoogle || profissional.emailLogin || '').toString().trim();
+      if (emailDest && emailDest.indexOf('@') > 1) {
+        const assunto = ehZero
+          ? 'Ajeitaí — seu saldo de moedas chegou a 0'
+          : 'Ajeitaí — seu saldo de moedas está baixo';
+        const corpo = ehZero
+          ? ('Olá, ' + nome + '.\n\nSeu saldo de moedas no Ajeitaí chegou a 0.\n\nRecarregue seu saldo para continuar utilizando os recursos que consomem moedas.')
+          : ('Olá, ' + nome + '.\n\nSeu saldo no Ajeitaí está em ' + saldo + ' moedas.\n\nPara continuar utilizando os recursos que consomem moedas, você pode recarregar seu saldo.\n\nO botão de comprar moedas já está disponível no seu painel.');
+        const payload = {
+          destinatario: emailDest,
+          assunto: assunto,
+          corpo_html: null,
+          corpo_texto: corpo,
+          origem: 'alerta_saldo_profissional',
+          profissional_id: String(profissional.id),
+          faixa_saldo: faixa,
+          saldo_atual: saldo
+        };
+        const urlBase = (window && window.location && window.location.origin) ? window.location.origin : '';
+        const ep = (urlBase ? urlBase : '') + '/api/email/enviar';
+        // Best-effort, não afeta UI. Não throw, não show error pro usuário.
+        if (typeof fetch === 'function') {
+          try {
+            fetch(ep, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify(payload)
+            }).then(function(r){ return r && r.text ? r.text() : ''; }).then(function(){}).catch(function(){});
+          } catch(eFetch){}
+        }
+      }
+    } catch(eEmail){}
+  } catch(e){}
+}
+// Função principal: Chamar sempre que saldo de um profissional for alterado.
+// - `profissional`: objeto com id/nome/email.
+// - `saldoAnterior`: saldo ANTES da alteração (number ou null se desconhecido).
+// - `saldoAtual`: saldo DEPOIS (number).
+// - `modo`: 'debito' (desbloqueio de lead etc) OU 'recarga' (compra/reset do ciclo).
+function _alertaSaldoVerificarProfissional(profissional, saldoAnterior, saldoAtual, modo) {
+  try {
+    if (!profissional || !profissional.id) return null;
+    const salAtual = Number.isFinite(+saldoAtual) ? Math.max(0, Math.floor(+saldoAtual)) : 0;
+    const st = _alertaSaldoPegarEstado(String(profissional.id));
+    // Reset do ciclo APENAS se for uma recarga e o novo saldo subir ACIMA da faixa mais alta (20)
+    if (String(modo || '').toLowerCase() === 'recarga') {
+      if (salAtual > 20) {
+        st.faixasDisparadas = {};
+        st.cicloAtual = (st.cicloAtual || 1) + 1;
+      }
+    }
+    const salAntes = (saldoAnterior == null || !Number.isFinite(+saldoAnterior))
+      ? (st.ultimoSaldo)
+      : Math.max(0, Math.floor(+saldoAnterior));
+    const fx = _alertaSaldoFaixaAtingida(salAntes, salAtual);
+    st.ultimoSaldo = salAtual;
+    if (fx == null) { _alertaSaldoPersistir(); return null; }
+    if (st.faixasDisparadas[String(fx)] === true) {
+      _alertaSaldoPersistir();
+      return { faixa: fx, puladoDuplicado: true };
+    }
+    st.faixasDisparadas[String(fx)] = true;
+    _alertaSaldoPersistir();
+    // Dispara (notificação + email). Não await para não bloquear UI.
+    try { _alertaSaldoDisparar(profissional, fx, salAtual); } catch(e){}
+    return { faixa: fx, disparado: true };
+  } catch (e) { try { console.warn('[alertaSaldo] erro:', e); } catch (e2){} return null; }
+}
+// Wrapper conveniência: para o profissional LOGADO. Chamada toda vez que seu saldo for alterado.
+function _alertaSaldoVerificarProfissionalLogado(saldoAnterior, modo) {
+  try {
+    if (!profissionalLogado || !profissionalLogado.id) return null;
+    const salAtual = Number(profissionalLogado.saldoMoedas || 0);
+    return _alertaSaldoVerificarProfissional(profissionalLogado, saldoAnterior, salAtual, modo || 'debito');
+  } catch (e){ return null; }
+}
+// Expor funções para testes e pontos remotos.
+window.IIFE_AlertaSaldoBaixoMoedas = {
+  _alertaSaldoVerificarProfissional: _alertaSaldoVerificarProfissional,
+  _alertaSaldoVerificarProfissionalLogado: _alertaSaldoVerificarProfissionalLogado,
+  _alertaSaldoFaixaAtingida: _alertaSaldoFaixaAtingida,
+  _alertaSaldoResetarEstado: function (profId) {
+    const root = _alertaSaldoCarregar();
+    if (profId) { delete root[String(profId)]; } else { for (var k in root) delete root[k]; }
+    _alertaSaldoPersistir();
+  },
+  _alertaSaldoGetEstado: _alertaSaldoPegarEstado,
+  _ALERTA_SALDO_FAIXAS: _ALERTA_SALDO_FAIXAS
+};
+// ============================================================
 function carregarDadosStorageBootstrap() {
   // #region debug-point H4:storage-load-entry
   DBG('H4','1561','carregarDadosStorageBootstrap: ENTRY (iniciando carga localStorage)', {});
@@ -3697,12 +4465,19 @@ function abrirLoginGoogle(tipoIntent) {
     });
     // #endregion
     setTimeout(()=>abrirLoginGoogle(tipoIntent), 400);
-    toast('info','Carregando Google...','Aguarde um instante e a janela do Google vai abrir.');
+    if (!_googleLoginToastEmExibicao) {
+      _googleLoginToastEmExibicao = true;
+      toast('info','Carregando Google...','Aguarde um instante e a janela do Google vai abrir.', 4500);
+      setTimeout(function(){ _googleLoginToastEmExibicao = false; }, 6000);
+    }
     return;
   }
   googleLoginIntent = tipoIntent || 'cliente';
-  // Feedback IMEDIATO (essencial no mobile para sensação de clique funcionando)
-  toast('info','Abrindo Google...','A janela do Google está abrindo. Caso nada abra em 1,5 segundos, você será redirecionado automaticamente para a página de login do Google.',6200);
+  if (!_googleLoginToastEmExibicao) {
+    _googleLoginToastEmExibicao = true;
+    toast('info','Abrindo Google...','A janela do Google está abrindo. Caso nada abra em 1,5 segundos, você será redirecionado automaticamente para a página de login do Google.',6200);
+    setTimeout(function(){ _googleLoginToastEmExibicao = false; }, 7500);
+  }
   try {
     const gsi = window.google.accounts.id;
     if (!_gsiInicializado) {
@@ -3923,40 +4698,53 @@ function renderizarBotoesGooglePlaceholders() {
 }
 
 // --------------- UI HELPERS ---------------
+var _toastUltimaChave = '';
+var _toastUltimoTimestamp = 0;
+var _googleLoginToastEmExibicao = false;
 function toast(tipo, titulo, mensagem, duracao=4200) {
-  const container = document.getElementById('toast-container');
-  const configs = {
-    success: { bg:'from-emerald-500 to-emerald-600', icon:'fa-circle-check' },
-    error:   { bg:'from-rose-500 to-rose-600',      icon:'fa-circle-exclamation' },
-    info:    { bg:'from-primary-500 to-primary-600', icon:'fa-circle-info' },
-    warning: { bg:'from-amber-500 to-amber-600',    icon:'fa-triangle-exclamation' }
-  };
-  const cfg = configs[tipo] || configs.info;
-  const id = 'toast_' + Date.now() + Math.random().toString(36).slice(2,7);
-  const el = document.createElement('div');
-  el.id = id;
-  el.className = `toast-item bg-white rounded-2xl shadow-pop overflow-hidden border border-slate-200 animate-slideRight max-w-sm`;
-  el.innerHTML = `
-    <div class="flex items-stretch">
-      <div class="w-1.5 bg-gradient-to-b ${cfg.bg}"></div>
-      <div class="flex-1 px-4 py-3.5 flex items-start gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${cfg.bg} text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-          <i class="fa-solid ${cfg.icon}"></i>
+  try {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const chaveDedup = String(tipo||'') + '|' + String(titulo||'') + '|' + String(mensagem||'');
+    const agora = Date.now();
+    if (chaveDedup === _toastUltimaChave && (agora - _toastUltimoTimestamp) < 4000) {
+      return;
+    }
+    _toastUltimaChave = chaveDedup;
+    _toastUltimoTimestamp = agora;
+    const configs = {
+      success: { bg:'from-emerald-500 to-emerald-600', icon:'fa-circle-check' },
+      error:   { bg:'from-rose-500 to-rose-600',      icon:'fa-circle-exclamation' },
+      info:    { bg:'from-primary-500 to-primary-600', icon:'fa-circle-info' },
+      warning: { bg:'from-amber-500 to-amber-600',    icon:'fa-triangle-exclamation' }
+    };
+    const cfg = configs[tipo] || configs.info;
+    const id = 'toast_' + Date.now() + Math.random().toString(36).slice(2,7);
+    const el = document.createElement('div');
+    el.id = id;
+    el.className = `toast-item bg-white rounded-2xl shadow-pop overflow-hidden border border-slate-200 animate-slideRight max-w-sm`;
+    el.innerHTML = `
+      <div class="flex items-stretch">
+        <div class="w-1.5 bg-gradient-to-b ${cfg.bg}"></div>
+        <div class="flex-1 px-4 py-3.5 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${cfg.bg} text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+            <i class="fa-solid ${cfg.icon}"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-black text-slate-800 text-sm mb-0.5">${(titulo||'').replace(/[<>&]/g,'')}</div>
+            <div class="text-xs text-slate-600 break-words leading-relaxed">${(mensagem||'').replace(/[<>&]/g,'')}</div>
+          </div>
+          <button onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-slate-600 flex-shrink-0 p-0.5">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <div class="flex-1 min-w-0">
-          <div class="font-black text-slate-800 text-sm mb-0.5">${titulo || ''}</div>
-          <div class="text-xs text-slate-600 break-words leading-relaxed">${mensagem || ''}</div>
-        </div>
-        <button onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-slate-600 flex-shrink-0 p-0.5">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-    </div>`;
-  container.appendChild(el);
-  setTimeout(() => {
-    const t = document.getElementById(id);
-    if (t) { t.style.transition='all 0.4s'; t.style.opacity='0'; t.style.transform='translateX(40px)'; setTimeout(()=>t.remove(), 400); }
-  }, duracao);
+      </div>`;
+    container.appendChild(el);
+    setTimeout(() => {
+      const t = document.getElementById(id);
+      if (t) { t.style.transition='all 0.4s'; t.style.opacity='0'; t.style.transform='translateX(40px)'; setTimeout(()=>t.remove(), 400); }
+    }, duracao);
+  } catch(eToast){}
 }
 
 function abrirModal(id) {
@@ -3998,7 +4786,7 @@ function trocarAbaLogin(aba) {
     if (titulo) titulo.textContent = 'Sua Conta AjeitaAí (Cliente)';
     if (sub) sub.textContent = 'Acesse para pedir serviços e acompanhar seus pedidos.';
     if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-home')");
-    if (btnCadLabel) btnCadLabel.textContent = 'Começar a pedir serviços (Cliente)';
+    if (btnCadLabel) btnCadLabel.textContent = 'Crie aqui';
     if (gWrap) gWrap.innerHTML = htmlBotaoContinuarComGoogle('cliente', 'Sua Conta');
   } else {
     btnProf.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition bg-white shadow-sm text-primary-700';
@@ -4006,7 +4794,7 @@ function trocarAbaLogin(aba) {
     if (titulo) titulo.textContent = 'Sua Conta AjeitaAí (Profissionais)';
     if (sub) sub.textContent = 'Acesse para ver pedidos, histórico e sua carteira de moedas.';
     if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-profissional-cadastro')");
-    if (btnCadLabel) btnCadLabel.textContent = 'Cadastrar-se como Profissional';
+    if (btnCadLabel) btnCadLabel.textContent = 'Cadastre aqui';
     if (gWrap) gWrap.innerHTML = htmlBotaoContinuarComGoogle('profissional', 'Sua Conta');
   }
   const email = document.getElementById('loginEmailInput');
@@ -4682,16 +5470,25 @@ async function _salvarNotificacaoFirestore(novaNotif) {
 async function _notificarNovoPedidoParaProfissionais(pedidoObj) {
   try {
     if (!pedidoObj || !pedidoObj.id || !pedidoObj.categoria) return;
-    const profsAlvos = (Array.isArray(PROFISSIONAIS) ? PROFISSIONAIS.slice() : [])
+    const catalogoProfs = (Array.isArray(profissionais) && profissionais.length) ? profissionais : (Array.isArray(window.profissionais) && window.profissionais.length ? window.profissionais : []);
+    const catPedidoOriginal = String(pedidoObj.categoria || '').trim();
+    const ehOutros = catPedidoOriginal.indexOf('Outros') === 0 || !!pedidoObj.categoria_outros_detalhe;
+    const profsAlvos = catalogoProfs.slice()
       .filter(function(p){
         if (!p || !p.id) return false;
-        // mesma categoria OU categorias selecionadas do profissional bate com pedido.categoria
         const categoriasP = Array.isArray(p.categorias) && p.categorias.length ? p.categorias : (p.categoria ? [p.categoria] : []);
-        const mesmacat = categoriasP.includes(pedidoObj.categoria);
+        // Categoria "Outros": como ninguém tem cadastrado "Outros - xxx", notificamos TODOS os
+        // profissionais ativos da mesma cidade, para que alguém se identifique capaz.
+        if (ehOutros) {
+          const mesmacidade = (p.cidade && pedidoObj.cidade) ? (String(p.cidade).trim().toLowerCase() === String(pedidoObj.cidade).trim().toLowerCase()) : true;
+          return categoriasP.length > 0 && mesmacidade;
+        }
+        const mesmacat = categoriasP.includes(catPedidoOriginal);
         const mesmacidade = (p.cidade && pedidoObj.cidade) ? (String(p.cidade).trim().toLowerCase() === String(pedidoObj.cidade).trim().toLowerCase()) : true;
         return mesmacat && mesmacidade;
       });
-    for (const prof of profsAlvos.slice(0, 40)) { // limite 40 notificações por novo pedido para não sobrecarregar
+    const maxNotif = ehOutros ? 60 : 40;
+    for (const prof of profsAlvos.slice(0, maxNotif)) {
       try {
         const notifId = 'not_' + pedidoObj.id + '_' + String(prof.id) + '_' + Math.random().toString(36).slice(2,6);
         const n = {
@@ -4699,18 +5496,18 @@ async function _notificarNovoPedidoParaProfissionais(pedidoObj) {
           usuario_id_alvo: String(prof.id),
           tipo_usuario_alvo: 'profissional',
           tipo: 'novo_pedido',
-          subtipo: (prof.categorias && prof.categorias.length>2) ? 'orcamento_solicitado' : 'novo_pedido_servico',
-          titulo: (prof.categorias && prof.categorias.length>2) ? '💰 Novo orçamento solicitado' : '🔨 Novo pedido de serviço',
-          mensagem: `Um cliente publicou um novo pedido de serviço para: ${pedidoObj.categoria}. Descrição: ${((pedidoObj.descricao||'').slice(0, 80))}${(pedidoObj.descricao||'').length>80?'...':''}`,
+          subtipo: ehOutros ? 'orcamento_solicitado_outros' : ((prof.categorias && prof.categorias.length>2) ? 'orcamento_solicitado' : 'novo_pedido_servico'),
+          titulo: ehOutros ? '✨ Novo orçamento OUTRO — chance de pegar!' : ((prof.categorias && prof.categorias.length>2) ? '💰 Novo orçamento solicitado' : '🔨 Novo pedido de serviço'),
+          mensagem: `Um cliente publicou um novo pedido de serviço para: ${catPedidoOriginal}. Descrição: ${((pedidoObj.descricao||'').slice(0, 80))}${(pedidoObj.descricao||'').length>80?'...':''}${ehOutros ? ' 🟡 Serviço fora das categorias padrão.' : ''}`,
           pedido_id: pedidoObj.id,
-          pedido_categoria: pedidoObj.categoria,
+          pedido_categoria: catPedidoOriginal,
           pedido_cidade: pedidoObj.cidade || null,
           pedido_bairro: pedidoObj.bairro || null,
           cliente_nome: pedidoObj.nomeCliente || null,
           foto_count: Array.isArray(pedidoObj.fotos) ? pedidoObj.fotos.length : 0,
           lida: false,
           criado_em: (pedidoObj.data || new Date().toISOString()),
-          origem: 'auto_novo_pedido',
+          origem: ehOutros ? 'auto_novo_pedido_outros' : 'auto_novo_pedido',
           _v: 1
         };
         _salvarNotificacaoFirestore(n);
@@ -5047,11 +5844,53 @@ function navigateTo(viewId) {
   if (viewId === 'view-home') {
     setTimeout(function(){ try { carregarEBannersPatrocinadores(); } catch(e){} }, 100);
   }
+  // ===== VIEWS TERMOS DE USO / POLÍTICA DE PRIVACIDADE (populam HTML nas telas oficiais do app) =====
+  if (viewId === 'view-termos-de-uso') {
+    try {
+      const el = document.getElementById('viewTermosConteudoContainer');
+      if (el && typeof _buildHtmlTermosDeUso === 'function') {
+        AplicaConteudoExtraidoDeBuild(_buildHtmlTermosDeUso(), el);
+      }
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    } catch(e){ console.warn('[navigateTo termos]', e); }
+  }
+  if (viewId === 'view-politica-de-privacidade') {
+    try {
+      const el = document.getElementById('viewPrivacidadeConteudoContainer');
+      if (el && typeof _buildHtmlPoliticaPrivacidade === 'function') {
+        AplicaConteudoExtraidoDeBuild(_buildHtmlPoliticaPrivacidade(), el);
+      }
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    } catch(e){ console.warn('[navigateTo privacidade]', e); }
+  }
 
   // ===== BOTTOM NAV: RENDERIZA SEMPRE QUE NAVEGA =====
   try { renderBottomNav(viewId); } catch(e) { console.error('[renderBottomNav erro]', e); }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Helper para extrair apenas o conteúdo interno das seções (entre os builders
+// Remove o bloco `<div class="px-6 ... border-b ..."> (cabeçalho do build) e devolve o conteúdo.
+// Para as VIEWS já têm seu próprio hero.
+function AplicaConteudoExtraidoDeBuild(htmlCompleto, containerEl) {
+  if (!containerEl || !htmlCompleto) return;
+  try {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = htmlCompleto;
+    var filhos = Array.from(tmp.children || tmp.childNodes || []);
+    var htmlSomenteConteudo = filhos.filter(function(n){
+      if (!n) return false;
+      if (n.nodeType !== 1) return false;
+      var cls = String(n.getAttribute && n.className ? n.className : '');
+      if (cls.includes('px-6') && cls.includes('border-b') && cls.includes('border-slate-100')) return false;
+      return true;
+    });
+    containerEl.innerHTML = '';
+    htmlSomenteConteudo.forEach(function(n){ containerEl.appendChild(n); });
+  } catch(eb) {
+    containerEl.innerHTML = htmlCompleto;
+  }
 }
 
 /**
@@ -5117,7 +5956,6 @@ function atualizarHomeSessao() {
 function bottomNavClickPedidos() {
   if (clienteGoogleLogado || profissionalLogado) { navigateTo('view-meus-pedidos'); return; }
   abrirLoginGoogle('cliente');
-  setTimeout(function(){ toast('info','Faça login','Entre com Google para ver seus pedidos.',4000); }, 300);
 }
 function bottomNavClickBuscaHome() {
   try {
@@ -5477,38 +6315,53 @@ function renderCatalogoProfissionais(fCat='', fCid='', fBai='', ordem='avaliacao
   container.innerHTML = lista.filter(p => p && typeof p === 'object').map(p => {
     p.nome = String(p.nome || 'Profissional');
     const _pNomeEsc = p.nome.replace(/'/g, "\\'");
+    const ehVerificado = !!(p && p.verificacao && p.verificacao.status === 'VERIFIED');
     const badgeCats = (p.categorias||[]).slice(0,3).map(c =>
       `<span class="inline-flex items-center gap-1 bg-primary-50 text-primary-700 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-primary-100">
         <i class="fa-solid ${CATEGORIAS_ICONE[c]||'fa-check'} text-[10px]"></i>${c}</span>`
     ).join('');
     const extraCats = (p.categorias||[]).length > 3 ? `<span class="text-[11px] font-bold text-slate-500 px-1.5">+${(p.categorias||[]).length-3}</span>` : '';
+    const classeFotoVerificado = ehVerificado ? 'ring-4 ring-emerald-400/70 ring-offset-2 ring-offset-white shadow-md' : '';
+    const seloTopoFoto = ehVerificado
+      ? `<div class="absolute top-3 left-3 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white rounded-[1.1rem] px-3.5 py-2 shadow-2xl shadow-emerald-600/30 flex items-center gap-2 text-[11.5px] font-black tracking-wide border-[3px] border-white backdrop-blur-sm animate-[pulse_2.8s_ease-in-out_infinite]">
+           <i class="fa-solid fa-circle-check text-white drop-shadow-sm"></i>
+           <span class="drop-shadow-sm">✓ PROFISSIONAL VERIFICADO</span>
+         </div>`
+      : '';
+    const seloMedalha = ehVerificado
+      ? `<div class="absolute top-3 right-3 w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 text-white border-[3px] border-white shadow-2xl shadow-emerald-600/40 flex items-center justify-center">
+           <i class="fa-solid fa-award text-2xl drop-shadow-md"></i>
+           <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm tracking-wide">VERIFIED</div>
+         </div>`
+      : '';
+    const seloAoLadoNome = ehVerificado
+      ? `<span class="inline-flex items-center gap-1 ml-1 text-[11px] font-black text-emerald-700 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 px-2 py-0.5 rounded-full shadow-sm">
+           <i class="fa-solid fa-circle-check text-emerald-600"></i>VERIFICADO
+         </span>`
+      : '';
     return `
-    <div class="bg-white rounded-3xl shadow-card border border-slate-100 overflow-hidden group hover:shadow-pop transition duration-300">
+    <div class="bg-white rounded-3xl shadow-card border ${ehVerificado ? 'border-emerald-200' : 'border-slate-100'} overflow-hidden group hover:shadow-pop transition duration-300 ${ehVerificado ? 'ring-2 ring-emerald-200/70' : ''}">
       <div class="relative h-52 overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200">
-        <img src="${p.foto || FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${_pNomeEsc}')" alt="${p.nome}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-        <div class="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-sm flex items-center gap-1 text-xs">
-          <span class="font-extrabold text-amber-600">🪙 ${p.saldoMoedas || 0}</span>
-        </div>
+        <img src="${p.foto || FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${_pNomeEsc}')" alt="${p.nome}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ${classeFotoVerificado}">
         <div class="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-1.5">
           ${htmlEstrelas(p.mediaAvaliacoes)}
           <span class="text-xs font-bold text-slate-700">(${p.qtdAvaliacoes||0})</span>
         </div>
-        ${ (p && p.verificacao && p.verificacao.status === 'VERIFIED') ? `<div class="absolute top-3 left-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-1.5 text-[11px] font-black tracking-wide">
-          <i class="fa-solid fa-circle-check"></i>
-          VERIFICADO
-        </div>` : '' }
+        ${seloTopoFoto}
+        ${seloMedalha}
       </div>
       <div class="p-5">
         <div class="flex items-start justify-between gap-2 mb-1">
-          <h3 class="text-lg font-black text-slate-800 leading-tight">${p.nome}</h3>
+          <h3 class="text-lg font-black text-slate-800 leading-tight flex items-center flex-wrap">${p.nome}${seloAoLadoNome}</h3>
         </div>
         <div class="flex items-center gap-1.5 text-sm text-slate-500 mb-3">
           <i class="fa-solid fa-map-location-dot text-primary-500 text-xs"></i>
           <span>${p.bairro} — ${p.cidade}</span>
         </div>
         <div class="flex flex-wrap gap-1.5 mb-4">${badgeCats}${extraCats}</div>
-        <button onclick="abrirPerfilProfissional('${p.id}')" class="w-full bg-slate-50 hover:bg-primary-50 text-primary-700 font-bold py-2.5 rounded-xl border border-slate-200 hover:border-primary-200 transition flex items-center justify-center gap-2">
-          <i class="fa-solid fa-eye"></i> Ver perfil completo
+        <button onclick="abrirPerfilProfissional('${p.id}')" class="w-full ${ehVerificado ? 'bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 text-emerald-800 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50 hover:bg-primary-50 text-primary-700 border-slate-200 hover:border-primary-200'} font-bold py-2.5 rounded-xl border transition flex items-center justify-center gap-2">
+          <i class="fa-solid ${ehVerificado ? 'fa-award' : 'fa-eye'}"></i>
+          ${ehVerificado ? 'Ver perfil verificado' : 'Ver perfil completo'}
         </button>
       </div>
     </div>`;
@@ -5551,36 +6404,96 @@ function abrirPerfilProfissional(proId) {
   ).join('');
 
   const statusVer = (p.verificacao && typeof p.verificacao.status === 'string') ? String(p.verificacao.status) : '';
-  const seloVerVerificadoHtml = statusVer === 'VERIFIED' ? `
-    <div class="mt-4 mb-5 inline-flex flex-col items-center gap-2">
-      <div class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 text-emerald-800 rounded-2xl px-5 py-2.5 shadow-sm">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500 text-white">
-          <i class="fa-solid fa-check text-lg"></i>
-        </span>
-        <div class="text-left">
-          <div class="font-black leading-tight text-sm">PROFISSIONAL VERIFICADO</div>
-          <div class="text-[11px] text-emerald-700 leading-tight">Identidade e documentos analisados pelo AjeitaAí</div>
+  const ehVerificadoModal = statusVer === 'VERIFIED';
+  const seloHeroVerificado = ehVerificadoModal ? `
+    <div class="absolute inset-x-0 top-0 h-[180px] bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 overflow-hidden">
+      <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 80% 20%, white 1.5px, transparent 1.5px); background-size: 30px 30px;"></div>
+      <div class="absolute inset-0 opacity-20" style="background-image: linear-gradient(135deg, #fff 25%, transparent 25%), linear-gradient(225deg, #fff 25%, transparent 25%), linear-gradient(45deg, #fff 25%, transparent 25%), linear-gradient(315deg, #fff 25%, transparent 25%); background-size: 20px 20px; background-position: 0 0, 10px 0, 10px -10px, 0px 10px;"></div>
+      <div class="absolute left-5 sm:left-8 top-5 sm:top-6 flex flex-col gap-2 z-10 max-w-[70%]">
+        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest">
+          <i class="fa-solid fa-shield-halved"></i>
+          Selo oficial de credibilidade
+        </div>
+        <h1 class="text-white font-black text-2xl sm:text-3xl leading-tight drop-shadow-md">
+          ✓ PROFISSIONAL VERIFICADO
+        </h1>
+        <p class="text-white/95 text-xs sm:text-sm leading-relaxed max-w-md font-medium drop-shadow-sm">
+          Identidade, endereço e documentos validados por administradores do AjeitaAí. Seguro para contratar.
+        </p>
+      </div>
+      <div class="absolute right-4 sm:right-8 top-6 sm:top-10 z-10 hidden sm:flex flex-col items-center">
+        <div class="relative">
+          <div class="w-24 h-24 rounded-full bg-gradient-to-br from-white to-emerald-100 border-[5px] border-white shadow-[0_20px_60px_-10px_rgba(0,0,0,0.35)] flex items-center justify-center animate-[pulse_2.8s_ease-in-out_infinite]">
+            <i class="fa-solid fa-award text-5xl bg-gradient-to-br from-emerald-600 to-teal-700 bg-clip-text text-transparent drop-shadow-sm" style="color:transparent;-webkit-text-fill-color:transparent;"></i>
+          </div>
+          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-[10px] font-black uppercase tracking-wider px-4 py-1 rounded-full shadow-lg border-2 border-white whitespace-nowrap">
+            ✓ IDENTITY CHECKED
+          </div>
         </div>
       </div>
-      <div class="text-[10px] text-emerald-700/80 font-medium">O selo de verificado confirma apenas que este profissional concluiu o processo de verificação do AjeitaAí. Avaliações de clientes são independentes.</div>
     </div>` : '';
+  const classesHeader = ehVerificadoModal
+    ? 'h-[320px]'
+    : 'h-72 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 overflow-hidden';
+  const avatarExtra = ehVerificadoModal
+    ? 'ring-4 ring-emerald-400 ring-offset-2 ring-offset-white shadow-2xl'
+    : 'shadow-pop';
+  const seloMiniResponsivoMobile = ehVerificadoModal
+    ? `<div class="sm:hidden mx-auto mt-5 mb-1 inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 text-emerald-900 rounded-2xl px-4 py-2.5 shadow-sm">
+         <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md flex-shrink-0"><i class="fa-solid fa-award"></i></span>
+         <div class="text-left leading-tight">
+           <div class="font-black text-sm">PROFISSIONAL VERIFICADO</div>
+           <div class="text-[11px] text-emerald-800">Documentos analisados pelo AjeitaAí</div>
+         </div>
+       </div>`
+    : '';
+  const seloNomeModal = ehVerificadoModal
+    ? `<span class="inline-flex items-center gap-1 ml-1.5 text-[11px] font-black text-emerald-700 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 px-2.5 py-1 rounded-full shadow-sm">
+         <i class="fa-solid fa-circle-check text-emerald-600"></i>VERIFICADO
+       </span>`
+    : '';
+  const seloVerVerificadoHtml = statusVer === 'VERIFIED'
+    ? `
+    <div class="mt-2 mb-5 inline-flex flex-col items-center gap-2 w-full">
+      <div class="inline-flex items-center gap-3 bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 border-[2px] border-emerald-200 text-emerald-900 rounded-2xl px-6 py-3 shadow-md w-full max-w-lg">
+        <span class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 text-white shadow-md flex-shrink-0">
+          <i class="fa-solid fa-check-double text-xl"></i>
+        </span>
+        <div class="text-left flex-1">
+          <div class="font-black leading-tight text-base">✓ PROFISSIONAL VERIFICADO · SELA AJEITAAÍ</div>
+          <div class="text-[12px] text-emerald-800 leading-tight mt-0.5">Identidade, endereço e documentos validados.${p.verificacao && p.verificacao.admin_responsavel ? (` · Análise por <strong>${p.verificacao.admin_responsavel}</strong>`) : ''}</div>
+        </div>
+      </div>
+      <div class="text-[10px] text-emerald-800/80 font-medium max-w-md text-center leading-relaxed">
+        O selo de verificado confirma que este profissional concluiu o processo de verificação do AjeitaAí. Avaliações de clientes são independentes.
+      </div>
+    </div>` : '';
+  const btnWhatsappClass = ehVerificadoModal
+    ? 'inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-700 hover:from-emerald-700 hover:via-green-700 hover:to-teal-800 text-white font-extrabold px-8 py-4 rounded-2xl shadow-[0_20px_50px_-15px_rgba(16,185,129,0.55)] hover:shadow-[0_25px_60px_-15px_rgba(16,185,129,0.75)] transition text-lg'
+    : 'inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-extrabold px-8 py-3.5 rounded-2xl shadow-card hover:shadow-pop transition';
+  const headerRoxoOverlay = !ehVerificadoModal
+    ? `<div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 30% 40%, white 1px, transparent 1px); background-size: 50px 50px;"></div>`
+    : '';
 
   cont.innerHTML = `
-    <div class="relative h-72 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 overflow-hidden">
-      <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 30% 40%, white 1px, transparent 1px); background-size: 50px 50px;"></div>
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-36 h-36 rounded-full border-4 border-white shadow-pop overflow-hidden bg-white">
+    <div class="relative ${classesHeader}">
+      ${!ehVerificadoModal ? '<div class="absolute inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800"></div>' : ''}
+      ${headerRoxoOverlay}
+      ${seloHeroVerificado}
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-36 h-36 rounded-full border-4 border-white ${avatarExtra} overflow-hidden bg-white z-20">
         <img src="${p.foto || FOTO_UI_AVATAR(p.nome)}" onerror="imgErroAvatar(this,'${_pNomeEsc}')" class="w-full h-full object-cover">
       </div>
     </div>
     <div class="pt-20 px-6 sm:px-8 pb-8">
+      ${seloMiniResponsivoMobile}
       <div class="text-center mb-5">
-        <h2 class="text-2xl font-black text-slate-800 mb-1">${p.nome}</h2>
+        <h2 class="text-2xl font-black text-slate-800 mb-1 flex items-center justify-center flex-wrap gap-1">${p.nome}${seloNomeModal}</h2>
         <div class="flex items-center justify-center gap-2 text-slate-500 text-sm mb-3">
-          <i class="fa-solid fa-map-location-dot text-primary-500"></i>${p.bairro} — ${p.cidade}
+          <i class="fa-solid fa-map-location-dot ${ehVerificadoModal ? 'text-emerald-600' : 'text-primary-500'}"></i>${p.bairro} — ${p.cidade}
         </div>
         ${seloVerVerificadoHtml}
         <div class="flex flex-wrap items-center justify-center gap-1.5 mb-4">${cats}</div>
-        <div class="inline-flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3">
+        <div class="inline-flex items-center gap-3 ${ehVerificadoModal ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200' : 'bg-slate-50 border border-slate-200'} rounded-2xl px-5 py-3 shadow-sm">
           <div class="flex items-center gap-1.5">
             ${htmlEstrelas(p.mediaAvaliacoes, true)}
           </div>
@@ -5588,19 +6501,15 @@ function abrirPerfilProfissional(proId) {
           <div class="text-sm text-slate-600">
             <span class="font-black text-slate-800">${p.qtdAvaliacoes||0}</span> avaliações
           </div>
-          <div class="w-px h-6 bg-slate-200"></div>
-          <div class="text-sm text-slate-600">
-            Saldo: <span class="font-black text-amber-700">🪙 ${p.saldoMoedas||0}</span>
-          </div>
         </div>
       </div>
       <div class="mb-6"><p class="text-slate-600 leading-relaxed">${p.sobre}</p></div>
       <div class="mb-8 text-center">
-        <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-extrabold px-8 py-3.5 rounded-2xl shadow-card hover:shadow-pop transition">
+        <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="${btnWhatsappClass}">
           <i class="fa-brands fa-whatsapp text-xl"></i>
-          Chamar no WhatsApp
+          ${ehVerificadoModal ? 'Chamar no WhatsApp (Profissional Verificado ✓)' : 'Chamar no WhatsApp'}
         </a>
-        <div class="text-xs text-slate-400 mt-2">Atendimento direto com ${_primeiroNomeP}</div>
+        <div class="text-xs text-slate-400 mt-2">Atendimento direto com ${_primeiroNomeP}${ehVerificadoModal ? ' · profissional com documentos validados ✓' : ''}</div>
       </div>
       ${trabalhos ? `
       <div class="mb-8">
@@ -5621,6 +6530,21 @@ function abrirPerfilProfissional(proId) {
 }
 
 // --------------- MURAL DE PEDIDOS ---------------
+function _solicOrcOutrosToggle(valorSel) {
+  try {
+    const wrap = document.getElementById('solicOutrosWrap');
+    const inp = document.getElementById('solicOutrosTexto');
+    if (!wrap) return;
+    if (String(valorSel || '') === 'Outros') {
+      wrap.classList.remove('hidden');
+      if (inp) setTimeout(function(){ inp.focus(); }, 60);
+    } else {
+      wrap.classList.add('hidden');
+      if (inp) inp.value = '';
+    }
+  } catch(e){}
+}
+window._solicOrcOutrosToggle = _solicOrcOutrosToggle;
 function abrirModalSolicitarOrcamento() {
   // Auto-preenche com últimos dados do cliente (UX)
   if (clienteUltimosDados) {
@@ -5632,18 +6556,35 @@ function abrirModalSolicitarOrcamento() {
       if (ult.bairro) document.getElementById('solicBairro').value = ult.bairro;
     } catch(e){}
   }
+  // Reset do campo Outros
+  try {
+    const sel = document.getElementById('solicCategoria'); if (sel) sel.value = '';
+    const wrap = document.getElementById('solicOutrosWrap'); if (wrap) wrap.classList.add('hidden');
+    const inp = document.getElementById('solicOutrosTexto'); if (inp) inp.value = '';
+  } catch(e){}
   _pedidoResetarFotos();
   abrirModal('modal-solicitar-orcamento');
 }
 function submitSolicitarOrcamento(e) {
   if (e) e.preventDefault();
   const nomeCli = (document.getElementById('solicNomeCliente').value||'').trim();
-  const cat = document.getElementById('solicCategoria').value;
+  let cat = (document.getElementById('solicCategoria').value || '').trim();
   const cid = document.getElementById('solicCidade').value;
   const bai = document.getElementById('solicBairro').value.trim();
   const desc = document.getElementById('solicDescricao').value.trim();
   const dataPref = document.getElementById('solicData').value || '';
   const wa = apenasNumeros(document.getElementById('solicWhatsApp').value);
+  const outrosTxt = ((document.getElementById('solicOutrosTexto') || {}).value || '').trim();
+  let categoriaOutrosDetalhe = null;
+  if (cat === 'Outros') {
+    if (outrosTxt.length < 4) {
+      toast('error','Informe o serviço','Quando escolher "Outros", descreva brevemente o serviço que precisa (ex: Limpeza de caixa d\'água).');
+      try { document.getElementById('solicOutrosTexto').focus(); } catch(e){}
+      return;
+    }
+    categoriaOutrosDetalhe = outrosTxt.substring(0, 80);
+    cat = 'Outros - ' + categoriaOutrosDetalhe;
+  }
 
   if (!cat || !cid || !bai || !desc || wa.length < 10) {
     toast('error','Faltam dados','Preencha todos os campos obrigatórios corretamente.');
@@ -5652,11 +6593,12 @@ function submitSolicitarOrcamento(e) {
   const fotosPedido = Array.isArray(_pedidoFotosState) ? _pedidoFotosState.filter(function(f){ return !!f && typeof f === 'string' && f.length > 50; }) : [];
   const novo = {
     id: 'ped_' + Date.now() + Math.random().toString(36).slice(2,6),
-    categoria:cat, cidade:cid, bairro:bai, descricao:desc,
+    categoria: cat.substring(0, 100), cidade:cid, bairro:bai, descricao:desc,
     data: new Date().toISOString(), whatsapp:wa, dataPreferida:dataPref,
     qtdDesbloqueios:0, status:'aberto', finalizado:false, avaliado:false,
     nomeCliente: nomeCli || null,
-    fotos: fotosPedido && fotosPedido.length ? fotosPedido : []
+    fotos: fotosPedido && fotosPedido.length ? fotosPedido : [],
+    categoria_outros_detalhe: categoriaOutrosDetalhe
   };
   pedidos.unshift(novo);
   // Vincula o pedido AO CLIENTE DESTE NAVEGADOR
@@ -5668,7 +6610,12 @@ function submitSolicitarOrcamento(e) {
   // (TASK 8) Cria notificacoes para profissionais da mesma categoria/regiao
   try { _notificarNovoPedidoParaProfissionais(novo); } catch(e){}
   renderMuralPedidos();
-  document.getElementById('formSolicitarOrcamento').reset();
+  try {
+    const formOrc = document.getElementById('formSolicitarOrcamento');
+    if (formOrc) formOrc.reset();
+    const wrapOut = document.getElementById('solicOutrosWrap'); if (wrapOut) wrapOut.classList.add('hidden');
+    const inpOut = document.getElementById('solicOutrosTexto'); if (inpOut) inpOut.value = '';
+  } catch(e){}
   _pedidoResetarFotos();
   fecharModal('modal-solicitar-orcamento');
   const saudacao = nomeCli ? `${nomeCli.split(' ')[0]}, seu` : 'Seu';
@@ -5801,6 +6748,7 @@ function confirmarDesbloquearPedido(pedId) {
     navigateTo('view-profissional-cadastro');
     return;
   }
+  if (!_verificarAceiteObrigatorio('desbloquear_lead_pedido')) { return; }
   if ((ped.qtdDesbloqueios||0) >= 4) {
     toast('error','Pedido fechado','Este pedido já atingiu o limite de 4 desbloqueios.');
     return;
@@ -5837,6 +6785,7 @@ function executarDesbloqueio() {
   }
 
   // 1) Subtrai moedas do profissional (logado e array global)
+  var _saldoAntesDesb = Number(profissionalLogado.saldoMoedas || 0);
   profissionalLogado.saldoMoedas = (profissionalLogado.saldoMoedas||0) - custo;
   const proIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
   if (proIdx >= 0) profissionais[proIdx].saldoMoedas = profissionalLogado.saldoMoedas;
@@ -5854,7 +6803,14 @@ function executarDesbloqueio() {
 
   pedidoDesbloqueioAtual = null;
   salvarTodosGlobaisNoStorage();
+  try {
+    if (profissionalLogado && typeof fbSyncAddProfissional === 'function') {
+      fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) }));
+    }
+  } catch(eSyncDesb){}
   atualizarHeaderPorSessao();
+  // Alerta saldo baixo moedas: após débito de desbloqueio.
+  try { _alertaSaldoVerificarProfissionalLogado(_saldoAntesDesb, 'debito'); } catch(e){}
   renderMuralPedidos();
   if (!document.getElementById('view-meus-pedidos').classList.contains('hidden')) renderMeusPedidos();
   fecharModal('modal-desbloquear');
@@ -5866,7 +6822,10 @@ function executarDesbloqueio() {
 }
 
 // --------------- LOJA DE MOEDAS + PIX ---------------
-function abrirLojaMoedas() { navigateTo('view-profissional-loja'); }
+function abrirLojaMoedas() {
+  if (profissionalLogado && !_verificarAceiteObrigatorio('abrir_loja_moedas')) { return; }
+  navigateTo('view-profissional-loja');
+}
 
 function renderLojaPacotes() {
   if (!configEconomia) configEconomia = JSON.parse(JSON.stringify(CONFIG_ECONOMIA_PADRAO));
@@ -6150,6 +7109,7 @@ async function finalizarAprovacaoPixComDados(dadosTransacaoFirestore) {
     else if (String(dadosTransacaoFirestore.pacote_key || '').toLowerCase() === 'prata') pkgNome = configEconomia.pacotes.prata.nome;
     else pkgNome = configEconomia.pacotes.ouro.nome;
   } catch(e){ pkgNome = ('Recarga ('+qtdMoedas+' moedas)'); }
+  var _saldoAntesRecargaMp = Number(profissionalLogado.saldoMoedas || 0);
   profissionalLogado.saldoMoedas = (profissionalLogado.saldoMoedas || 0) + qtdMoedas;
   var proIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
   if (proIdx >= 0) profissionais[proIdx].saldoMoedas = profissionalLogado.saldoMoedas;
@@ -6166,7 +7126,14 @@ async function finalizarAprovacaoPixComDados(dadosTransacaoFirestore) {
   };
   recargas.push(objRecarga);
   salvarTodosGlobaisNoStorage();
+  try {
+    if (profissionalLogado && typeof fbSyncAddProfissional === 'function') {
+      fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) }));
+    }
+  } catch(eSyncMp){}
   atualizarHeaderPorSessao();
+  // Alerta saldo baixo: após recarga, reset das faixas disparadas do ciclo se novo saldo > 20.
+  try { _alertaSaldoVerificarProfissionalLogado(_saldoAntesRecargaMp, 'recarga'); } catch(e){}
   renderLojaPacotes();
   atualizarCardsEstatisticasPerfil();
   try { if (document.getElementById('pixAprovadoPacote')) document.getElementById('pixAprovadoPacote').textContent = pkgNome; } catch(e){}
@@ -6184,6 +7151,7 @@ async function abrirPixPagamento(pkgKey) {
     navigateTo('view-profissional-cadastro');
     return;
   }
+  if (!_verificarAceiteObrigatorio('comprar_pacote_moedas_pix')) { return; }
   // ========== (BUG FIX R$0 PRODUCAO / NUMERO PIX ANTIGO CONFUNDE) ==========
   var precoEsperado = Number(pkg.preco || 0);
   // (PROTECAO EXTRA R$0) se pkg.preco nao existir ou vier invalido, calcula manualmente por nome do pacote (nunca mais depende de um unico ponto)
@@ -6557,6 +7525,7 @@ function simularAprovacaoWebhook() {
   const pkg = pacotePixAtual;
   const ts = Date.now();
 
+  var _saldoAntesRecargaSim = Number(profissionalLogado.saldoMoedas||0);
   profissionalLogado.saldoMoedas = (profissionalLogado.saldoMoedas||0) + pkg.qtd;
   const proIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
   if (proIdx >= 0) profissionais[proIdx].saldoMoedas = profissionalLogado.saldoMoedas;
@@ -6577,7 +7546,14 @@ function simularAprovacaoWebhook() {
   recargas.push(objRecarga);
 
   salvarTodosGlobaisNoStorage();
+  try {
+    if (profissionalLogado && typeof fbSyncAddProfissional === 'function') {
+      fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) }));
+    }
+  } catch(eSyncSim){}
   atualizarHeaderPorSessao();
+  // Alerta saldo baixo: após recarga SIMULADA. Reset das faixas se novo saldo > 20.
+  try { _alertaSaldoVerificarProfissionalLogado(_saldoAntesRecargaSim, 'recarga'); } catch(e){}
   renderLojaPacotes();
   atualizarCardsEstatisticasPerfil();
 
@@ -6914,6 +7890,26 @@ function submitCadastroProfissional(e) {
   if (bairro.length<2) { toast('warning','Informe o bairro','Digite o bairro/região de atendimento.'); return; }
   if (categoriasSelecionadas.length===0) { toast('warning','Selecione categorias','Marque pelo menos 1 categoria de serviço.'); return; }
 
+  const aceiteCheck = document.getElementById('cadAceiteTermos');
+  if (!aceiteCheck || !aceiteCheck.checked) {
+    toast('warning','Aceite obrigatório','Para criar sua conta, é obrigatório ler e concordar com os Termos de Uso e a Política de Privacidade. Clique nos links azuis para ler os documentos completos.',6500);
+    if (aceiteCheck) { aceiteCheck.focus({preventScroll:false}); try { aceiteCheck.parentElement?.scrollIntoView({behavior:'smooth',block:'center'}); } catch(eScr){} }
+    return;
+  }
+
+  const _agoraISO = new Date().toISOString();
+  const _payloadAceite = {
+    termos_version: String(TERMS_VERSION),
+    privacidade_version: String(PRIVACY_VERSION),
+    data_hora_aceite: _agoraISO,
+    usuario_nome: String(nome || ''),
+    usuario_whatsapp: String(wa || ''),
+    usuario_email: String(email || emailGoogle || ''),
+    ip_registro: null,
+    origem: 'cadastro_formulario',
+    registro_integridade: 'hash_pendente_backend_v1'
+  };
+
   // Google: se usuário fez login Google para se cadastrar, injeta dados
   const googleId = profissionalGoogleIdPending || null;
   const emailGoogle = profissionalGoogleEmailPending || email || null;
@@ -6936,6 +7932,7 @@ function submitCadastroProfissional(e) {
     saldoMoedas: 10,
     trabalhosAnteriores: [],
     depoimentos: [],
+    aceite_termos: _payloadAceite,
     _docs_validacao_privado: {
       rg_cnh: docs.rg_cnh || null,
       comprovante_endereco: docs.comprovante_endereco || null,
@@ -7188,6 +8185,147 @@ function renderFormPerfilComDadosAtuais() {
   if (document.getElementById('perfilSobreCount')) {
     document.getElementById('perfilSobreCount').textContent = (p.sobre||'').length;
   }
+
+  // Renderiza card Legal: status aceite Termos/Política
+  try { renderPerfilLegalAceiteStatus(); } catch(eLegal){}
+}
+
+function _validarAceiteValidoParaVersaoAtual(pRef) {
+  const p = pRef || profissionalLogado || null;
+  if (!p) return { valido:false, motivo:'sem_usuario_logado' };
+  const aceite = (p.aceite_termos && typeof p.aceite_termos === 'object') ? p.aceite_termos : null;
+  if (!aceite) return { valido:false, motivo:'sem_aceite_registrado' };
+  const tv = String(aceite.termos_version || '');
+  const pv = String(aceite.privacidade_version || '');
+  if (tv !== TERMS_VERSION) return { valido:false, motivo:'versao_termos_desatualizada', esperado:TERMS_VERSION, encontrado:tv };
+  if (pv !== PRIVACY_VERSION) return { valido:false, motivo:'versao_privacidade_desatualizada', esperado:PRIVACY_VERSION, encontrado:pv };
+  const dth = String(aceite.data_hora_aceite || '').trim();
+  if (!dth || dth.length < 10) return { valido:false, motivo:'sem_data_hora_registro' };
+  return { valido:true, aceite };
+}
+
+function renderPerfilLegalAceiteStatus() {
+  const el = document.getElementById('perfilLegalStatusAceite');
+  if (!el) return;
+  const info = _validarAceiteValidoParaVersaoAtual();
+  if (info.valido && info.aceite) {
+    const a = info.aceite;
+    const d = new Date(a.data_hora_aceite);
+    const dStr = isNaN(d.getTime()) ? a.data_hora_aceite : d.toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo'});
+    el.className = 'rounded-2xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 sm:p-5 shadow-sm';
+    el.innerHTML = `
+      <div class="flex items-start gap-3 sm:gap-4">
+        <span class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm flex-shrink-0"><i class="fa-solid fa-check-double text-xl"></i></span>
+        <div class="flex-1 min-w-0">
+          <div class="font-black text-emerald-900 text-base leading-tight flex items-center gap-2 flex-wrap">
+            <span>✓ Aceite registrado com sucesso</span>
+            <span class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white text-emerald-700 border border-emerald-200">versões vigentes</span>
+          </div>
+          <div class="text-xs sm:text-sm text-emerald-800 mt-2 space-y-1.5 leading-relaxed">
+            <p><strong>Termos de Uso:</strong> versão ${a.termos_version} · <strong>Política de Privacidade:</strong> versão ${a.privacidade_version}</p>
+            <p><strong>Data e horário do aceite (Brasília):</strong> ${dStr}${a.origem ? (` · <strong>Origem:</strong> ` + String(a.origem)) : ''}</p>
+            <p class="text-emerald-700/90 text-[11px] sm:text-xs">Seu registro está íntegro e válido para as versões atuais. Quando publicarmos uma nova versão, solicitaremos um novo aceite.</p>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    const esperadoT = info.esperado || TERMS_VERSION;
+    const esperadoP = info.esperado || (info.motivo && info.motivo.includes('privacidade')) ? (info.esperado || PRIVACY_VERSION) : PRIVACY_VERSION;
+    el.className = 'rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 sm:p-5 shadow-sm';
+    el.innerHTML = `
+      <div class="flex items-start gap-3 sm:gap-4 mb-4">
+        <span class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-sm flex-shrink-0"><i class="fa-solid fa-triangle-exclamation text-xl"></i></span>
+        <div class="flex-1 min-w-0">
+          <div class="font-black text-amber-900 text-base leading-tight flex items-center gap-2 flex-wrap">
+            <span>Aceite pendente — obrigatório</span>
+            <span class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white text-amber-700 border border-amber-200">ação necessária</span>
+          </div>
+          <div class="text-xs sm:text-sm text-amber-800 mt-2 leading-relaxed">
+            <p>Para continuar usando os recursos do Ajeitaí (comprar moedas, desbloquear leads, etc.), você precisa ler e concordar formalmente com os <strong>Termos de Uso v${esperadoT}</strong> e a <strong>Política de Privacidade v${esperadoP}</strong>.</p>
+            <p class="mt-1 text-amber-700">${info.motivo === 'sem_aceite_registrado' ? 'Nenhum registro de aceite encontrado no seu perfil.' : 'Seu aceite é de uma versão antiga. Revise os documentos atualizados e aceite a nova versão.'}</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-end">
+        <div class="flex-1 flex flex-col sm:flex-row gap-2 text-[11px] sm:text-xs text-amber-700/90 items-start sm:items-center">
+          <label class="flex items-start gap-2 cursor-pointer group">
+            <input type="checkbox" id="perfilAceiteCheckbox" class="mt-0.5 w-4 h-4 accent-amber-600 rounded cursor-pointer">
+            <span class="leading-snug group-hover:text-amber-900 transition">Marque aqui depois de ler os documentos: <span onclick="event.preventDefault();abrirTermosDeUso()" class="underline font-bold cursor-pointer decoration-amber-400 hover:decoration-amber-600">Termos de Uso</span> e <span onclick="event.preventDefault();abrirPoliticaPrivacidade()" class="underline font-bold cursor-pointer decoration-emerald-400 hover:decoration-emerald-600">Política de Privacidade</span>.</span>
+          </label>
+        </div>
+        <button onclick="_registrarAceiteTermosUsuarioAtual('perfil_legal_card')" id="perfilBtnAceitarAgora" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-700 hover:via-orange-700 hover:to-red-700 text-white font-black rounded-xl shadow-lg shadow-amber-600/25 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:grayscale" disabled>
+          <i class="fa-solid fa-signature"></i>
+          Li e concordo · Registrar aceite agora
+        </button>
+      </div>`;
+    const cb = document.getElementById('perfilAceiteCheckbox');
+    const btn = document.getElementById('perfilBtnAceitarAgora');
+    if (cb && btn) cb.addEventListener('change', function(){ btn.disabled = !this.checked; });
+  }
+}
+
+function _registrarAceiteTermosUsuarioAtual(origem) {
+  const p = profissionalLogado;
+  if (!p) { toast('warning','Sem sessão','Faça login como profissional para registrar o aceite.'); return false; }
+  const agoraISO = new Date().toISOString();
+  const novoAceite = {
+    termos_version: String(TERMS_VERSION),
+    privacidade_version: String(PRIVACY_VERSION),
+    data_hora_aceite: agoraISO,
+    usuario_id: String(p.id || ''),
+    usuario_nome: String(p.nome || ''),
+    usuario_whatsapp: String(p.whatsapp || ''),
+    usuario_email: String(p.email || p.emailGoogle || ''),
+    ip_registro: null,
+    origem: String(origem || 'perfil_legal_card'),
+    registro_integridade: 'hash_pendente_backend_v1'
+  };
+  p.aceite_termos = novoAceite;
+  profissionalLogado = Object.assign({}, profissionalLogado, { aceite_termos:novoAceite });
+  const idx = profissionais.findIndex(function(x){ return x && x.id === p.id; });
+  if (idx >= 0) profissionais[idx] = Object.assign({}, profissionais[idx], { aceite_termos:novoAceite });
+  try { salvarTodosGlobaisNoStorage(); } catch(eSave){}
+  try { if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais(); } catch(eR1){}
+  try { if (typeof fbSyncAddProfissional === 'function') {
+    setTimeout(function(){
+      try { fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id)) })); } catch(eFs){ console.warn(eFs); }
+    }, 250);
+  }} catch(eSync){}
+  try { renderPerfilLegalAceiteStatus(); } catch(eRe){}
+  toast('success','✓ Aceite registrado','Seu aceite dos Termos de Uso e Política de Privacidade foi salvo com sucesso (versões '+TERMS_VERSION+' / '+PRIVACY_VERSION+').',6500);
+  try { if (typeof fecharModalAceitePendente === 'function') fecharModalAceitePendente(); } catch(eCl){}
+  return true;
+}
+
+function abrirModalAceitePendente() {
+  const m = document.getElementById('modal-aceite-pendente');
+  if (!m) return false;
+  m.classList.remove('hidden');
+  try { document.body.style.overflow = 'hidden'; } catch(e){}
+  const cb = document.getElementById('modalAceitePendenteCheckbox');
+  const btn = document.getElementById('modalAceitePendenteBtnRegistrar');
+  if (cb && btn) {
+    cb.checked = false;
+    btn.disabled = true;
+    cb.onchange = function(){ btn.disabled = !this.checked; };
+  }
+  return true;
+}
+function fecharModalAceitePendente() {
+  const m = document.getElementById('modal-aceite-pendente');
+  if (!m) return;
+  m.classList.add('hidden');
+  try { document.body.style.overflow = ''; } catch(e){}
+}
+function _verificarAceiteObrigatorio(origem) {
+  if (!profissionalLogado) return true;
+  const info = _validarAceiteValidoParaVersaoAtual(profissionalLogado);
+  if (info && info.valido) return true;
+  try { abrirModalAceitePendente(); } catch(e){}
+  try {
+    toast('warning','Aceite pendente','Para usar esta funcionalidade, leia e aceite os Termos de Uso e a Política de Privacidade (versões atuais).',6500);
+  } catch(eT){}
+  return false;
 }
 
 function initPerfilEventListeners() {
@@ -7294,6 +8432,17 @@ document.addEventListener('DOMContentLoaded', () => {
     atualizarHeaderPorSessao();
     try { if (typeof inicializarCadastroProfCategorias === 'function') inicializarCadastroProfCategorias(); } catch(eCat){}
     try { if (typeof IIFE_validacaoProfissionais === 'object' && IIFE_validacaoProfissionais && typeof IIFE_validacaoProfissionais.bootstrap === 'function') IIFE_validacaoProfissionais.bootstrap(); } catch(eVer){}
+    // Alerta saldo baixo: verificação após carregar sessão (primeira carga).
+    try {
+      if (profissionalLogado && profissionalLogado.id) {
+        const st = (typeof window.IIFE_AlertaSaldoBaixoMoedas !== 'undefined') ? IIFE_AlertaSaldoBaixoMoedas : null;
+        if (st && typeof st._alertaSaldoVerificarProfissionalLogado === 'function') {
+          st._alertaSaldoVerificarProfissionalLogado(null, 'debito');
+        } else {
+          try { _alertaSaldoVerificarProfissionalLogado(null, 'debito'); } catch(e){}
+        }
+      }
+    } catch(eSb){}
     renderCatalogoProfissionais();
     renderMuralPedidos();
     // Fallback URL: se usuario veio do OAuth redirect com #id_token=... (ux_mode redirect ou window.open fallback)

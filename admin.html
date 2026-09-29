@@ -137,7 +137,7 @@ tailwind.config = {
     </div>
 
     <!-- Métricas -->
-    <div id="adminMetricas" class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+    <div id="adminMetricas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
       <div class="bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 rounded-3xl p-6 text-white shadow-pop">
         <div class="flex items-start justify-between mb-4">
           <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">🪙</div>
@@ -164,6 +164,35 @@ tailwind.config = {
         <div class="text-xs font-bold uppercase tracking-wider text-white/80 mb-1">Receita Estimada</div>
         <div id="metricReceita" class="text-4xl font-black">R$ 0,00</div>
         <div class="text-sm text-white/80 mt-2">Soma dos valores de todas as recargas.</div>
+      </div>
+      <div onclick="trocarTabAdmin('verificacao')" role="button" tabindex="0" class="cursor-pointer group bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500 hover:from-amber-600 hover:via-yellow-600 hover:to-orange-600 rounded-3xl p-6 text-white shadow-pop transition-all active:scale-[0.99]">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-shield-halved text-xl"></i></div>
+          <i class="fa-solid fa-user-clock text-2xl opacity-90 group-hover:animate-pulse"></i>
+        </div>
+        <div class="text-xs font-bold uppercase tracking-wider text-white/85 mb-1">Validações Pendentes</div>
+        <div id="metricValidacoesPendentes" class="text-4xl font-black">0</div>
+        <div class="text-sm text-white/85 mt-2"><span class="font-bold underline">Clique aqui</span> para ir à aba de análises.</div>
+      </div>
+    </div>
+
+    <!-- ALERTA FIXO DE NOVAS SOLICITAÇÕES DE VALIDAÇÃO (aparece sempre que houver 1+ pending) -->
+    <div id="adminBannerPendentes" class="hidden mb-8 rounded-3xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 shadow-sm animate-fadeIn">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 p-5 sm:p-6">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+          <i class="fa-solid fa-bell text-xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="font-black text-amber-900 text-base sm:text-lg">Há <span id="adminBannerPendentesCount">0</span> nova(s) solicitação(ões) de validação pendentes de análise.</span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500 text-white text-[10px] font-black shadow-sm">⏳ AGUARDANDO</span>
+          </div>
+          <p class="text-amber-800 text-sm leading-relaxed">Novos profissionais cadastraram ou reenviaram seus documentos e aguardam o seu aceite para receber o selo de verificado. Lembre-se: eles só aparecem aqui após clicarem no botão <b class="text-amber-900">Enviar para Análise</b> do próprio perfil.</p>
+        </div>
+        <button onclick="trocarTabAdmin('verificacao')" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-black px-5 py-3 rounded-2xl shadow-lg shadow-amber-600/20 transition active:scale-95">
+          <i class="fa-solid fa-magnifying-glass-arrow-right"></i>
+          Ir para Verificações →
+        </button>
       </div>
     </div>
 
@@ -947,6 +976,25 @@ async function adminExcluirPatrocinador(docId) {
   } catch(e){ toast('error','Erro','Sem conexão.'); }
 }
 
+/* Firestore sync: salva configEconomia global em doc único configs/economia_global. Sem side effects. */
+async function fbSyncSalvarConfigEconomia() {
+  try {
+    if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules || !FbDb) return { ok: false, reason: 'firestore_unavailable' };
+    const mods = window.__fbModules;
+    const docRef = mods.doc(FbDb, 'configs', 'economia_global');
+    const payload = Object.assign({}, configEconomia, {
+      _updatedAt: Date.now(),
+      _syncOrigin: 'admin_dashboard',
+      _syncVersion: 1
+    });
+    await mods.setDoc(docRef, payload);
+    return { ok: true };
+  } catch(eSyncEco){
+    console.warn('fbSyncSalvarConfigEconomia fail:', eSyncEco && eSyncEco.message);
+    return { ok: false, error: eSyncEco && eSyncEco.message || String(eSyncEco) };
+  }
+}
+
 function adminSalvarEconomia() {
   const custo = Number(document.getElementById('cfgCustoDesbloqueio').value);
   if (!custo || custo < 1) { toast('error','Custo inválido','Informe um custo de desbloqueio maior que zero.'); return; }
@@ -962,6 +1010,18 @@ function adminSalvarEconomia() {
   });
   configEconomia.custoMoedasPorDesbloqueio = Math.round(custo);
   salvarTodosGlobaisNoStorage();
+  try {
+    if (typeof fbSyncSalvarConfigEconomia === 'function') {
+      fbSyncSalvarConfigEconomia().then(function(r) {
+        if (r && r.ok === true) {
+          toast('success','⚙️ Configurações salvas!','Os novos preços foram persistidos no banco de dados central e já estão ativos para todos os profissionais.');
+        } else {
+          toast('success','⚙️ Configurações salvas!','Valores ativos localmente. (Aviso: sincronização com banco central falhou — verifique conexão.)');
+        }
+      }).catch(function(){ toast('success','⚙️ Configurações salvas!','Valores ativos localmente.'); });
+      return;
+    }
+  } catch(eFbEco){}
   toast('success','⚙️ Configurações salvas!','Os novos preços e custos já estão ativos na plataforma. Faça refresh no app principal para aplicar.');
 }
 
@@ -982,6 +1042,45 @@ function renderAdminDashboard() {
   if (document.getElementById('metricMoedasVendidas')) document.getElementById('metricMoedasVendidas').textContent = totMoedas;
   if (document.getElementById('metricRecargas')) document.getElementById('metricRecargas').textContent = totRecargas;
   if (document.getElementById('metricReceita')) document.getElementById('metricReceita').textContent = formatarBRL(totReceita);
+  // ===== (Novas solicitações de validação: contador + badge tab + banner) =====
+  try {
+    var todosProfs = Array.isArray(profissionais) ? profissionais.slice() : [];
+    for (var _bck = 0; _bck < todosProfs.length; _bck++) {
+      try { if (typeof window.IIFE_adminVerProf === 'object' && window.IIFE_adminVerProf) { window.IIFE_adminVerProf._garante && window.IIFE_adminVerProf._garante(todosProfs[_bck]); } } catch(eB){}
+    }
+    var qtdPendentesValidacao = todosProfs.filter(function(p){
+      if (!p || !p.verificacao) return false;
+      if (String(p.verificacao.status||'').toUpperCase() !== 'PENDING') return false;
+      return !!p.verificacao.data_solicitacao || (Number(p.verificacao.versao_envio)||0) >= 1;
+    }).length;
+    if (document.getElementById('metricValidacoesPendentes')) document.getElementById('metricValidacoesPendentes').textContent = qtdPendentesValidacao;
+    // Banner fixo no topo
+    var banner = document.getElementById('adminBannerPendentes');
+    var bannerCount = document.getElementById('adminBannerPendentesCount');
+    if (banner) {
+      if (qtdPendentesValidacao > 0) { banner.classList.remove('hidden'); if (bannerCount) bannerCount.textContent = qtdPendentesValidacao; }
+      else banner.classList.add('hidden');
+    }
+    // Badge dinâmico na aba "Verificações" (tab)
+    var tabVer = document.getElementById('tabAdminVerificacao');
+    var tabPro = document.getElementById('tabAdminProfissionais');
+    if (tabVer) {
+      var baseLabel = '🛡️ Verificações';
+      var badgeClass = ' inline-flex items-center justify-center ml-1.5 min-w-[22px] px-2 h-[22px] rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black shadow-sm';
+      var titulo = baseLabel + (qtdPendentesValidacao > 0 ? (` <span class="${badgeClass}">${qtdPendentesValidacao}</span>`) : '');
+      var jaTem = tabVer.getAttribute('data-has-badge-added') === '1';
+      tabVer.innerHTML = titulo;
+      tabVer.setAttribute('data-has-badge-added', '1');
+    }
+    // Badge na aba Profissionais (total cadastrados)
+    if (tabPro) {
+      var baseP = '👥 Profissionais';
+      var totalP = todosProfs.length;
+      if (totalP > 0) {
+        tabPro.innerHTML = baseP + ` <span class="inline-flex items-center justify-center ml-1.5 min-w-[22px] px-2 h-[22px] rounded-full bg-slate-200 text-slate-700 text-[10px] font-black">${totalP}</span>`;
+      } else tabPro.innerHTML = baseP;
+    }
+  } catch(eCountPend){ console.warn('[adminDashboard] erro contador pendentes:', eCountPend); }
 
   const tbPedBody = document.getElementById('adminTabelaPedidosBody');
   if (tbPedBody) {
@@ -1167,7 +1266,15 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
         tabsContainer.innerHTML = statusSet.map(function(s){
           var count = s.k === 'TODOS'
             ? (Array.isArray(profissionais) ? profissionais.length : 0)
-            : (Array.isArray(profissionais) ? profissionais.filter(function(p){ _garante(p); return p.verificacao && String(p.verificacao.status).toUpperCase() === s.k; }).length : 0);
+            : (Array.isArray(profissionais) ? profissionais.filter(function(p){
+                _garante(p);
+                if (!p.verificacao) return false;
+                if (String(p.verificacao.status).toUpperCase() !== s.k) return false;
+                if (s.k === 'PENDING') {
+                  return !!p.verificacao.data_solicitacao || (Number(p.verificacao.versao_envio)||0) >= 1;
+                }
+                return true;
+              }).length : 0);
           var ativo = (s.k === _adminVerFiltroStatus);
           return `<button onclick="IIFE_adminVerProf.setFiltro('${s.k}')" class="px-3 py-1.5 rounded-lg text-[11px] font-black transition ${ativo ? 'bg-gradient-to-r from-primary-500 to-primary-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
             ${s.l} <span class="opacity-70 font-bold ml-1">${count}</span>
@@ -1183,9 +1290,19 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
       }
       // backfill garante estrutura
       for (var b = 0; b < profissionais.length; b++) _garante(profissionais[b]);
+      // Para status PENDING: SOMENTE quem JÁ ENVIOU solicitação (tem data_solicitacao NÃO NULA / versao_envio >= 1).
+      // Evita aparecer a fila toda cheia de cadastros novos que ainda não enviaram nenhum documento.
       var lista = _adminVerFiltroStatus === 'TODOS'
         ? profissionais.slice()
-        : profissionais.filter(function(p){ return p.verificacao && String(p.verificacao.status).toUpperCase() === String(_adminVerFiltroStatus).toUpperCase(); });
+        : profissionais.filter(function(p){
+            if (!p || !p.verificacao) return false;
+            if (String(p.verificacao.status).toUpperCase() !== String(_adminVerFiltroStatus).toUpperCase()) return false;
+            if (_adminVerFiltroStatus === 'PENDING') {
+              var temEnvio = !!p.verificacao.data_solicitacao || (Number(p.verificacao.versao_envio) || 0) >= 1;
+              return temEnvio;
+            }
+            return true;
+          });
       // Ordena: PENDING primeiro por data_solicitacao crescente (mais antiga na fila)
       lista.sort(function(a,b){
         try {
@@ -1199,7 +1316,34 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
         } catch(e){ return 0; }
       });
       if (lista.length === 0) {
-        body.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">Nenhum profissional com status "${_adminVerFiltroStatus}" encontrado.</td></tr>`;
+        var _qtdTotal = Array.isArray(profissionais) ? profissionais.length : 0;
+        var _ehFiltroPend = String(_adminVerFiltroStatus).toUpperCase() === 'PENDING';
+        if (_ehFiltroPend && _qtdTotal > 0) {
+          body.innerHTML = `<tr><td colspan="6" class="px-6 py-10">
+            <div class="rounded-3xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 p-6 sm:p-8 max-w-3xl mx-auto">
+              <div class="flex flex-col sm:flex-row items-start gap-5">
+                <div class="w-14 h-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm"><i class="fa-solid fa-envelopes-bulk text-2xl"></i></div>
+                <div class="flex-1 space-y-3">
+                  <div class="text-lg font-black text-amber-900">Ainda não há solicitações PENDENTES novas enviadas para análise.</div>
+                  <p class="text-amber-800 text-sm leading-relaxed">Existem <b class="text-amber-900">${_qtdTotal} profissional(is)</b> cadastrados no total, mas nenhum deles clicou ainda no botão <b class="text-amber-900">Enviar para Análise (solicitar verificação)</b> no próprio perfil (aba "Meu Perfil", área "Documentos de verificação").</p>
+                  <p class="text-[13px] text-amber-900/90 leading-relaxed">A solicitação só aparece na fila <b>APÓS</b> o profissional anexar documentos e enviar explicitamente — até lá, eles permanecem com status PENDING padrão mas não aparecem nesta visão filtrada (evita fila falsamente cheia).</p>
+                  <div class="flex flex-wrap gap-2 pt-1">
+                    <button onclick="IIFE_adminVerProf.setFiltro('TODOS')" class="inline-flex items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm transition active:scale-95">
+                      <i class="fa-solid fa-users"></i> Ver todos os ${_qtdTotal} profissional(ais)
+                    </button>
+                    <button onclick="trocarTabAdmin('profissionais')" class="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm px-4 py-2.5 rounded-xl transition active:scale-95">
+                      <i class="fa-solid fa-table"></i> Ir para aba "Profissionais"
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td></tr>`;
+        } else if (_qtdTotal === 0) {
+          body.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">Nenhum profissional cadastrado ainda.</td></tr>`;
+        } else {
+          body.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">Nenhum profissional com status "${_adminVerFiltroStatus}" encontrado.</td></tr>`;
+        }
         return;
       }
       body.innerHTML = lista.map(function(p){
