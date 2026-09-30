@@ -267,9 +267,12 @@ tailwind.config = {
           </div>
           <div class="inline-flex bg-slate-100 rounded-xl p-1 flex-wrap">
             <button onclick="trocarTabAdmin('pedidos')" id="tabAdminPedidos" class="px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm">📋 Pedidos</button>
+            <button onclick="trocarTabAdmin('clientes')" id="tabAdminClientes" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">🧑 Clientes</button>
             <button onclick="trocarTabAdmin('profissionais')" id="tabAdminProfissionais" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">👥 Profissionais</button>
+            <button onclick="trocarTabAdmin('moedas')" id="tabAdminMoedas" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">🪙 Ajustar Moedas</button>
             <button onclick="trocarTabAdmin('verificacao')" id="tabAdminVerificacao" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">🛡️ Verificações</button>
             <button onclick="trocarTabAdmin('patrocinadores')" id="tabAdminPatrocinadores" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">🤝 Patrocinadores</button>
+            <button onclick="trocarTabAdmin('comunicado')" id="tabAdminComunicado" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50">📢 Comunicado Global</button>
           </div>
         </div>
       </div>
@@ -291,7 +294,67 @@ tailwind.config = {
             </tbody>
           </table>
         </div>
+        <!-- ===== CLIENTES (busca, listar, editar, excluir) ===== -->
+        <div id="adminTabelaClientesContainer" class="hidden">
+          <div class="px-6 py-4 bg-blue-50/50 border-b border-blue-100">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-2 min-w-0">
+                <i class="fa-solid fa-users text-blue-600"></i>
+                <span class="font-bold text-base text-blue-900">🧑 Gestão de Clientes</span>
+                <span class="text-[11px] text-blue-700/80 hidden sm:inline">— Visualize, pesquise, edite e exclua contas de clientes.</span>
+              </div>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <div class="relative flex-1 sm:w-96">
+                  <input id="adminBuscaClientesInput" type="text" placeholder="🔍 Pesquisar por nome, WhatsApp, e-mail, cidade..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-blue-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 focus:outline-none text-sm font-semibold" onkeydown="if (event.key === 'Enter') adminBuscarClientes(this.value)">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                </div>
+                <button onclick="adminCarregarTodosClientes(true)" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-blue-50 border border-blue-200 text-blue-800 font-bold text-sm transition">
+                  <i class="fa-solid fa-rotate-right"></i> Recarregar
+                </button>
+                <button onclick="adminBuscarClientes(document.getElementById('adminBuscaClientesInput')?.value || '')" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-sm shadow shadow-blue-500/20 transition">
+                  <i class="fa-solid fa-search"></i> Buscar
+                </button>
+              </div>
+            </div>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Fonte</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Nome</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">WhatsApp</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">E-mail</th>
+                <th class="text-left px-6 py-4 font-bold text-slate-600">Cidade</th>
+                <th class="text-center px-6 py-4 font-bold text-slate-600">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="adminTabelaClientesBody" class="divide-y divide-slate-100">
+            </tbody>
+          </table>
+        </div>
+
         <div id="adminTabelaProfissionaisContainer" class="hidden">
+          <div class="px-6 py-4 bg-primary-50/60 border-b border-primary-100">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-2 min-w-0">
+                <i class="fa-solid fa-user-hard-hat text-primary-600"></i>
+                <span class="font-bold text-base text-primary-900">👥 Gestão de Profissionais</span>
+                <span class="text-[11px] text-primary-700/80 hidden sm:inline">— Visualize, pesquise, edite, exclua e ajuste saldo de moedas.</span>
+              </div>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <div class="relative flex-1 sm:w-96">
+                  <input id="adminBuscaProfInput" type="text" placeholder="🔍 Pesquisar por nome, WhatsApp, cidade, e-mail..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-primary-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 focus:outline-none text-sm font-semibold" onkeydown="if (event.key === 'Enter') adminBuscarProfissionais(this.value)">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                </div>
+                <button onclick="adminCarregarTodosProfissionais(true)" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-primary-50 border border-primary-200 text-primary-800 font-bold text-sm transition">
+                  <i class="fa-solid fa-rotate-right"></i> Recarregar
+                </button>
+                <button onclick="adminBuscarProfissionais(document.getElementById('adminBuscaProfInput')?.value || '')" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold text-sm shadow shadow-primary-500/20 transition">
+                  <i class="fa-solid fa-search"></i> Buscar
+                </button>
+              </div>
+            </div>
+          </div>
           <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b border-slate-200">
               <tr>
@@ -310,6 +373,71 @@ tailwind.config = {
             </tbody>
           </table>
         </div>
+
+        <!-- ===== AJUSTAR MOEDAS (adicionar/remover manualmente) ===== -->
+        <div id="adminAjustarMoedasContainer" class="hidden px-5 sm:px-8 py-6 sm:py-8 space-y-6 bg-gradient-to-br from-amber-50/50 via-yellow-50/60 to-orange-50/50">
+          <div class="flex items-start gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-white border border-amber-200 shadow-card">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 via-yellow-400 to-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20"><i class="fa-solid fa-coins text-xl"></i></div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-black text-slate-800 text-lg sm:text-xl">🪙 Ajuste Manual de Moedas (Administrativo)</h3>
+              <p class="text-sm text-slate-600 mt-1">Adicione ou remova moedas de qualquer profissional. <strong>Todas as operações são registradas em log</strong> (usuário, quantidade, admin, data/hora, motivo).</p>
+            </div>
+          </div>
+
+          <!-- Seleção de profissional -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+            <div class="md:col-span-3 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-4 shadow-sm">
+              <div>
+                <label class="text-xs font-black text-slate-700 mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-user-hard-hat text-amber-500"></i> Selecione o profissional (digite para pesquisar)</label>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <div class="relative flex-1">
+                    <input id="adminMoedasBuscaProfInput" type="text" placeholder="🔍 Buscar profissional por nome/WhatsApp..." class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 focus:outline-none text-sm font-semibold" oninput="adminMoedasBuscarProf(this.value)">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                  </div>
+                  <div id="adminMoedasProfSelecionadoInfo" class="flex-1 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user-hard-hat"></i></div>
+                    <div class="min-w-0">
+                      <div class="text-xs font-black text-amber-800/80 uppercase tracking-wide">Nenhum selecionado</div>
+                      <div class="text-xs text-amber-700/70">Pesquise e clique em "Selecionar" na lista abaixo.</div>
+                    </div>
+                  </div>
+                </div>
+                <div id="adminMoedasProfResultados" class="mt-3 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
+                  <div class="px-4 py-3 text-xs text-slate-400 text-center">Digite pelo menos 2 caracteres ou clique em "Carregar Todos" acima.</div>
+                </div>
+                <button onclick="adminMoedasBuscarProf('')" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                  <i class="fa-solid fa-list"></i> Carregar 30 primeiros profissionais
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div>
+                  <label class="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-1.5"><i class="fa-solid fa-plus text-emerald-500"></i> Quantidade a <strong class="text-emerald-600">ADICIONAR</strong> (número inteiro)</label>
+                  <input id="adminMoedasQtdAdd" type="number" min="1" step="1" placeholder="Ex: 10" class="w-full px-4 py-2.5 rounded-xl bg-white border-2 border-emerald-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 focus:outline-none text-sm font-bold text-emerald-900 transition">
+                </div>
+                <div>
+                  <label class="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-1.5"><i class="fa-solid fa-minus text-rose-500"></i> Quantidade a <strong class="text-rose-600">REMOVER</strong> (nunca saldo negativo)</label>
+                  <input id="adminMoedasQtdRem" type="number" min="1" step="1" placeholder="Ex: 5" class="w-full px-4 py-2.5 rounded-xl bg-white border-2 border-rose-200 focus:border-rose-400 focus:ring-4 focus:ring-rose-100 focus:outline-none text-sm font-bold text-rose-900 transition">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-1.5"><i class="fa-solid fa-note-sticky text-slate-500"></i> Motivo (obrigatório se qtd > 20 moedas, recomendado sempre)</label>
+                  <input id="adminMoedasMotivo" type="text" maxlength="400" placeholder="Ex: Bonificação por campanha, Ajuste manual, etc." class="w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 focus:outline-none text-sm font-semibold transition">
+                </div>
+              </div>
+
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                <button onclick="adminMoedasLimparSelecao()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">Limpar</button>
+                <button onclick="adminMoedasExecutar('remover')" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white font-bold text-sm shadow-md shadow-rose-500/20 transition">
+                  <i class="fa-solid fa-minus"></i> Remover Moedas
+                </button>
+                <button onclick="adminMoedasExecutar('adicionar')" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-extrabold text-sm shadow-md shadow-emerald-500/20 transition">
+                  <i class="fa-solid fa-plus"></i> Adicionar Moedas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="adminTabelaPatrocinadoresContainer" class="hidden">
           <div class="px-6 py-4 bg-amber-50/50 border-b border-amber-100 text-[11px] text-amber-800 flex items-center gap-2">
             <i class="fa-solid fa-circle-info"></i>
@@ -331,6 +459,61 @@ tailwind.config = {
             <tbody id="adminTabelaPatrocinadoresBody" class="divide-y divide-slate-100">
             </tbody>
           </table>
+        </div>
+
+        <!-- ===== COMUNICADO GLOBAL (tarja topo site) ===== -->
+        <div id="adminComunicadoContainer" class="hidden px-5 sm:px-8 py-6 sm:py-8 space-y-5 bg-slate-50/60">
+          <div class="flex items-start gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary-50 via-blue-50 to-accent-50 border border-primary-200">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 text-white flex items-center justify-center flex-shrink-0 shadow-card"><i class="fa-solid fa-bullhorn text-lg"></i></div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-black text-slate-800 text-lg sm:text-xl">📢 Comunicado Global</h3>
+              <p class="text-sm text-slate-600 mt-1">Ative e edite a tarja de aviso no topo do site. Todos os visitantes e usuários logados veem a mensagem enquanto estiver ativa.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+            <label class="md:col-span-2 flex items-center gap-3 p-4 rounded-2xl bg-white border border-slate-200 hover:border-primary-300 transition cursor-pointer select-none">
+              <div class="relative inline-block w-14 h-8">
+                <input type="checkbox" id="comunicadoAtivo" class="sr-only peer peer-checked:bg-primary-500">
+                <div class="absolute left-0 top-0 w-full h-full rounded-full bg-slate-300 peer-checked:from-primary-500 peer-checked:to-accent-500 peer-checked:bg-gradient-to-r transition cursor-pointer"></div>
+                <div class="absolute left-1 top-1 w-6 h-6 rounded-full bg-white shadow transition peer-checked:translate-x-6 cursor-pointer"></div>
+              </div>
+              <div>
+                <div class="font-black text-slate-800 text-base">Publicar comunicado ativo no site</div>
+                <div class="text-xs text-slate-500">Quando desligado, a tarja fica oculta para todos os usuários.</div>
+              </div>
+            </label>
+
+            <div class="md:col-span-2">
+              <label class="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-1.5"><i class="fa-solid fa-bullhorn text-primary-500"></i> Mensagem exibida (visível para todos)</label>
+              <textarea id="comunicadoMensagem" maxlength="500" rows="3" placeholder="Ex: 📢 Novidade! Novos profissionais disponíveis na sua região." class="w-full px-4 py-3 rounded-2xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 text-sm font-semibold text-slate-800 placeholder-slate-400 transition resize-y"></textarea>
+              <div class="mt-1 text-right text-[10px] text-slate-400"><span id="comunicadoMensagemCont">0</span> / 500</div>
+            </div>
+
+            <div>
+              <label class="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-1.5"><i class="fa-solid fa-face-smile text-primary-500"></i> Ícone/emoji (opcional)</label>
+              <input id="comunicadoIcone" maxlength="8" type="text" value="📢" placeholder="📢" class="w-full px-4 py-3 rounded-2xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 text-base text-center font-bold text-slate-800 placeholder-slate-400 transition">
+            </div>
+            <div>
+              <label class="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-1.5"><i class="fa-solid fa-toggle-on text-primary-500"></i> Texto do botão (opcional, deixa vazio p/ não exibir botão)</label>
+              <input id="comunicadoBotaoTexto" maxlength="40" type="text" placeholder="Ex: Saiba mais" class="w-full px-4 py-3 rounded-2xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 text-sm font-semibold text-slate-800 placeholder-slate-400 transition">
+            </div>
+            <div class="md:col-span-2">
+              <label class="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-1.5"><i class="fa-solid fa-link text-primary-500"></i> Link do botão (opcional, requer texto preenchido) — inicie com <code class="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-mono">http://</code> ou <code class="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-mono">https://</code></label>
+              <input id="comunicadoBotaoLink" maxlength="800" type="url" placeholder="https://..." class="w-full px-4 py-3 rounded-2xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 text-sm font-semibold text-slate-800 placeholder-slate-400 transition">
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+            <button onclick="adminCarregarComunicadoAtual()" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">
+              <i class="fa-solid fa-rotate-right"></i>
+              Recarregar
+            </button>
+            <button onclick="adminSalvarComunicado()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-primary-500 via-primary-600 to-accent-600 hover:from-primary-600 hover:via-primary-700 hover:to-accent-700 text-white font-black shadow-lg shadow-primary-500/20 hover:shadow-xl active:scale-[0.98] transition">
+              <i class="fa-solid fa-floppy-disk"></i>
+              Salvar Comunicado
+            </button>
+          </div>
         </div>
 
         <!-- ===== NOVA TAB 4: PROFISSIONAIS P/ VERIFICAÇÃO (alteraçao cirúrgica) ===== -->
@@ -421,6 +604,62 @@ tailwind.config = {
         <div class="text-[11px] text-slate-400 leading-relaxed pt-1">
           Código válido por 5 minutos · 6 tentativas · Uso único. Autorização expira automaticamente após 10 minutos.
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR USUÁRIO (Cliente ou Profissional) -->
+  <div id="modalAdminEditarUsuario" class="hidden fixed inset-0 z-50 p-4">
+    <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modalAdminEditarUsuario')"></div>
+    <div class="relative max-w-2xl w-full mx-auto my-4 max-h-[94vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+      <div class="px-6 sm:px-8 py-5 border-b border-slate-100 flex items-start gap-4">
+        <div id="adminEditarIcone" class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user-pen text-white text-xl"></i></div>
+        <div class="flex-1 min-w-0">
+          <h3 id="adminEditarTitulo" class="text-xl font-black text-slate-800 truncate">Editar Usuário</h3>
+          <p id="adminEditarSubtitulo" class="text-sm text-slate-500 mt-0.5 truncate">Ajuste os dados permitidos. Saldo de moedas NÃO pode ser alterado aqui.</p>
+        </div>
+        <button onclick="fecharModal('modalAdminEditarUsuario')" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div id="adminEditarBody" class="p-6 sm:p-8 space-y-4">
+        <!-- popula por JS -->
+      </div>
+      <div class="px-6 sm:px-8 py-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex flex-col-reverse sm:flex-row items-stretch gap-3">
+        <button onclick="fecharModal('modalAdminEditarUsuario')" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold py-3 rounded-xl transition">Cancelar</button>
+        <button onclick="adminSalvarEdicaoUsuario()" class="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-extrabold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-floppy-disk"></i>
+          Salvar Alterações
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EXCLUIR USUÁRIO (confirmação) -->
+  <div id="modalAdminExcluirUsuario" class="hidden fixed inset-0 z-[70] p-4">
+    <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modalAdminExcluirUsuario')"></div>
+    <div class="relative max-w-lg w-full mx-auto my-12 max-h-[92vh] overflow-y-auto bg-white rounded-3xl shadow-pop animate-popIn">
+      <div class="px-6 sm:px-8 py-5 border-b border-slate-100 flex items-start gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-trash-can text-white text-xl"></i></div>
+        <div class="flex-1 min-w-0">
+          <h3 id="adminExcluirTitulo" class="text-xl font-black text-slate-800 truncate">⚠️ Excluir Usuário</h3>
+          <p id="adminExcluirSubtitulo" class="text-sm text-slate-500 mt-0.5 truncate">Ação irreversível. Confirme abaixo.</p>
+        </div>
+        <button onclick="fecharModal('modalAdminExcluirUsuario')" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-6 sm:p-8 space-y-4">
+        <div id="adminExcluirMsgBox" class="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-[13px] text-rose-800 leading-relaxed">
+          Atenção: esta ação <b>não pode ser desfeita</b>. Os dados do usuário serão removidos permanentemente do Firestore.
+        </div>
+        <label class="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-200 hover:border-rose-300 cursor-pointer select-none">
+          <input id="adminExcluirConfirmar" type="checkbox" class="mt-1 w-5 h-5 rounded text-rose-600 focus:ring-rose-500">
+          <div class="text-sm text-slate-700 font-bold"><span class="text-rose-700">Confirmo que desejo EXCLUIR permanentemente este usuário.</span></div>
+        </label>
+      </div>
+      <div class="px-6 sm:px-8 py-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex flex-col-reverse sm:flex-row items-stretch gap-3">
+        <button onclick="fecharModal('modalAdminExcluirUsuario')" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold py-3 rounded-xl transition">Cancelar</button>
+        <button id="adminExcluirConfirmarBtn" onclick="adminExcluirUsuarioConfirmar()" class="flex-1 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-extrabold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash-can"></i>
+          Excluir Permanentemente
+        </button>
       </div>
     </div>
   </div>
@@ -679,24 +918,38 @@ function fazerLogoutAdmin() {
 var _tabAdminAtual = 'pedidos';
 let _adminCachePatrocinadores = [];
 var _adminVerFiltroStatus = 'PENDING';
+/* Caches globais para Gestão Usuários + Moedas */
+var _adminCacheProfissionais = [];
+var _adminCacheClientes = [];
+var _adminMoedasProfSelecionado = null; // { docId, nome, whatsapp, saldoMoedas, cidade, categorias }
+var _adminEditarAtual = null; // { docId, usuario_tipo, obj }
 function trocarTabAdmin(tab) {
   _tabAdminAtual = tab;
   const btnPed = document.getElementById('tabAdminPedidos');
+  const btnCli = document.getElementById('tabAdminClientes');
   const btnPro = document.getElementById('tabAdminProfissionais');
+  const btnMd  = document.getElementById('tabAdminMoedas');
   const btnVer = document.getElementById('tabAdminVerificacao');
   const btnPat = document.getElementById('tabAdminPatrocinadores');
+  const btnCom = document.getElementById('tabAdminComunicado');
   const tbPed = document.getElementById('adminTabelaPedidosContainer');
+  const tbCli = document.getElementById('adminTabelaClientesContainer');
   const tbPro = document.getElementById('adminTabelaProfissionaisContainer');
+  const tbMd  = document.getElementById('adminAjustarMoedasContainer');
   const tbVer = document.getElementById('adminTabelaVerificacaoContainer');
   const tbPat = document.getElementById('adminTabelaPatrocinadoresContainer');
+  const tbCom = document.getElementById('adminComunicadoContainer');
   const des = 'px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white/50';
   const atv = 'px-4 py-2 rounded-lg text-sm font-bold bg-white text-primary-700 shadow-sm';
-  [btnPed,btnPro,btnVer,btnPat].forEach(b => b && (b.className = des));
-  [tbPed,tbPro,tbVer,tbPat].forEach(t => t && t.classList.add('hidden'));
+  [btnPed,btnCli,btnPro,btnMd,btnVer,btnPat,btnCom].forEach(b => b && (b.className = des));
+  [tbPed,tbCli,tbPro,tbMd,tbVer,tbPat,tbCom].forEach(t => t && t.classList.add('hidden'));
   if (tab === 'pedidos') { btnPed && (btnPed.className = atv); tbPed && tbPed.classList.remove('hidden'); }
-  else if (tab === 'profissionais') { btnPro && (btnPro.className = atv); tbPro && tbPro.classList.remove('hidden'); }
+  else if (tab === 'clientes') { btnCli && (btnCli.className = atv); tbCli && tbCli.classList.remove('hidden'); adminCarregarTodosClientes(); }
+  else if (tab === 'profissionais') { btnPro && (btnPro.className = atv); tbPro && tbPro.classList.remove('hidden'); adminCarregarTodosProfissionais(); }
+  else if (tab === 'moedas') { btnMd && (btnMd.className = atv); tbMd && tbMd.classList.remove('hidden'); adminMoedasLimparSelecao(true); }
   else if (tab === 'verificacao') { btnVer && (btnVer.className = atv); tbVer && tbVer.classList.remove('hidden'); if (typeof window.IIFE_adminVerProf === 'object' && window.IIFE_adminVerProf && typeof window.IIFE_adminVerProf.renderTabela === 'function') window.IIFE_adminVerProf.renderTabela(); }
   else if (tab === 'patrocinadores') { btnPat && (btnPat.className = atv); tbPat && tbPat.classList.remove('hidden'); adminCarregarPatrocinadores(); }
+  else if (tab === 'comunicado') { btnCom && (btnCom.className = atv); tbCom && tbCom.classList.remove('hidden'); adminCarregarComunicadoAtual(); }
 }
 
 async function adminLimparCacheListagens() {
@@ -755,6 +1008,500 @@ async function adminCarregarPatrocinadores(force) {
     renderAdminPatrocinadores(Array.isArray(local) ? local : []);
   } catch(e){ console.error('[adminCarregarPatrocinadores] erro:', e); renderAdminPatrocinadores([]); }
 }
+
+/* ---------- COMUNICADO GLOBAL ---------- */
+var _adminUltimoComunicado = null;
+function _adminAtualizaContadorMensagem() {
+  try {
+    const el = document.getElementById('comunicadoMensagem');
+    const cont = document.getElementById('comunicadoMensagemCont');
+    if (el && cont) {
+      const t = String(el.value || '');
+      cont.textContent = String(t.length);
+    }
+  } catch(e){}
+}
+async function adminCarregarComunicadoAtual() {
+  if (!adminLogado) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const r = await fetch(BACKEND_PIX_URL + '/api/comunicado/public', { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store' }).catch(()=>null);
+    const json = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    const cfg = (json && json.config && typeof json.config === 'object') ? json.config : null;
+    _adminUltimoComunicado = cfg || null;
+    const ativoEl = document.getElementById('comunicadoAtivo');
+    const msgEl = document.getElementById('comunicadoMensagem');
+    const iconeEl = document.getElementById('comunicadoIcone');
+    const btEl = document.getElementById('comunicadoBotaoTexto');
+    const blEl = document.getElementById('comunicadoBotaoLink');
+    if (ativoEl) ativoEl.checked = Boolean(cfg && cfg.ativo);
+    if (msgEl) msgEl.value = cfg && cfg.mensagem ? String(cfg.mensagem) : '';
+    if (iconeEl) iconeEl.value = cfg && cfg.icone ? String(cfg.icone) : '📢';
+    if (btEl) btEl.value = cfg && cfg.botao_texto ? String(cfg.botao_texto) : '';
+    if (blEl) blEl.value = cfg && cfg.botao_link ? String(cfg.botao_link) : '';
+    _adminAtualizaContadorMensagem();
+  } catch(e){ console.error('[adminCarregarComunicadoAtual] erro:', e); }
+}
+async function adminSalvarComunicado() {
+  if (!adminLogado) { toast('error','Acesso negado','Apenas administradores.'); return; }
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const ativoEl = document.getElementById('comunicadoAtivo');
+    const msgEl = document.getElementById('comunicadoMensagem');
+    const iconeEl = document.getElementById('comunicadoIcone');
+    const btEl = document.getElementById('comunicadoBotaoTexto');
+    const blEl = document.getElementById('comunicadoBotaoLink');
+    const ativo = !!(ativoEl && ativoEl.checked);
+    const mensagem = (msgEl ? String(msgEl.value||'').trim() : '').substring(0, 500);
+    if (ativo && !mensagem) { toast('warning','Mensagem obrigatória','Informe o texto do comunicado antes de ativar.'); msgEl && msgEl.focus(); return; }
+    const icone = (iconeEl ? String(iconeEl.value||'📢').trim() : '📢').substring(0, 8);
+    const botao_texto = (btEl ? String(btEl.value||'').trim() : '').substring(0, 40);
+    const botao_link = (blEl ? String(blEl.value||'').trim() : '').substring(0, 800);
+    if (botao_link && !(botao_link.startsWith('http://') || botao_link.startsWith('https://'))) {
+      toast('warning','Link inválido','O link do botão precisa começar com http:// ou https://.'); blEl && blEl.focus(); return;
+    }
+    const r = await fetch(BACKEND_PIX_URL + '/api/comunicado/admin', {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+      body: JSON.stringify({ admin_senha:'bolo2024', ativo, mensagem, icone, botao_texto, botao_link })
+    }).catch(()=>null);
+    const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    if (j && j.ok === true) {
+      _adminUltimoComunicado = (j && j.config && typeof j.config === 'object') ? j.config : null;
+      toast('success','✅ Comunicado salvo', ativo ? 'A tarja está ativa e visível no site para todos os usuários.' : 'Comunicado desativado e salvo com sucesso.', 5500);
+      adminCarregarComunicadoAtual();
+    } else {
+      toast('error','Erro ao salvar', (j && j.msg) ? String(j.msg) : 'Verifique a conexão com o backend e tente novamente.');
+    }
+  } catch(e){
+    console.error('[adminSalvarComunicado] erro:', e && e.message);
+    toast('error','Erro interno','Falha inesperada ao salvar comunicado. ' + (e && e.message || ''));
+  }
+}
+
+/* ============================================================
+   (NOVO V12 — GESTÃO ADMIN USUÁRIOS E MOEDAS)
+   ============================================================ */
+var _adminExcluirPendente = null; // { usuario_tipo, docId, nome }
+
+/* HELPERS */
+function _adminFormatarWA(wa) { try { wa = String(wa||'').replace(/\D/g,'').slice(0,11); if (wa.length===11) return '('+wa.slice(0,2)+') '+wa.slice(2,7)+'-'+wa.slice(7); if (wa.length===10) return '('+wa.slice(0,2)+') '+wa.slice(2,6)+'-'+wa.slice(6); return wa || '—'; } catch(e){ return wa||'—'; } }
+function _adminTrunca(str, max) { str = String(str||''); if (str.length <= (Number(max)||40)) return str; return str.substring(0, (Number(max)||40)) + '…'; }
+function _adminEstrelas(nota, qtd) {
+  nota = Number(nota||0); qtd = Number(qtd||0); if (qtd < 1) return `<span class="text-slate-400 text-xs">—</span>`;
+  const full = Math.floor(nota); const half = (nota - full) >= 0.5 ? 1 : 0; const emp = Math.max(0,5-full-half);
+  let h = ''; for (let i=0;i<full;i++) h += `<i class="fa-solid fa-star text-amber-400 text-[11px]"></i>`; if (half) h += `<i class="fa-solid fa-star-half-stroke text-amber-400 text-[11px]"></i>`; for (let i=0;i<emp;i++) h += `<i class="fa-regular fa-star text-amber-300 text-[11px]"></i>`;
+  h += ` <span class="ml-1 font-bold text-slate-700 text-[11px]">${nota.toFixed(1)} (${qtd})</span>`; return h;
+}
+
+/* PROFISSIONAIS — listar todos */
+async function adminCarregarTodosProfissionais(force) {
+  if (!adminLogado) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    if (!force && Array.isArray(_adminCacheProfissionais) && _adminCacheProfissionais.length > 0) { renderAdminProfissionaisTabela(_adminCacheProfissionais); return; }
+    const r = await fetch(BACKEND_PIX_URL + '/api/admin/usuarios/profissionais?admin_senha=' + encodeURIComponent('bolo2024'), { method:'GET', headers:{'Accept':'application/json'} }).catch(()=>null);
+    const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    if (j && j.ok && Array.isArray(j.items)) {
+      _adminCacheProfissionais = j.items;
+      renderAdminProfissionaisTabela(j.items);
+      return;
+    }
+    // Fallback storage local
+    const local = pegarDoStorage('profissionais', []);
+    _adminCacheProfissionais = Array.isArray(local) ? local : [];
+    renderAdminProfissionaisTabela(_adminCacheProfissionais);
+  } catch(e){ console.error('[adminCarregarTodosProfissionais erro:', e && e.message); renderAdminProfissionaisTabela([]); }
+}
+function renderAdminProfissionaisTabela(items) {
+  const tb = document.getElementById('adminTabelaProfissionaisBody'); if (!tb) return;
+  items = Array.isArray(items) ? items : _adminCacheProfissionais || [];
+  if (items.length === 0) {
+    tb.innerHTML = `<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400">Nenhum profissional encontrado.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = items.map(function(p){
+    const docId = p._docId || (p.uid || p.id || '');
+    const idCurto = String(p.id || docId).toString().slice(0, 10);
+    const cats = Array.isArray(p.categorias) ? p.categorias.slice(0,3).map(c=>`<span class="inline-block px-2 py-0.5 rounded-lg bg-primary-100 text-primary-700 text-[10px] font-bold mr-0.5 mb-0.5">${_adminTrunca(c,16)}</span>`).join('') : '';
+    const wa = p.whatsapp ? `<a href="https://wa.me/55${String(p.whatsapp||'').replace(/\D/g,'')}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 font-bold hover:text-emerald-800 transition">${_adminFormatarWA(p.whatsapp)}</a>` : '—';
+    const saldoCor = (Number(p.saldoMoedas||0) <= 2 ? 'text-rose-600 font-extrabold' : ((Number(p.saldoMoedas||0) <= 5) ? 'text-amber-600 font-bold' : 'text-slate-800 font-bold'));
+    return `<tr class="hover:bg-slate-50">
+      <td class="px-6 py-3 text-[11px] text-slate-500 font-mono">${idCurto}…</td>
+      <td class="px-6 py-3"><div class="flex items-center gap-2.5 min-w-0"><div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 text-white flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-user-hard-hat text-xs"></i></div><div class="min-w-0"><div class="font-bold text-slate-800 text-sm truncate max-w-[180px]">${_adminTrunca(p.nome || 'Profissional', 40)}</div>${p.emailGoogle || p.email ? `<div class="text-[10px] text-slate-500 truncate max-w-[220px]">${p.emailGoogle || p.email}</div>` : ''}</div></div></td>
+      <td class="px-6 py-3">${wa}</td>
+      <td class="px-6 py-3 text-slate-700 text-xs max-w-[140px] truncate">${p.cidade || '—'}</td>
+      <td class="px-6 py-3 text-slate-700 text-xs max-w-[140px] truncate">${p.bairro || '—'}</td>
+      <td class="px-6 py-3 text-center">${_adminEstrelas(p.mediaAvaliacoes, p.qtdAvaliacoes)}</td>
+      <td class="px-6 py-3 text-center"><span class="${saldoCor} text-base">${Number(p.saldoMoedas||0)} 🪙</span></td>
+      <td class="px-6 py-3 text-left max-w-[190px]">${cats || '<span class="text-slate-400 text-[11px]">—</span>'}</td>
+      <td class="px-6 py-3"><div class="flex items-center justify-center gap-1.5 flex-wrap">
+        <button onclick="adminAbrirEditarUsuario('profissional','${docId}')" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-[11px] font-bold transition" title="Editar dados"><i class="fa-solid fa-user-pen"></i> Editar</button>
+        <button onclick="adminAbrirMoedasPara('${docId}')" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 text-[11px] font-bold transition" title="Ajustar saldo de moedas"><i class="fa-solid fa-coins"></i> Moedas</button>
+        <button onclick="adminDialogExcluirUsuario('profissional','${docId}', ${JSON.stringify(p.nome || 'Profissional').replace(/"/g,'&quot;')})" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-[11px] font-bold transition" title="Excluir permanentemente"><i class="fa-solid fa-trash-can"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* CLIENTES — listar todos */
+async function adminCarregarTodosClientes(force) {
+  if (!adminLogado) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    if (!force && Array.isArray(_adminCacheClientes) && _adminCacheClientes.length > 0) { renderAdminClientesTabela(_adminCacheClientes); return; }
+    const r = await fetch(BACKEND_PIX_URL + '/api/admin/usuarios/clientes?admin_senha=' + encodeURIComponent('bolo2024'), { method:'GET', headers:{'Accept':'application/json'} }).catch(()=>null);
+    const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    if (j && j.ok && Array.isArray(j.items)) {
+      _adminCacheClientes = j.items;
+      renderAdminClientesTabela(j.items);
+      return;
+    }
+    _adminCacheClientes = [];
+    renderAdminClientesTabela([]);
+  } catch(e){ console.error('[adminCarregarTodosClientes erro:', e && e.message); renderAdminClientesTabela([]); }
+}
+function renderAdminClientesTabela(items) {
+  const tb = document.getElementById('adminTabelaClientesBody'); if (!tb) return;
+  items = Array.isArray(items) ? items : _adminCacheClientes || [];
+  if (items.length === 0) {
+    tb.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">Nenhum cliente encontrado.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = items.map(function(c){
+    const docId = c._docId || c.id || '';
+    const fonte = c._fonte === 'credenciais'
+      ? '<span class="inline-block px-2 py-0.5 rounded-lg bg-blue-100 text-blue-700 text-[10px] font-black">Credencial</span>'
+      : '<span class="inline-block px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-black">Pedido</span>';
+    const wa = c.whatsapp ? `<a href="https://wa.me/55${String(c.whatsapp||'').replace(/\D/g,'')}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 font-bold hover:text-emerald-800 transition text-xs">${_adminFormatarWA(c.whatsapp)}</a>` : '—';
+    return `<tr class="hover:bg-slate-50">
+      <td class="px-6 py-3">${fonte}</td>
+      <td class="px-6 py-3"><div class="font-bold text-slate-800 text-sm">${_adminTrunca(c.nome || 'Cliente', 40)}</div>${c.email ? `<div class="text-[10px] text-slate-500">${_adminTrunca(c.email, 40)}</div>` : ''}</td>
+      <td class="px-6 py-3">${wa}</td>
+      <td class="px-6 py-3 text-slate-700 text-xs max-w-[200px] truncate">${c.email || '—'}</td>
+      <td class="px-6 py-3 text-slate-700 text-xs max-w-[160px] truncate">${c.cidade ? (c.cidade + (c.bairro ? ' / ' + c.bairro : '')) : '—'}</td>
+      <td class="px-6 py-3"><div class="flex items-center justify-center gap-1.5 flex-wrap">
+        <button onclick="adminAbrirEditarUsuario('cliente','${docId}')" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-[11px] font-bold transition"><i class="fa-solid fa-user-pen"></i> Editar</button>
+        <button onclick="adminDialogExcluirUsuario('cliente','${docId}', ${JSON.stringify(c.nome || 'Cliente').replace(/"/g,'&quot;')})" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-[11px] font-bold transition" title="Excluir"><i class="fa-solid fa-trash-can"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* BUSCA CLIENTES / PROFISSIONAIS */
+async function adminBuscarProfissionais(q) {
+  q = String(q||'').trim(); if (q.length && q.length < 2) { toast('info','Digite mais caracteres','Informe pelo menos 2 caracteres para buscar.'); return; }
+  if (!adminLogado) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    if (!q) { adminCarregarTodosProfissionais(true); return; }
+    const r = await fetch(BACKEND_PIX_URL + '/api/admin/usuarios/busca?admin_senha=' + encodeURIComponent('bolo2024') + '&q=' + encodeURIComponent(q), { method:'GET', headers:{'Accept':'application/json'} }).catch(()=>null);
+    const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    const prof = j && j.ok && Array.isArray(j.profissionais) ? j.profissionais : [];
+    const cli  = j && j.ok && Array.isArray(j.clientes) ? j.clientes : [];
+    _adminCacheProfissionais = prof;
+    renderAdminProfissionaisTabela(prof);
+    if (_tabAdminAtual === 'clientes') { _adminCacheClientes = cli; renderAdminClientesTabela(cli); }
+    const total = prof.length + cli.length;
+    toast('success','Busca concluída', `${total} resultado(s) encontrado(s).');
+  } catch(e){ console.error('[adminBuscarProfissionais erro:', e && e.message); }
+}
+async function adminBuscarClientes(q) {
+  q = String(q||'').trim(); if (q.length && q.length < 2) { toast('info','Digite mais caracteres','Informe pelo menos 2 caracteres para buscar.'); return; }
+  if (!adminLogado) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    if (!q) { adminCarregarTodosClientes(true); return; }
+    const r = await fetch(BACKEND_PIX_URL + '/api/admin/usuarios/busca?admin_senha=' + encodeURIComponent('bolo2024') + '&q=' + encodeURIComponent(q), { method:'GET', headers:{'Accept':'application/json'} }).catch(()=>null);
+    const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    const prof = j && j.ok && Array.isArray(j.profissionais) ? j.profissionais : [];
+    const cli  = j && j.ok && Array.isArray(j.clientes) ? j.clientes : [];
+    _adminCacheClientes = cli;
+    renderAdminClientesTabela(cli);
+    if (_tabAdminAtual === 'profissionais') { _adminCacheProfissionais = prof; renderAdminProfissionaisTabela(prof); }
+    const total = prof.length + cli.length;
+    toast('success','Busca concluída', `${total} resultado(s) encontrado(s).');
+  } catch(e){ console.error('[adminBuscarClientes erro:', e && e.message); }
+}
+
+/* ABRIR MODAL EDITAR USUÁRIO */
+async function adminAbrirEditarUsuario(usuario_tipo, docId) {
+  if (!adminLogado) return;
+  usuario_tipo = String(usuario_tipo||'').toLowerCase();
+  docId = String(docId||'').trim(); if (!docId) return;
+  try {
+    const ehPro = usuario_tipo === 'profissional';
+    const fonte = ehPro
+      ? (Array.isArray(_adminCacheProfissionais) ? _adminCacheProfissionais.find(function(pp){ return String(pp._docId||pp.uid||pp.id||'') === docId; }) || null : null)
+      : (Array.isArray(_adminCacheClientes) ? _adminCacheClientes.find(function(cc){ return String(cc._docId||cc.id||'') === docId; }) || null : null);
+    if (!fonte) { toast('warning','Usuário não encontrado no cache. Recarregue a lista.'); return; }
+    _adminEditarAtual = { docId, usuario_tipo, obj: Object.assign({}, fonte || {}) };
+    document.getElementById('adminEditarTitulo').textContent = ehPro ? '👥 Editar Profissional' : '🧑 Editar Cliente';
+    document.getElementById('adminEditarSubtitulo').textContent = ehPro
+      ? 'Edite os dados cadastrais básicos do profissional.'
+      : 'Edite os dados básicos do cliente.';
+    const icone = document.getElementById('adminEditarIcone');
+    if (icone) {
+      icone.classList.remove('from-primary-500', 'to-accent-500', 'from-blue-500', 'to-indigo-600');
+      icone.classList.add(ehPro ? 'from-primary-500' : 'from-blue-500', ehPro ? 'to-accent-500' : 'to-indigo-600');
+    }
+    const body = document.getElementById('adminEditarBody'); if (!body) return;
+    if (ehPro) {
+      body.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="sm:col-span-2">
+          <label class="text-xs font-black text-slate-700">Nome completo</label>
+          <input id="edtProNome" type="text" maxlength="160" value="${(fonte.nome||'').replace(/"/g,'&quot;')}" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="text-xs font-black text-slate-700">WhatsApp (só números)</label>
+          <input id="edtProWA" type="tel" maxlength="11" value="${String(fonte.whatsapp||'').replace(/\D/g,'')}" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="text-xs font-black text-slate-700">E-mail</label>
+          <input id="edtProEmail" type="email" maxlength="200" value="${(fonte.emailGoogle || fonte.emailLogin || fonte.email || '').replace(/"/g,'&quot;')}" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="text-xs font-black text-slate-700">Cidade</label>
+          <input id="edtProCidade" type="text" maxlength="120" value="${(fonte.cidade||'').replace(/"/g,'&quot;')}" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="text-xs font-black text-slate-700">Bairro</label>
+          <input id="edtProBairro" type="text" maxlength="120" value="${(fonte.bairro||'').replace(/"/g,'&quot;')}" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 text-sm font-semibold">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs font-black text-slate-700">Sobre / descrição profissional</label>
+          <textarea id="edtProSobre" rows="3" maxlength="1200" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-primary-400 focus:ring-4 focus:ring-primary-100 text-sm font-semibold resize-y">${(fonte.sobre||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="flex items-center gap-2.5 p-3 rounded-xl bg-white border border-slate-200 p-3 cursor-pointer select-none">
+            <input id="edtProDisp" type="checkbox" ${fonte.disponivel_para_trabalhar ? ' checked' : ''} class="w-5 h-5 rounded text-primary-600 focus:ring-primary-500">
+            <div>
+              <div class="font-black text-slate-800 text-sm">Disponível para receber novos trabalhos</div>
+              <div class="text-[11px] text-slate-500">Ative quando estiver ativo na plataforma.</div>
+            </div>
+          </label>
+        </div>
+        <div class="sm:col-span-2 flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
+          <i class="fa-solid fa-circle-info text-base"></i>
+          Saldo atual do profissional: <b>${Number(fonte.saldoMoedas||0)} 🪙 moedas. Para alterar saldo, use a aba <b>🪙 Ajustar Moedas</b> (movimentações ficam registradas em log).
+        </div>
+      </div>`;
+    } else {
+      body.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="text-xs font-black text-slate-700">Nome</label>
+            <input id="edtCliNome" type="text" maxlength="160" value="${(fonte.nome||'').replace(/"/g,'&quot;')}" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="text-xs font-black text-slate-700">WhatsApp</label>
+            <input id="edtCliWA" type="tel" maxlength="11" value="${String(fonte.whatsapp||'').replace(/\D/g,'')}" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="text-xs font-black text-slate-700">E-mail</label>
+            <input id="edtCliEmail" type="email" maxlength="200" value="${(fonte.email||'').replace(/"/g,'&quot;')}" class="mt-1.5 w-full px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 text-sm font-semibold">
+          </div>
+        </div>`;
+    }
+    abrirModal('modalAdminEditarUsuario');
+  } catch(e){ console.error('[adminAbrirEditarUsuario erro:', e && e.message); toast('error','Erro','Falha ao abrir edição.'); }
+}
+async function adminSalvarEdicaoUsuario() {
+  if (!adminLogado || !_adminEditarAtual) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const { docId, usuario_tipo } = _adminEditarAtual;
+    const ehPro = usuario_tipo === 'profissional';
+    const payload = { admin_senha:'bolo2024', docId, usuario_tipo, admin_responsavel:'admin10' };
+    if (ehPro) {
+      payload.nome = (document.getElementById('edtProNome')?.value||'').trim();
+      payload.whatsapp = String(document.getElementById('edtProWA')?.value||'').replace(/\D/g,'').slice(0,11);
+      payload.email = (document.getElementById('edtProEmail')?.value||'').trim();
+      payload.cidade = (document.getElementById('edtProCidade')?.value||'').trim();
+      payload.bairro = (document.getElementById('edtProBairro')?.value||'').trim();
+      payload.sobre = (document.getElementById('edtProSobre')?.value||'').trim();
+      payload.disponivel_para_trabalhar = !!(document.getElementById('edtProDisp')?.checked);
+    } else {
+      payload.nome = (document.getElementById('edtCliNome')?.value||'').trim();
+      payload.whatsapp = String(document.getElementById('edtCliWA')?.value||'').replace(/\D/g,'').slice(0,11);
+      payload.email = (document.getElementById('edtCliEmail')?.value||'').trim();
+    }
+    if (ehPro && !payload.nome) { toast('warning','Nome obrigatório','Informe o nome do profissional.'); return; }
+    if (!ehPro && !payload.nome) { toast('warning','Nome obrigatório','Informe o nome do cliente.'); return; }
+    const r = await fetch(BACKEND_PIX_URL + '/api/admin/usuarios/editar', {
+      method:'PATCH', headers:{'Content-Type':'application/json','Accept':'application/json'}, body: JSON.stringify(payload)
+    }).catch(()=>null);
+    const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    if (j && j.ok === true) {
+      toast('success','✅ Salvo com sucesso', (j && j.msg) ? String(j.msg) : 'Dados atualizados.', 4500);
+      fecharModal('modalAdminEditarUsuario');
+      _adminEditarAtual = null;
+      if (ehPro) adminCarregarTodosProfissionais(true);
+      else adminCarregarTodosClientes(true);
+    } else {
+      toast('error','Erro ao salvar', (j && j.msg) ? String(j.msg) : 'Verifique a conexão com o backend.');
+    }
+  } catch(e){ console.error('[adminSalvarEdicaoUsuario erro:', e && e.message); toast('error','Erro interno', 'Falha inesperada.'); }
+}
+
+/* MODAL EXCLUIR */
+function adminDialogExcluirUsuario(usuario_tipo, docId, nome) {
+  if (!adminLogado) return;
+  _adminExcluirPendente = { usuario_tipo, docId, nome: nome || 'Usuário' };
+  const ehPro = usuario_tipo === 'profissional';
+  document.getElementById('adminExcluirTitulo').textContent = ehPro ? '⚠️ Excluir Profissional' : '⚠️ Excluir Cliente';
+  document.getElementById('adminExcluirSubtitulo').textContent = `Usuário: ${_adminTrunca(nome || '—', 50)}`;
+  const cb = document.getElementById('adminExcluirConfirmar'); if (cb) cb.checked = false;
+  abrirModal('modalAdminExcluirUsuario');
+}
+async function adminExcluirUsuarioConfirmar() {
+  if (!adminLogado || !_adminExcluirPendente) return;
+  try {
+    const confirmar = document.getElementById('adminExcluirConfirmar')?.checked;
+    if (!confirmar) { toast('warning','Confirme o checkbox','Marque a confirmação para prosseguir.'); return; }
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const { usuario_tipo, docId } = _adminExcluirPendente;
+    const r = await fetch(BACKEND_PIX_URL + '/api/admin/usuarios/excluir', {
+      method:'DELETE', headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({ admin_senha:'bolo2024', usuario_tipo, docId, confirmar: true })
+    }).catch(()=>null);
+    const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    if (j && j.ok === true) {
+      toast('success','🗑️ Excluído', (j && j.msg) ? String(j.msg) : 'Usuário excluído.', 5000);
+      fecharModal('modalAdminExcluirUsuario');
+      _adminExcluirPendente = null;
+      if (usuario_tipo === 'profissional') adminCarregarTodosProfissionais(true);
+      else adminCarregarTodosClientes(true);
+    } else {
+      toast('error','Erro ao excluir', (j && j.msg) ? String(j.msg) : 'Verifique a conexão.');
+    }
+  } catch(e){ console.error('[adminExcluirUsuarioConfirmar erro:', e && e.message); toast('error','Erro interno','Falha inesperada.'); }
+}
+
+/* ABRIR Aba MOEDAS com profissional já pré-selecionado
+   (quando admin clica no botão "Moedas" da lista de profissionais) */
+function adminAbrirMoedasPara(docId) {
+  docId = String(docId||'').trim(); if (!docId) return;
+  trocarTabAdmin('moedas');
+  setTimeout(function(){
+    try {
+      const p = Array.isArray(_adminCacheProfissionais) ? _adminCacheProfissionais.find(function(pp){ return String(pp._docId||pp.uid||pp.id||'') === docId; }) : null;
+      if (!p) { toast('warning','Profissional não está no cache. Recarregando a lista...'); adminCarregarTodosProfissionais(true); return; }
+      adminMoedasSelecionarProf(docId, p);
+    } catch(e){}
+  }, 120);
+}
+
+/* ==========================================
+   ABA — MOEDAS ADMINISTRATIVAS
+   ========================================== */
+async function adminMoedasBuscarProf(q) {
+  if (!adminLogado) return;
+  q = String(q||'').trim();
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const resEl = document.getElementById('adminMoedasProfResultados');
+    let items = [];
+    if (!q || q.length < 2) {
+      if (!q) {
+        const r = await fetch(BACKEND_PIX_URL + '/api/admin/usuarios/profissionais?admin_senha=' + encodeURIComponent('bolo2024'), { method:'GET', headers:{'Accept':'application/json'} }).catch(()=>null);
+        const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+        if (j && j.ok && Array.isArray(j.items)) { items = j.items.slice(0,30); _adminCacheProfissionais = j.items; }
+      } else { if (resEl) resEl.innerHTML = `<div class="px-4 py-4 text-center text-xs text-slate-400">Informe pelo menos 2 caracteres para pesquisar.</div>`; return; }
+    } else {
+      const r = await fetch(BACKEND_PIX_URL + '/api/admin/usuarios/busca?admin_senha=' + encodeURIComponent('bolo2024') + '&q=' + encodeURIComponent(q), { method:'GET', headers:{'Accept':'application/json'} }).catch(()=>null);
+      const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+      items = j && j.ok && Array.isArray(j.profissionais) ? j.profissionais : [];
+    }
+    if (!resEl) return;
+    if (items.length === 0) { resEl.innerHTML = `<div class="px-4 py-4 text-center text-xs text-slate-400">Nenhum profissional encontrado.</div>`; return; }
+    resEl.innerHTML = items.map(function(p){
+      const docId = p._docId || (p.uid || p.id || '');
+      const salCor = (Number(p.saldoMoedas||0) <= 2 ? 'text-rose-700' : ((Number(p.saldoMoedas||0) <= 5) ? 'text-amber-700' : 'text-emerald-700'));
+      return `<div class="flex items-center justify-between gap-3 p-3 hover:bg-amber-50/60 transition">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-user-hard-hat text-xs"></i></div>
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-slate-800 text-sm truncate">${_adminTrunca(p.nome || 'Profissional', 40)}</div>
+            <div class="text-[10px] text-slate-500 truncate">WA ${_adminFormatarWA(p.whatsapp)} · ${p.cidade || 'Sem cidade'}</div>
+          </div>
+          <div class="shrink-0 text-right">
+            <div class="font-black ${salCor} text-sm">${Number(p.saldoMoedas||0)} 🪙</div>
+          </div>
+        </div>
+        <button onclick='adminMoedasSelecionarProf("${docId}")' class="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white text-[11px] font-bold shadow-sm shadow-amber-500/20 transition"><i class="fa-solid fa-check"></i> Selecionar</button>
+      </div>`;
+    }).join('');
+  } catch(e){ console.error('[adminMoedasBuscarProf erro:', e && e.message); }
+}
+function adminMoedasSelecionarProf(docId, obj) {
+  docId = String(docId||'').trim(); if (!docId) return;
+  let p = obj && typeof obj === 'object' && obj ? obj : null;
+  if (!p) p = Array.isArray(_adminCacheProfissionais) ? _adminCacheProfissionais.find(function(pp){ return String(pp._docId||pp.uid||pp.id||'') === docId; }) : null;
+  if (!p) { toast('warning','Não encontrado no cache. Tente recarregar.'); return; }
+  _adminMoedasProfSelecionado = { docId, nome: p.nome || 'Profissional', whatsapp: p.whatsapp || '', saldoMoedas: Number(p.saldoMoedas||0), cidade: p.cidade || '' };
+  const infoEl = document.getElementById('adminMoedasProfSelecionadoInfo');
+  if (infoEl) infoEl.innerHTML = `
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-user-hard-hat"></i></div>
+    <div class="min-w-0 flex-1">
+      <div class="text-[10px] font-black text-emerald-700 uppercase tracking-wide">✅ SELECIONADO</div>
+      <div class="font-bold text-slate-800 text-sm truncate">${_adminTrunca(p.nome || 'Profissional', 36)}</div>
+      <div class="text-[11px] text-slate-600">Saldo atual: <b class="text-primary-700">${Number(p.saldoMoedas||0)} 🪙</b> · ${p.cidade ? p.cidade + ' · ' : ''}WA ${_adminFormatarWA(p.whatsapp)}</div>
+    </div>`;
+  toast('info','Profissional selecionado', 'Agora informe a quantidade e clique em Adicionar ou Remover moedas.');
+}
+function adminMoedasLimparSelecao(silent) {
+  _adminMoedasProfSelecionado = null;
+  ['adminMoedasQtdAdd','adminMoedasQtdRem','adminMoedasMotivo'].forEach(function(id){ try { const e = document.getElementById(id); if (e) e.value = ''; } catch(e){} });
+  const infoEl = document.getElementById('adminMoedasProfSelecionadoInfo');
+  if (infoEl) infoEl.innerHTML = `
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user-hard-hat"></i></div>
+    <div class="min-w-0">
+      <div class="text-xs font-black text-amber-800/80 uppercase tracking-wide">Nenhum selecionado</div>
+      <div class="text-xs text-amber-700/70">Pesquise e clique em "Selecionar" na lista abaixo.</div>
+    </div>`;
+  const resEl = document.getElementById('adminMoedasProfResultados');
+  if (resEl) resEl.innerHTML = `<div class="px-4 py-3 text-xs text-slate-400 text-center">Digite pelo menos 2 caracteres ou clique em "Carregar 30 primeiros" acima.</div>`;
+  if (!silent) toast('info','Limpeza realizada','Seleção e campos foram limpos.');
+}
+async function adminMoedasExecutar(operacao) {
+  if (!adminLogado) return;
+  try {
+    operacao = String(operacao||'').toLowerCase();
+    if (!_adminMoedasProfSelecionado || !_adminMoedasProfSelecionado.docId) { toast('warning','Selecione um profissional','Pesquise e selecione um profissional na lista acima.'); return; }
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const isAdd = operacao === 'adicionar';
+    const qtdInputEl = document.getElementById(isAdd ? 'adminMoedasQtdAdd' : 'adminMoedasQtdRem');
+    let qtd = Math.max(0, Math.floor(Number(qtdInputEl?.value || 0)));
+    const motivo = (document.getElementById('adminMoedasMotivo')?.value||'').trim();
+    if (!qtd || qtd <= 0) { toast('warning','Informe a quantidade', isAdd ? 'Informe um número positivo para adicionar.' : 'Informe um número positivo para remover.'); return; }
+    if (qtd > 20 && !motivo) { toast('warning','Motivo obrigatório','Para movimentações acima de 20 moedas, informe o motivo.'); document.getElementById('adminMoedasMotivo')?.focus(); return; }
+    const ep = isAdd ? '/api/admin/moedas/adicionar' : '/api/admin/moedas/remover';
+    const r = await fetch(BACKEND_PIX_URL + ep, {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+      body: JSON.stringify({ admin_senha:'bolo2024', docId: _adminMoedasProfSelecionado.docId, qtd, motivo: motivo || (isAdd ? 'Adição manual admin' : 'Remoção manual admin'), admin_responsavel: 'admin10' })
+    }).catch(()=>null);
+    const j = r && r.ok ? (await r.json().catch(()=>({ok:false}))) : { ok:false };
+    if (j && j.ok === true) {
+      const novoSaldo = Number((j && j.saldo_novo != null) ? j.saldo_novo : (_adminMoedasProfSelecionado.saldoMoedas + (isAdd ? qtd : -qtd)));
+      toast(isAdd ? 'success' : 'success', isAdd ? '🪙 Moedas adicionadas!' : '🪙 Moedas removidas!', j && j.msg ? String(j.msg) : (isAdd ? `${qtd} moeda(s) adicionada(s).` : `${qtd} moeda(s) removida(s).`), 6500);
+      adminMoedasLimparSelecao(true);
+      adminCarregarTodosProfissionais(true);
+    } else {
+      toast('error','Falha na operação', (j && j.msg) ? String(j.msg) : 'Verifique a conexão com o backend.');
+    }
+  } catch(e){ console.error('[adminMoedasExecutar erro:', e && e.message); toast('error','Erro interno','Falha inesperada ao ajustar moedas.'); }
+}
+
+/* Colocar listener de contador da mensagem */
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    const m = document.getElementById('comunicadoMensagem');
+    if (m) m.addEventListener('input', _adminAtualizaContadorMensagem);
+  } catch(e){}
+});
 function renderAdminPatrocinadores(items) {
   const tb = document.getElementById('adminTabelaPatrocinadoresBody');
   if (!tb) return;

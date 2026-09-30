@@ -117,6 +117,116 @@ tailwind.config = {
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
+<!-- ============ TARJA GLOBAL DE COMUNICADO (TOPO) ============ -->
+<div id="tarjaComunicadoGlobal" class="hidden relative z-50 w-full bg-gradient-to-r from-primary-500 via-primary-600 to-accent-500 text-white shadow-md animate-fadeIn">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center gap-3">
+    <div id="tarjaComunicadoIcone" class="flex-shrink-0 text-lg sm:text-xl">📢</div>
+    <p id="tarjaComunicadoMensagem" class="flex-1 text-xs sm:text-sm font-semibold leading-snug truncate">Novidade no AjeitaAí! Agora você pode encontrar novos profissionais perto de você.</p>
+    <a id="tarjaComunicadoBotao" href="#" target="_blank" rel="noopener noreferrer" class="hidden flex-shrink-0 items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-white/90 hover:bg-white text-primary-700 text-[11px] sm:text-xs font-black rounded-xl shadow-sm transition">
+      <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      <span id="tarjaComunicadoBotaoTexto">Saiba mais</span>
+    </a>
+    <button onclick="fecharTarjaComunicadoGlobal()" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition" title="Fechar aviso" aria-label="Fechar comunicado">
+      <i class="fa-solid fa-xmark text-sm sm:text-base"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ============ AVISO PWA: ADICIONAR À TELA INICIAL ============ -->
+<div id="pwaInstalaAviso" class="hidden fixed inset-x-0 bottom-0 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:max-w-sm w-full z-[80] animate-[fadeIn_0.35s_ease-out]">
+  <div class="bg-white sm:rounded-3xl rounded-t-3xl border border-slate-200 shadow-[0_20px_60px_-15px_rgba(126,34,206,0.5)] overflow-hidden">
+    <!-- Barrinha arraste (só mobile) -->
+    <div class="sm:hidden h-1.5 w-full flex items-center justify-center pt-2 pb-1 bg-slate-50">
+      <div class="h-1 w-12 rounded-full bg-slate-300"></div>
+    </div>
+    <div class="p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+      <!-- Logo / Ícone -->
+      <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-card">
+        <i class="fa-solid fa-screwdriver-wrench text-white text-2xl sm:text-3xl"></i>
+      </div>
+      <!-- Título + descrição -->
+      <div class="flex-1 min-w-0">
+        <h3 class="font-black text-slate-800 text-base sm:text-lg leading-tight mb-1">
+          Tenha o AjeitaAí sempre à mão!
+        </h3>
+        <p class="text-slate-500 text-xs sm:text-sm leading-relaxed mb-3.5">
+          Adicione o AjeitaAí à tela inicial do seu celular e acesse mais rápido.
+        </p>
+        <!-- Botões -->
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <button id="pwaBtnAdicionar" onclick="pwaSolicitarInstalacao()" class="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-black rounded-2xl shadow-lg shadow-primary-500/20 active:scale-[0.98] transition text-sm whitespace-nowrap">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            Adicionar à tela inicial
+          </button>
+          <button onclick="pwaDispensarAviso(true)" class="flex-shrink-0 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition text-sm whitespace-nowrap">
+            Agora não
+          </button>
+        </div>
+        <button onclick="pwaDispensarAviso(false)" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition" aria-label="Fechar" title="Fechar aviso">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Espaçamento no mobile para não encostar no bottom nav -->
+  <div class="h-24 sm:hidden"></div>
+</div>
+
+<!-- ============ TUTORIAL iOS: 3 PASSOS ============ -->
+<div id="pwaIosTutorial" class="hidden fixed inset-0 z-[90]">
+  <div class="absolute inset-0 modal-backdrop animate-[fadeIn_0.25s_ease-out]" onclick="pwaFecharTutorialIos()"></div>
+  <div class="relative z-10 min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-[0_30px_80px_-20px_rgba(126,34,206,0.55)] overflow-hidden animate-[popIn_0.3s_ease-out]">
+      <!-- Header -->
+      <div class="relative p-5 sm:p-6 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 text-white">
+        <button onclick="pwaFecharTutorialIos()" class="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition" aria-label="Fechar">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+            <i class="fa-brands fa-apple text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="font-black text-xl sm:text-2xl leading-tight">Instalar no iPhone/iPad</h3>
+            <p class="text-sm text-white/80">Siga esses 3 passos rápidos:</p>
+          </div>
+        </div>
+      </div>
+      <!-- Passos -->
+      <ol class="p-5 sm:p-6 space-y-4">
+        <li class="flex items-start gap-3">
+          <span class="flex-shrink-0 w-9 h-9 rounded-2xl bg-primary-100 text-primary-700 flex items-center justify-center font-black text-lg">1</span>
+          <div>
+            <p class="font-bold text-slate-800 mb-1">Toque em <b class="inline-flex items-center gap-1 text-primary-700"><i class="fa-solid fa-square-arrow-up-right text-xs"></i> Compartilhar</b> no Safari</p>
+            <p class="text-sm text-slate-500">É o botão com a seta saindo de um quadrado, na barra inferior ou superior do navegador.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="flex-shrink-0 w-9 h-9 rounded-2xl bg-primary-100 text-primary-700 flex items-center justify-center font-black text-lg">2</span>
+          <div>
+            <p class="font-bold text-slate-800 mb-1">Toque em <b class="text-primary-700">"Adicionar à Tela de Início"</b></p>
+            <p class="text-sm text-slate-500">Role a lista de ações para baixo até encontrar essa opção (ícone ➕).</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="flex-shrink-0 w-9 h-9 rounded-2xl bg-primary-100 text-primary-700 flex items-center justify-center font-black text-lg">3</span>
+          <div>
+            <p class="font-bold text-slate-800 mb-1">Confirme em <b class="text-primary-700">"Adicionar"</b></p>
+            <p class="text-sm text-slate-500">Pronto! O ícone do AjeitaAí aparecerá na sua tela inicial, igual um app baixado da App Store.</p>
+          </div>
+        </li>
+      </ol>
+      <!-- Rodapé -->
+      <div class="p-5 sm:p-6 pt-1 sm:pt-1 bg-slate-50 border-t border-slate-100">
+        <button onclick="pwaFecharTutorialIos()" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-black rounded-2xl shadow-lg shadow-primary-500/20 active:scale-[0.98] transition">
+          <i class="fa-solid fa-check"></i>
+          Entendi!
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- =============== HEADER =============== -->
 <header id="ajeitaHeader" class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -143,7 +253,11 @@ tailwind.config = {
           <div id="headerNavGroupCliente" class="flex items-center gap-1">
             <button onclick="navigateTo('view-home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-magnifying-glass mr-1.5 text-primary-500"></i>Catálogo de Profissionais</button>
             <button onclick="abrirModalSolicitarOrcamento()" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 shadow-sm transition"><i class="fa-solid fa-bullhorn mr-1.5"></i>Pedir Serviço</button>
-            <button onclick="navigateTo('view-meus-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase mr-1.5 text-accent-500"></i>Meus Pedidos</button>
+            <button onclick="navigateTo('view-meus-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase mr-1.5 text-accent-500"></i>Pedidos</button>
+            <button onclick="abrirDrawerNotificacoesCliente()" class="relative nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition" aria-label="Notificações" title="Notificações">
+              <i class="fa-solid fa-bell mr-1.5 text-primary-500"></i>Notificações
+              <span id="headerClienteSinoBadge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md border-2 border-white animate-[bellRing_1.4s_ease-in-out_infinite_0.5s]">0</span>
+            </button>
             <button onclick="navigateTo('view-profissional-cadastro')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie mr-1.5 text-primary-500"></i>Sou Profissional</button>
             <button onclick="navigateTo('view-area-patrocinador')" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-fuchsia-700 bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-fuchsia-200 hover:from-fuchsia-100 hover:to-purple-100 transition"><i class="fa-solid fa-handshake mr-1.5 text-fuchsia-600"></i>Seja um parceiro</button>
           </div>
@@ -245,7 +359,12 @@ tailwind.config = {
         <div id="mobileNavGroupCliente" class="space-y-1.5">
           <button onclick="navigateTo('view-home'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-magnifying-glass text-primary-500 w-5"></i>Catálogo de Profissionais</button>
           <button onclick="abrirModalSolicitarOrcamento(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 shadow-sm transition"><i class="fa-solid fa-bullhorn w-5"></i>Pedir Serviço / Orçamento</button>
-          <button onclick="navigateTo('view-meus-pedidos'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase text-accent-500 w-5"></i>Meus Pedidos</button>
+          <button onclick="navigateTo('view-meus-pedidos'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-briefcase text-accent-500 w-5"></i>Pedidos</button>
+          <button onclick="toggleMobileMenu(); setTimeout(function(){try{abrirDrawerNotificacoesCliente();}catch(e){}},150);" class="relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition">
+            <i class="fa-solid fa-bell text-primary-500 w-5"></i>
+            <span>Notificações</span>
+            <span id="mobileClienteSinoBadge" class="hidden absolute right-4 top-1/2 -translate-y-1/2 min-w-[22px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md">0</span>
+          </button>
           <button onclick="navigateTo('view-profissional-cadastro'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie text-primary-500 w-5"></i>Quero ser Profissional</button>
         </div>
         <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
@@ -795,7 +914,7 @@ tailwind.config = {
             <h4 class="font-black text-slate-800 text-sm sm:text-lg">Ar condicionado</h4>
           </div>
         </button>
-        <button onclick="abrirModalSolicitarOrcamento()" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+        <button onclick="setCategoria('Técnico de eletrodomésticos')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
           <div class="aspect-square overflow-hidden bg-slate-100">
             <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Technician%20repairing%20broken%20smartphone%20cracked%20screen%20workbench%20tools%20white%20gloves%20close%20up%20photorealistic&image_size=square_hd" alt="Celular" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
           </div>
@@ -803,7 +922,7 @@ tailwind.config = {
             <h4 class="font-black text-slate-800 text-sm sm:text-lg">Celular</h4>
           </div>
         </button>
-        <button onclick="abrirModalSolicitarOrcamento()" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+        <button onclick="setCategoria('Técnico de geladeira')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
           <div class="aspect-square overflow-hidden bg-slate-100">
             <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Repairman%20working%20on%20refrigerator%20freezer%20appliance%20kitchen%20uniform%20tools%20professional%20photorealistic&image_size=square_hd" alt="Geladeira e freezer" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
           </div>
@@ -821,7 +940,7 @@ tailwind.config = {
         <button onclick="setCategoria('Diarista')" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
       </div>
       <div class="grid grid-cols-3 gap-3 sm:gap-5">
-        <button onclick="abrirModalSolicitarOrcamento()" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+        <button onclick="setCategoria('Babá')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
           <div class="aspect-square overflow-hidden bg-slate-100">
             <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Smiling%20female%20babysitter%20nanny%20helping%20little%20girl%20with%20homework%20living%20room%20yellow%20sweater%20photorealistic&image_size=square_hd" alt="Babá" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
           </div>
@@ -829,7 +948,7 @@ tailwind.config = {
             <h4 class="font-black text-slate-800 text-sm sm:text-lg">Babá</h4>
           </div>
         </button>
-        <button onclick="abrirModalSolicitarOrcamento()" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
+        <button onclick="setCategoria('Cozinheira')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
           <div class="aspect-square overflow-hidden bg-slate-100">
             <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Professional%20female%20cook%20chef%20blue%20apron%20cooking%20in%20kitchen%20stainless%20steel%20pots%20photorealistic&image_size=square_hd" alt="Cozinheira" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
           </div>
@@ -905,12 +1024,18 @@ tailwind.config = {
 
     <!-- Barra de pesquisa rápida dentro da view -->
     <div class="mb-8">
-      <div class="relative group">
-        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-primary-500 transition"></i>
-        <input id="barraPesquisaCategorias" type="text" placeholder="Pesquisar profissão (ex: soldador, jardineiro, engenheiro...)"
-          oninput="filtrarCategoriasViewTodas(this.value)"
-          class="w-full pl-14 pr-5 py-4 bg-white hover:bg-slate-50 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
-      </div>
+      <form onsubmit="event.preventDefault(); const v = document.getElementById('barraPesquisaCategorias').value; filtrarCategoriasViewTodas(v); const g = document.getElementById('containerGruposCategoriasTodas'); if (g) g.scrollIntoView({behavior:'smooth', block:'start'});" class="flex flex-col sm:flex-row items-stretch gap-3" autocomplete="off">
+        <div class="relative group flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-primary-500 transition"></i>
+          <input id="barraPesquisaCategorias" type="text" placeholder="Pesquisar profissão (ex: soldador, jardineiro, engenheiro...)"
+            oninput="filtrarCategoriasViewTodas(this.value)"
+            class="w-full pl-14 pr-5 py-4 bg-white hover:bg-slate-50 border-2 border-slate-200 focus:border-primary-400 focus:bg-white rounded-2xl text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+        </div>
+        <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-black rounded-2xl shadow-lg shadow-primary-500/20 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition whitespace-nowrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          Buscar
+        </button>
+      </form>
     </div>
 
     <!-- Grupos de categorias renderizados via JS (manter separado) -->
@@ -1149,12 +1274,27 @@ tailwind.config = {
               <input required id="cadNome" type="text" placeholder="Ex: João Silva dos Santos" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
             </div>
             <div>
-              <label class="block text-sm font-bold text-slate-700 mb-2">E-mail (opcional)</label>
-              <input id="cadEmail" type="text" inputmode="email" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="joao@email.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+              <label class="block text-sm font-bold text-slate-700 mb-2">E-mail *</label>
+              <input required id="cadEmail" type="text" inputmode="email" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="joao@email.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
             </div>
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-2">WhatsApp *</label>
               <input required id="cadWhatsApp" type="tel" placeholder="(61) 99999-9999" oninput="mascaraInputTel(this)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">Senha <span class="text-[11px] font-medium text-slate-400">(mínimo 6 caracteres)</span></label>
+              <div class="relative">
+                <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="cadSenha" type="password" placeholder="Obrigatória se não usar Google" autocomplete="new-password" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+              </div>
+              <div class="mt-1 text-[11px] text-slate-400">Deixe em branco se for entrar com Google.</div>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">Confirmar Senha</label>
+              <div class="relative">
+                <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="cadSenhaConfirm" type="password" placeholder="Repita a senha" autocomplete="new-password" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+              </div>
             </div>
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-2">Cidade *</label>
@@ -1323,6 +1463,28 @@ tailwind.config = {
             </div>
           </div>
           <div id="perfilCardQtdAval" class="text-xs text-slate-500 mt-1">0 avaliações recebidas</div>
+        </div>
+      </div>
+
+      <!-- TOGGLE DISPONIBILIDADE PROFISSIONAL -->
+      <div id="perfilDisponibilidadeContainer" class="bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-200 rounded-3xl p-5 sm:p-6 mb-8 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-white shadow flex items-center justify-center text-2xl flex-shrink-0" id="perfilDispIconeBox">
+              <span id="perfilDispIcone">🟢</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="font-black text-slate-900 text-lg sm:text-xl leading-tight">Disponibilidade para trabalhos</h3>
+                <span id="perfilDispBadge" class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">DISPONÍVEL</span>
+              </div>
+              <p id="perfilDispDesc" class="text-sm text-slate-600 leading-relaxed">Clientes da sua região serão notificados quando você estiver disponível para atender.</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0 mx-auto sm:mx-0">
+            <input type="checkbox" id="perfilToggleDisp" class="sr-only peer" onchange="_handleToggleDisponibilidadeProfissional(this.checked)">
+            <div class="w-16 h-9 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-200 rounded-full peer peer-checked:after:translate-x-7 peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-200 after:border after:rounded-full after:h-8 after:w-8 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-600 shadow-inner"></div>
+          </label>
         </div>
       </div>
 
@@ -1525,7 +1687,7 @@ tailwind.config = {
   <!-- VIEW MEUS PEDIDOS -->
   <section id="view-meus-pedidos" class="view-section">
     <div class="mb-8">
-      <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-2">Meus Pedidos</h2>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-2">Pedidos</h2>
       <p class="text-slate-500 text-lg">Acompanhe e gerencie todos os seus serviços.</p>
     </div>
 
@@ -1618,7 +1780,7 @@ tailwind.config = {
 
         <!-- Rodapé: "Não tem conta? Crie aqui" (IDs preservados para trocarAbaLogin atualizar texto/onclick) -->
         <div class="pt-4 mt-2 border-t border-slate-100 text-center text-sm text-slate-600">
-          Não tem conta? <span id="loginBtnCadastrar" onclick="navigateTo('view-home')" class="font-extrabold text-primary-700 hover:text-primary-900 underline underline-offset-2 cursor-pointer transition"><span id="loginBtnCadastrarLabel">Crie aqui</span></span>
+          Não tem conta? <span id="loginBtnCadastrar" onclick="navigateTo('view-cadastro-escolha')" class="font-extrabold text-primary-700 hover:text-primary-900 underline underline-offset-2 cursor-pointer transition"><span id="loginBtnCadastrarLabel">Crie aqui</span></span>
         </div>
       </form>
     </div>
@@ -1723,6 +1885,184 @@ tailwind.config = {
     <!-- CONTEÚDO PRINCIPAL com rodapé de área segura (nunca fica abaixo do bottomNav) -->
     <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
       <div id="viewPrivacidadeConteudoContainer" class="p-6 sm:p-8 space-y-7 text-sm text-slate-700 leading-relaxed overflow-y-auto max-h-none pb-[calc(env(safe-area-inset-bottom)+128px)] sm:pb-28"></div>
+    </div>
+  </section>
+
+  <!-- =============== VIEW ESCOLHA DE CADASTRO (Cliente vs Profissional) =============== -->
+  <section id="view-cadastro-escolha" class="view-section">
+    <div class="max-w-md mx-auto">
+      <!-- HEADER LIMPO (mesmo padrão view-login) -->
+      <div class="flex items-center justify-between mb-10">
+        <button onclick="navigateTo('view-login')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition">
+          <i class="fa-solid fa-arrow-left text-lg"></i>
+        </button>
+        <button onclick="navigateTo('view-home')" class="flex items-center gap-2.5 group">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-card group-hover:shadow-pop transition">
+            <i class="fa-solid fa-screwdriver-wrench text-white text-lg"></i>
+          </div>
+          <div class="text-left">
+            <div class="text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">AjeitaAí</div>
+            <div class="text-[11px] text-slate-500 font-medium -mt-0.5">Serviços domésticos</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center gap-2 bg-primary-50 text-primary-600 text-xs font-bold px-3 py-1.5 rounded-full border border-primary-200 mb-4">
+          <i class="fa-solid fa-user-plus"></i> CRIAR CONTA
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-3">Como você deseja se cadastrar?</h2>
+        <p class="text-slate-500 text-base">Escolha a opção que melhor descreve você.</p>
+      </div>
+
+      <div class="space-y-4">
+        <!-- OPÇÃO CLIENTE -->
+        <button onclick="navigateTo('view-cadastro-cliente')" class="w-full group text-left bg-white rounded-3xl shadow-card border-2 border-slate-100 hover:border-primary-400 hover:shadow-pop transition-all p-6 sm:p-7 active:scale-[0.995]">
+          <div class="flex items-start gap-4 sm:gap-5">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-md flex-shrink-0 group-hover:-rotate-6 group-hover:scale-105 transition">
+              <i class="fa-solid fa-user text-white text-2xl sm:text-3xl"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-xl sm:text-2xl font-black text-slate-800 mb-1.5">Sou Cliente</h3>
+              <p class="text-sm sm:text-base text-slate-500 leading-relaxed">Quero pedir serviços, solicitar orçamentos e contratar profissionais de confiança.</p>
+              <div class="mt-3 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl">
+                <i class="fa-solid fa-bullhorn text-[11px]"></i> Pedir orçamentos grátis
+              </div>
+            </div>
+            <div class="flex-shrink-0 self-center text-slate-300 group-hover:text-primary-600 group-hover:translate-x-1 transition">
+              <i class="fa-solid fa-chevron-right text-lg"></i>
+            </div>
+          </div>
+        </button>
+
+        <!-- OPÇÃO PROFISSIONAL -->
+        <button onclick="abrirCadastroProfissionalComEscolha()" class="w-full group text-left bg-white rounded-3xl shadow-card border-2 border-slate-100 hover:border-fuchsia-400 hover:shadow-pop transition-all p-6 sm:p-7 active:scale-[0.995]">
+          <div class="flex items-start gap-4 sm:gap-5">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-fuchsia-600 flex items-center justify-center shadow-md flex-shrink-0 group-hover:rotate-6 group-hover:scale-105 transition">
+              <i class="fa-solid fa-screwdriver-wrench text-white text-2xl sm:text-3xl"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-xl sm:text-2xl font-black text-slate-800 mb-1.5">Sou Profissional</h3>
+              <p class="text-sm sm:text-base text-slate-500 leading-relaxed">Quero oferecer meus serviços, receber pedidos e fechar negócios com clientes da minha região.</p>
+              <div class="mt-3 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-fuchsia-700 bg-fuchsia-50 border border-fuchsia-200 px-3 py-1.5 rounded-xl">
+                <i class="fa-solid fa-coins text-[11px]"></i> Ganhe 10 Moedas de bônus
+              </div>
+            </div>
+            <div class="flex-shrink-0 self-center text-slate-300 group-hover:text-primary-600 group-hover:translate-x-1 transition">
+              <i class="fa-solid fa-chevron-right text-lg"></i>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- RODAPÉ: já tem conta? -->
+      <div class="mt-8 pt-6 border-t border-slate-100 text-center text-sm text-slate-600">
+        Já tem conta? <span onclick="navigateTo('view-login')" class="font-extrabold text-primary-700 hover:text-primary-900 underline underline-offset-2 cursor-pointer transition">Entre aqui</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============== VIEW CADASTRO DE CLIENTE (e-mail + senha) =============== -->
+  <section id="view-cadastro-cliente" class="view-section">
+    <div class="max-w-md mx-auto">
+      <!-- HEADER LIMPO -->
+      <div class="flex items-center justify-between mb-10">
+        <button onclick="navigateTo('view-cadastro-escolha')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition">
+          <i class="fa-solid fa-arrow-left text-lg"></i>
+        </button>
+        <button onclick="navigateTo('view-home')" class="flex items-center gap-2.5 group">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-card group-hover:shadow-pop transition">
+            <i class="fa-solid fa-screwdriver-wrench text-white text-lg"></i>
+          </div>
+          <div class="text-left">
+            <div class="text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">AjeitaAí</div>
+            <div class="text-[11px] text-slate-500 font-medium -mt-0.5">Serviços domésticos</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 text-xs font-bold px-3 py-1.5 rounded-full border border-blue-200 mb-4">
+          <i class="fa-solid fa-user"></i> CADASTRO DE CLIENTE
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-3">Criar conta de Cliente</h2>
+        <p class="text-slate-500 text-base">Preencha os dados abaixo para começar a pedir serviços.</p>
+      </div>
+
+      <form id="formCadastroCliente" onsubmit="submitCadastroCliente(event)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="bg-white rounded-3xl shadow-card border border-slate-100 p-7 space-y-6">
+        <!-- Botão Google (wrapper JS injeta htmlBotaoContinuarComGoogle) -->
+        <div id="cadClienteBtnGoogleContainer"></div>
+
+        <!-- Separador "ou use e-mail/senha" -->
+        <div class="relative flex items-center gap-3 py-0.5 -mt-1">
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <span class="text-[11px] uppercase font-black tracking-widest text-slate-400">ou preencha manualmente</span>
+          <div class="flex-1 h-px bg-slate-200"></div>
+        </div>
+
+        <!-- Campo Nome -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Nome Completo *</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input required id="cadClienteNome" type="text" placeholder="Ex: Maria Silva dos Santos" autocomplete="off" class="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+          </div>
+        </div>
+
+        <!-- Campo Email -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">E-mail *</label>
+          <div class="relative">
+            <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input required id="cadClienteEmail" type="email" placeholder="seuemail@exemplo.com" autocomplete="off" class="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+          </div>
+        </div>
+
+        <!-- Campo Senha -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Senha *</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input required id="cadClienteSenha" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" class="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+          </div>
+        </div>
+
+        <!-- Campo Confirmar Senha -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Confirmar Senha *</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input required id="cadClienteSenhaConfirm" type="password" placeholder="Digite a senha novamente" autocomplete="new-password" class="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+          </div>
+        </div>
+
+        <!-- Aceite Termos -->
+        <label class="flex items-start gap-3 p-4 bg-slate-50 hover:bg-primary-50/40 border-2 rounded-2xl transition cursor-pointer select-none group" style="border-color:var(--tw-border-opacity);">
+          <input id="cadClienteAceiteTermos" type="checkbox" onchange="document.getElementById('btnCadastroClienteSubmit').disabled = !this.checked;" class="mt-0.5 w-5 h-5 accent-primary-600 rounded cursor-pointer" required>
+          <div class="flex-1 text-sm text-slate-700 leading-relaxed">
+            <div class="font-bold text-slate-800 mb-0.5">Li e concordo com os documentos legais obrigatórios *</div>
+            <div class="text-xs sm:text-sm">
+              Declaro que li, entendi e concordo integralmente com os
+              <span onclick="event.preventDefault();abrirTermosDeUso()" class="inline-block font-bold text-primary-700 underline hover:text-primary-900 cursor-pointer decoration-2 underline-offset-2 group-hover:text-primary-900 transition">Termos de Uso</span>
+              (v${TERMS_VERSION}) e com a
+              <span onclick="event.preventDefault();abrirPoliticaPrivacidade()" class="inline-block font-bold text-emerald-700 underline hover:text-emerald-900 cursor-pointer decoration-2 underline-offset-2 group-hover:text-emerald-900 transition">Política de Privacidade</span>
+              (v${PRIVACY_VERSION}) do AjeitaAí.
+            </div>
+          </div>
+          <i class="fa-solid fa-circle-info text-slate-300 group-hover:text-primary-500 mt-1 transition text-sm"></i>
+        </label>
+
+        <!-- Botão Submit -->
+        <button id="btnCadastroClienteSubmit" type="submit" disabled class="w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:grayscale bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-700 hover:to-primary-900 text-white font-extrabold py-3.5 rounded-xl shadow-card hover:shadow-pop transition text-base flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i>
+          Criar conta de Cliente
+        </button>
+
+        <!-- Rodapé -->
+        <div class="pt-4 mt-2 border-t border-slate-100 text-center text-sm text-slate-600">
+          Já tem conta? <span onclick="navigateTo('view-login')" class="font-extrabold text-primary-700 hover:text-primary-900 underline underline-offset-2 cursor-pointer transition">Entre aqui</span>
+        </div>
+      </form>
     </div>
   </section>
 
@@ -2266,6 +2606,36 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- DRAWER SININHO NOTIFICAÇÕES CLIENTE -->
+<div id="drawerNotificacoesCliente" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onclick="fecharDrawerNotificacoesCliente()"></div>
+  <div class="absolute right-0 top-0 h-full w-full sm:max-w-md bg-white shadow-2xl flex flex-col animate-[slideLeftDrawer_0.25s_ease-out]">
+    <div class="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-accent-50 to-blue-50">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+          <i class="fa-solid fa-bell text-accent-600 text-lg"></i>
+        </div>
+        <div>
+          <div class="font-black text-slate-800 text-base sm:text-lg">Notificações</div>
+          <div class="text-[11px] text-slate-500 font-medium">Novos profissionais disponíveis</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="marcarTodasNotificacoesClienteLidas()" title="Marcar todas como lidas" class="w-9 h-9 rounded-lg hover:bg-white/80 text-slate-600 flex items-center justify-center transition" aria-label="Marcar todas como lidas">
+          <i class="fa-solid fa-check-double"></i>
+        </button>
+        <button onclick="fecharDrawerNotificacoesCliente()" aria-label="Fechar notificações" class="w-9 h-9 rounded-lg hover:bg-white/80 text-slate-600 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+    </div>
+    <div id="drawerNotificacoesClienteLista" class="flex-1 overflow-y-auto"></div>
+    <div class="px-5 sm:px-6 py-3 border-t border-slate-100 bg-slate-50 text-[11px] sm:text-xs text-slate-500 text-center font-medium">
+      Você recebe avisos de profissionais compatíveis com sua cidade e categoria.
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PIX PAGAMENTO -->
 <div id="modal-pix" class="hidden fixed inset-0 z-50 p-4">
   <div class="absolute inset-0 modal-backdrop" onclick="fecharModal('modal-pix')"></div>
@@ -2515,6 +2885,8 @@ function fbInit() {
     try { fbInitCarregarConfigEconomiaGlobal(); } catch(eEcoLoad){ DBG('FB', '1413', 'fbInitCarregarConfigEconomiaGlobal erro (seguro continuar): ' + String(eEcoLoad && eEcoLoad.message || eEcoLoad), {}); }
     // (TASK 8) Inicializa listener realtime notificações SE já tem profissional logado no carregamento inicial (bootstrap login)
     try { setTimeout(function(){ try { inicializarNotificacoesProfissional(false); } catch(eNotif){} }, 1800); } catch(eDly){}
+    // (NOVO) Inicializa listener realtime notificações de CLIENTE no bootstrap inicial (se já tiver cliente logado)
+    try { setTimeout(function(){ try { inicializarNotificacoesCliente(false); } catch(eNotifCli){} }, 1850); } catch(eDlyCli){}
   } catch (e) {
     FB_FIRESTORE_DISPONIVEL = false;
     DBG('FB', '1416', 'Firebase init FALHOU (tentaremos novamente em 2s). Erro: ' + String(e && e.message || e), {});
@@ -2527,6 +2899,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.__firebaseLoaded === true) fbInit();
     else window.addEventListener('firebase:loaded', fbInit, { once: true });
     setTimeout(function(){ try { carregarEBannersPatrocinadores(); } catch(e){} }, 800);
+    // (NOVO) Bootstrap tarja comunicado e PWA
+    setTimeout(function(){ try { inicializarTarjaComunicado(); } catch(eTarja){} }, 50);
+    setTimeout(function(){ try { inicializarPwaInstalacao(); } catch(ePwa){} }, 1200);
   } catch(eDCL){}
 });
 
@@ -2635,12 +3010,53 @@ function fbSyncProfissionaisRealtime() {
           if (!idProfLocal) return;
           if (idsVistos[idProfLocal]) return;
           idsVistos[idProfLocal] = true;
-          novoArray.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
+          var mergeProf = Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() });
+          // ============================================================
+          // ✅ CORREÇÃO: PRESERVAR SALDO DE MOEDAS ENTRE STORAGE ↔ FIRESTORE
+          // Evita que onSnapshot volte o saldo para 0/null/valor antigo
+          // quando o Firestore está desatualizado ou a alteração local
+          // ainda não foi sincronizada.
+          // ============================================================
+          try {
+            var existenteAgora = Array.isArray(profissionais) ? profissionais.find(function(pp){ return pp && String(pp.id||'') === String(idProfLocal); }) : null;
+            var saldoLocalNum = (existenteAgora && typeof existenteAgora.saldoMoedas === 'number' && !Number.isNaN(existenteAgora.saldoMoedas)) ? existenteAgora.saldoMoedas : null;
+            var saldoFsNum = (typeof dados.saldoMoedas === 'number' && !Number.isNaN(dados.saldoMoedas)) ? dados.saldoMoedas : null;
+            if (saldoLocalNum !== null || saldoFsNum !== null) {
+              if (saldoLocalNum !== null && saldoFsNum !== null) {
+                mergeProf.saldoMoedas = Math.max(saldoFsNum, saldoLocalNum);
+              } else if (saldoFsNum !== null) {
+                mergeProf.saldoMoedas = saldoFsNum;
+              } else {
+                mergeProf.saldoMoedas = saldoLocalNum;
+              }
+            }
+          } catch(eSaldoMerge){}
+          novoArray.push(mergeProf);
         });
+        // Preservar profissionais que existem LOCALMENTE mas ainda não chegaram ao Firestore
+        // (evita perda de cadastros novos quando o onSnapshot demora)
+        if (Array.isArray(profissionais)) {
+          profissionais.forEach(function(pLocal){
+            if (!pLocal || !pLocal.id) return;
+            if (idsVistos[String(pLocal.id)]) return;
+            idsVistos[String(pLocal.id)] = true;
+            novoArray.push(Object.assign({}, pLocal));
+          });
+        }
         profissionais = novoArray;
+        // Refletir novo saldo no profissionalLogado se necessário (evita "volta para 10 no header")
+        try {
+          if (profissionalLogado && profissionalLogado.id) {
+            var atualizado = profissionais.find(function(pp){ return pp && String(pp.id||'') === String(profissionalLogado.id); });
+            if (atualizado && typeof atualizado.saldoMoedas === 'number' && profissionalLogado.saldoMoedas !== atualizado.saldoMoedas) {
+              profissionalLogado.saldoMoedas = atualizado.saldoMoedas;
+            }
+          }
+        } catch(eUpdLog){}
         try { salvarTodosGlobaisNoStorage();
           if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais();
           if (typeof renderMuralPedidos === 'function') renderMuralPedidos();
+          if (typeof atualizarHeaderPorSessao === 'function') atualizarHeaderPorSessao();
         } catch(ePersist){}
       } catch(eInner) {
         DBG('FB', '1503', 'Erro interno onSnapshot handler: ' + String(eInner && eInner.message || eInner), {});
@@ -3744,6 +4160,8 @@ let clienteUltimosDados = null; // {nome, whatsapp, cidade, bairro} autocomplete
 // 👇 Google Login vars
 let clienteGoogleLogado = null; // { googleId, email, nome, foto, tipo: 'cliente', timestamp }
 let googleLoginIntent = null; // 'cliente' | 'profissional' — onde o usuário clicou no botao Google
+// 👇 Credenciais de e-mail/senha (cliente e profissional cadastrados via form)
+let credenciaisUsuarios = []; // [{email, senhaHash, tipo: 'cliente'|'profissional', refId, criadoEm}]
 
 // Temporários de fluxo
 let pedidoDesbloqueioAtual = null;
@@ -3947,14 +4365,205 @@ function salvarTodosGlobaisNoStorage() {
   salvarNoStorage('meusPedidosClienteIds', meusPedidosClienteIds);
   salvarNoStorage('clienteUltimosDados', clienteUltimosDados);
   salvarNoStorage('clienteGoogleLogado', clienteGoogleLogado);
-  // Alerta saldo baixo moedas: estado (faixas já disparadas no ciclo atual)
+  salvarNoStorage('credenciaisUsuarios', credenciaisUsuarios);
   if (typeof _ALERTA_SALDO !== 'undefined' && _ALERTA_SALDO && typeof salvarNoStorage === 'function') {
     try { salvarNoStorage('_alerta_saldo_baixo_prof', _ALERTA_SALDO); } catch(e){}
   }
 }
+
+// ============================================================
+// (NOVO) TARJA GLOBAL DE COMUNICADO + PWA INSTALAÇÃO
+// ============================================================
+const _COMUNICADO_STORAGE_FECHADO_KEY = 'tarja_comunicado_fechado_hash';
+var _COMUNICADO_ULTIMO_CONFIG = null;
+function _comunicadoHashConfig(cfg) {
+  try {
+    const s = JSON.stringify({ ativo: Boolean(cfg && cfg.ativo), msg: String(cfg && cfg.mensagem || ''), bt: String(cfg && cfg.botao_texto || ''), bl: String(cfg && cfg.botao_link || '') });
+    var h = 0; for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return String(h);
+  } catch(e){ return 'none'; }
+}
+async function inicializarTarjaComunicado() {
+  try {
+    const elTarja = document.getElementById('tarjaComunicadoGlobal');
+    if (!elTarja) return;
+    // (1) Tenta buscar no backend
+    let cfg = null;
+    try {
+      const url = (window.AJEITA_PIX_BACKEND_URL || '') + '/api/comunicado/public';
+      const resp = await fetch(url, { method:'GET', headers:{ 'Accept':'application/json' }, cache:'no-store' }).catch(()=>null);
+      if (resp && resp.ok) {
+        const json = await resp.json().catch(()=>null);
+        if (json && json.config) cfg = json.config;
+      }
+    } catch(eReq){ cfg = null; }
+    if (!cfg || typeof cfg !== 'object') {
+      cfg = { ativo:false, mensagem:'', icone:'📢', botao_texto:'', botao_link:'' };
+    }
+    _COMUNICADO_ULTIMO_CONFIG = cfg;
+    if (!cfg.ativo) { elTarja.classList.add('hidden'); return; }
+    // (2) Se comunicado igual o que o usuário já fechou, não reabre
+    const fechadoHash = pegarDoStorage(_COMUNICADO_STORAGE_FECHADO_KEY, null);
+    const cfgHash = _comunicadoHashConfig(cfg);
+    if (fechadoHash && fechadoHash === cfgHash) { elTarja.classList.add('hidden'); return; }
+    // (3) Renderiza
+    const msgEl = document.getElementById('tarjaComunicadoMensagem');
+    const iconeEl = document.getElementById('tarjaComunicadoIcone');
+    const btnEl = document.getElementById('tarjaComunicadoBotao');
+    const btnTexto = document.getElementById('tarjaComunicadoBotaoTexto');
+    if (iconeEl) iconeEl.textContent = (cfg.icone || '📢').toString().substring(0, 8);
+    if (msgEl) msgEl.textContent = String(cfg.mensagem || '').substring(0, 500);
+    if (btnEl) {
+      if (cfg.botao_texto && cfg.botao_link) {
+        btnEl.href = String(cfg.botao_link);
+        if (btnTexto) btnTexto.textContent = String(cfg.botao_texto).substring(0, 40);
+        btnEl.classList.remove('hidden'); btnEl.classList.add('inline-flex');
+      } else { btnEl.classList.add('hidden'); btnEl.classList.remove('inline-flex'); }
+    }
+    elTarja.classList.remove('hidden');
+  } catch(e){ console.warn('[inicializarTarjaComunicado erro]', e && e.message); }
+}
+function fecharTarjaComunicadoGlobal() {
+  try {
+    const elTarja = document.getElementById('tarjaComunicadoGlobal');
+    if (!elTarja) return;
+    elTarja.classList.add('hidden');
+    if (_COMUNICADO_ULTIMO_CONFIG) {
+      const h = _comunicadoHashConfig(_COMUNICADO_ULTIMO_CONFIG);
+      salvarNoStorage(_COMUNICADO_STORAGE_FECHADO_KEY, h);
+    } else {
+      salvarNoStorage(_COMUNICADO_STORAGE_FECHADO_KEY, 'v');
+    }
+  } catch(e){}
+}
+
+// ---------- PWA / Instalação ----------
+var _PWA_PROMPT_EVENTO_INSTALACAO = null;
+var _PWA_DISPENSADO_ATE_MS = null;
+const _PWA_DISPENSADO_STORAGE_KEY = 'pwa_instala_dispensado_ate_ms';
+const _PWA_INSTALADO_STORAGE_KEY = 'pwa_instalado_v1';
+const _PWA_DISPENSA_DIAS = 7;
+function _pwaEstaInstalado() {
+  try {
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+    if (window.navigator && window.navigator.standalone === true) return true;
+    if (pegarDoStorage(_PWA_INSTALADO_STORAGE_KEY, false) === true) return true;
+    return false;
+  } catch(e){ return false; }
+}
+function _pwaEhIOS() {
+  try {
+    const ua = (navigator && navigator.userAgent) ? String(navigator.userAgent) : '';
+    return /iPhone|iPad|iPod/i.test(ua) ||
+           (/Macintosh|Mac OS X/i.test(ua) && ('ontouchend' in document));
+  } catch(e){ return false; }
+}
+function _pwaEhSafari() {
+  try {
+    const ua = (navigator && navigator.userAgent) ? String(navigator.userAgent) : '';
+    return /Safari/i.test(ua) && !/Chrome|Chromium|Edg|OPR|Brave/i.test(ua);
+  } catch(e){ return false; }
+}
+function _pwaJaDispensadoRecentemente() {
+  try {
+    if (_PWA_DISPENSADO_ATE_MS === null) _PWA_DISPENSADO_ATE_MS = Number(pegarDoStorage(_PWA_DISPENSADO_STORAGE_KEY, 0) || 0);
+    return (_PWA_DISPENSADO_ATE_MS > Date.now());
+  } catch(e){ return false; }
+}
+function inicializarPwaInstalacao() {
+  try {
+    if (_pwaEstaInstalado()) return;
+    if (_pwaJaDispensadoRecentemente()) return;
+    window.addEventListener('beforeinstallprompt', function(evt) {
+      try { evt.preventDefault(); } catch(e){}
+      _PWA_PROMPT_EVENTO_INSTALACAO = evt;
+      _pwaMostrarAvisoSeAdequado();
+    });
+    window.addEventListener('appinstalled', function() {
+      try { salvarNoStorage(_PWA_INSTALADO_STORAGE_KEY, true); } catch(e){}
+      try {
+        const av = document.getElementById('pwaInstalaAviso');
+        if (av) av.classList.add('hidden');
+      } catch(e){}
+    });
+    // iOS Safari: mostrar mesmo sem beforeinstallprompt
+    setTimeout(_pwaMostrarAvisoSeAdequado, 1500);
+  } catch(e){ console.warn('[inicializarPwaInstalacao erro]', e && e.message); }
+}
+function _pwaMostrarAvisoSeAdequado() {
+  try {
+    if (_pwaEstaInstalado()) return;
+    if (_pwaJaDispensadoRecentemente()) return;
+    const av = document.getElementById('pwaInstalaAviso');
+    if (!av) return;
+    const btnAdd = document.getElementById('pwaBtnAdicionar');
+    const ios = _pwaEhIOS();
+    if (ios) {
+      if (btnAdd) btnAdd.setAttribute('title','Mostrar tutorial (iOS não permite instalação automática)');
+    } else if (!_PWA_PROMPT_EVENTO_INSTALACAO) {
+      // Desktop / Android Chrome sem evento ainda → não mostra
+      return;
+    }
+    av.classList.remove('hidden');
+  } catch(e){}
+}
+async function pwaSolicitarInstalacao() {
+  try {
+    const ios = _pwaEhIOS();
+    if (ios) {
+      pwaAbrirTutorialIos();
+      return;
+    }
+    if (!_PWA_PROMPT_EVENTO_INSTALACAO) {
+      toast('info','Tente pelo menu do navegador','Seu navegador não disponibilizou instalação automática. Tente o menu → "Adicionar à tela inicial" / "Instalar aplicativo".', 5000);
+      return;
+    }
+    const res = await _PWA_PROMPT_EVENTO_INSTALACAO.prompt().catch(()=>({ outcome:'dismissed' }));
+    try {
+      if (res && res.outcome === 'accepted') {
+        salvarNoStorage(_PWA_INSTALADO_STORAGE_KEY, true);
+        const av = document.getElementById('pwaInstalaAviso');
+        if (av) av.classList.add('hidden');
+      } else {
+        pwaDispensarAviso(true);
+      }
+    } catch(eFim){}
+    _PWA_PROMPT_EVENTO_INSTALACAO = null;
+  } catch(e){ console.warn('[pwaSolicitarInstalacao erro]', e && e.message); }
+}
+function pwaDispensarAviso(adiar7Dias) {
+  try {
+    const av = document.getElementById('pwaInstalaAviso');
+    if (av) av.classList.add('hidden');
+    if (adiar7Dias) {
+      const ate = Date.now() + (_PWA_DISPENSA_DIAS * 24 * 60 * 60 * 1000);
+      _PWA_DISPENSADO_ATE_MS = ate;
+      salvarNoStorage(_PWA_DISPENSADO_STORAGE_KEY, ate);
+    } else {
+      // Dispensa simples (fechar botão X) → 12h
+      const ate = Date.now() + (12 * 60 * 60 * 1000);
+      _PWA_DISPENSADO_ATE_MS = ate;
+      salvarNoStorage(_PWA_DISPENSADO_STORAGE_KEY, ate);
+    }
+  } catch(e){}
+}
+function pwaAbrirTutorialIos() {
+  try {
+    const t = document.getElementById('pwaIosTutorial');
+    if (t) t.classList.remove('hidden');
+  } catch(e){}
+}
+function pwaFecharTutorialIos() {
+  try {
+    const t = document.getElementById('pwaIosTutorial');
+    if (t) t.classList.add('hidden');
+  } catch(e){}
+}
 // ========================= ALERTA DE SALDO BAIXO DE MOEDAS =========================
 // Faixas em ordem DECRESCENTE para checagem top→down.
 const _ALERTA_SALDO_FAIXAS = Object.freeze([20, 10, 5, 2, 0]);
+// LIMITE CONFIGURÁVEL (único local!) — só dispara notificação no sino para faixas <= este valor.
+// Ex: 5 = alerta criado quando saldo cai para 5, 2 ou 0 (e mantém regras anti-duplicidade).
+const _ALERTA_SALDO_BAIXO_LIMITE_SINO = 5;
 // Estado singleton persistido no storage: { [profissionalId]: { ultimoSaldo:number, faixasDisparadas:{ 20:true, ... }, cicloAtual:number } }
 var _ALERTA_SALDO = null;
 function _alertaSaldoCarregar() {
@@ -3992,22 +4601,26 @@ function _alertaSaldoFaixaAtingida(anterior, atual) {
 async function _alertaSaldoDisparar(profissional, faixa, saldoAtual) {
   try {
     if (!profissional || !profissional.id) return;
+    // REGRA: Só dispara se a faixa for <= ao LIMITE CONFIGURAVEL (evita notificar para 20/10 por padrao)
+    const LIM = Number.isFinite(+_ALERTA_SALDO_BAIXO_LIMITE_SINO) ? Math.max(0, +_ALERTA_SALDO_BAIXO_LIMITE_SINO) : 5;
+    if (faixa > LIM) return;
     const nome = (profissional.nome || profissional.primeiroNome || 'Profissional').toString().trim() || 'Profissional';
     const saldo = Number.isFinite(+saldoAtual) ? Math.floor(+saldoAtual) : 0;
     const ehZero = faixa === 0;
     // 1) Notificação no painel (usa sistema existente _salvarNotificacaoFirestore)
     try {
-      const titulo = ehZero ? '🪙 Saldo esgotado' : `🪙 Saldo baixo (${saldo} moedas)`;
+      const titulo = ehZero ? '🪙 Saldo esgotado' : '🪙 Suas moedas estão acabando';
       const msg = ehZero
         ? 'Seu saldo de moedas chegou a 0. Recarregue para continuar utilizando os recursos que consomem moedas.'
-        : `Você está com ${saldo} moedas. Recarregue seu saldo para continuar utilizando o Ajeitaí.`;
+        : `Você está com poucas moedas disponíveis. Adquira mais moedas para continuar desbloqueando oportunidades.`;
       const idn = 'not_sb_' + faixa + '_' + String(profissional.id) + '_' + (Math.floor(Date.now() / 1000));
       const not = {
         id: idn, usuario_id_alvo: String(profissional.id), tipo_usuario_alvo: 'profissional',
         tipo: 'saldo_moedas', subtipo: (faixa === 0) ? 'saldo_esgotado' : 'saldo_baixo',
         faixa_saldo: faixa, saldo_atual: saldo,
         titulo: titulo, mensagem: msg, lida: false, criado_em: new Date().toISOString(),
-        origem: 'alerta_saldo_baixo', _v: 1
+        origem: 'alerta_saldo_baixo', _v: 1,
+        acao_navegar_para: 'view-profissional-loja'
       };
       if (typeof _salvarNotificacaoFirestore === 'function') try { _salvarNotificacaoFirestore(not); } catch(e){}
       // Exibe toast para o DONO da sessão (se profissional logado = este)
@@ -4302,6 +4915,8 @@ function handleGoogleCredentialResponse(resp) {
   if (!clienteUltimosDados) clienteUltimosDados = {};
   clienteUltimosDados.nome = clienteUltimosDados.nome || dadosGoogle.nome;
   salvarTodosGlobaisNoStorage();
+  // (NOVO) Inicializa listener notificações em tempo real pós login cliente
+  try { setTimeout(function(){ try { inicializarNotificacoesCliente(true); } catch(eNotifCli){} }, 400); } catch(eDlyCli){}
   // #region debug-point H4:salvoCliente
   DBG('H4','1697','CLIENTE GOOGLE LOGADO E SALVO NO STORAGE', {
     clienteGoogleLogado_nome: clienteGoogleLogado && clienteGoogleLogado.nome,
@@ -4785,7 +5400,7 @@ function trocarAbaLogin(aba) {
     btnProf.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition text-slate-500 hover:text-slate-700';
     if (titulo) titulo.textContent = 'Sua Conta AjeitaAí (Cliente)';
     if (sub) sub.textContent = 'Acesse para pedir serviços e acompanhar seus pedidos.';
-    if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-home')");
+    if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-cadastro-escolha')");
     if (btnCadLabel) btnCadLabel.textContent = 'Crie aqui';
     if (gWrap) gWrap.innerHTML = htmlBotaoContinuarComGoogle('cliente', 'Sua Conta');
   } else {
@@ -4793,17 +5408,251 @@ function trocarAbaLogin(aba) {
     btnCliente.className = 'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black tracking-tight transition text-slate-500 hover:text-slate-700';
     if (titulo) titulo.textContent = 'Sua Conta AjeitaAí (Profissionais)';
     if (sub) sub.textContent = 'Acesse para ver pedidos, histórico e sua carteira de moedas.';
-    if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-profissional-cadastro')");
+    if (btnCad) btnCad.setAttribute('onclick', "navigateTo('view-cadastro-escolha')");
     if (btnCadLabel) btnCadLabel.textContent = 'Cadastre aqui';
     if (gWrap) gWrap.innerHTML = htmlBotaoContinuarComGoogle('profissional', 'Sua Conta');
   }
   const email = document.getElementById('loginEmailInput');
   if (email) email.focus();
 }
+
+// ============================================================
+// HELPERS DE AUTENTICAÇÃO (e-mail/senha + validações compartilhadas
+// ============================================================
+
+/** Carrega credenciais do storage (lazy, idempotente) */
+function _carregarCredenciaisSePreciso() {
+  try {
+    if (!Array.isArray(credenciaisUsuarios) || credenciaisUsuarios.length === 0) {
+      const tmp = pegarDoStorage('credenciaisUsuarios', []);
+      if (Array.isArray(tmp)) credenciaisUsuarios = tmp;
+    }
+  } catch (e) { credenciaisUsuarios = []; }
+}
+_carregarCredenciaisSePreciso();
+
+/** Hash simples (não substitui hash real de backend — evita plaintext no storage local) */
+function _hashSenhaSimples(senha) {
+  try {
+    const s = String(senha || '');
+    let h1 = 0x811c9dc5;
+    for (let i = 0; i < s.length; i++) {
+      h1 ^= s.charCodeAt(i);
+      h1 = Math.imul(h1, 0x01000193);
+    }
+    return ('00000000' + (h1 >>> 0).toString(16)).slice(-8) + ':' +
+           ('00000000' + (s.length * 7 + 13).toString(16)).slice(-8);
+  } catch (e) { return 'invalid'; }
+}
+
+/** Valida formato de e-mail */
+function _validarEmailFormato(email) {
+  if (!email || typeof email !== 'string') return false;
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(String(email).trim().toLowerCase());
+}
+
+/** Verifica se e-mail já foi cadastrado (credenciais ou profissionais via Google) */
+function _emailJaCadastrado(email, _ignorado) {
+  _carregarCredenciaisSePreciso();
+  const alvo = String(email || '').toLowerCase();
+  if (Array.isArray(credenciaisUsuarios)) {
+    for (let i = 0; i < credenciaisUsuarios.length; i++) {
+      if (credenciaisUsuarios[i] && credenciaisUsuarios[i].email && String(credenciaisUsuarios[i].email).toLowerCase() === alvo) return true;
+    }
+  }
+  // Também procura em profissionais
+  if (Array.isArray(profissionais)) {
+    for (let j = 0; j < profissionais.length; j++) {
+      const p = profissionais[j] || {};
+      if ((p.email && String(p.email).toLowerCase() === alvo) ||
+          (p.emailGoogle && String(p.emailGoogle).toLowerCase() === alvo) ||
+          (p.emailLogin && String(p.emailLogin).toLowerCase() === alvo)) return true;
+    }
+  }
+  return false;
+}
+
+/** Abre cadastro profissional (limpa campos de senha do formulário de profissional) */
+function abrirCadastroProfissionalComEscolha() {
+  navigateTo('view-profissional-cadastro');
+  setTimeout(function () {
+    try {
+      const s = document.getElementById('cadSenha');
+      if (s) s.value = '';
+      const sc = document.getElementById('cadSenhaConfirm');
+      if (sc) sc.value = '';
+    } catch (e) {}
+  }, 60);
+}
+
+/** Inicializa view de cadastro de cliente: injeta botão Google + limpa campos */
+function inicializarCadastroCliente() {
+  try {
+    const g = document.getElementById('cadClienteBtnGoogleContainer');
+    if (g) g.innerHTML = htmlBotaoContinuarComGoogle('cliente', 'Cadastro');
+  } catch (e) {}
+  ['cadClienteNome','cadClienteEmail','cadClienteSenha','cadClienteSenhaConfirm'].forEach(function(id){
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  try {
+    const ck = document.getElementById('cadClienteAceiteTermos');
+    if (ck) { ck.checked = false; }
+    const btn = document.getElementById('btnCadastroClienteSubmit');
+    if (btn) btn.disabled = true;
+  } catch (e) {}
+}
+
+/** Submit do cadastro de Cliente */
+function submitCadastroCliente(e) {
+  if (e) e.preventDefault();
+  _carregarCredenciaisSePreciso();
+  const nome = (document.getElementById('cadClienteNome').value || '').trim();
+  const emailRaw = (document.getElementById('cadClienteEmail').value || '').trim();
+  const senha = document.getElementById('cadClienteSenha').value || '';
+  const senhaConf = document.getElementById('cadClienteSenhaConfirm').value || '';
+  const email = emailRaw.toLowerCase();
+
+  if (nome.length < 3) { toast('warning','Nome inválido','Informe seu nome completo (mínimo 3 caracteres).'); return; }
+  if (!_validarEmailFormato(emailRaw)) { toast('warning','E-mail inválido','Informe um e-mail válido (ex: nome@exemplo.com).'); return; }
+  if (!senha || senha.length < 6) { toast('warning','Senha inválida','A senha deve ter no mínimo 6 caracteres.'); return; }
+  if (senha !== senhaConf) { toast('warning','Senhas diferentes','A senha e a confirmação de senha precisam ser iguais.'); return; }
+  const aceite = document.getElementById('cadClienteAceiteTermos');
+  if (!aceite || !aceite.checked) { toast('warning','Aceite obrigatório','Leia e concorde com os Termos de Uso e Política de Privacidade para criar sua conta.'); return; }
+  if (_emailJaCadastrado(email)) { toast('error','E-mail já cadastrado','Este e-mail já está em uso. Tente fazer login ou recupere a senha.'); return; }
+
+  const agora = new Date().toISOString();
+  const idCliente = 'cli_' + Date.now();
+  const primeiroNome = nome.split(' ')[0] || nome;
+
+  // 1) Salvar credencial
+  credenciaisUsuarios.push({
+    email: email,
+    senhaHash: _hashSenhaSimples(senha),
+    tipo: 'cliente',
+    refId: idCliente,
+    criadoEm: agora
+  });
+
+  // 2) Monta sessão de cliente (equivalente ao fluxo Google cliente
+  const objCliente = {
+    id: idCliente,
+    tipo: 'cliente',
+    origem: 'cadastro_formulario',
+    email: email,
+    nome: nome,
+    primeiroNome: primeiroNome,
+    foto: null,
+    googleId: null,
+    emailVerificado: false,
+    timestamp: Date.now(),
+    aceite_termos: {
+      termos_version: String(TERMS_VERSION),
+      privacidade_version: String(PRIVACY_VERSION),
+      data_hora_aceite: agora,
+      usuario_nome: nome,
+      usuario_email: email,
+      origem: 'cadastro_cliente_form',
+      registro_integridade: 'local_v1'
+    }
+  };
+  clienteGoogleLogado = objCliente;
+  if (!clienteUltimosDados) clienteUltimosDados = {};
+  clienteUltimosDados.nome = clienteUltimosDados.nome || nome;
+
+  salvarTodosGlobaisNoStorage();
+  atualizarHeaderPorSessao();
+  document.getElementById('formCadastroCliente').reset();
+  toast('success', `Bem-vindo(a), ${primeiroNome}! 👋`,'Sua conta de Cliente foi criada com sucesso. Agora você pode pedir serviços e acompanhar seus pedidos!',8000);
+  navigateTo('view-home');
+  setTimeout(function(){
+    if (typeof preencherModalSolicitarComClienteGoogle && clienteGoogleLogado) {
+      try { preencherModalSolicitarComClienteGoogle({nome, email, primeiroNome}); } catch(es) {}
+    }
+  },300);
+}
+
+/** Implementa login com e-mail/senha (cliente e profissional) */
 function submitLoginGeral(e) {
   if (e) e.preventDefault();
-  toast('info','Login com senha','Atualmente o login por e-mail e senha estará disponível em breve. Use o botão "Continuar com o Google" para entrar SEM SENHA na sua conta AjeitaAí.','5500');
+  _carregarCredenciaisSePreciso();
+  const emailRaw = (document.getElementById('loginEmailInput').value|| '').trim();
+  const senha = document.getElementById('loginSenhaInput').value || '';
+  if (!_validarEmailFormato(emailRaw)) {
+    toast('warning','E-mail inválido','Informe um e-mail válido.');
+    return;
+  }
+  if (!senha) {
+    toast('warning','Senha obrigatória','Informe sua senha.');
+    return;
+  }
+  const email = emailRaw.toLowerCase();
+  const hash = _hashSenhaSimples(senha);
+  const cred = Array.isArray(credenciaisUsuarios) ? credenciaisUsuarios.find(function(c){
+    return c && String(c.email||'').toLowerCase() === email && c.senhaHash === hash;
+  }) : null;
+  if (!cred) {
+    // Tenta buscar por e-mail mas senha errada vs não cadastrado
+    const existe = Array.isArray(credenciaisUsuarios).some(function(c){ return c && String(c.email||'').toLowerCase()===email; });
+    if (existe) {
+      toast('error','Senha incorreta','A senha informada não corresponde a este e-mail. Tente novamente.');
+    } else {
+      toast('error','E-mail não cadastrado','Este e-mail ainda não tem conta. Clique em "Crie aqui" abaixo para se cadastrar.');
+    }
+    return;
+  }
+
+  const tipo = cred.tipo === 'profissional' ? 'profissional' : 'cliente';
+  if (tipo === 'cliente') {
+    // Monta obj cliente
+    const obj = {
+      id: cred.refId || ('cli_login_' + Date.now()),
+      tipo: 'cliente',
+      origem: 'login_senha',
+      email: email,
+      nome: (clienteGoogleLogado && clienteGoogleLogado.email === email) ? clienteGoogleLogado.nome : ((clienteGoogleLogado && clienteGoogleLogado.nome) || 'Cliente'),
+      primeiroNome: ((clienteGoogleLogado && clienteGoogleLogado.email === email && clienteGoogleLogado.primeiroNome) ||
+                    (((clienteGoogleLogado && clienteGoogleLogado.nome) || 'Cliente').toString().split(' ')[0] || 'Cliente')),
+      foto: (clienteGoogleLogado && clienteGoogleLogado.email === email) ? clienteGoogleLogado.foto : null,
+      googleId: null,
+      emailVerificado: false,
+      timestamp: Date.now()
+    };
+    // Se ja existe cadastro no storage com dados melhores prevalece
+    clienteGoogleLogado = Object.assign({}, clienteGoogleLogado || {}, obj);
+    if (!clienteUltimosDados) clienteUltimosDados = {};
+    clienteUltimosDados.nome = clienteUltimosDados.nome || obj.nome;
+    salvarTodosGlobaisNoStorage();
+    atualizarHeaderPorSessao();
+    toast('success', `Olá, ${obj.primeiroNome}! 👋`, 'Login realizado com sucesso como Cliente.', 5500);
+    navigateTo('view-home');
+    return;
+  }
+
+  // PROFISSIONAL: tenta encontrar pelo refId ou email
+  let pLogar = null;
+  if (cred.refId && Array.isArray(profissionais)) {
+    pLogar = profissionais.find(function(pp){ return pp && String(pp.id||'') === String(cred.refId); });
+  }
+  if (!pLogar && Array.isArray(profissionais)) {
+    pLogar = profissionais.find(function(pp){
+      return pp && ((pp.email && String(pp.email).toLowerCase()===email) ||
+                   (pp.emailLogin && String(pp.emailLogin).toLowerCase()===email));
+    });
+  }
+  if (!pLogar) {
+    toast('error','Profissional não encontrado','Seu cadastro profissional não foi encontrado. Contate o suporte.');
+    return;
+  }
+  profissionalLogado = Object.assign({}, pLogar);
+  salvarTodosGlobaisNoStorage();
+  try { setTimeout(function(){ try { inicializarNotificacoesProfissional(true); } catch(eNotif){} }, 400); } catch(eDly){}
+  atualizarHeaderPorSessao();
+  toast('success', `Olá, ${(profissionalLogado.nome||'').split(' ')[0]}! 👋`,'Login profissional realizado com sucesso.',5500);
+  navigateTo('view-profissional-loja');
 }
+
 function renderLoginDedicado() {
   // garante que a view-login abra com o estado correto e botao google preenchido
   try { trocarAbaLogin(_loginAbaAtual); } catch(eTroca){}
@@ -5466,6 +6315,22 @@ async function _salvarNotificacaoFirestore(novaNotif) {
   } catch(e){ return { status:'erro', err: e }; }
 }
 
+// Helper: envia lote de emails via backend (reutiliza SMTP existente, não cria novo)
+async function _backendEnviarEmailLote(loteArray) {
+  try {
+    if (!Array.isArray(loteArray) || !loteArray.length) return { ok:false, msg:'lote vazio' };
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const r = await fetch(BACKEND_PIX_URL + '/api/notificacoes/enviar-email-lote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ lote: loteArray })
+    });
+    if (!r || !r.ok) return { ok:false, msg:'fetch falhou http ' + (r?r.status:'') };
+    const j = await r.json().catch(function(){return {ok:false};});
+    return j || { ok:false };
+  } catch(e){ return { ok:false, msg: String(e&&e.message||e).substring(0,200) }; }
+}
+
 // Para cada profissional da mesma categoria e cidade → cria 1 notificação
 async function _notificarNovoPedidoParaProfissionais(pedidoObj) {
   try {
@@ -5477,17 +6342,18 @@ async function _notificarNovoPedidoParaProfissionais(pedidoObj) {
       .filter(function(p){
         if (!p || !p.id) return false;
         const categoriasP = Array.isArray(p.categorias) && p.categorias.length ? p.categorias : (p.categoria ? [p.categoria] : []);
-        // Categoria "Outros": como ninguém tem cadastrado "Outros - xxx", notificamos TODOS os
-        // profissionais ativos da mesma cidade, para que alguém se identifique capaz.
         if (ehOutros) {
           const mesmacidade = (p.cidade && pedidoObj.cidade) ? (String(p.cidade).trim().toLowerCase() === String(pedidoObj.cidade).trim().toLowerCase()) : true;
-          return categoriasP.length > 0 && mesmacidade;
+          const disp = p.disponivel_para_trabalhar === false ? false : true;
+          return categoriasP.length > 0 && mesmacidade && disp;
         }
         const mesmacat = categoriasP.includes(catPedidoOriginal);
         const mesmacidade = (p.cidade && pedidoObj.cidade) ? (String(p.cidade).trim().toLowerCase() === String(pedidoObj.cidade).trim().toLowerCase()) : true;
-        return mesmacat && mesmacidade;
+        const disp = p.disponivel_para_trabalhar === false ? false : true;
+        return mesmacat && mesmacidade && disp;
       });
     const maxNotif = ehOutros ? 60 : 40;
+    const loteEmails = [];
     for (const prof of profsAlvos.slice(0, maxNotif)) {
       try {
         const notifId = 'not_' + pedidoObj.id + '_' + String(prof.id) + '_' + Math.random().toString(36).slice(2,6);
@@ -5511,7 +6377,34 @@ async function _notificarNovoPedidoParaProfissionais(pedidoObj) {
           _v: 1
         };
         _salvarNotificacaoFirestore(n);
+        const emailProf = (prof.email || prof.emailGoogle || prof.emailLogin || '').toString().trim();
+        if (emailProf && emailProf.indexOf('@') > 1) {
+          const nomeProf = ((prof.nome || prof.primeiroNome || 'Profissional').toString().split(' ')[0] || 'Profissional');
+          const assunto = `🔔 Ajeitaí — novo pedido de ${catPedidoOriginal} em ${pedidoObj.cidade||'sua região'}`;
+          const corpoTxt = `Olá, ${nomeProf}!
+
+Um novo pedido de serviço foi publicado na sua região.
+
+📋 Categoria: ${catPedidoOriginal}
+📍 Cidade: ${pedidoObj.cidade || '—'}${pedidoObj.bairro ? '\n🏘️ Bairro: ' + pedidoObj.bairro : ''}
+👤 Cliente: ${pedidoObj.nomeCliente || 'Anônimo'}
+📝 Descrição: ${pedidoObj.descricao || ''}
+
+Acesse o Ajeitaí para visualizar os detalhes e desbloquear o contato do cliente.
+
+Mensagem automática, não responder.`;
+          loteEmails.push({
+            to: emailProf,
+            subject: assunto,
+            text: corpoTxt,
+            html: null,
+            idempotencia: 'pedido_' + String(pedidoObj.id) + '_' + String(prof.id)
+          });
+        }
       } catch(eUm){}
+    }
+    if (loteEmails.length > 0) {
+      try { _backendEnviarEmailLote(loteEmails); } catch(eMail){}
     }
   } catch(e){ console.warn('[notificarNovoPedidoParaProfissionais] erro:', e); }
 }
@@ -5575,6 +6468,7 @@ function renderizarListaNotificacoesProfissional() {
         mensagem: 'fa-message text-blue-600 bg-blue-50',
         atualizacao_orcamento: 'fa-pen-to-square text-purple-600 bg-purple-50',
         novo_cliente: 'fa-user-plus text-emerald-600 bg-emerald-50',
+        saldo_moedas: 'fa-coins text-amber-600 bg-amber-50',
         sistema: 'fa-shield text-slate-600 bg-slate-100'
       };
       const def = iconeMap[novo_pedido] ? iconeMap[novo_pedido] : (n.tipo && iconeMap[n.tipo] ? iconeMap[n.tipo] : 'fa-bell text-primary-600 bg-primary-50');
@@ -5627,6 +6521,12 @@ function _handleCliqueNotificacao(idNotif, idxOrdenado) {
         try { navigateTo('view-mural-pedidos'); } catch(e){}
         setTimeout(function(){ try { abrirDetalhePedido(alvo.pedido_id); } catch(e){} }, 350);
       }, 200);
+    } else if (alvo && alvo.acao_navegar_para && typeof navigateTo === 'function') {
+      fecharDrawerNotificacoes();
+      const viewDestino = String(alvo.acao_navegar_para||'').trim();
+      if (viewDestino) {
+        setTimeout(function(){ try { navigateTo(viewDestino); } catch(e){} }, 200);
+      }
     }
   } catch(e){}
 }
@@ -5788,6 +6688,467 @@ function inicializarNotificacoesProfissional(forcar) {
   } catch(eGeral){ console.warn('[inicializarNotificacoesProfissional] erro:', eGeral); }
 }
 
+// =============== (NOVO) SISTEMA DE NOTIFICAÇÕES CLIENTE 🔔 ===============
+var NOTIFICACOES_CLIENTE_LISTA = [];
+var NOTIFICACOES_CLIENTE_UNSUB = null;
+var NOTIFICACOES_CLIENTE_ID_USUARIO = null;
+
+function _getClienteIdUnico() {
+  try {
+    if (clienteGoogleLogado && clienteGoogleLogado.uid) return String(clienteGoogleLogado.uid);
+    if (clienteGoogleLogado && clienteGoogleLogado.email) return 'cli_' + String(clienteGoogleLogado.email).toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const cliDados = clienteUltimosDados;
+    if (cliDados && cliDados.id) return String(cliDados.id);
+    if (cliDados && cliDados.email) return 'cli_' + String(cliDados.email).toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const storageId = pegarDoStorage('ajeita_cliente_id_unico', null);
+    if (storageId) return String(storageId);
+    const novoId = 'cli_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    try { salvarNoStorage('ajeita_cliente_id_unico', novoId); } catch(e){}
+    return novoId;
+  } catch(e){
+    return 'cli_anon_' + Date.now();
+  }
+}
+
+function _garantirClienteIdPersistenteSeLogado() {
+  try {
+    if (clienteGoogleLogado && clienteGoogleLogado.uid) {
+      try { salvarNoStorage('ajeita_cliente_id_unico', String(clienteGoogleLogado.uid)); } catch(e){}
+    }
+  } catch(e){}
+}
+
+function atualizarContadorNotificacoesCliente() {
+  try {
+    const badge1 = document.getElementById('headerClienteSinoBadge');
+    const badge2 = document.getElementById('mobileClienteSinoBadge');
+    const naoLidas = NOTIFICACOES_CLIENTE_LISTA.filter(function(n){ return n && n.lida !== true; }).length;
+    if (badge1) {
+      if (naoLidas > 0) {
+        badge1.classList.remove('hidden');
+        badge1.textContent = String(naoLidas > 99 ? '99+' : naoLidas);
+      } else badge1.classList.add('hidden');
+    }
+    if (badge2) {
+      if (naoLidas > 0) {
+        badge2.classList.remove('hidden');
+        badge2.textContent = String(naoLidas > 99 ? '99+' : naoLidas);
+      } else badge2.classList.add('hidden');
+    }
+  } catch(e){}
+}
+
+function renderizarListaNotificacoesCliente() {
+  const container = document.getElementById('drawerNotificacoesClienteLista');
+  if (!container) return;
+  try {
+    if (!Array.isArray(NOTIFICACOES_CLIENTE_LISTA) || NOTIFICACOES_CLIENTE_LISTA.length === 0) {
+      container.innerHTML = `
+        <div class="p-10 text-center">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent-50 to-blue-50 border-2 border-white shadow-inner flex items-center justify-center text-4xl text-slate-300"><i class="fa-solid fa-bell-slash"></i></div>
+          <div class="font-black text-slate-700 mb-1">Nenhuma notificação</div>
+          <div class="text-sm text-slate-500 max-w-xs mx-auto">Você receberá avisos aqui quando novos profissionais compatíveis estiverem disponíveis na sua região.</div>
+        </div>
+      `;
+      return;
+    }
+    const ordenado = NOTIFICACOES_CLIENTE_LISTA.slice().sort(function(a,b){
+      const ta = a && a.criado_em ? (new Date(String(a.criado_em)).getTime()||0) : 0;
+      const tb = b && b.criado_em ? (new Date(String(b.criado_em)).getTime()||0) : 0;
+      return tb - ta;
+    });
+    container.innerHTML = ordenado.map(function(n, i){
+      const iconeMap = {
+        novo_profissional_disponivel: 'fa-user-check text-emerald-600 bg-emerald-50',
+        profissional_ativo: 'fa-briefcase text-accent-600 bg-accent-50',
+        sistema: 'fa-shield text-slate-600 bg-slate-100'
+      };
+      const def = (n.tipo && iconeMap[n.tipo]) ? iconeMap[n.tipo] : 'fa-bell text-accent-600 bg-accent-50';
+      const spl = def.split(' ');
+      const iconeClasse = spl[0];
+      const bgClasse = spl.slice(1).join(' ');
+      return `
+        <div onclick="_handleCliqueNotificacaoCliente('${String(n.id||'').replace(/'/g,"\\'")}', ${i})" role="button" tabindex="0"
+          class="relative border-b border-slate-100 px-5 sm:px-6 py-4 hover:bg-slate-50 cursor-pointer transition ${n.lida===true ? 'opacity-70' : ''}">
+          ${n.lida!==true ? `<span class="absolute left-2 top-5 w-2 h-2 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 shadow-sm"></span>` : ''}
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl ${bgClasse} flex items-center justify-center flex-shrink-0 shadow-sm">
+              <i class="fa-solid ${iconeClasse}"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2 mb-1">
+                <div class="font-extrabold text-slate-800 text-sm leading-tight">${String(n.titulo||'Notificação').slice(0,90)}</div>
+                ${n.criado_em ? `<div class="shrink-0 text-[10px] font-bold text-slate-400 whitespace-nowrap mt-0.5">${dataRelativa(n.criado_em)}</div>` : ''}
+              </div>
+              <div class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-2">${String(n.mensagem||'').slice(0,240)}</div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${n.profissional_categoria ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">${n.profissional_categoria}</span>` : ''}
+                ${n.profissional_cidade ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-200"><i class="fa-solid fa-location-dot mr-0.5 text-[9px]"></i>${n.profissional_cidade}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e){ console.warn(e); }
+}
+
+function _handleCliqueNotificacaoCliente(idNotif, idxOrdenado) {
+  try {
+    idNotif = String(idNotif||'');
+    if (!idNotif) return;
+    marcarNotificacaoClienteLida(idNotif);
+    const ordenado = NOTIFICACOES_CLIENTE_LISTA.slice().sort(function(a,b){
+      const ta = a && a.criado_em ? (new Date(String(a.criado_em)).getTime()||0) : 0;
+      const tb = b && b.criado_em ? (new Date(String(b.criado_em)).getTime()||0) : 0;
+      return tb - ta;
+    });
+    const alvo = ordenado[Number(idxOrdenado||0)];
+    if (alvo && alvo.profissional_id) {
+      fecharDrawerNotificacoesCliente();
+      setTimeout(function(){
+        try { navigateTo('view-home'); } catch(e){}
+        setTimeout(function(){
+          try {
+            setCategoria('');
+            const filtroEl = document.getElementById('barraPesquisaCategorias');
+            if (filtroEl) { filtroEl.value = ''; }
+            aplicarFiltrosCatalogo();
+          } catch(e){}
+          setTimeout(function(){
+            try { abrirPerfilProfissional(alvo.profissional_id); } catch(e){}
+          }, 300);
+        }, 250);
+      }, 200);
+    }
+  } catch(e){}
+}
+
+async function marcarNotificacaoClienteLida(idNotif) {
+  try {
+    idNotif = String(idNotif||'');
+    if (!idNotif) return;
+    let alterou = false;
+    NOTIFICACOES_CLIENTE_LISTA = NOTIFICACOES_CLIENTE_LISTA.map(function(n){
+      if (n && n.id === idNotif && n.lida !== true) { alterou = true; return Object.assign({}, n, { lida: true, lida_em: new Date().toISOString() }); }
+      return n;
+    });
+    if (alterou) {
+      renderizarListaNotificacoesCliente();
+      atualizarContadorNotificacoesCliente();
+    }
+    if (FB_FIRESTORE_DISPONIVEL && window.__fbModules) {
+      try {
+        const mods = window.__fbModules;
+        const ref = mods.doc(mods.collection(FbDb, 'notificacoes'), idNotif);
+        await mods.updateDoc(ref, { lida: true, lida_em: new Date().toISOString() }).catch(function(){});
+      } catch(eFs){}
+    }
+  } catch(e){}
+}
+
+async function marcarTodasNotificacoesClienteLidas() {
+  try {
+    const qtdAntes = NOTIFICACOES_CLIENTE_LISTA.filter(function(n){ return n && n.lida !== true; }).length;
+    if (qtdAntes <= 0) {
+      toast('info','Tudo atualizado','Não há notificações não lidas.');
+      return;
+    }
+    const idsAlvo = [];
+    NOTIFICACOES_CLIENTE_LISTA = NOTIFICACOES_CLIENTE_LISTA.map(function(n){
+      if (n && n.lida !== true) { idsAlvo.push(n.id); return Object.assign({}, n, { lida: true, lida_em: new Date().toISOString() }); }
+      return n;
+    });
+    renderizarListaNotificacoesCliente();
+    atualizarContadorNotificacoesCliente();
+    toast('success','Tudo lido ✔️', `${qtdAntes} notificaç${qtdAntes===1?'ão':'ões'} marcada${qtdAntes===1?'':'s'} como lida${qtdAntes===1?'':'s'}.`);
+    if (FB_FIRESTORE_DISPONIVEL && window.__fbModules) {
+      const mods = window.__fbModules;
+      for (const id of idsAlvo) {
+        try {
+          const ref = mods.doc(mods.collection(FbDb, 'notificacoes'), String(id));
+          mods.updateDoc(ref, { lida: true, lida_em: new Date().toISOString() }).catch(function(){});
+        } catch(e){}
+      }
+    }
+  } catch(e){}
+}
+
+function abrirDrawerNotificacoesCliente() {
+  try {
+    _garantirClienteIdPersistenteSeLogado();
+    const drawer = document.getElementById('drawerNotificacoesCliente');
+    if (!drawer) return;
+    drawer.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    inicializarNotificacoesCliente(true);
+    renderizarListaNotificacoesCliente();
+    atualizarContadorNotificacoesCliente();
+  } catch(e){ console.warn(e); }
+}
+function fecharDrawerNotificacoesCliente() {
+  try {
+    const drawer = document.getElementById('drawerNotificacoesCliente');
+    if (drawer) drawer.classList.add('hidden');
+    document.body.style.overflow = '';
+  } catch(e){}
+}
+
+function inicializarNotificacoesCliente(forcar) {
+  try {
+    if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules) return;
+    const meuId = _getClienteIdUnico();
+    if (!meuId) return;
+    if (!forcar && NOTIFICACOES_CLIENTE_UNSUB && NOTIFICACOES_CLIENTE_ID_USUARIO === meuId) return;
+    if (NOTIFICACOES_CLIENTE_UNSUB) { try { NOTIFICACOES_CLIENTE_UNSUB(); } catch(e){} NOTIFICACOES_CLIENTE_UNSUB = null; }
+    NOTIFICACOES_CLIENTE_ID_USUARIO = meuId;
+    const mods = window.__fbModules;
+    try {
+      const q = mods.query(
+        mods.collection(FbDb, 'notificacoes'),
+        mods.where('usuario_id_alvo', '==', meuId),
+        mods.where('tipo_usuario_alvo', '==', 'cliente'),
+        mods.limit(100)
+      );
+      NOTIFICACOES_CLIENTE_UNSUB = mods.onSnapshot(q, function(snap){
+        try {
+          if (!snap || !snap.docs) return;
+          const arr = [];
+          snap.docs.forEach(function(d){
+            try { arr.push(Object.assign({}, d.data() || {}, { id: d.id })); } catch(e){}
+          });
+          NOTIFICACOES_CLIENTE_LISTA = arr;
+          atualizarContadorNotificacoesCliente();
+          const drawer = document.getElementById('drawerNotificacoesCliente');
+          if (drawer && !drawer.classList.contains('hidden')) renderizarListaNotificacoesCliente();
+          try {
+            if (typeof NOTIFICACOES_CLIENTE_COUNT_ANTERIOR === 'undefined') NOTIFICACOES_CLIENTE_COUNT_ANTERIOR = arr.length;
+            const naoLidasAgora = arr.filter(function(n){ return n && n.lida !== true; }).length;
+            if (naoLidasAgora > (window.NOTIFICACOES_CLIENTE_NAOLIDAS_ANTERIOR||0)) {
+              window.NOTIFICACOES_CLIENTE_NAOLIDAS_ANTERIOR = naoLidasAgora;
+              const drawerAberto = drawer && !drawer.classList.contains('hidden');
+              if (!drawerAberto && arr.length > 0) {
+                const maisNova = arr.slice().sort(function(a,b){
+                  const ta = a && a.criado_em ? (new Date(String(a.criado_em)).getTime()||0) : 0;
+                  const tb = b && b.criado_em ? (new Date(String(b.criado_em)).getTime()||0) : 0;
+                  return tb - ta;
+                })[0];
+                if (maisNova && maisNova.criado_em && (Date.now() - new Date(String(maisNova.criado_em)).getTime()) < (15 * 1000)) {
+                  toast('info', maisNova.titulo || 'Nova notificação', maisNova.mensagem || '', 5000);
+                }
+              }
+            } else {
+              window.NOTIFICACOES_CLIENTE_NAOLIDAS_ANTERIOR = naoLidasAgora;
+            }
+          } catch(eCont){}
+        } catch(eOn){ console.warn('[onSnapshot notif cliente]', eOn); }
+      }, function(err){ console.warn('[onSnapshot notif cliente ERRO]', err); });
+    } catch(eQuery){
+      try {
+        const qFallback = mods.query(mods.collection(FbDb, 'notificacoes'), mods.where('usuario_id_alvo', '==', meuId), mods.limit(200));
+        NOTIFICACOES_CLIENTE_UNSUB = mods.onSnapshot(qFallback, function(snap){
+          if (!snap || !snap.docs) return;
+          const arr = [];
+          snap.docs.forEach(function(d){
+            try { const obj = Object.assign({}, d.data() || {}, { id: d.id }); if (obj && obj.tipo_usuario_alvo === 'cliente') arr.push(obj); } catch(e){}
+          });
+          NOTIFICACOES_CLIENTE_LISTA = arr;
+          atualizarContadorNotificacoesCliente();
+          const drawer = document.getElementById('drawerNotificacoesCliente');
+          if (drawer && !drawer.classList.contains('hidden')) renderizarListaNotificacoesCliente();
+        });
+      } catch(eFb){}
+    }
+    atualizarContadorNotificacoesCliente();
+  } catch(eGeral){ console.warn('[inicializarNotificacoesCliente] erro:', eGeral); }
+}
+
+// =============== (NOVO) TOGGLE DISPONIBILIDADE PROFISSIONAL + NOTIFICA CLIENTES ===============
+function _atualizarUiDispProfissional(disponivel) {
+  try {
+    const badge = document.getElementById('perfilDispBadge');
+    const icone = document.getElementById('perfilDispIcone');
+    const iconeBox = document.getElementById('perfilDispIconeBox');
+    const desc = document.getElementById('perfilDispDesc');
+    const container = document.getElementById('perfilDisponibilidadeContainer');
+    const toggleEl = document.getElementById('perfilToggleDisp');
+    if (toggleEl) toggleEl.checked = !!disponivel;
+    if (badge) {
+      badge.textContent = disponivel ? 'DISPONÍVEL' : 'INDISPONÍVEL';
+      badge.className = disponivel
+        ? 'text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200'
+        : 'text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200';
+    }
+    if (icone) icone.textContent = disponivel ? '🟢' : '⛔';
+    if (iconeBox) {
+      iconeBox.className = disponivel
+        ? 'w-12 h-12 rounded-2xl bg-white shadow flex items-center justify-center text-2xl flex-shrink-0'
+        : 'w-12 h-12 rounded-2xl bg-slate-50 shadow flex items-center justify-center text-2xl flex-shrink-0';
+    }
+    if (desc) {
+      desc.textContent = disponivel
+        ? 'Clientes da sua região serão notificados quando você estiver disponível para atender.'
+        : 'Você não receberá novos pedidos enquanto estiver indisponível. Marque como disponível para voltar a receber notificações.';
+    }
+    if (container) {
+      container.className = disponivel
+        ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-200 rounded-3xl p-5 sm:p-6 mb-8 shadow-sm'
+        : 'bg-gradient-to-r from-slate-50 via-slate-50 to-slate-100 border-2 border-slate-200 rounded-3xl p-5 sm:p-6 mb-8 shadow-sm';
+    }
+  } catch(e){}
+}
+
+async function _notificarNovoProfDisponivelParaClientes(profissionalObj) {
+  try {
+    if (!profissionalObj || !profissionalObj.id) return;
+    if (profissionalObj.disponivel_para_trabalhar === false) return;
+    const categoriasProf = Array.isArray(profissionalObj.categorias) && profissionalObj.categorias.length ? profissionalObj.categorias : (profissionalObj.categoria ? [profissionalObj.categoria] : []);
+    if (!categoriasProf.length) return;
+    const cidadeProf = String(profissionalObj.cidade || '').trim().toLowerCase();
+    if (!cidadeProf) return;
+    const todosClientesPotenciais = [];
+    try {
+      if (Array.isArray(pedidos) && pedidos.length) {
+        for (const ped of pedidos) {
+          try {
+            if (!ped || !ped.id) continue;
+            const catPed = String(ped.categoria || '').trim();
+            const cidPed = String(ped.cidade || '').trim().toLowerCase();
+            if (!catPed || !cidPed) continue;
+            if (cidPed !== cidadeProf) continue;
+            const ehOutrosPed = catPed.indexOf('Outros') === 0;
+            const compativel = ehOutrosPed ? true : categoriasProf.includes(catPed);
+            if (!compativel) continue;
+            const clienteId = ped.uid_cliente || ped.clienteId || ('cli_ped_' + String(ped.id));
+            const clienteEmail = (ped.emailCliente || '').toString().trim();
+            const clienteNome = (ped.nomeCliente || 'Cliente').toString();
+            if (!todosClientesPotenciais.find(function(c){ return c.id === clienteId; })) {
+              todosClientesPotenciais.push({ id: clienteId, email: clienteEmail, nome: clienteNome, categoriasInteresse: [catPed], cidade: ped.cidade, bairro: ped.bairro, pedidoIdCompativel: ped.id });
+            } else {
+              const ex = todosClientesPotenciais.find(function(c){ return c.id === clienteId; });
+              if (ex && !ex.categoriasInteresse.includes(catPed)) ex.categoriasInteresse.push(catPed);
+            }
+          } catch(eP){}
+        }
+      }
+    } catch(eLista){}
+    try {
+      if (clienteUltimosDados && clienteUltimosDados.cidade) {
+        const cli = clienteUltimosDados;
+        const cidCli = String(cli.cidade || '').trim().toLowerCase();
+        if (cidCli === cidadeProf && !todosClientesPotenciais.find(function(c){ return c.id === (cli.id || cli.email || 'cli_last'); })) {
+          const temCategoriaCompat = Array.isArray(cli.categoriasInteresse) && cli.categoriasInteresse.some(function(cx){ return categoriasProf.includes(cx); });
+          if (temCategoriaCompat || (Array.isArray(categoriasProf) && categoriasProf.length > 0)) {
+            todosClientesPotenciais.unshift({
+              id: cli.id || (cli.email ? 'cli_' + String(cli.email).toLowerCase().replace(/[^a-z0-9]/g,'_') : 'cli_last_'+Date.now()),
+              email: (cli.email || '').toString().trim(),
+              nome: (cli.nome || 'Cliente').toString(),
+              categoriasInteresse: Array.isArray(cli.categoriasInteresse) ? cli.categoriasInteresse.slice() : categoriasProf.slice(0,1),
+              cidade: cli.cidade
+            });
+          }
+        }
+      }
+    } catch(eCli){}
+    try {
+      if (clienteGoogleLogado && clienteGoogleLogado.cidade) {
+        const cidCli = String(clienteGoogleLogado.cidade || '').trim().toLowerCase();
+        if (cidCli === cidadeProf && !todosClientesPotenciais.find(function(c){ return c.id === (clienteGoogleLogado.uid || clienteGoogleLogado.email); })) {
+          todosClientesPotenciais.unshift({
+            id: clienteGoogleLogado.uid || (clienteGoogleLogado.email ? 'cli_' + String(clienteGoogleLogado.email).toLowerCase().replace(/[^a-z0-9]/g,'_') : 'cli_google_'+Date.now()),
+            email: (clienteGoogleLogado.email || '').toString().trim(),
+            nome: (clienteGoogleLogado.nome || clienteGoogleLogado.primeiroNome || 'Cliente').toString(),
+            categoriasInteresse: Array.isArray(clienteGoogleLogado.categoriasInteresse) ? clienteGoogleLogado.categoriasInteresse.slice() : categoriasProf.slice(0,1),
+            cidade: clienteGoogleLogado.cidade
+          });
+        }
+      }
+    } catch(eG){}
+    const maxClientes = 80;
+    const loteEmails = [];
+    const nomeProf = (profissionalObj.nome || profissionalObj.primeiroNome || 'Profissional').toString();
+    const fotoProf = profissionalObj.foto || '';
+    for (const cli of todosClientesPotenciais.slice(0, maxClientes)) {
+      try {
+        if (!cli || !cli.id) continue;
+        const catDestaque = Array.isArray(cli.categoriasInteresse) && cli.categoriasInteresse.length ? cli.categoriasInteresse[0] : (categoriasProf[0] || 'Serviço');
+        const notifId = 'not_disp_' + String(profissionalObj.id) + '_' + String(cli.id) + '_' + Math.random().toString(36).slice(2,5);
+        const n = {
+          id: notifId,
+          usuario_id_alvo: String(cli.id),
+          tipo_usuario_alvo: 'cliente',
+          tipo: 'novo_profissional_disponivel',
+          subtipo: 'profissional_marcou_disponivel',
+          titulo: `🔔 Novo ${catDestaque} disponível`,
+          mensagem: `${nomeProf.split(' ')[0]} está disponível para atender ${cli.cidade ? 'em ' + cli.cidade : 'na sua região'}. Clique para ver o perfil completo.`,
+          profissional_id: String(profissionalObj.id),
+          profissional_nome: nomeProf,
+          profissional_foto: fotoProf,
+          profissional_categoria: catDestaque,
+          profissional_cidade: profissionalObj.cidade || cli.cidade || null,
+          profissional_bairro: profissionalObj.bairro || cli.bairro || null,
+          lida: false,
+          criado_em: new Date().toISOString(),
+          origem: 'auto_profissional_disponivel',
+          _v: 1
+        };
+        if (typeof _salvarNotificacaoFirestore === 'function') try { _salvarNotificacaoFirestore(n); } catch(e){}
+        const emailCli = (cli.email || '').toString().trim();
+        if (emailCli && emailCli.indexOf('@') > 1) {
+          const assunto = `🔔 Ajeitaí — ${catDestaque} disponível em ${profissionalObj.cidade || cli.cidade || 'sua região'}`;
+          const corpoTxt = `Olá, ${(cli.nome||'Cliente').toString().split(' ')[0]}!
+
+Um novo profissional compatível está disponível para atender.
+
+👤 Profissional: ${nomeProf}
+🧰 Categoria: ${catDestaque}
+📍 Cidade: ${profissionalObj.cidade || cli.cidade || '—'}${profissionalObj.bairro ? '\n🏘️ Bairro: ' + profissionalObj.bairro : ''}
+
+Acesse o Ajeitaí para ver o perfil completo e entrar em contato.
+
+Mensagem automática, não responder.`;
+          loteEmails.push({
+            to: emailCli,
+            subject: assunto,
+            text: corpoTxt,
+            html: null,
+            idempotencia: 'disp_' + String(profissionalObj.id) + '_' + String(cli.id) + '_' + String(Math.floor(Date.now() / (60 * 60 * 1000)))
+          });
+        }
+      } catch(eUm){}
+    }
+    if (loteEmails.length > 0) {
+      try { _backendEnviarEmailLote(loteEmails); } catch(eMail){}
+    }
+  } catch(e){ console.warn('[notificarNovoProfDisponivelParaClientes] erro:', e); }
+}
+
+async function _handleToggleDisponibilidadeProfissional(checked) {
+  try {
+    if (!profissionalLogado) {
+      toast('error','Acesso restrito','Faça login como profissional para alterar a disponibilidade.');
+      const tg = document.getElementById('perfilToggleDisp');
+      if (tg) tg.checked = !checked;
+      return;
+    }
+    _atualizarUiDispProfissional(!!checked);
+    const meuId = _getProfissionalIdUnico();
+    const idx = profissionais.findIndex(function(p){ return p && (p.id === profissionalLogado.id || p.uid === profissionalLogado.uid || (meuId && (p.id === meuId || p.uid === meuId))); });
+    if (idx >= 0) {
+      profissionais[idx].disponivel_para_trabalhar = !!checked;
+      profissionalLogado = Object.assign({}, profissionalLogado, { disponivel_para_trabalhar: !!checked });
+      salvarTodosGlobaisNoStorage();
+      try { if (typeof fbSyncAddProfissional === 'function') await fbSyncAddProfissional(profissionais[idx]); } catch(eSync){}
+      toast(checked ? 'success' : 'info', checked ? 'Você está disponível!' : 'Modo indisponível ativado',
+        checked ? 'Clientes da sua região serão notificados.' : 'Você não receberá novos pedidos por enquanto.',
+        5000);
+      if (checked) {
+        try { await _notificarNovoProfDisponivelParaClientes(profissionais[idx]); } catch(eNot){}
+      }
+    }
+  } catch(e){ console.warn('_handleToggleDisp erro:', e); }
+}
+
 // =============== FIM HELPERS DETALHE PEDIDO / NOTIFICAÇÕES ===============
 
 // =============== FIM HELPERS FOTOS PEDIDO ===============
@@ -5819,6 +7180,9 @@ function navigateTo(viewId) {
   if (viewId === 'view-profissional-loja') renderLojaPacotes();
   if (viewId === 'view-meus-pedidos') renderMeusPedidos();
   if (viewId === 'view-login') renderLoginDedicado();
+  if (viewId === 'view-cadastro-cliente') {
+    setTimeout(function(){ try { inicializarCadastroCliente(); } catch(e){} }, 30);
+  }
   if (viewId === 'view-profissional-perfil') {
     setTimeout(() => {
       renderCidadesSelectPerfil();
@@ -5899,9 +7263,16 @@ function AplicaConteudoExtraidoDeBuild(htmlCompleto, containerEl) {
 function setCategoria(valorCategoria) {
   try {
     const sel = document.getElementById('filtroCategoria');
-    if (sel) { sel.value = valorCategoria || ''; }
+    const pesquisaEl = document.getElementById('barraPesquisaCategorias');
+    const valor = (valorCategoria || '').toString().trim();
+    let usarPesquisaTexto = false;
+    if (valor) {
+      const setTodos = new Set(Array.isArray(CATEGORIAS_GLOBAIS) ? CATEGORIAS_GLOBAIS : []);
+      if (!setTodos.has(valor)) usarPesquisaTexto = true;
+    }
+    if (sel) { sel.value = usarPesquisaTexto ? '' : valor; }
+    if (pesquisaEl) { pesquisaEl.value = usarPesquisaTexto ? valor : ''; }
     aplicarFiltrosCatalogo();
-    // Rola até o grid de profissionais (suave)
     setTimeout(() => {
       const grid = document.getElementById('catalogoProfissionais');
       if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -7881,7 +9252,10 @@ function submitCadastroProfissional(e) {
   const wa = apenasNumeros(document.getElementById('cadWhatsApp').value);
   const cidade = document.getElementById('cadCidade').value;
   const bairro = (document.getElementById('cadBairro').value||'').trim();
-  const email = (document.getElementById('cadEmail').value||'').trim();
+  const emailRaw = (document.getElementById('cadEmail').value||'').trim();
+  const email = emailRaw.toLowerCase();
+  const senha = document.getElementById('cadSenha') ? (document.getElementById('cadSenha').value || '') : '';
+  const senhaConfirm = document.getElementById('cadSenhaConfirm') ? (document.getElementById('cadSenhaConfirm').value || '') : '';
   const categoriasSelecionadas = Array.from(document.querySelectorAll('#formCadastroProfissional input[type="checkbox"]:checked')).map(el=>el.value);
 
   if (nome.length<3) { toast('warning','Nome inválido','Informe seu nome completo.'); return; }
@@ -7889,6 +9263,38 @@ function submitCadastroProfissional(e) {
   if (!cidade) { toast('warning','Selecione a cidade','Escolha a cidade onde você atende.'); return; }
   if (bairro.length<2) { toast('warning','Informe o bairro','Digite o bairro/região de atendimento.'); return; }
   if (categoriasSelecionadas.length===0) { toast('warning','Selecione categorias','Marque pelo menos 1 categoria de serviço.'); return; }
+
+  // (NOVO) Validações de e-mail e senha para cadastro manual
+  const temGooglePendente = !!(profissionalGoogleIdPending || profissionalGoogleEmailPending);
+  if (!_validarEmailFormato(emailRaw)) {
+    toast('warning','E-mail inválido','Informe um e-mail válido (ex: joao@email.com).');
+    return;
+  }
+  if (_emailJaCadastrado(email)) {
+    toast('error','E-mail já cadastrado','Este e-mail já está em uso. Tente fazer login ou use outro e-mail.');
+    return;
+  }
+  // Senha é obrigatória se NÃO estiver usando Google
+  if (!temGooglePendente) {
+    if (!senha || senha.length < 6) {
+      toast('warning','Senha inválida','Crie uma senha com no mínimo 6 caracteres (ou cadastre-se usando o botão Google acima).');
+      return;
+    }
+    if (senha !== senhaConfirm) {
+      toast('warning','Senhas diferentes','A senha e a confirmação de senha precisam ser iguais.');
+      return;
+    }
+  } else if (senha) {
+    // Usou Google mas também preencheu senha → valida match
+    if (senha.length < 6) {
+      toast('warning','Senha inválida','A senha precisa ter no mínimo 6 caracteres.');
+      return;
+    }
+    if (senha !== senhaConfirm) {
+      toast('warning','Senhas diferentes','A senha e a confirmação de senha precisam ser iguais.');
+      return;
+    }
+  }
 
   const aceiteCheck = document.getElementById('cadAceiteTermos');
   if (!aceiteCheck || !aceiteCheck.checked) {
@@ -7922,6 +9328,7 @@ function submitCadastroProfissional(e) {
   const novo = {
     id, nome, whatsapp:wa, cidade, bairro,
     email: email || null,
+    emailLogin: (email && !googleId) ? email : null,
     emailGoogle: emailGoogle || null,
     googleId: googleId || null,
     cpf: cpf || null,
@@ -7950,6 +9357,20 @@ function submitCadastroProfissional(e) {
     }
   };
   profissionais.unshift(novo);
+
+  // (NOVO) Salvar credencial para login com e-mail/senha (se usuário forneceu senha)
+  try {
+    if (senha && senha.length >= 6) {
+      _carregarCredenciaisSePreciso();
+      credenciaisUsuarios.push({
+        email: email,
+        senhaHash: _hashSenhaSimples(senha),
+        tipo: 'profissional',
+        refId: id,
+        criadoEm: _agoraISO
+      });
+    }
+  } catch(eCred){}
 
   // Login automático
   profissionalLogado = { ...novo };
@@ -8188,6 +9609,12 @@ function renderFormPerfilComDadosAtuais() {
 
   // Renderiza card Legal: status aceite Termos/Política
   try { renderPerfilLegalAceiteStatus(); } catch(eLegal){}
+
+  // (NOVO) Atualiza UI do toggle de disponibilidade profissional
+  try {
+    const disp = (profissionalLogado && profissionalLogado.disponivel_para_trabalhar === false) ? false : true;
+    _atualizarUiDispProfissional(disp);
+  } catch(eDisp){}
 }
 
 function _validarAceiteValidoParaVersaoAtual(pRef) {

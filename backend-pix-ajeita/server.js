@@ -89,7 +89,7 @@ function _validarAceiteTermosBackend(profDoc) {
 }
 const app = express();
 // ===== Ajeitaí Security Agent ===== (3 linhas)
-const secAgent = require('./security');
+const secAgent = require('./security/index');
 if (secAgent && typeof secAgent.middleware === 'function') app.use(secAgent.middleware);
 // ===== Fim Security Agent middleware =====
 app.use(cors({ origin: true }));
@@ -1801,11 +1801,465 @@ app.post('/api/admin/2fa/docs/checar', async (req, res) => {
   }
 });
 
+/* ============================================================
+   (SISTEMA DE NOTIFICAÇÕES — ENVIO DE E-MAIL EM LOTE)
+   Reutiliza sendEmail() existente — NÃO cria novo SMTP, NÃO altera credenciais.
+   Usado pelo frontend para disparar e-mails de notificação:
+   - Novo pedido/orçamento para profissionais compatíveis
+   - Novo profissional disponível para clientes compatíveis
+   ============================================================ */
+const _NOTIF_EMAIL_BLOQUEIO_INTERVALO_MS = 30 * 60 * 1000;
+const _NOTIF_EMAIL_ULTIMOS_DISPARADOS = new Map();
+function _notifEmailTemDuplicidade(chaveIdempotencia) {
+  try {
+    if (!chaveIdempotencia) return false;
+    const agora = Date.now();
+    const ultimo = _NOTIF_EMAIL_ULTIMOS_DISPARADOS.get(String(chaveIdempotencia));
+    if (ultimo && (agora - Number(ultimo)) < _NOTIF_EMAIL_BLOQUEIO_INTERVALO_MS) return true;
+    return false;
+  } catch(e){ return false; }
+}
+function _notifEmailMarcarDisparado(chaveIdempotencia) {
+  try {
+    if (!chaveIdempotencia) return;
+    _NOTIF_EMAIL_ULTIMOS_DISPARADOS.set(String(chaveIdempotencia), Date.now());
+    if (_NOTIF_EMAIL_ULTIMOS_DISPARADOS.size > 5000) {
+      let cont = 0;
+      for (const k of _NOTIF_EMAIL_ULTIMOS_DISPARADOS.keys()) {
+        if (cont >= 1000) break;
+        _NOTIF_EMAIL_ULTIMOS_DISPARADOS.delete(k);
+        cont += 1;
+      }
+    }
+  } catch(e){}
+}
+app.post('/api/notificacoes/enviar-email-lote', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const lote = Array.isArray(b.lote) ? b.lote : [];
+    if (!lote.length) return res.status(400).json({ ok:false, msg:'Lote vazio. Envie array lote[].' });
+    if (lote.length > 100) return res.status(400).json({ ok:false, msg:'Lote excedeu 100 e-mails.' });
+    const resultados = [];
+    let enviadosOk = 0;
+    let falhas = 0;
+    let duplicadosBloq = 0;
+    for (let i = 0; i < lote.length; i++) {
+      try {
+        const item = lote[i] || {};
+        const to = String(item.to || '').trim();
+        const subject = String(item.subject || '(Sem assunto)').substring(0, 200);
+        const text = typeof item.text === 'string' ? String(item.text) : '';
+        const html = typeof item.html === 'string' ? String(item.html) : null;
+        const idempotencia = String(item.idempotencia || (to + '_' + subject + '_' + Date.now())).substring(0, 300);
+        if (!to || to.indexOf('@') <= 1) { falhas += 1; resultados.push({ idx:i, ok:false, msg:'destinatario invalido', toMask: to.substring(0,2)+'***@'+(to.split('@')[1]||'?').substring(0,3)+'***' }); continue; }
+        if (_notifEmailTemDuplicidade(idempotencia)) { duplicadosBloq += 1; resultados.push({ idx:i, ok:false, duplicado:true, msg:'bloqueado anti-duplicidade (30min)', toMask: to.substring(0,2)+'***@'+(to.split('@')[1]||'?').substring(0,3)+'***' }); continue; }
+        const r = await sendEmail({ to: to, subject: subject, text: text, html: html });
+        if (r.ok) { enviadosOk += 1; _notifEmailMarcarDisparado(idempotencia); } else { falhas += 1; }
+        resultados.push({ idx:i, ok: Boolean(r.ok), msg: String(r.msg || '').substring(0, 150), toMask: to.substring(0,2)+'***@'+(to.split('@')[1]||'?').substring(0,3)+'***' });
+      } catch(eItem){ falhas += 1; resultados.push({ idx:i, ok:false, msg: String(eItem && eItem.message ? eItem.message : eItem).substring(0, 150) }); }
+    }
+    return res.json({ ok:true, total: lote.length, enviadosOk: enviadosOk, falhas: falhas, duplicadosBloqueados: duplicadosBloq, resultados: resultados });
+  } catch(e){
+    console.error('/api/notificacoes/enviar-email-lote erro geral:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno servidor envio lote emails.' });
+  }
+});
+
+/* ============================================================
+   (NOVO) COMUNICADO GLOBAL ADMIN / PUBLICO
+   Documento unico Firestore "comunicado_global" (collection: sistema_configs, doc: comunicado_global)
+   Schema: { ativo:boolean, mensagem:string, botao_texto?:string, botao_link?:string,
+             icone?:string, atualizado_em:Timestamp, atualizado_por:string }
+   ============================================================ */
+const _COMUNICADO_DOC_ID = 'comunicado_global';
+const _COMUNICADO_COL = typeof FIRESTORE_COL_PREFIX === 'string' ? (FIRESTORE_COL_PREFIX + 'sistema_configs') : 'sistema_configs';
+const _COMUNICADO_DEFAULT = {
+  ativo: false,
+  mensagem: '📢 Novidade no AjeitaAí! Agora você pode encontrar novos profissionais perto de você.',
+  icone: '📢',
+  botao_texto: 'Saiba mais',
+  botao_link: ''
+};
+app.get('/api/comunicado/public', async (req, res) => {
+  try {
+    if (!dbFirestore) return res.status(200).json({ ok:true, config: _COMUNICADO_DEFAULT });
+    const snap = await dbFirestore.collection(_COMUNICADO_COL).doc(_COMUNICADO_DOC_ID).get().catch(()=>null);
+    let cfg = _COMUNICADO_DEFAULT;
+    if (snap && snap.exists) {
+      const raw = Object.assign({}, snap.data() || {});
+      cfg = {
+        ativo: Boolean(raw.ativo === true || raw.ativo === 'true'),
+        mensagem: String(raw.mensagem || _COMUNICADO_DEFAULT.mensagem).substring(0, 500),
+        icone: String(raw.icone || _COMUNICADO_DEFAULT.icone || '📢').substring(0, 8),
+        botao_texto: String(raw.botao_texto || '').trim().substring(0, 40),
+        botao_link: String(raw.botao_link || '').trim().substring(0, 800)
+      };
+    }
+    return res.status(200).json({ ok:true, config: cfg });
+  } catch(e){
+    console.error('/api/comunicado/public erro:', e && e.message);
+    return res.status(200).json({ ok:true, config: _COMUNICADO_DEFAULT });
+  }
+});
+app.patch('/api/comunicado/admin', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const senha = String(b.admin_senha || '').trim();
+    if (senha !== 'bolo2024') return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const ativo = Boolean(b.ativo === true || b.ativo === 'true' || b.ativo === 'on');
+    const mensagem = String(b.mensagem || '').trim().substring(0, 500);
+    const icone = String(b.icone || '📢').trim().substring(0, 8);
+    const botao_texto = String(b.botao_texto || '').trim().substring(0, 40);
+    const botao_link = String(b.botao_link || '').trim().substring(0, 800);
+    if (ativo && !mensagem) return res.status(400).json({ ok:false, msg:'Para ativar o comunicado, informe uma mensagem.' });
+    if (botao_link && !(botao_link.startsWith('http://') || botao_link.startsWith('https://'))) {
+      return res.status(400).json({ ok:false, msg:'Link do botão precisa começar com http:// ou https://.' });
+    }
+    const payload = {
+      ativo, mensagem, icone,
+      botao_texto,
+      botao_link,
+      atualizado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),
+      atualizado_por: 'admin_api'
+    };
+    if (dbFirestore) {
+      await dbFirestore.collection(_COMUNICADO_COL).doc(_COMUNICADO_DOC_ID).set(payload, { merge: false });
+    }
+    return res.status(200).json({ ok:true, msg:'Comunicado salvo.', config: payload });
+  } catch(e){
+    console.error('/api/comunicado/admin erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno salvar comunicado.' });
+  }
+});
+
+/* ============================================================
+   (V12 — ADMIN USUÁRIOS + MOEDAS)
+   Todas as rotas exigem admin_senha === 'bolo2024'
+   Coleções Firestore usadas:
+     - profissionais (collection existente)
+     - credenciais_usuarios (cria se não existir — cliente/whatsapp + id_ref)
+     - admin_moedas_transacoes (log de todas operações manuais)
+   ============================================================ */
+const _ADMIN_USERS_PASS = 'bolo2024';
+const _FS_COL_PROFISSIONAIS = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'profissionais';
+const _FS_COL_CREDENCIAIS  = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'credenciais_usuarios';
+const _FS_COL_TRANSACOES_MOEDAS = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'admin_moedas_transacoes';
+
+function _adminAuth(b, q) {
+  try {
+    const s = String((b && b.admin_senha) || (q && q.admin_senha) || '').trim();
+    return s === _ADMIN_USERS_PASS;
+  } catch(e){ return false; }
+}
+function _fsTs() {
+  try { if (admin && admin.firestore && admin.firestore.Timestamp) return admin.firestore.Timestamp.now(); } catch(e){}
+  return new Date().toISOString();
+}
+function _limStr(v, max) {
+  v = String(v == null ? '' : v);
+  return v.length > (Number(max)||400) ? v.substring(0, Number(max)||400) : v;
+}
+function _sanitizaUsuarioBasico(obj) {
+  const o = Object.assign({}, obj || {});
+  // Remover campos sensíveis antes de enviar ao frontend
+  ['_docs_validacao_privado','cpf','senhaHash','senha'].forEach(function(k){ try { delete o[k]; } catch(e){} });
+  return o;
+}
+async function _logTransacaoMoedas(tipo, usuario_id, usuario_tipo, usuario_nome, qtd_movida, saldo_anterior, saldo_novo, motivo, admin_resp) {
+  try {
+    if (!dbFirestore) return null;
+    const payload = {
+      id: 'tr_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+      tipo: String(tipo||'manual'), // 'adicionar' | 'remover'
+      usuario_id: String(usuario_id || ''),
+      usuario_tipo: String(usuario_tipo || 'profissional'),
+      usuario_nome: _limStr(usuario_nome, 200),
+      qtd_movida: Number.isFinite(+qtd_movida) ? Math.max(0, Math.floor(+qtd_movida)) : 0,
+      saldo_anterior: Number.isFinite(+saldo_anterior) ? Math.floor(+saldo_anterior) : 0,
+      saldo_novo: Number.isFinite(+saldo_novo) ? Math.floor(+saldo_novo) : 0,
+      motivo: _limStr(motivo, 400),
+      admin_responsavel: _limStr(admin_resp || 'admin_api', 120),
+      criado_em: _fsTs(),
+      _v: 1
+    };
+    await dbFirestore.collection(_FS_COL_TRANSACOES_MOEDAS).doc(payload.id).set(payload).catch(()=>{});
+    return payload.id;
+  } catch(e){ return null; }
+}
+
+/* 1) GET /api/admin/usuarios/profissionais -> lista todos (lim 300) */
+app.get('/api/admin/usuarios/profissionais', async (req, res) => {
+  try {
+    if (!_adminAuth(req.body, req.query)) return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const out = { ok:true, total:0, items:[] };
+    if (dbFirestore) {
+      const snap = await dbFirestore.collection(_FS_COL_PROFISSIONAIS).orderBy('cadastroEm','desc').limit(300).get().catch(()=>null);
+      if (snap && snap.forEach) {
+        snap.forEach(function(ds){ try { out.items.push(_sanitizaUsuarioBasico(Object.assign({ _docId: ds.id }, ds.data() || {}))); } catch(e){} });
+        out.total = out.items.length;
+      }
+    }
+    return res.status(200).json(out);
+  } catch(e){
+    console.error('/api/admin/usuarios/profissionais erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno listar profissionais admin.' });
+  }
+});
+
+/* 2) GET /api/admin/usuarios/clientes -> lista credenciais_usuarios (tipo=cliente) + google logados de profissionais com clienteGoogle? Vamos listar quem temos.
+      Estratégia: busca credenciais_usuarios (clientes) + junta clienteGoogleLogado não está em collection, então busca também nos pedidos como fallback. */
+app.get('/api/admin/usuarios/clientes', async (req, res) => {
+  try {
+    if (!_adminAuth(req.body, req.query)) return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const out = { ok:true, total:0, items:[] };
+    const vistos = {};
+    // Fonte A: credenciais_usuarios (tipo cliente)
+    if (dbFirestore) {
+      const snapCred = await dbFirestore.collection(_FS_COL_CREDENCIAIS).limit(300).get().catch(()=>null);
+      if (snapCred && snapCred.forEach) {
+        snapCred.forEach(function(ds){
+          try {
+            const d = ds.data() || {};
+            if (String(d.tipo || '').toLowerCase() !== 'cliente') return;
+            const idChave = 'cred_' + String(d.refId || ds.id);
+            if (vistos[idChave]) return;
+            vistos[idChave] = true;
+            out.items.push(_sanitizaUsuarioBasico(Object.assign({ _docId: ds.id, _fonte: 'credenciais', id: String(d.refId || ds.id), tipo: 'cliente', email: d.email || null, nome: d.nome || 'Cliente', whatsapp: d.whatsapp || null, criadoEm: d.criadoEm || d.timestamp || null }, d || {})));
+          } catch(e){}
+        });
+      }
+    }
+    // Fonte B: pedidos (nome + whatsapp + cidade do cliente dono)
+    if (dbFirestore) {
+      const snapPed = await dbFirestore.collection((typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'pedidos').orderBy('data','desc').limit(200).get().catch(()=>null);
+      if (snapPed && snapPed.forEach) {
+        snapPed.forEach(function(ds){
+          try {
+            const d = ds.data() || {};
+            const wa = String(d.whatsapp || '').trim();
+            if (!wa) return;
+            const chave = 'wa_' + wa.replace(/\D/g,'');
+            if (vistos[chave]) return;
+            vistos[chave] = true;
+            out.items.push({
+              _docId: ds.id, _fonte: 'pedidos',
+              id: chave, tipo: 'cliente',
+              nome: _limStr(d.nomeCliente || d.cliente || 'Cliente', 120),
+              whatsapp: wa,
+              cidade: d.cidade || null,
+              bairro: d.bairro || null,
+              qtd_pedidos: 1
+            });
+          } catch(e){}
+        });
+      }
+    }
+    out.total = out.items.length;
+    return res.status(200).json(out);
+  } catch(e){
+    console.error('/api/admin/usuarios/clientes erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno listar clientes admin.' });
+  }
+});
+
+/* 3) GET /api/admin/usuarios/busca?q= (nome/email/whatsapp/cidade/id) */
+app.get('/api/admin/usuarios/busca', async (req, res) => {
+  try {
+    if (!_adminAuth(req.body, req.query)) return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    const q = String((req.query && req.query.q) || (req.body && req.body.q) || '').trim().toLowerCase();
+    const out = { ok:true, total:0, profissionais:[], clientes:[] };
+    if (!q || q.length < 2) return res.status(200).json(out);
+    if (dbFirestore) {
+      // Buscar profissionais
+      const snapPro = await dbFirestore.collection(_FS_COL_PROFISSIONAIS).limit(400).get().catch(()=>null);
+      if (snapPro && snapPro.forEach) snapPro.forEach(function(ds){
+        try {
+          const d = Object.assign({ _docId: ds.id }, ds.data() || {});
+          const hay = [d.id, ds.id, d.nome, d.email, d.emailGoogle, d.emailLogin, d.whatsapp, d.cidade, d.bairro, d.cpf].join(' | ').toLowerCase();
+          if (hay.indexOf(q) >= 0) out.profissionais.push(_sanitizaUsuarioBasico(d));
+        } catch(e){}
+      });
+      // Buscar clientes em credenciais + pedidos
+      const snapCred = await dbFirestore.collection(_FS_COL_CREDENCIAIS).limit(400).get().catch(()=>null);
+      const vistosCli = {};
+      if (snapCred && snapCred.forEach) snapCred.forEach(function(ds){
+        try {
+          const d = ds.data() || {};
+          if (String(d.tipo||'').toLowerCase() !== 'cliente') return;
+          const hay = [d.refId, ds.id, d.email, d.nome, d.whatsapp].join(' | ').toLowerCase();
+          if (hay.indexOf(q) >= 0) {
+            const chave = 'c_' + (d.refId || ds.id);
+            if (vistosCli[chave]) return; vistosCli[chave] = true;
+            out.clientes.push(_sanitizaUsuarioBasico(Object.assign({ _docId: ds.id, id: String(d.refId || ds.id), tipo: 'cliente', nome: d.nome || 'Cliente', email: d.email || null, whatsapp: d.whatsapp || null, criadoEm: d.criadoEm || null }, d || {})));
+          }
+        } catch(e){}
+      });
+      const snapPed = await dbFirestore.collection((typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'pedidos').limit(400).get().catch(()=>null);
+      if (snapPed && snapPed.forEach) snapPed.forEach(function(ds){
+        try {
+          const d = ds.data() || {};
+          const wa = String(d.whatsapp || '').trim();
+          const hay = [wa, d.nomeCliente, d.cidade, d.bairro, ds.id].join(' | ').toLowerCase();
+          if (hay.indexOf(q) >= 0 && wa) {
+            const chave = 'w_' + wa.replace(/\D/g,'');
+            if (vistosCli[chave]) return; vistosCli[chave] = true;
+            out.clientes.push({ _docId: ds.id, _fonte:'pedidos', id: chave, tipo:'cliente', nome: _limStr(d.nomeCliente || 'Cliente', 120), whatsapp: wa, cidade: d.cidade || null, bairro: d.bairro || null });
+          }
+        } catch(e){}
+      });
+    }
+    out.total = out.profissionais.length + out.clientes.length;
+    return res.status(200).json(out);
+  } catch(e){
+    console.error('/api/admin/usuarios/busca erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno busca usuarios admin.' });
+  }
+});
+
+/* 4) PATCH /api/admin/usuarios/editar -> editar dados permitidos de profissional OU cliente */
+app.patch('/api/admin/usuarios/editar', async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!_adminAuth(b)) return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    if (!dbFirestore) return res.status(200).json({ ok:false, msg:'Firestore indisponível.' });
+    const usuario_tipo = String(b.usuario_tipo || 'profissional').toLowerCase();  // 'profissional' | 'cliente'
+    const docId = String(b.docId || '').trim(); // id do doc Firestore (_docId vindo da listagem)
+    if (!docId) return res.status(400).json({ ok:false, msg:'docId ausente.' });
+    const adminResp = _limStr(b.admin_responsavel || 'admin_api', 120);
+    if (usuario_tipo === 'profissional') {
+      const col = dbFirestore.collection(_FS_COL_PROFISSIONAIS);
+      const snapDoc = await col.doc(docId).get().catch(()=>null);
+      if (!snapDoc || !snapDoc.exists) return res.status(404).json({ ok:false, msg:'Profissional não encontrado no Firestore.' });
+      // Campos permitidos de editar (NÃO tocar senha, cpf, docs validacao privado, googleId sem necessidade)
+      const pAtual = snapDoc.data() || {};
+      const patch = {};
+      if (typeof b.nome === 'string') patch.nome = _limStr(b.nome, 160);
+      if (typeof b.whatsapp === 'string') patch.whatsapp = _limStr(b.whatsapp.replace(/\D/g,'').slice(0,11), 20);
+      if (typeof b.cidade === 'string') patch.cidade = _limStr(b.cidade, 120);
+      if (typeof b.bairro === 'string') patch.bairro = _limStr(b.bairro, 120);
+      if (typeof b.email === 'string') patch.email = _limStr(b.email, 200);
+      if (typeof b.sobre === 'string') patch.sobre = _limStr(b.sobre, 1200);
+      if (typeof b.disponivel_para_trabalhar !== 'undefined') patch.disponivel_para_trabalhar = Boolean(b.disponivel_para_trabalhar);
+      // Categorias (array de strings)
+      if (b.categorias && Array.isArray(b.categorias)) patch.categorias = b.categorias.map(function(c){ return _limStr(c, 60); }).slice(0, 20);
+      // Observação: alteração saldoMoedas é BLOQUEADA nesta rota (só pode via rotas moedas-adicionar/remover específicas c/ log)
+      patch.ultima_edicao_admin_em = _fsTs();
+      patch.ultima_edicao_admin_por = adminResp;
+      await col.doc(docId).set(patch, { merge: true }).catch(function(e){ throw e; });
+      return res.status(200).json({ ok:true, msg:'Profissional atualizado com sucesso.', patch });
+    }
+    // Cliente
+    const col = dbFirestore.collection(_FS_COL_CREDENCIAIS);
+    const snapDoc = await col.doc(docId).get().catch(()=>null);
+    if (!snapDoc || !snapDoc.exists) return res.status(404).json({ ok:false, msg:'Cliente não encontrado (coleção credenciais_usuarios).' });
+    const patch = {};
+    if (typeof b.nome === 'string') patch.nome = _limStr(b.nome, 160);
+    if (typeof b.email === 'string') patch.email = _limStr(b.email, 200);
+    if (typeof b.whatsapp === 'string') patch.whatsapp = _limStr(b.whatsapp.replace(/\D/g,'').slice(0,11), 20);
+    patch.ultima_edicao_admin_em = _fsTs();
+    patch.ultima_edicao_admin_por = adminResp;
+    await col.doc(docId).set(patch, { merge: true }).catch(function(e){ throw e; });
+    return res.status(200).json({ ok:true, msg:'Cliente atualizado com sucesso.', patch });
+  } catch(e){
+    console.error('/api/admin/usuarios/editar erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno editar usuario admin.' });
+  }
+});
+
+/* 5) DELETE /api/admin/usuarios/excluir -> excluir profissional ou cliente (credencial + pedidos associados mantém anonimizados) */
+app.delete('/api/admin/usuarios/excluir', async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!_adminAuth(b)) return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    if (!dbFirestore) return res.status(200).json({ ok:false, msg:'Firestore indisponível.' });
+    const usuario_tipo = String(b.usuario_tipo || 'profissional').toLowerCase();
+    const docId = String(b.docId || '').trim();
+    if (!docId) return res.status(400).json({ ok:false, msg:'docId ausente.' });
+    const adminResp = _limStr(b.admin_responsavel || 'admin_api', 120);
+    const confirmar = Boolean(b.confirmar === true || b.confirmar === 'true' || b.confirmar === 'on');
+    if (!confirmar) return res.status(400).json({ ok:false, msg:'Marque o checkbox de confirmação para excluir o usuário.' });
+    if (usuario_tipo === 'profissional') {
+      await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(docId).delete().catch(function(e){ throw e; });
+      // Também limpar credencial de login desse profissional se houver
+      try {
+        const snapCred = await dbFirestore.collection(_FS_COL_CREDENCIAIS).where('refId','==',docId).where('tipo','==','profissional').limit(5).get().catch(()=>null);
+        if (snapCred && snapCred.forEach) snapCred.forEach(function(d){ try { d.ref.delete().catch(()=>{}); } catch(e){} });
+      } catch(e2){}
+      // Log minimal
+      try { await dbFirestore.collection((typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'admin_acoes').add({ acao:'excluir_profissional', docId, admin_responsavel: adminResp, criado_em: _fsTs() }).catch(()=>{}); } catch(e){}
+      return res.status(200).json({ ok:true, msg:'Profissional excluído.' });
+    }
+    // Cliente: só remove credencial_usuarios doc se houver
+    try { await dbFirestore.collection(_FS_COL_CREDENCIAIS).doc(docId).delete().catch(function(e){ throw e; }); } catch(e){ return res.status(404).json({ ok:false, msg:'Doc cliente não encontrado em credenciais_usuarios.' }); }
+    try { await dbFirestore.collection((typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'admin_acoes').add({ acao:'excluir_cliente', docId, admin_responsavel: adminResp, criado_em: _fsTs() }).catch(()=>{}); } catch(e){}
+    return res.status(200).json({ ok:true, msg:'Cliente (credencial) excluído.' });
+  } catch(e){
+    console.error('/api/admin/usuarios/excluir erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno excluir usuario admin.' });
+  }
+});
+
+/* 6) PATCH /api/admin/moedas/adicionar -> adicionar N moedas manualmente (com log) */
+app.patch('/api/admin/moedas/adicionar', async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!_adminAuth(b)) return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    if (!dbFirestore) return res.status(200).json({ ok:false, msg:'Firestore indisponível.' });
+    const docId = String(b.docId || '').trim();
+    if (!docId) return res.status(400).json({ ok:false, msg:'docId ausente.' });
+    const qtd = Math.max(0, Math.floor(Number(b.qtd || 0)));
+    if (!qtd || qtd <= 0) return res.status(400).json({ ok:false, msg:'Informe uma quantidade positiva de moedas para adicionar.' });
+    if (qtd > 100000) return res.status(400).json({ ok:false, msg:'Limite por operação: 100.000 moedas.' });
+    const motivo = _limStr(b.motivo || 'Ajuste manual admin', 400);
+    const adminResp = _limStr(b.admin_responsavel || 'admin_api', 120);
+    const col = dbFirestore.collection(_FS_COL_PROFISSIONAIS);
+    const snapDoc = await col.doc(docId).get().catch(()=>null);
+    if (!snapDoc || !snapDoc.exists) return res.status(404).json({ ok:false, msg:'Profissional não encontrado no Firestore.' });
+    const p = snapDoc.data() || {};
+    const saldoAnt = (typeof p.saldoMoedas === 'number' && !Number.isNaN(p.saldoMoedas)) ? Math.floor(p.saldoMoedas) : 0;
+    const saldoNovo = saldoAnt + qtd;
+    await col.doc(docId).set({ saldoMoedas: saldoNovo, ultima_movimentacao_moedas_em: _fsTs(), ultima_movimentacao_moedas_por: adminResp }, { merge: true }).catch(function(e){ throw e; });
+    const logId = await _logTransacaoMoedas('adicionar', docId, 'profissional', p.nome || 'Profissional', qtd, saldoAnt, saldoNovo, motivo, adminResp);
+    return res.status(200).json({ ok:true, msg: qtd + ' moeda(s) adicionada(s) com sucesso. Saldo ' + saldoAnt + ' → ' + saldoNovo + '.', saldo_antigo: saldoAnt, saldo_novo: saldoNovo, log_id: logId });
+  } catch(e){
+    console.error('/api/admin/moedas/adicionar erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno adicionar moedas admin.' });
+  }
+});
+
+/* 7) PATCH /api/admin/moedas/remover -> remover N moedas manualmente (NUNCA saldo negativo) */
+app.patch('/api/admin/moedas/remover', async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!_adminAuth(b)) return res.status(401).json({ ok:false, msg:'Acesso negado admin.' });
+    if (!dbFirestore) return res.status(200).json({ ok:false, msg:'Firestore indisponível.' });
+    const docId = String(b.docId || '').trim();
+    if (!docId) return res.status(400).json({ ok:false, msg:'docId ausente.' });
+    const qtd = Math.max(0, Math.floor(Number(b.qtd || 0)));
+    if (!qtd || qtd <= 0) return res.status(400).json({ ok:false, msg:'Informe uma quantidade positiva de moedas para remover.' });
+    const motivo = _limStr(b.motivo || 'Ajuste manual admin', 400);
+    const adminResp = _limStr(b.admin_responsavel || 'admin_api', 120);
+    const col = dbFirestore.collection(_FS_COL_PROFISSIONAIS);
+    const snapDoc = await col.doc(docId).get().catch(()=>null);
+    if (!snapDoc || !snapDoc.exists) return res.status(404).json({ ok:false, msg:'Profissional não encontrado no Firestore.' });
+    const p = snapDoc.data() || {};
+    const saldoAnt = (typeof p.saldoMoedas === 'number' && !Number.isNaN(p.saldoMoedas)) ? Math.floor(p.saldoMoedas) : 0;
+    if (qtd > saldoAnt) return res.status(400).json({ ok:false, msg:'Saldo insuficiente. O profissional possui ' + saldoAnt + ' moeda(s) e você tentou remover ' + qtd + '. Nunca permitimos saldo negativo.' });
+    const saldoNovo = saldoAnt - qtd;
+    await col.doc(docId).set({ saldoMoedas: saldoNovo, ultima_movimentacao_moedas_em: _fsTs(), ultima_movimentacao_moedas_por: adminResp }, { merge: true }).catch(function(e){ throw e; });
+    const logId = await _logTransacaoMoedas('remover', docId, 'profissional', p.nome || 'Profissional', qtd, saldoAnt, saldoNovo, motivo, adminResp);
+    return res.status(200).json({ ok:true, msg: qtd + ' moeda(s) removida(s) com sucesso. Saldo ' + saldoAnt + ' → ' + saldoNovo + '.', saldo_antigo: saldoAnt, saldo_novo: saldoNovo, log_id: logId });
+  } catch(e){
+    console.error('/api/admin/moedas/remover erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno remover moedas admin.' });
+  }
+});
+
 // ===================== (NOVO V11: HANDLERS FINAIS — 404 + ERROR GLOBAL — VEM SEMPRE DEPOIS DE TODAS AS ROTAS E ANTES DE app.listen) =====================
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
   if (res.headersSent) return;
-  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar.' });
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/comunicado/public, PATCH /api/comunicado/admin, GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar, POST /api/notificacoes/enviar-email-lote.' });
 });
 // Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
 app.use((err, req, res, next) => {
