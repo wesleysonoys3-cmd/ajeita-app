@@ -408,200 +408,295 @@ tailwind.config = {
 <!-- =============== MAIN (SPA VIEWS) =============== -->
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 pb-32 sm:pb-36">
 
-  <!-- VIEW HOME: CATÁLOGO (LAYOUT TIPO APP GETNINJAS) -->
+  <!-- VIEW HOME: AJEITAÍ — ESTRUTURA PRÓPRIA, NÃO CÓPIA DE OUTRO MARKETPLACE -->
+  <!-- Ordem de blocos: (1) Header compacto [hero+entrar] → (2) Barra busca interativa → (3) CTA Solicitar Orçamento compacto → (4) Categorias grid 2x3 sem overflow → (5) Entrar profissional [chip] → (6) Acompanhar pedidos [logado] → (7) Destaques/Petrocinadores → (8) Grupos com fotos 2col -->
   <section id="view-home" class="view-section active">
 
-    <!-- 1) TÍTULO DINÂMICO BOAS-VINDAS + SAUDAÇÃO POR HORA / NOME -->
-    <div class="mb-5 sm:mb-6">
-      <h1 id="homeTituloBoasVindas" class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Boas-vindas</h1>
-    </div>
-
-    <!-- 2) BARRA DE PESQUISA GRANDE "O que você precisa?" -->
-    <div class="mb-6 sm:mb-8">
-      <div class="relative group">
-        <i class="fa-solid fa-magnifying-glass absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-primary-500 transition"></i>
-        <input id="homeBarraPesquisa" type="text" placeholder="O que você precisa?"
-          onclick="document.getElementById('filtroBairro')?.focus(); window.scrollTo({top: document.getElementById('catalogoProfissionais')?.offsetTop || 500, behavior:'smooth'});"
-          class="w-full pl-14 sm:pl-16 pr-5 py-4.5 sm:py-5 bg-slate-100 hover:bg-slate-50 border-2 border-transparent focus:border-primary-400 focus:bg-white rounded-2xl sm:rounded-3xl text-base sm:text-lg font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition">
+    <!-- ============ BLOCO 1 — CABEÇALHO COMPACTO (HERO + ENTRAR PROFISSIONAL) ============ -->
+    <!-- NÃO tem botão gigante "Cadastrar como profissional"; tem chip compacto circular+texto no canto sup dir -->
+    <div class="relative mb-5 sm:mb-6">
+      <div class="flex items-start justify-between gap-3">
+        <!-- Esquerda: saudação dinâmica (mesma ID do sistema antigo para atualizarHomeSessao funcionar) -->
+        <div class="flex-1 min-w-0">
+          <div class="inline-flex items-center gap-1.5 bg-gradient-to-r from-primary-50 to-accent-50 border border-primary-100 text-primary-700 text-[10.5px] sm:text-xs font-black uppercase tracking-[0.14em] px-2.5 py-1 rounded-full mb-2">
+            <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+            Ajeitaí
+          </div>
+          <h1 id="homeTituloBoasVindas" class="text-[26px] sm:text-3xl font-black text-slate-900 tracking-tight leading-[1.15]">Boas-vindas</h1>
+          <p class="text-[13px] sm:text-sm text-slate-500 font-medium mt-1.5 leading-relaxed">Conectamos você aos melhores profissionais da sua cidade.</p>
+        </div>
+        <!-- Direita: BOTÃO COMPACTO ENTRAR PROFISSIONAL [círculo + Entrar] -->
+        <!-- Reutiliza fluxo login/cadastro existente via navigateTo('view-profissional-cadastro') — NÃO cria novo login -->
+        <button onclick="navigateTo('view-profissional-cadastro')"
+                class="group flex items-center gap-2 bg-white border border-slate-200 hover:border-primary-200 hover:bg-primary-50/60 text-slate-700 hover:text-primary-700 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-2xl shadow-sm hover:shadow transition active:scale-[0.98] flex-shrink-0">
+          <!-- Bolinha/círculo com ícone perfil profissional -->
+          <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-primary-500 to-accent-600 flex items-center justify-center shadow-sm group-hover:from-primary-600 group-hover:to-accent-700 transition flex-shrink-0">
+            <i class="fa-solid fa-user-tie text-white text-[13px] sm:text-sm"></i>
+          </span>
+          <span class="text-[12.5px] sm:text-sm font-bold tracking-tight pr-1">Entrar</span>
+        </button>
       </div>
     </div>
 
-    <!-- 2 B) CTA BOTÃO SOLICITAR ORÇAMENTO (DESTAQUE GRANDE — NOVA PALETA ROSA/CORAL) -->
-    <div class="mb-7 sm:mb-9">
-      <button onclick="abrirModalSolicitarOrcamento()" class="group w-full relative overflow-hidden rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:from-pink-600 hover:via-rose-600 hover:to-pink-700 text-white shadow-card hover:shadow-pop transition active:scale-[0.995]">
-        <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/20 blur-2xl group-hover:bg-white/30 transition"></div>
-        <div class="absolute -left-8 -bottom-14 w-44 h-44 rounded-full bg-yellow-300/40 blur-3xl transition"></div>
-        <div class="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div class="flex items-start gap-4">
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 border-2 border-white/30 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-lg group-hover:-rotate-6 transition">
-              <i class="fa-solid fa-bullhorn text-2xl sm:text-3xl"></i>
+    <!-- ============ BLOCO 2 — BUSCA PRINCIPAL: "O que você precisa?" [realmente interativa, não só rola] ============ -->
+    <!-- Requer o helper _executarPesquisaHome() inserido acima que usa: setCategoria()+aplicarFiltrosCatalogo() existentes -->
+    <div class="mb-5 sm:mb-7">
+      <form id="formBuscaHome"
+            onsubmit="event.preventDefault(); _executarPesquisaHome('submit');"
+            class="w-full flex flex-col sm:flex-row items-stretch gap-2.5"
+            autocomplete="off">
+        <!-- Input: clica → recebe foco → digita → Enter envia. NÃO rola página antes do submit! -->
+        <label class="relative flex-1 min-w-0 group">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base sm:text-lg group-focus-within:text-primary-600 transition pointer-events-none"></i>
+          <input id="homeBarraPesquisa" type="search" inputmode="search"
+                 placeholder="O que você precisa?"
+                 enterkeyhint="search"
+                 aria-label="O que você precisa?"
+                 class="w-full pl-11 sm:pl-12 pr-4 py-3.5 sm:py-4 bg-slate-50 hover:bg-white border-2 border-slate-200 hover:border-slate-300 focus:border-primary-500 focus:bg-white rounded-2xl sm:rounded-2.5xl text-[15px] sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-100 shadow-sm transition" />
+        </label>
+        <!-- Botão BUSCAR físico, visível e tocável. Não só ícone. -->
+        <button type="submit"
+                onclick="return _executarPesquisaHome('btn');"
+                class="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl sm:rounded-2.5xl bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-black text-[14px] sm:text-base shadow-card hover:shadow-pop transition active:scale-[0.985] flex-shrink-0">
+          <i class="fa-solid fa-magnifying-glass text-sm sm:text-base"></i>
+          <span>Buscar</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- ============ BLOCO 3 — CTA COMPACTO: SOLICITAR ORÇAMENTO ============ -->
+    <!-- Mantém funcionalidade mas reduz altura (era p-7/600px aprox, agora p-4/180px aprox). Identidade Ajeitaí. -->
+    <div class="mb-6 sm:mb-8">
+      <button onclick="abrirModalSolicitarOrcamento()"
+              class="group w-full relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-accent-500 via-rose-500 to-pink-600 hover:from-accent-600 hover:via-rose-600 hover:to-pink-700 text-white shadow-card hover:shadow-pop transition active:scale-[0.995]">
+        <div class="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/20 blur-2xl group-hover:bg-white/30 transition"></div>
+        <div class="relative flex items-center justify-between gap-3 sm:gap-4">
+          <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 border-2 border-white/30 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-md group-hover:-rotate-3 transition">
+              <i class="fa-solid fa-bullhorn text-lg sm:text-xl"></i>
             </div>
-            <div class="text-left">
-              <div class="text-[11px] sm:text-xs font-black uppercase tracking-[0.18em] text-white/80 mb-1">⚡ Rápido e Gratuito</div>
-              <div class="text-2xl sm:text-3xl font-black leading-tight mb-1">Solicitar Orçamento</div>
-              <div class="text-sm sm:text-base text-white/90 font-medium">Publique seu serviço agora e receba propostas dos melhores profissionais!</div>
+            <div class="text-left min-w-0">
+              <div class="text-[10.5px] sm:text-[11px] font-black uppercase tracking-[0.16em] text-white/80 leading-none mb-1.5">⚡ Gratuito</div>
+              <div class="text-lg sm:text-xl font-black leading-tight truncate">Solicitar Orçamento</div>
+              <div class="text-[11.5px] sm:text-xs text-white/90 font-medium leading-tight sm:leading-snug mt-0.5 sm:mt-1 hidden sm:block">Receba propostas dos melhores profissionais.</div>
             </div>
           </div>
-          <div class="flex items-center gap-3 bg-white text-pink-600 font-black px-5 py-3.5 rounded-2xl shadow-xl group-hover:scale-105 group-hover:gap-4 transition self-start sm:self-center">
-            <span class="text-sm sm:text-base">Começar agora</span>
-            <i class="fa-solid fa-arrow-right"></i>
+          <div class="flex items-center gap-2 bg-white text-rose-600 font-black px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl shadow-lg group-hover:scale-105 transition flex-shrink-0">
+            <span class="text-xs sm:text-sm">Começar</span>
+            <i class="fa-solid fa-arrow-right text-[11px] sm:text-sm"></i>
           </div>
         </div>
       </button>
     </div>
 
-    <!-- 3) CATEGORIAS RÁPIDAS — HORIZONTAL SCROLL (ÍCONES QUADRADOS) -->
-    <div class="mb-8 sm:mb-10 -mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto pb-3 hide-scrollbar">
-      <div class="flex gap-3 sm:gap-4 min-w-max sm:grid sm:grid-cols-6 sm:gap-4 sm:min-w-0">
-        <button onclick="setCategoria('Técnico de Ar Condicionado')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
-          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-screwdriver-wrench text-2xl sm:text-3xl text-fuchsia-500"></i>
-          </div>
-          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Assistência Técnica</span>
+    <!-- ============ BLOCO 4 — CATEGORIAS: GRID RESPONSIVO [não usa -mx-4, não usa min-w-max = sem overflow] ============ -->
+    <!-- IMPORTANTE Item 5: TODAS as categorias usam setCategoria() ou navigateTo correto. NÃO abrem Eventos para Babá/Cozinheira/Celular/Geladeira/Freezer. -->
+    <!-- Babá = setCategoria('Babá'), Cozinheira = setCategoria('Cozinheira'), Assistência Técnica = setCategoria('Técnico de celular') / ... -->
+    <div class="mb-6 sm:mb-8">
+      <div class="flex items-center justify-between mb-3.5 sm:mb-4 px-0.5">
+        <h2 class="text-[17px] sm:text-xl font-black text-slate-900 tracking-tight">Categorias</h2>
+        <button onclick="navigateTo('view-categorias-todas')" class="text-[12px] sm:text-sm font-bold text-primary-700 hover:text-primary-900 transition inline-flex items-center gap-1.5">
+          Ver todas <i class="fa-solid fa-arrow-right text-[10px] sm:text-[11px]"></i>
         </button>
-        <button onclick="setCategoria('Pedreiro')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
-          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-hammer text-2xl sm:text-3xl text-purple-600"></i>
+      </div>
+      <!-- Grid 3 mobile, 4 sm, 6 lg. Todas cards QUADRADAS sem overflow-x. NÃO usa min-w-max. NÃO usa -mx-4. -->
+      <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
+        <!-- 1) Assistência Técnica → fallback Técnico de celular + Ar Condicionado/Eletrodomésticos/Geladeira/Freezer via pesquisa -->
+        <button onclick="setCategoria('Técnico de celular')" class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-white border border-slate-100 hover:border-primary-200 hover:bg-primary-50/40 transition shadow-sm hover:shadow active:scale-[0.985]">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-100 flex items-center justify-center group-hover:scale-105 transition">
+            <i class="fa-solid fa-mobile-screen-button text-xl sm:text-2xl text-indigo-600"></i>
           </div>
-          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Reformas e Reparos</span>
+          <span class="text-[11px] sm:text-[12.5px] font-bold text-slate-700 text-center leading-tight">Celular</span>
         </button>
-        <button onclick="abrirModalSolicitarOrcamento()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
-          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-champagne-glasses text-2xl sm:text-3xl text-pink-500"></i>
+        <!-- 2) Geladeira/Freezer = Assistência Técnica Eletrodomésticos / geladeira (exato) -->
+        <button onclick="setCategoria('Técnico de geladeira')" class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-white border border-slate-100 hover:border-primary-200 hover:bg-primary-50/40 transition shadow-sm hover:shadow active:scale-[0.985]">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-sky-50 to-cyan-100 flex items-center justify-center group-hover:scale-105 transition">
+            <i class="fa-solid fa-temperature-half text-xl sm:text-2xl text-cyan-600"></i>
           </div>
-          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Eventos</span>
+          <span class="text-[11px] sm:text-[12.5px] font-bold text-slate-700 text-center leading-tight">Geladeira / Freezer</span>
         </button>
-        <button onclick="setCategoria('Diarista')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
-          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-house text-2xl sm:text-3xl text-teal-600"></i>
+        <!-- 3) Reformas (Pedreiro) -->
+        <button onclick="setCategoria('Pedreiro')" class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-white border border-slate-100 hover:border-primary-200 hover:bg-primary-50/40 transition shadow-sm hover:shadow active:scale-[0.985]">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center group-hover:scale-105 transition">
+            <i class="fa-solid fa-hammer text-xl sm:text-2xl text-orange-600"></i>
           </div>
-          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Serviços Domésticos</span>
+          <span class="text-[11px] sm:text-[12.5px] font-bold text-slate-700 text-center leading-tight">Reformas</span>
         </button>
-        <button onclick="abrirModalSolicitarOrcamento()" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
-          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-slate-200 bg-white flex items-center justify-center group-hover:border-primary-300 group-hover:bg-primary-50 transition shadow-sm">
-            <i class="fa-solid fa-trophy text-2xl sm:text-3xl text-violet-600"></i>
+        <!-- 4) Serviços Domésticos → Diarista -->
+        <button onclick="setCategoria('Diarista')" class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-white border border-slate-100 hover:border-primary-200 hover:bg-primary-50/40 transition shadow-sm hover:shadow active:scale-[0.985]">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-100 flex items-center justify-center group-hover:scale-105 transition">
+            <i class="fa-solid fa-broom text-xl sm:text-2xl text-teal-600"></i>
           </div>
-          <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">Aulas</span>
+          <span class="text-[11px] sm:text-[12.5px] font-bold text-slate-700 text-center leading-tight">Diarista</span>
         </button>
-        <button onclick="navigateTo('view-categorias-todas')" class="flex flex-col items-center gap-2 w-20 sm:w-auto group">
-          <div class="w-16 h-16 sm:w-full sm:aspect-square rounded-2xl sm:rounded-3xl border-2 border-primary-200 bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center group-hover:border-primary-400 group-hover:from-primary-100 group-hover:to-accent-100 transition shadow-sm">
-            <i class="fa-solid fa-grid-2 text-2xl sm:text-3xl text-primary-600"></i>
+        <!-- 5) BABÁ = setCategoria('Babá') [NÃO Eventos, NÃO abre orçamento indevido] -->
+        <button onclick="setCategoria('Babá')" class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-white border border-slate-100 hover:border-primary-200 hover:bg-primary-50/40 transition shadow-sm hover:shadow active:scale-[0.985]">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-pink-50 to-rose-100 flex items-center justify-center group-hover:scale-105 transition">
+            <i class="fa-solid fa-child-reaching text-xl sm:text-2xl text-rose-500"></i>
           </div>
-          <span class="text-xs sm:text-sm font-semibold text-primary-700 text-center leading-tight">Ver todas →</span>
+          <span class="text-[11px] sm:text-[12.5px] font-bold text-slate-700 text-center leading-tight">Babá</span>
+        </button>
+        <!-- 6) COZINHEIRA = setCategoria('Cozinheira') [NÃO Eventos] + Ver todas mantém para overflow categorias -->
+        <button onclick="setCategoria('Cozinheira')" class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-white border border-slate-100 hover:border-primary-200 hover:bg-primary-50/40 transition shadow-sm hover:shadow active:scale-[0.985]">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-fuchsia-50 to-purple-100 flex items-center justify-center group-hover:scale-105 transition">
+            <i class="fa-solid fa-utensils text-xl sm:text-2xl text-fuchsia-600"></i>
+          </div>
+          <span class="text-[11px] sm:text-[12.5px] font-bold text-slate-700 text-center leading-tight">Cozinheira</span>
         </button>
       </div>
     </div>
 
-    <!-- 4) BANNER ROXO/VERDE-ÁGUA — CADASTRAR COMO PROFISSIONAL (NOVA PALETA) -->
-    <div class="relative overflow-hidden bg-gradient-to-br from-violet-400 via-purple-500 to-fuchsia-500 rounded-3xl shadow-lg mb-8 sm:mb-10 group cursor-pointer" onclick="navigateTo('view-profissional-cadastro')">
-      <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-pink-400/40 mix-blend-multiply blur-2xl group-hover:bg-pink-400/50 transition"></div>
-      <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-teal-400/30 mix-blend-multiply blur-3xl group-hover:bg-teal-400/40 transition"></div>
-      <div class="absolute right-6 top-6 opacity-60 rotate-12 group-hover:rotate-3 transition duration-500">
-        <i class="fa-solid fa-user-tie text-white text-7xl"></i>
-      </div>
-      <div class="relative px-6 sm:px-10 py-8 sm:py-10 text-center sm:text-left">
-        <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Cadastrar serviços</h3>
-        <p class="text-base sm:text-lg text-slate-900/80 font-medium mb-5 sm:mb-6 max-w-lg mx-auto sm:mx-0">Confira todas as opções disponíveis para você!</p>
-        <button onclick="event.stopPropagation(); navigateTo('view-profissional-cadastro');" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-base sm:text-lg px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition group-hover:-translate-y-0.5">
-          Seja profissional
-        </button>
-      </div>
-    </div>
-
-    <!-- 5) BANNER VERDE-ÁGUA/ROXO — ACOMPANHE SEUS PEDIDOS (mostra SÓ se logado!) -->
-    <div id="homeBannerAcompanharPedidos" class="hidden relative overflow-hidden bg-gradient-to-br from-teal-500 via-cyan-600 to-emerald-700 rounded-3xl shadow-lg mb-8 sm:mb-10 group cursor-pointer" onclick="navigateTo('view-meus-pedidos')">
-      <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-cyan-300/30 mix-blend-overlay blur-2xl group-hover:bg-cyan-300/40 transition"></div>
-      <div class="absolute -left-12 -bottom-16 w-64 h-64 rounded-full bg-indigo-400/30 mix-blend-overlay blur-3xl transition"></div>
-      <div class="relative flex items-center justify-between px-6 sm:px-10 py-8 sm:py-9">
-        <div>
-          <h3 class="text-2xl sm:text-3xl font-black text-white mb-1.5">Acessar</h3>
-          <p class="text-base sm:text-lg text-emerald-50 font-medium">Acompanhe seus pedidos</p>
+    <!-- ============ BLOCO 5 — BANNER COMPACTO SEJA PROFISSIONAL (NÃO é gigante 500px+, agora ~chip row) ============ -->
+    <!-- NÃO substitui o botão Entrar do bloco 1 — complementa com CTA secundário mais abaixo sem ocupar espaço exagerado -->
+    <div class="relative overflow-hidden bg-gradient-to-r from-primary-600 via-primary-700 to-accent-600 rounded-2xl sm:rounded-3xl shadow-md mb-6 sm:mb-8 group"
+         onclick="navigateTo('view-profissional-cadastro')">
+      <div class="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white/10 blur-2xl group-hover:bg-white/20 transition"></div>
+      <div class="relative px-4 sm:px-6 py-3.5 sm:py-4.5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center flex-shrink-0 shadow-sm">
+            <i class="fa-solid fa-user-tie text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-white text-sm sm:text-[15px] font-black leading-tight truncate">Ofereça seus serviços no Ajeitaí</div>
+            <div class="text-white/85 text-[11px] sm:text-[12px] font-medium leading-tight mt-0.5 truncate hidden sm:block">Cadastre-se grátis e receba orçamentos.</div>
+          </div>
         </div>
-        <button onclick="event.stopPropagation(); navigateTo('view-meus-pedidos');" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-teal-400 hover:bg-white text-white hover:text-teal-700 flex items-center justify-center shadow-xl border-4 border-white/20 transition group-hover:scale-110 group-active:scale-95">
-          <i class="fa-solid fa-arrow-right text-xl sm:text-2xl ml-1"></i>
+        <button onclick="event.stopPropagation(); navigateTo('view-profissional-cadastro');"
+                class="bg-white text-primary-700 hover:bg-primary-50 font-black text-[12px] sm:text-sm px-3.5 sm:px-4.5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl shadow-md group-hover:scale-105 transition active:scale-95 flex-shrink-0">
+          Cadastrar
         </button>
       </div>
     </div>
 
-    <!-- 5 B) EMPRESAS PARCEIRAS — PATROCINADORES (renderizado via JS) -->
-    <div id="patrocinadoresBannersContainer" class="mb-10 sm:mb-12"></div>
-
-    <!-- 6) SEÇÃO: REFORMAS E REPAROS + Ver Tudo + grid 3 colunas FOTOS -->
-    <div class="mb-10 sm:mb-12">
-      <div class="flex items-center justify-between mb-5 sm:mb-6 px-1">
-        <h2 class="text-2xl sm:text-2.5xl font-black text-slate-900 tracking-tight">Reformas e Reparos</h2>
-        <button onclick="setCategoria('Pedreiro')" class="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 transition">Ver tudo</button>
+    <!-- ============ BLOCO 6 — ACOMPANHAR PEDIDOS (mantém ID e estrutura; mostra só logado; reduzido verticalmente) ============ -->
+    <div id="homeBannerAcompanharPedidos" class="hidden relative overflow-hidden bg-gradient-to-br from-teal-500 via-cyan-600 to-emerald-700 rounded-2xl sm:rounded-3xl shadow-md mb-6 sm:mb-8 group cursor-pointer" onclick="navigateTo('view-meus-pedidos')">
+      <div class="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-cyan-300/25 mix-blend-overlay blur-2xl transition"></div>
+      <div class="relative flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4.5 gap-3">
+        <div class="min-w-0 flex-1">
+          <h3 class="text-white text-[15px] sm:text-lg font-black leading-tight">Acompanhar pedidos</h3>
+          <p class="text-emerald-50/90 text-[11.5px] sm:text-[13px] font-medium leading-tight mt-0.5 sm:mt-1">Veja o andamento dos seus serviços.</p>
+        </div>
+        <button onclick="event.stopPropagation(); navigateTo('view-meus-pedidos');"
+                class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white/15 hover:bg-white border-2 border-white/25 hover:border-white text-white hover:text-teal-700 flex items-center justify-center shadow-md transition group-hover:scale-105 group-active:scale-95 flex-shrink-0">
+          <i class="fa-solid fa-arrow-right text-base sm:text-lg"></i>
+        </button>
       </div>
-      <div class="grid grid-cols-3 gap-3 sm:gap-5">
-        <button onclick="setCategoria('Eletricista')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
-          <div class="aspect-square overflow-hidden bg-slate-100">
+    </div>
+
+    <!-- ============ BLOCO 7 — PATROCINADORES BANNERS (mantém ID original, sem tocar JS) ============ -->
+    <div id="patrocinadoresBannersContainer" class="mb-7 sm:mb-9"></div>
+
+    <!-- ============ BLOCO 8 — GRUPOS FOTOS: Reformas, Assist. Técnica, Serviços Domésticos (grid 2 col) ============ -->
+    <!-- Identidade Ajeitaí própria: grid 2col mobile cards compactos (2.5col sm). Fotos reais existentes. NÃO 3col estourado. -->
+    <!-- Item 7 Overflow: todos containers usam w-full max-w-full, grid 2col, imagens object-cover; NÃO tem grid-cols-3 forçado mobile. -->
+
+    <!-- 8a) Reformas e Reparos -->
+    <div class="mb-7 sm:mb-9">
+      <div class="flex items-center justify-between mb-3.5 sm:mb-4 px-0.5">
+        <h2 class="text-[17px] sm:text-xl font-black text-slate-900 tracking-tight">Reformas e Reparos</h2>
+        <button onclick="setCategoria('Pedreiro')" class="text-[12px] sm:text-sm font-bold text-primary-700 hover:text-primary-900 transition inline-flex items-center gap-1.5">
+          Ver tudo <i class="fa-solid fa-arrow-right text-[10px] sm:text-[11px]"></i>
+        </button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+        <button onclick="setCategoria('Eletricista')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition active:scale-[0.995]">
+          <div class="aspect-[5/4] overflow-hidden bg-slate-100">
             <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Brazilian%20black%20male%20electrician%20yellow%20helmet%20working%20on%20residential%20electrical%20wires%20closeup%20photorealistic&image_size=square_hd" alt="Eletricista" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
           </div>
-          <div class="p-3 sm:p-4">
-            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Eletricista</h4>
+          <div class="p-2.5 sm:p-3.5">
+            <h4 class="font-black text-slate-800 text-[13px] sm:text-base leading-tight">Eletricista</h4>
           </div>
         </button>
-        <button onclick="setCategoria('Pedreiro')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
-          <div class="aspect-square overflow-hidden bg-slate-100">
+        <button onclick="setCategoria('Pedreiro')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition active:scale-[0.995]">
+          <div class="aspect-[5/4] overflow-hidden bg-slate-100">
             <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Handyman%20blue%20overalls%20tool%20belt%20construction%20tools%20leather%20gloves%20home%20repair%20photorealistic&image_size=square_hd" alt="Marido de aluguel" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
           </div>
-          <div class="p-3 sm:p-4">
-            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Marido de aluguel</h4>
+          <div class="p-2.5 sm:p-3.5">
+            <h4 class="font-black text-slate-800 text-[13px] sm:text-base leading-tight">Marido de aluguel</h4>
           </div>
         </button>
-        <button onclick="setCategoria('Marceneiro')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition">
-          <div class="aspect-square overflow-hidden bg-slate-100">
+        <button onclick="setCategoria('Marceneiro')" class="group text-left overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition active:scale-[0.995] col-span-2 sm:col-span-1">
+          <div class="aspect-[5/4] overflow-hidden bg-slate-100">
             <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Professional%20mover%20uniform%20carrying%20cardboard%20boxes%20moving%20truck%20residential%20photorealistic&image_size=square_hd" alt="Mudanças e Carretos" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
           </div>
-          <div class="p-3 sm:p-4">
-            <h4 class="font-black text-slate-800 text-sm sm:text-lg">Mudanças e Carretos</h4>
+          <div class="p-2.5 sm:p-3.5">
+            <h4 class="font-black text-slate-800 text-[13px] sm:text-base leading-tight">Mudanças e Carretos</h4>
           </div>
         </button>
       </div>
     </div>
 
-    <!-- 7) CARD DESTAQUE HORIZONTAL: 📢 PATROCINADORES (substitui card Diarista original)
-         - Carrossel cascata/loop 5 segundos (1 timer, 1 única requisição, sem polling)
-         - Swipe touch no celular, dots discretos, fade suave 500ms
-         - Se NENHUM patrocinador ativo → mostra placeholder neutro "Em breve"
-         - NÃO mostra profissionais mais avaliados aqui (ficam em sua seção própria) -->
-    <div id="patrocionariosDestaqueHome" class="mb-10 sm:mb-12">
-      <div class="overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-lg">
-        <div class="relative aspect-[16/9] sm:aspect-[21/9] overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
-          <!-- SLIDES (render via JS: carrosselPatrHomeSlidesWrap) -->
+    <!-- ============ BLOCO 9 — CARD DESTAQUE PATROCINADORES (mantém IDs originais para JS não quebrar; reduzido) ============ -->
+    <div id="patrocionariosDestaqueHome" class="mb-7 sm:mb-9">
+      <div class="overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-slate-100 shadow-md">
+        <div class="relative aspect-[16/8] sm:aspect-[21/9] overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
           <div id="carrosselPatrHomeSlidesWrap" class="relative w-full h-full">
-            <!-- Placeholder neutro inicial (até o JS carregar) -->
-            <div class="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-              <div class="inline-flex items-center gap-2 bg-gradient-to-r from-fuchsia-50 to-purple-50 text-fuchsia-700 text-[11px] font-black uppercase tracking-[0.14em] px-3 py-1.5 rounded-full border border-fuchsia-200 mb-5">
+            <div class="absolute inset-0 flex flex-col items-center justify-center px-5 text-center">
+              <div class="inline-flex items-center gap-1.5 bg-gradient-to-r from-fuchsia-50 to-purple-50 text-fuchsia-700 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.14em] px-2.5 py-1 rounded-full border border-fuchsia-200 mb-3.5 sm:mb-4">
                 📢 PATROCINADORES
               </div>
-              <div class="text-5xl sm:text-6xl mb-4 text-slate-300"><i class="fa-solid fa-building"></i></div>
-              <h3 class="text-xl sm:text-2xl font-black text-slate-700 mb-1.5">Em breve</h3>
-              <p class="text-sm sm:text-base text-slate-500 max-w-lg">Empresas parceiras do AjeitaAí estarão aqui.</p>
+              <div class="text-4xl sm:text-5xl mb-2.5 sm:mb-3.5 text-slate-300"><i class="fa-solid fa-building"></i></div>
+              <h3 class="text-lg sm:text-2xl font-black text-slate-700 mb-1">Em breve</h3>
+              <p class="text-[12px] sm:text-sm text-slate-500 max-w-md leading-snug">Empresas parceiras do AjeitaAí estarão aqui.</p>
             </div>
           </div>
-          <!-- Dots indicadores (render via JS) -->
-          <div id="carrosselPatrHomeDots" class="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/50 shadow-sm"></div>
+          <div id="carrosselPatrHomeDots" class="absolute bottom-2.5 sm:bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/75 backdrop-blur-sm border border-white/50 shadow-sm"></div>
         </div>
-        <!-- Rodapé (fora do aspect) — título 📢 PATROCINADORES + botão conhecer (igual proporção original do card Diarista) -->
-        <div class="flex items-center justify-between gap-5 p-5 sm:p-7 bg-white">
+        <div class="flex items-center justify-between gap-4 px-4 sm:px-6 py-3.5 sm:py-5 bg-white">
           <div class="flex-1 min-w-0">
-            <div class="inline-flex items-center gap-2 bg-gradient-to-r from-fuchsia-50 to-purple-50 text-fuchsia-700 text-[11px] font-black uppercase tracking-[0.14em] px-3 py-1.5 rounded-full border border-fuchsia-200 mb-2">
+            <div class="inline-flex items-center gap-1.5 bg-gradient-to-r from-fuchsia-50 to-purple-50 text-fuchsia-700 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.14em] px-2.5 py-1 rounded-full border border-fuchsia-200 mb-1.5">
               📢 PATROCINADORES
             </div>
-            <h3 id="carrosselPatrHomeTituloRodape" class="text-2xl sm:text-3xl font-black text-slate-900 mb-2 leading-tight truncate">Empresas parceiras do AjeitaAí</h3>
-            <p id="carrosselPatrHomeDescRodape" class="text-base sm:text-lg text-slate-600 leading-relaxed line-clamp-2 sm:line-clamp-none truncate">Marcas que apoiam nossa missão de conectar clientes aos melhores profissionais.</p>
+            <h3 id="carrosselPatrHomeTituloRodape" class="text-[16px] sm:text-2xl font-black text-slate-900 mb-0.5 sm:mb-1 leading-tight truncate">Empresas parceiras do AjeitaAí</h3>
+            <p id="carrosselPatrHomeDescRodape" class="text-[12px] sm:text-sm text-slate-600 leading-relaxed line-clamp-2 sm:line-clamp-none truncate">Marcas que apoiam nossa missão de conectar clientes aos melhores profissionais.</p>
           </div>
           <a id="carrosselPatrHomeBtnRodape" href="#view-home"
-             class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-fuchsia-600 to-purple-800 hover:from-fuchsia-700 hover:to-purple-900 text-white flex items-center justify-center shadow-xl hover:shadow-2xl transition group-hover:scale-110 group-active:scale-95"
+             class="flex-shrink-0 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-fuchsia-600 to-purple-800 hover:from-fuchsia-700 hover:to-purple-900 text-white flex items-center justify-center shadow-md hover:shadow-lg transition group-hover:scale-105 group-active:scale-95"
              onclick="event.preventDefault();var h=document.getElementById('patrocinadoresBannersContainer');if(h){h.scrollIntoView({behavior:'smooth',block:'center'});}else{navigateTo('view-home');}return false;"
              title="Ver todos patrocinadores">
-            <i class="fa-solid fa-arrow-right text-xl sm:text-2xl ml-0.5"></i>
+            <i class="fa-solid fa-arrow-right text-sm sm:text-lg ml-0"></i>
           </a>
         </div>
       </div>
     </div>
     <script>
+    // ============================================================
+    // BUSCA PRINCIPAL DA HOME ("O que você precisa?") — Reutiliza filtros existentes aplicarFiltrosCatalogo()
+    // NÃO cria sistema de busca novo: alimenta os mesmos campos da view de categorias (filtroCategoria + barraPesquisaCategorias + filtroBairro)
+    // ============================================================
+    function _executarPesquisaHome(origemEvento) {
+      try {
+        var rawV = '';
+        var homeBarEl = document.getElementById('homeBarraPesquisa');
+        if (homeBarEl) rawV = (homeBarEl.value || '').toString();
+        var v = (rawV || '').trim();
+        var pesquisaCatEl = document.getElementById('barraPesquisaCategorias');
+        var filtroCatEl = document.getElementById('filtroCategoria');
+        var filtroBairroEl = document.getElementById('filtroBairro');
+        var setTodos = new Set(Array.isArray(CATEGORIAS_GLOBAIS) ? CATEGORIAS_GLOBAIS : []);
+        var categoriaExata = '';
+        if (v && setTodos.has(v)) categoriaExata = v;
+        if (filtroCatEl) filtroCatEl.value = categoriaExata || '';
+        if (pesquisaCatEl) pesquisaCatEl.value = categoriaExata ? '' : v;
+        if (filtroBairroEl && !categoriaExata && v && v.length > 0) {
+          try {
+            var bairroLower = (filtroBairroEl.value || '').toString().trim().toLowerCase();
+            if (!bairroLower) filtroBairroEl.value = v;
+          } catch(eB){}
+        }
+        try { aplicarFiltrosCatalogo(); } catch(eAplic){}
+        setTimeout(function(){
+          var grid = document.getElementById('catalogoProfissionais');
+          if (grid) {
+            try { grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(eR){}
+          }
+        }, 90);
+      } catch(e) {
+        console.error('[pesquisa home]', e);
+        try { toast('error','Ops','Não foi possível pesquisar agora. Tente novamente.'); } catch(eT){}
+      }
+      return false;
+    }
     // ============================================================
     // CARROSSEL CASCATA PATROCINADORES (home destaque - substituindo card Diarista)
     // Regras (item 4,5,6,7,8,11):
