@@ -962,29 +962,24 @@ async function _ativarPatrocinadorPorPagamento(externalRef, opts) {
     if (!snap.exists) { console.warn('[ATIVAR_PATROCINADOR] doc nao existe: "'+parsed.docId+'"'); return false; }
     const doc = Object.assign({}, snap.data() || {});
     const planoKey = parsed.plano || doc.plano || 'bronze';
-    const planoCfg = PATROCINIO_PLANOS_CONFIG[planoKey] || PATROCINIO_PLANOS_CONFIG.bronze;
     const statusPatr = String(doc.status_patrocinador || '').toLowerCase();
     // ====================== IDEMPOTENCIA ======================
-    if (statusPatr === 'ativo') {
-      console.log(`[IDEMPOTENCIA_PATROCINADOR] SKIP ativar: doc "${parsed.docId}" JA ESTA status_patrocinador=ativo. Nao duplica datas.`);
+    if (statusPatr === 'ativo' || statusPatr === 'aguardando_aprovacao_admin') {
+      console.log(`[IDEMPOTENCIA_PATROCINADOR] SKIP: doc "${parsed.docId}" JA ESTA status_patrocinador=${statusPatr}. Nao duplica fluxo.`);
       return true;
     }
     const agora = admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString();
-    const dias = Number(doc.plano_dias || planoCfg.dias || 30);
-    const termMs = Date.now() + (dias * 24 * 60 * 60 * 1000);
-    const termObj = admin.firestore.Timestamp ? admin.firestore.Timestamp.fromMillis(termMs) : new Date(termMs).toISOString();
     const patch = {
       status_pagamento: 'approved',
-      status_patrocinador: 'ativo',
-      data_inicio: agora,
-      data_termino: termObj,
+      status_patrocinador: 'aguardando_aprovacao_admin',
+      atualizado_pagamento_aprovado_em: agora,
       updated_at: agora
     };
     if (opts.mp_payment_id) patch.mp_payment_id = String(opts.mp_payment_id);
     if (opts.aprovado_via) patch.aprovado_via = String(opts.aprovado_via);
     if (opts.valor_pago) patch.valor_pago_final = Number(opts.valor_pago || doc.valor || 0);
     await docRef.set(patch, { merge: true });
-    console.log(`[ATIVAR_PATROCINADOR] OK doc="${parsed.docId}" plano=${planoKey} dias=${dias} termino=${new Date(termMs).toISOString()} via=${opts.aprovado_via||'?'}`);
+    console.log(`[PAGAMENTO_PATROCINADOR_APROVADO] OK doc="${parsed.docId}" plano=${planoKey} via=${opts.aprovado_via||'?'}. AGUARDANDO APROVACAO ADMIN PARA DIVULGACAO PUBLICA.`);
     return true;
   } catch(e) { console.error('[ATIVAR_PATROCINADOR] ERRO:', e && e.message || e); return false; }
 }
@@ -1880,9 +1875,13 @@ const _COMUNICADO_DEFAULT = {
   botao_texto: 'Saiba mais',
   botao_link: ''
 };
+let _COMUNICADO_IN_MEMORY = null;
 app.get('/api/comunicado/public', async (req, res) => {
   try {
-    if (!dbFirestore) return res.status(200).json({ ok:true, config: _COMUNICADO_DEFAULT });
+    if (!dbFirestore) {
+      const cfg = _COMUNICADO_IN_MEMORY && typeof _COMUNICADO_IN_MEMORY === 'object' ? _COMUNICADO_IN_MEMORY : _COMUNICADO_DEFAULT;
+      return res.status(200).json({ ok:true, config: cfg });
+    }
     const snap = await dbFirestore.collection(_COMUNICADO_COL).doc(_COMUNICADO_DOC_ID).get().catch(()=>null);
     let cfg = _COMUNICADO_DEFAULT;
     if (snap && snap.exists) {
@@ -1892,13 +1891,18 @@ app.get('/api/comunicado/public', async (req, res) => {
         mensagem: String(raw.mensagem || _COMUNICADO_DEFAULT.mensagem).substring(0, 500),
         icone: String(raw.icone || _COMUNICADO_DEFAULT.icone || '📢').substring(0, 8),
         botao_texto: String(raw.botao_texto || '').trim().substring(0, 40),
-        botao_link: String(raw.botao_link || '').trim().substring(0, 800)
+        botao_link: String(raw.botao_link || '').trim().substring(0, 800),
+        atualizado_em: raw.atualizado_em || null
       };
+      _COMUNICADO_IN_MEMORY = Object.assign({}, cfg);
+    } else if (_COMUNICADO_IN_MEMORY && typeof _COMUNICADO_IN_MEMORY === 'object') {
+      cfg = Object.assign({}, _COMUNICADO_IN_MEMORY);
     }
     return res.status(200).json({ ok:true, config: cfg });
   } catch(e){
     console.error('/api/comunicado/public erro:', e && e.message);
-    return res.status(200).json({ ok:true, config: _COMUNICADO_DEFAULT });
+    const cfg = _COMUNICADO_IN_MEMORY && typeof _COMUNICADO_IN_MEMORY === 'object' ? _COMUNICADO_IN_MEMORY : _COMUNICADO_DEFAULT;
+    return res.status(200).json({ ok:true, config: cfg });
   }
 });
 app.patch('/api/comunicado/admin', async (req, res) => {
@@ -1915,16 +1919,18 @@ app.patch('/api/comunicado/admin', async (req, res) => {
     if (botao_link && !(botao_link.startsWith('http://') || botao_link.startsWith('https://'))) {
       return res.status(400).json({ ok:false, msg:'Link do botão precisa começar com http:// ou https://.' });
     }
+    const nowTs = admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString();
     const payload = {
       ativo, mensagem, icone,
       botao_texto,
       botao_link,
-      atualizado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),
+      atualizado_em: nowTs,
       atualizado_por: 'admin_api'
     };
     if (dbFirestore) {
       await dbFirestore.collection(_COMUNICADO_COL).doc(_COMUNICADO_DOC_ID).set(payload, { merge: false });
     }
+    _COMUNICADO_IN_MEMORY = Object.assign({}, payload);
     return res.status(200).json({ ok:true, msg:'Comunicado salvo.', config: payload });
   } catch(e){
     console.error('/api/comunicado/admin erro:', e && e.message);
@@ -2412,13 +2418,16 @@ app.post('/api/cliente/excluir-conta', async (req, res) => {
    - Regra: NÃO confiar em parâmetros enviados pelo frontend.
    - Se não autorizado: retorna 403 SEM telefone.
    ============================================================ */
+/* ============================================================
+   (V12 — TASK 2 PATCH: rota /whatsapp-seguro com contactLocked flag + force null when bloqueado)
+   ============================================================ */
 app.post('/api/profissional/pedido/whatsapp-seguro', async (req, res) => {
   try {
     const b = req.body || {};
     const pedidoId = String(b.pedido_id || '').trim();
     const profissionalId = String(b.profissional_id || '').trim();
     const isAdmin = _adminAuth(b, req.query || {});
-    if (!pedidoId) return res.status(400).json({ ok:false, msg:'pedido_id obrigatorio.' });
+    if (!pedidoId) return res.status(400).json({ ok:false, contactLocked:true, msg:'pedido_id obrigatorio.', whatsapp:null, nomeCliente:null });
     let autorizado = false;
     if (isAdmin) autorizado = true;
     let whatsappEncontrado = null;
@@ -2460,19 +2469,261 @@ app.post('/api/profissional/pedido/whatsapp-seguro', async (req, res) => {
           const senhaRecebida = String(b.profissional_senha || '').trim();
           const senhaHashLocal = String(pData.senhaHash || pData.senha || '');
           if (senhaRecebida && senhaHashLocal && (senhaHashLocal === senhaRecebida || senhaHashLocal === String(require('crypto').createHash('sha256').update(senhaRecebida).digest('hex')))) {
-            // Validado senha do profissional, mas SEM prova de desbloqueio → AINDA NAO autoriza.
             autorizado = false;
           }
         }
       } catch(eProf){}
     }
     if (!autorizado) {
-      return res.status(403).json({ ok:false, bloqueado:true, msg:'Acesso negado: WhatsApp protegido. Realize o desbloqueio no app para ter acesso ao contato.', telefone: null, whatsapp: null });
+      return res.status(403).json({
+        ok:false, contactLocked:true, bloqueado:true,
+        msg:'Acesso negado: WhatsApp protegido. Realize o desbloqueio no app para ter acesso ao contato.',
+        whatsapp: null, nomeCliente: null, telefone: null
+      });
     }
-    return res.status(200).json({ ok:true, whatsapp: whatsappEncontrado, nomeCliente: nomeClienteEncontrado, pedido_id: pedidoId });
+    return res.status(200).json({
+      ok:true, contactLocked:false,
+      whatsapp: whatsappEncontrado, nomeCliente: nomeClienteEncontrado, pedido_id: pedidoId
+    });
   } catch(e){
     console.error('/api/profissional/pedido/whatsapp-seguro erro:', e && e.message);
-    return res.status(500).json({ ok:false, msg:'Erro interno buscar WhatsApp seguro.' });
+    return res.status(500).json({ ok:false, contactLocked:true, msg:'Erro interno buscar WhatsApp seguro.', whatsapp:null, nomeCliente:null });
+  }
+});
+
+/* ============================================================
+   (V12 — TASK 1 NEW: rota /desbloquear-atômico — única fonte de verdade para liberar WhatsApp)
+   11 passos: auth → pedido → whatsapp real → idempotência duradoura → inflight →
+              saldo+custo FIRESTORE → 402 se insuficiente → 4 writes prova →
+              fecha pedido se ≥4 → retorna 200 whatsapp REAL somente após sucesso.
+   ============================================================ */
+const _DESBLOQUEIO_ATOMICO_INFLIGHT = new Map();
+const _FS_COL_DESBLOQUEIOS = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'desbloqueios_contatos';
+const _FS_COL_CONFIGS    = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'sistema_configs';
+const _CUSTO_DESBLOQUEIO_FALLBACK = 2;
+
+async function _lerCustoDesbloqueioFirestore() {
+  try {
+    if (!dbFirestore) return _CUSTO_DESBLOQUEIO_FALLBACK;
+    const snap = await dbFirestore.collection(_FS_COL_CONFIGS).doc('configEconomia').get().catch(()=>null);
+    if (snap && snap.exists) {
+      const d = snap.data() || {};
+      const c = Math.round(Number(d.custoMoedasPorDesbloqueio) || 0);
+      if (c >= 1) return c;
+    }
+  } catch(e){}
+  return _CUSTO_DESBLOQUEIO_FALLBACK;
+}
+
+async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
+  if (!dbFirestore) return { docId:null, data:null };
+  const tentativas = [];
+  if (profissionalId.startsWith('local_')) tentativas.push(profissionalId);
+  tentativas.push('local_' + profissionalId);
+  tentativas.push(profissionalId);
+  for (const tid of tentativas) {
+    const s = await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(tid).get().catch(()=>null);
+    if (s && s.exists) return { docId: tid, data: s.data() || {} };
+  }
+  try {
+    const allP = await dbFirestore.collection(_FS_COL_PROFISSIONAIS).limit(2000).get().catch(()=>({empty:true,docs:[]}));
+    if (allP && !allP.empty) {
+      for (const d of allP.docs) {
+        const dd = d.data() || {};
+        if (String(dd.id || '') === String(profissionalId) || String(dd.docId || d.id) === String(profissionalId)) {
+          return { docId: d.id, data: dd };
+        }
+      }
+    }
+  } catch(eF){}
+  return { docId:null, data:null };
+}
+
+app.post('/api/profissional/pedido/desbloquear-atômico', async (req, res) => {
+  const PASSO_ERRO = function(codHttp, codigoErro, msgExtra) {
+    return res.status(codHttp).json({
+      ok:false, contactLocked:true, whatsapp:null,
+      error: codigoErro,
+      msg: msgExtra || 'Desbloqueio não realizado. Contato permanece protegido.'
+    });
+  };
+  try {
+    const b = req.body || {};
+    const pedidoId = String(b.pedido_id || '').trim();
+    const profissionalId = String(b.profissional_id || '').trim();
+    const isAdminBypass = _adminAuth(b, req.query || {});
+    if (!pedidoId || !profissionalId) return PASSO_ERRO(400, 'PARAMETROS_OBRIGATORIOS', 'pedido_id e profissional_id são obrigatórios.');
+
+    // PASSO 1: Autenticar profissional OU admin
+    let autenticado = false;
+    let profDocId = null;
+    let profData = null;
+    if (isAdminBypass) {
+      autenticado = true;
+      const r = await _buscarProfissionalFirestorePorIdOuDoc(profissionalId);
+      profDocId = r.docId; profData = r.data;
+      if (!profDocId) return PASSO_ERRO(404, 'PROFISSIONAL_NAO_ENCONTRADO', 'Admin bypass: profissional não encontrado.');
+    } else {
+      const r = await _buscarProfissionalFirestorePorIdOuDoc(profissionalId);
+      profDocId = r.docId; profData = r.data;
+      if (!profDocId || !profData) return PASSO_ERRO(401, 'PROFISSIONAL_NAO_AUTENTICADO', 'Profissional não encontrado.');
+      const senhaRecebida = String(b.profissional_senha || '').trim();
+      const senhaHashLocal = String(profData.senhaHash || profData.senha || '');
+      if (senhaRecebida && senhaHashLocal) {
+        const sha256Recebida = String(require('crypto').createHash('sha256').update(senhaRecebida).digest('hex'));
+        if (senhaHashLocal === senhaRecebida || senhaHashLocal === sha256Recebida) autenticado = true;
+      }
+      if (!autenticado) return PASSO_ERRO(401, 'SENHA_INVALIDA', 'Senha do profissional inválida.');
+    }
+
+    // PASSO 2 e 3: Buscar pedido e extrair WhatsApp REAL (não retorna agora)
+    const prefixoCol = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '');
+    const pedRef = dbFirestore ? dbFirestore.collection(prefixoCol + 'pedidos').doc(pedidoId) : null;
+    let pedidoDocData = null;
+    let whatsappReal = null;
+    let nomeClienteReal = null;
+    if (pedRef) {
+      const pSnap = await pedRef.get().catch(()=>({exists:false}));
+      if (pSnap && pSnap.exists) pedidoDocData = pSnap.data() || {};
+    }
+    if (!pedidoDocData) return PASSO_ERRO(404, 'PEDIDO_NAO_ENCONTRADO', 'Pedido não existe.');
+    whatsappReal = pedidoDocData.whatsapp || pedidoDocData.clienteTelefone || pedidoDocData.clienteWhatsapp || null;
+    nomeClienteReal = pedidoDocData.nomeCliente || pedidoDocData.clienteNome || '';
+    const whatsappLimpo = String(whatsappReal || '').replace(/\D/g,'');
+    if (!whatsappLimpo || whatsappLimpo.length < 10) return PASSO_ERRO(422, 'PEDIDO_SEM_WHATSAPP', 'Pedido não possui WhatsApp do cliente cadastrado.');
+
+    // PASSO 4: Idempotência DURADOURA — verificação de desbloqueio JÁ EXISTENTE no banco
+    const marcadoresDesb = pedidoDocData.profissionaisDesbloquearamIds || pedidoDocData.profissionaisQueDesbloquearam || [];
+    const jaTemMarcadorPedido = Array.isArray(marcadoresDesb) && marcadoresDesb.includes(profissionalId);
+    let jaTemRegistroContabil = false;
+    try {
+      if (dbFirestore) {
+        const snapCol = await dbFirestore.collection(_FS_COL_DESBLOQUEIOS)
+          .where('order_id','==',pedidoId)
+          .where('professional_id','==',profissionalId)
+          .where('status','==','paid')
+          .limit(1).get().catch(()=>({empty:true, docs:[]}));
+        jaTemRegistroContabil = snapCol && !snapCol.empty && snapCol.docs.length > 0;
+      }
+    } catch(eIdem){}
+    if (jaTemMarcadorPedido || jaTemRegistroContabil) {
+      const saldoAtual = Number.isFinite(+profData.saldoMoedas) ? Math.floor(+profData.saldoMoedas) : 0;
+      return res.status(200).json({
+        ok:true, contactLocked:false, repetido:true,
+        whatsapp: whatsappLimpo, whatsapp_formatado: null, nome_cliente: nomeClienteReal,
+        custo_moedas: 0, saldo_restante: saldoAtual, unlock_id: null, unlocked_at_ms: Date.now(),
+        msg: 'Contato já estava desbloqueado. Nenhum custo cobrado.'
+      });
+    }
+
+    // PASSO 5: Idempotência INFLIGHT — impede duplo clique concorrente < 120s
+    const chaveInflight = pedidoId + '|' + profissionalId;
+    if (_DESBLOQUEIO_ATOMICO_INFLIGHT.has(chaveInflight)) {
+      return PASSO_ERRO(409, 'DESBLOQUEIO_EM_ANDAMENTO', 'Uma solicitação de desbloqueio já está em processamento. Aguarde.');
+    }
+    _DESBLOQUEIO_ATOMICO_INFLIGHT.set(chaveInflight, Date.now());
+    setTimeout(()=>{ try { _DESBLOQUEIO_ATOMICO_INFLIGHT.delete(chaveInflight); } catch(e){} }, 120 * 1000);
+
+    try {
+      // PASSO 6: Ler SALDO e CUSTO DO FIRESTORE (NÃO aceita body params)
+      const custoMoedas = await _lerCustoDesbloqueioFirestore();
+      const profAtualSnap = profDocId ? await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(profDocId).get().catch(()=>null) : null;
+      let profAtual = profAtualSnap && profAtualSnap.exists ? (profAtualSnap.data() || {}) : (profData || {});
+      const saldoMoedasAtual = Number.isFinite(+profAtual.saldoMoedas) ? Math.floor(+profAtual.saldoMoedas) : 0;
+
+      // PASSO 7: Admin bypass NÃO debita moedas. Caso contrário, saldo < custo → 402
+      let saldoRestante = saldoMoedasAtual;
+      let custoCobrado = custoMoedas;
+      if (isAdminBypass) custoCobrado = 0;
+      if (!isAdminBypass && saldoMoedasAtual < custoMoedas) {
+        return PASSO_ERRO(402, 'SALDO_INSUFICIENTE',
+          'Saldo insuficiente. Você tem ' + saldoMoedasAtual + ' moeda(s) e precisa de ' + custoMoedas + '. Recarregue pacotes na Loja de Moedas.');
+      }
+      if (!isAdminBypass) saldoRestante = saldoMoedasAtual - custoCobrado;
+
+      // PASSO 8 e 9: 4 writes PROVA idempotentes + fechar pedido se ≥4
+      const unlockId = 'unl_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+      const agoraMs = Date.now();
+      const fv = admin && admin.firestore ? admin.firestore.FieldValue : null;
+      const agoraTs = _fsTs();
+
+      // Write A: saldo decrement + counters increment no profissional
+      if (profDocId && dbFirestore && !isAdminBypass) {
+        const patchProf = { saldoMoedas: saldoRestante, ultima_movimentacao_moedas_em: agoraTs, ultima_movimentacao_moedas_por: 'desbloqueio_atomico' };
+        try { await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(profDocId).set(patchProf, { merge:true }); } catch(eW){}
+        try {
+          await _logTransacaoMoedas('remover_desbloqueio', profDocId, 'profissional',
+            profAtual.nome || 'Profissional', custoCobrado, saldoMoedasAtual, saldoRestante,
+            'Desbloqueio contato pedido_id=' + pedidoId, 'sistema_desbloqueio_atomico');
+        } catch(eLog){}
+      }
+
+      // Write B: pedido.profissionaisDesbloquearamIds arrayUnion (idempotente) + qtdDesbloqueios increment
+      if (pedRef && dbFirestore) {
+        const patchPed = {};
+        if (fv) {
+          patchPed.profissionaisDesbloquearamIds = fv.arrayUnion(profissionalId);
+          patchPed.qtdDesbloqueios = fv.increment(1);
+          patchPed.ultimo_desbloqueio_em = agoraTs;
+        } else {
+          const arr = Array.isArray(pedidoDocData.profissionaisDesbloquearamIds) ? pedidoDocData.profissionaisDesbloquearamIds.slice() : [];
+          if (!arr.includes(profissionalId)) arr.push(profissionalId);
+          patchPed.profissionaisDesbloquearamIds = arr;
+          patchPed.qtdDesbloqueios = (Number(pedidoDocData.qtdDesbloqueios)||0) + 1;
+          patchPed.ultimo_desbloqueio_em = agoraTs;
+        }
+        try { await pedRef.set(patchPed, { merge:true }); } catch(eW){}
+
+        // Write EXTRA: fecha o pedido (finalizado:true, status:'fechado') se qtd ≥ 4
+        try {
+          const pedReSnap = await pedRef.get().catch(()=>null);
+          const pd2 = pedReSnap && pedReSnap.exists ? (pedReSnap.data()||{}) : pedidoDocData;
+          const qtd = Number(pd2.qtdDesbloqueios) || 0;
+          if (qtd >= 4) {
+            try { await pedRef.set({ finalizado:true, status: (pd2.status === 'aberto' ? 'fechado' : pd2.status), fechado_em: agoraTs }, { merge:true }); } catch(eFech){}
+          }
+        } catch(eReSnap){}
+      }
+
+      // Write D: coleção desbloqueios_contatos doc autoID status=paid (prova contábil duradoura)
+      if (dbFirestore) {
+        const payloadDesb = {
+          id: unlockId,
+          order_id: pedidoId,
+          professional_id: profissionalId,
+          profissional_doc_id: profDocId || '',
+          payment_id: '',
+          status: 'paid',
+          amount: custoCobrado,
+          moedas: custoCobrado,
+          created_at: agoraTs,
+          unlocked_at: agoraTs,
+          unlocked_at_ms: agoraMs,
+          admin_bypass: !!isAdminBypass,
+          _v: 1
+        };
+        try { await dbFirestore.collection(_FS_COL_DESBLOQUEIOS).doc(unlockId).set(payloadDesb).catch(()=>{}); } catch(eW){}
+      }
+
+      // PASSO 10: Retorna 200 com WhatsApp REAL liberado
+      return res.status(200).json({
+        ok:true, contactLocked:false, repetido:false,
+        whatsapp: whatsappLimpo, whatsapp_formatado: null, nome_cliente: nomeClienteReal,
+        custo_moedas: custoCobrado, saldo_restante: saldoRestante,
+        unlock_id: unlockId, unlocked_at_ms: agoraMs,
+        pedido_id: pedidoId, profissional_id: profissionalId,
+        msg: isAdminBypass ? 'Contato liberado por admin (sem custo).' : 'Contato desbloqueado com sucesso.'
+      });
+
+    } catch(eInterno) {
+      console.error('/api/profissional/pedido/desbloquear-atômico ERRO INTERNO (passos 6-9):', eInterno && eInterno.message);
+      return PASSO_ERRO(500, 'ERRO_INTERNO_DESBLOQUEIO', 'Erro interno ao processar desbloqueio. Nenhuma moeda foi debitada. WhatsApp permanece bloqueado.');
+    } finally {
+      setTimeout(()=>{ try { _DESBLOQUEIO_ATOMICO_INFLIGHT.delete(chaveInflight); } catch(e){} }, 2000);
+    }
+  } catch(e){
+    console.error('/api/profissional/pedido/desbloquear-atômico erro topo:', e && e.message);
+    return res.status(500).json({ ok:false, contactLocked:true, whatsapp:null, error:'ERRO_DESCONHECIDO', msg:'Erro geral. Contato permanece protegido.' });
   }
 });
 
@@ -2480,7 +2731,7 @@ app.post('/api/profissional/pedido/whatsapp-seguro', async (req, res) => {
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
   if (res.headersSent) return;
-  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/comunicado/public, PATCH /api/comunicado/admin, GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar, POST /api/notificacoes/enviar-email-lote, POST /api/cliente/excluir-conta, POST /api/profissional/pedido/whatsapp-seguro.' });
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/comunicado/public, PATCH /api/comunicado/admin, GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar, POST /api/notificacoes/enviar-email-lote, POST /api/cliente/excluir-conta, POST /api/profissional/pedido/whatsapp-seguro, POST /api/profissional/pedido/desbloquear-atômico.' });
 });
 // Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
 app.use((err, req, res, next) => {

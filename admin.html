@@ -1567,9 +1567,10 @@ function renderAdminPatrocinadores(items) {
   const statusPatColor = function(s) {
     s = String(s||'').toLowerCase();
     if (s === 'ativo') return { t:'ATIVO', c:'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    if (s === 'aguardando_aprovacao_admin' || s === 'aguardando_aprovacao' || s === 'aguardando_admin') return { t:'AGUARDANDO APROVAÇÃO', c:'bg-orange-50 text-orange-700 border-orange-200' };
     if (s === 'expirado') return { t:'EXPIRADO', c:'bg-rose-50 text-rose-700 border-rose-200' };
     if (s === 'inativo') return { t:'INATIVO', c:'bg-slate-100 text-slate-500 border-slate-200' };
-    return { t: (s || '—').toUpperCase().slice(0,10), c:'bg-slate-100 text-slate-600 border-slate-200' };
+    return { t: (s || '—').toUpperCase().slice(0,15), c:'bg-slate-100 text-slate-600 border-slate-200' };
   };
   tb.innerHTML = items.map(function(p){
     const sp = statusPagColor(p.status_pagamento);
@@ -1611,6 +1612,10 @@ function renderAdminPatrocinadores(items) {
         </td>
         <td class="px-6 py-3.5">
           <div class="flex flex-col gap-1.5 justify-center">
+            ${(String(p.status_patrocinador||'').toLowerCase() === 'aguardando_aprovacao_admin' || String(p.status_patrocinador||'').toLowerCase() === 'aguardando_aprovacao' || String(p.status_patrocinador||'').toLowerCase() === 'aguardando_admin' || (String(p.status_patrocinador||'').toLowerCase() !== 'ativo' && String(p.status_pagamento||'').toLowerCase() === 'approved')) ? `
+            <button onclick="adminLiberarDivulgacaoPatrocinador('${String(p.id||'').replace(/'/g,"\\'")}')" class="inline-flex items-center justify-center gap-1.5 bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl font-black text-[11px] px-3 py-2 rounded-xl transition animate-[pulse_3s_ease-in-out_infinite]">
+              <i class="fa-solid fa-circle-check"></i> Aprovar divulgação
+            </button>` : ''}
             <button onclick="adminEditarPatrocinador('${String(p.id||'').replace(/'/g,"\\'")}')" class="inline-flex items-center justify-center gap-1 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-200 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition">
               <i class="fa-solid fa-pen-to-square"></i> Editar
             </button>
@@ -1618,7 +1623,7 @@ function renderAdminPatrocinadores(items) {
               <i class="fa-solid fa-power-off"></i> Ativar/Desat.
             </button>
             <button onclick="adminAprovarPagamentoPatrocinadorManual('${String(p.id||'').replace(/'/g,"\\'")}')" class="inline-flex items-center justify-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition" title="⚠️ Marca como aprovado SEM Mercado Pago. Requer justificativa.">
-              <i class="fa-solid fa-hand-holding-dollar"></i> Aprovar manual
+              <i class="fa-solid fa-hand-holding-dollar"></i> Aprovar manual (MP)
             </button>
             <button onclick="adminExcluirPatrocinador('${String(p.id||'').replace(/'/g,"\\'")}')" class="inline-flex items-center justify-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition">
               <i class="fa-solid fa-trash-can"></i> Excluir
@@ -1731,6 +1736,74 @@ async function adminAprovarPagamentoPatrocinadorManual(docId) {
     });
     const j = await resp.json().catch(()=>({ok:false}));
     if (j && j.ok === true) { toast('success','✅ Aprovação manual registrada!','Patrocínio marcado como aprovado e ativado. Motivo registrado em histórico no banco.'); adminCarregarPatrocinadores(true); }
+    else toast('error','Erro', j && j.msg || 'Verifique console.');
+  } catch(e){ toast('error','Erro','Sem conexão backend.'); }
+}
+
+async function adminLiberarDivulgacaoPatrocinador(docId) {
+  if (!adminLogado || !docId) return;
+  const p = (_adminCachePatrocinadores || []).find(x => x && String(x.id) === String(docId)) || {};
+  const stPag = (p.status_pagamento||'').toLowerCase();
+  const pagOk = stPag === 'approved' || stPag === 'aprovado';
+  const html = `
+    <div style="background:white;border-radius:20px;padding:22px 22px 18px;max-width:460px;width:100%;box-shadow:0 20px 60px -10px rgba(16,185,129,.35);border:1px solid #d1fae5">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;box-shadow:0 6px 16px -4px rgba(16,185,129,.55)">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+          <div style="font-weight:900;font-size:17px;color:#065f46">Aprovar divulgação pública</div>
+          <div style="font-size:12px;color:#047857;font-weight:600">Patrocinador: <strong>${(p.nome_empresa||docId).toString().replace(/</g,'&lt;')}</strong></div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:#334155;font-weight:600;line-height:1.5;margin-bottom:14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:12px 14px">
+        ${pagOk
+          ? `✅ Pagamento Mercado Pago confirmado. Após aprovação, o patrocínio entra no ar imediatamente e a validade (${Number(p.plano_dias||30)} dias) começa a contar de HOJE.`
+          : `⚠️ Pagamento <strong style="color:#b91c1c">NÃO CONFIRMADO</strong> (status: ${stPag||'—'}) — só aprove se você recebeu o valor fora do sistema. A validade (${Number(p.plano_dias||30)} dias) começa a contar de HOJE.`}
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;cursor:pointer;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc">
+        <input id="lib_confirm" type="checkbox" style="margin-top:3px;transform:scale(1.15)">
+        <span style="font-size:13px;font-weight:700;color:#334155;line-height:1.4">Confirmo que li o cadastro do patrocinador (nome, categoria, conteúdo) e autorizo a <strong>divulgação pública</strong> no banner do site a partir de agora.</span>
+      </label>
+      <label style="display:block;margin-bottom:10px;font-size:12px;font-weight:700;color:#334155">Motivo / justificativa da aprovação (mínimo 8 caracteres):</label>
+      <textarea id="lib_motivo" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;resize:vertical" placeholder="Ex: Pagamento MP aprovado ontem. Cadastro completo, categoria válida, logo OK. Liberar."></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button id="lib_cancel" style="padding:9px 16px;border-radius:10px;font-weight:700;border:1px solid #e2e8f0;background:white;color:#475569;cursor:pointer">Cancelar</button>
+        <button id="lib_ok" style="padding:9px 18px;border-radius:10px;font-weight:800;border:0;background:linear-gradient(90deg,#059669,#10b981);color:white;cursor:pointer;box-shadow:0 8px 18px -6px rgba(16,185,129,.55)">🟢 Liberar no site</button>
+      </div>
+    </div>`;
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+  const done = new Promise(function(res){
+    modal.querySelector('#lib_cancel').onclick = function(){ document.body.removeChild(modal); res({ok:false}); };
+    modal.querySelector('#lib_ok').onclick = async function(){
+      const conf = modal.querySelector('#lib_confirm').checked;
+      const mot = (modal.querySelector('#lib_motivo').value || '').trim();
+      if (!conf) { alert('Por favor marque a checkbox de confirmação de leitura do cadastro.'); return; }
+      if (mot.length < 8) { alert('Informe um motivo com no mínimo 8 caracteres para justificar a liberação da divulgação.'); return; }
+      document.body.removeChild(modal);
+      res({ok:true, motivo:mot});
+    };
+  });
+  const resultado = await done;
+  if (!resultado.ok) return;
+  try {
+    if (typeof BACKEND_PIX_URL === 'undefined') window.BACKEND_PIX_URL = 'https://ajeita-backend-pix.onrender.com';
+    const resp = await fetch(BACKEND_PIX_URL + '/api/patrocinadores/admin/patch', {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        admin_senha: 'bolo2024',
+        docId: docId,
+        patch: { status_patrocinador: 'ativo' },
+        marcar_pagamento_aprovado_confirmar: true,
+        marcar_pagamento_aprovado_motivo: resultado.motivo
+      })
+    });
+    const j = await resp.json().catch(()=>({ok:false}));
+    if (j && j.ok === true) { toast('success','✅ Divulgação liberada!','Patrocinador ATIVO no banner público. Validade contando a partir de hoje.'); adminCarregarPatrocinadores(true); }
     else toast('error','Erro', j && j.msg || 'Verifique console.');
   } catch(e){ toast('error','Erro','Sem conexão backend.'); }
 }

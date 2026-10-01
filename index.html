@@ -260,12 +260,14 @@ tailwind.config = {
             </button>
             <button onclick="navigateTo('view-profissional-cadastro')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie mr-1.5 text-primary-500"></i>Sou Profissional</button>
             <button onclick="navigateTo('view-area-patrocinador')" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-fuchsia-700 bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-fuchsia-200 hover:from-fuchsia-100 hover:to-purple-100 transition"><i class="fa-solid fa-handshake mr-1.5 text-fuchsia-600"></i>Seja um parceiro</button>
+            <button onclick="navigateTo('view-suporte')" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-sky-700 bg-gradient-to-r from-sky-50 to-cyan-50 border border-sky-200 hover:from-sky-100 hover:to-cyan-100 transition"><i class="fa-solid fa-headset mr-1.5 text-sky-600"></i>Suporte</button>
           </div>
           <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
           <div id="headerNavGroupProfissional" class="hidden items-center gap-1">
             <button onclick="navigateTo('view-home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-house mr-1.5 text-slate-500"></i>Home</button>
             <button onclick="navigateTo('view-mural-pedidos')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-map-location-dot mr-1.5 text-primary-500"></i>Mural da Sua Região</button>
             <button onclick="navigateTo('view-area-patrocinador')" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-fuchsia-700 bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-fuchsia-200 hover:from-fuchsia-100 hover:to-purple-100 transition"><i class="fa-solid fa-handshake mr-1.5 text-fuchsia-600"></i>Seja parceiro</button>
+            <button onclick="navigateTo('view-suporte')" class="nav-link px-3 py-2 rounded-lg text-sm font-bold text-sky-700 bg-gradient-to-r from-sky-50 to-cyan-50 border border-sky-200 hover:from-sky-100 hover:to-cyan-100 transition"><i class="fa-solid fa-headset mr-1.5 text-sky-600"></i>Suporte</button>
             <button onclick="abrirDrawerNotificacoes()" class="relative nav-link px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition" aria-label="Notificações" title="Notificações">
               <i class="fa-solid fa-bell mr-1.5 text-primary-500"></i>Notificações
               <span id="headerProfSinoBadge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md border-2 border-white animate-[bellRing_1.4s_ease-in-out_infinite_0.5s]">0</span>
@@ -291,10 +293,11 @@ tailwind.config = {
           </button>
         </div>
 
-        <!-- SININHO NOTIFICAÇÕES CLIENTE (desktop) -->
-        <button id="headerBtnSinoCliente" onclick="abrirDrawerNotificacoesCliente()" class="hidden items-center justify-center relative w-10 h-10 rounded-xl bg-primary-50 hover:bg-primary-100 border border-primary-200 text-primary-700 transition" title="Notificações">
+        <!-- SININHO NOTIFICAÇÕES GLOBAL (todas telas) -->
+        <button id="headerBtnSinoCliente" onclick="abrirDrawerNotificacoesGlobal()" class="flex items-center justify-center relative w-10 h-10 rounded-xl bg-primary-50 hover:bg-primary-100 border border-primary-200 text-primary-700 transition" title="Notificações">
           <i class="fa-solid fa-bell text-base"></i>
-          <span id="headerClienteSinoBadge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md border-2 border-white">0</span>
+          <span id="headerClienteSinoBadgeTopo" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md border-2 border-white">0</span>
+          <span id="headerProfSinoBadgeTopo" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md border-2 border-white">0</span>
         </button>
 
         <!-- AVATAR GOOGLE CLIENTE (se logado) -->
@@ -373,6 +376,7 @@ tailwind.config = {
           </button>
           <button onclick="abrirMeuPerfilCliente(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-sm transition"><i class="fa-solid fa-user-gear w-5"></i>Meu Perfil</button>
           <button onclick="navigateTo('view-profissional-cadastro'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie text-primary-500 w-5"></i>Quero ser Profissional</button>
+          <button onclick="navigateTo('view-suporte'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sky-700 bg-gradient-to-r from-sky-50 to-cyan-50 border border-sky-200 hover:from-sky-100 hover:to-cyan-100 transition"><i class="fa-solid fa-headset text-sky-600 w-5"></i>Suporte ao Usuário</button>
         </div>
         <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
         <div id="mobileNavGroupProfissional" class="hidden space-y-1.5">
@@ -388,6 +392,7 @@ tailwind.config = {
           <button onclick="abrirLojaMoedas(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:from-amber-100 hover:to-orange-100 transition"><i class="fa-solid fa-coins text-amber-600 w-5"></i>Loja / Saldo de Moedas</button>
           <button onclick="abrirHistoricoLeadsProfissional(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-book-open text-primary-500 w-5"></i>Histórico Leads Desbloqueados</button>
           <button onclick="abrirMeuPerfil(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-sm transition"><i class="fa-solid fa-user-gear w-5"></i>Meu Perfil Profissional</button>
+          <button onclick="navigateTo('view-suporte'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sky-700 bg-gradient-to-r from-sky-50 to-cyan-50 border border-sky-200 hover:from-sky-100 hover:to-cyan-100 transition"><i class="fa-solid fa-headset text-sky-600 w-5"></i>Suporte ao Usuário</button>
         </div>
       </nav>
       <div class="p-4 border-t border-slate-100 space-y-2">
@@ -443,6 +448,35 @@ tailwind.config = {
           <span class="text-[12.5px] sm:text-sm font-bold tracking-tight pr-1">Entrar</span>
         </button>
       </div>
+    </div>
+
+    <!-- ============ BLOCO 1.5 — CTA DESTACADO: SEJA UM PARCEIRO (perto do topo, destaque máximo, não botão gigante) ============ -->
+    <!-- Recuperado e PROMOVIDO: fluxo existente navigateTo('view-area-patrocinador'). Agora posicionado ANTES da busca para chamar atenção. -->
+    <div class="relative mb-5 sm:mb-6">
+      <button onclick="navigateTo('view-area-patrocinador')"
+              class="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-gradient-to-br from-fuchsia-600 via-purple-600 to-violet-700 border-2 border-fuchsia-300/40 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.995] animate-[pulse_4s_ease-in-out_infinite]">
+        <div class="absolute -right-10 -top-10 w-36 h-36 rounded-full bg-fuchsia-300/25 blur-3xl group-hover:bg-fuchsia-200/40 transition-all duration-500"></div>
+        <div class="absolute -left-6 -bottom-8 w-28 h-28 rounded-full bg-violet-300/25 blur-2xl group-hover:bg-violet-200/35 transition-all duration-500"></div>
+        <div class="relative flex items-center justify-between gap-3 sm:gap-5">
+          <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/40 shadow-lg flex items-center justify-center flex-shrink-0 group-hover:from-white/30 group-hover:to-white/10 transition-all duration-300 group-hover:rotate-[-4deg]">
+              <i class="fa-solid fa-handshake text-white text-xl sm:text-2xl drop-shadow"></i>
+            </div>
+            <div class="text-left min-w-0">
+              <div class="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-[2px] border border-white/25 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.16em] px-2.5 py-1 rounded-full mb-1.5 sm:mb-2 shadow-sm">
+                <i class="fa-solid fa-sparkles text-[9px] sm:text-[10px]"></i>
+                Destaque · Seja parceiro
+              </div>
+              <div class="text-[16px] sm:text-xl font-black tracking-tight text-white leading-tight drop-shadow-sm">Ofereça seus serviços e ganhe clientes</div>
+              <div class="text-[12px] sm:text-sm text-white/85 font-medium leading-tight mt-0.5 sm:mt-1">Milhares de clientes procurando profissionais como você hoje</div>
+            </div>
+          </div>
+          <div class="flex-shrink-0 inline-flex items-center gap-1.5 bg-white text-fuchsia-700 font-black px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-white/60 group-hover:scale-105 group-hover:text-purple-800 group-hover:shadow-2xl transition-all duration-300">
+            <span class="text-xs sm:text-sm">Quero participar</span>
+            <i class="fa-solid fa-arrow-right text-[11px] sm:text-sm group-hover:translate-x-0.5 transition-transform"></i>
+          </div>
+        </div>
+      </button>
     </div>
 
     <!-- ============ BLOCO 2 — BUSCA PRINCIPAL: "O que você precisa?" [realmente interativa, não só rola] ============ -->
@@ -631,30 +665,6 @@ tailwind.config = {
           </div>
         </button>
       </div>
-    </div>
-
-    <!-- ============ BLOCO 5 — CTA COMPACTO: SEJA UM PARCEIRO (não botão gigante, não gigante) ============ -->
-    <!-- Recuperado: componente reutiliza navigateTo('view-area-patrocinador') fluxo existente. Compacto. Mobile cabe completo. -->
-    <div class="mb-6 sm:mb-8">
-      <button onclick="navigateTo('view-area-patrocinador')"
-              class="group w-full relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-gradient-to-br from-fuchsia-50 via-purple-50 to-violet-50 border-2 border-fuchsia-100 hover:border-fuchsia-200 shadow-sm hover:shadow-md transition active:scale-[0.995]">
-        <div class="absolute -left-8 -top-8 w-28 h-28 rounded-full bg-fuchsia-200/30 blur-2xl group-hover:bg-fuchsia-200/40 transition"></div>
-        <div class="relative flex items-center justify-between gap-3 sm:gap-5">
-          <div class="flex items-center gap-3 sm:gap-4 min-w-0">
-            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-fuchsia-500 to-purple-600 border-2 border-white/60 shadow-md flex items-center justify-center flex-shrink-0 group-hover:from-fuchsia-600 group-hover:to-purple-700 transition">
-              <i class="fa-solid fa-handshake text-white text-lg sm:text-xl"></i>
-            </div>
-            <div class="text-left min-w-0">
-              <div class="text-[15px] sm:text-lg font-black tracking-tight text-fuchsia-900 leading-tight">Seja um parceiro</div>
-              <div class="text-[12px] sm:text-sm text-fuchsia-700/80 font-medium leading-tight mt-0.5 sm:mt-1">Ofereça seus serviços aos clientes da sua cidade</div>
-            </div>
-          </div>
-          <div class="flex-shrink-0 inline-flex items-center gap-1.5 bg-white text-fuchsia-700 font-black px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl shadow-md border border-fuchsia-100 group-hover:scale-105 group-hover:text-fuchsia-800 transition">
-            <span class="text-xs sm:text-sm">Entrar</span>
-            <i class="fa-solid fa-arrow-right text-[11px] sm:text-sm"></i>
-          </div>
-        </div>
-      </button>
     </div>
 
     <!-- ============ BLOCO 9 — CARD DESTAQUE PATROCINADORES (mantém IDs originais para JS não quebrar; reduzido) ============ -->
@@ -1926,6 +1936,31 @@ tailwind.config = {
               </button>
             </div>
 
+            <!-- Card Suporte (abaixo de Termos/Privacidade) -->
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-500 via-cyan-600 to-teal-600 p-5 sm:p-6 border border-sky-400/30 shadow-md">
+              <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-sky-200/30 blur-3xl"></div>
+              <div class="relative flex items-center justify-between gap-4 sm:gap-5 flex-wrap sm:flex-nowrap">
+                <div class="flex items-center gap-4 min-w-0">
+                  <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center flex-shrink-0 shadow">
+                    <i class="fa-solid fa-headset text-white text-xl"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="inline-flex items-center gap-1.5 bg-white/15 border border-white/25 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full mb-1">Atendimento oficial</div>
+                    <div class="text-base sm:text-lg font-black text-white leading-tight">Precisa de ajuda? Fale com o suporte</div>
+                    <div class="text-xs sm:text-sm text-white/90 font-medium mt-0.5">WhatsApp direto (61) 99251-8130 · E-mail: ti.santos.melo@gmail.com</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto mt-3 sm:mt-0 flex-1 sm:flex-none justify-end">
+                  <a href="https://wa.me/5561992518130?text=Ol%C3%A1%21%20Preciso%20de%20ajuda%20no%20AjeitaA%C3%AD." target="_blank" rel="noopener noreferrer" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-white text-emerald-700 font-black px-3.5 py-2.5 rounded-xl shadow-md hover:scale-105 transition text-xs sm:text-sm">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                  </a>
+                  <button type="button" onclick="navigateTo('view-suporte')" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-black px-3.5 py-2.5 rounded-xl hover:scale-105 transition text-xs sm:text-sm">
+                    <i class="fa-solid fa-bars"></i> Ver tela completa
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Status do aceite -->
             <div id="perfilLegalStatusAceite" class="rounded-2xl border-2 border-dashed border-slate-200 p-4 sm:p-5"></div>
 
@@ -2136,6 +2171,147 @@ tailwind.config = {
     <!-- CONTEÚDO PRINCIPAL com rodapé de área segura (nunca fica abaixo do bottomNav) -->
     <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
       <div id="viewPrivacidadeConteudoContainer" class="p-6 sm:p-8 space-y-7 text-sm text-slate-700 leading-relaxed overflow-y-auto max-h-none pb-[calc(env(safe-area-inset-bottom)+128px)] sm:pb-28"></div>
+    </div>
+  </section>
+
+  <!-- =============== VIEW SUPORTE AO USUÁRIO (contato oficial · TELA INTEGRADA AO APP) =============== -->
+  <section id="view-suporte" class="view-section">
+    <!-- HEADER CABEÇALHO: voltar + logo + tela (padrão app oficial) -->
+    <div class="flex items-center justify-between mb-6 sm:mb-8">
+      <button onclick="history.length > 1 ? history.back() : navigateTo('view-home')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition active:scale-95">
+        <i class="fa-solid fa-arrow-left text-lg"></i>
+      </button>
+      <div class="flex items-center gap-2.5 group pointer-events-none select-none">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-600 flex items-center justify-center shadow-card">
+          <i class="fa-solid fa-headset text-white text-lg"></i>
+        </div>
+        <div class="text-left">
+          <div class="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-sky-600 via-cyan-600 to-teal-700 bg-clip-text text-transparent leading-tight">Suporte ao Usuário</div>
+          <div class="text-[11px] text-slate-500 font-medium -mt-0.5 flex items-center gap-1.5">
+            <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 font-black uppercase tracking-wider text-[9px]"><i class="fa-solid fa-circle text-[6px] text-emerald-500"></i> Online</span>
+            <span>AjeitaAí · Atendimento oficial</span>
+          </div>
+        </div>
+      </div>
+      <button onclick="navigateTo('view-home')" class="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition active:scale-95" title="Início">
+        <i class="fa-solid fa-house text-lg"></i>
+      </button>
+    </div>
+
+    <!-- HERO DESTAQUE (mesmo visual das telas oficiais) -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 via-cyan-600 to-teal-600 text-white px-6 sm:px-8 py-7 sm:py-8 mb-6 sm:mb-8 shadow-card">
+      <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_60%)]"></div>
+      <div class="relative flex items-start gap-4 sm:gap-5">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center flex-shrink-0 shadow-inner">
+          <i class="fa-solid fa-comments text-3xl sm:text-4xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/25 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider mb-2.5">
+            <i class="fa-solid fa-life-ring"></i> Equipe de atendimento
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-black leading-tight mb-1.5">Fale com a nossa equipe</h1>
+          <p class="text-white/90 text-sm sm:text-base leading-relaxed">Tem dúvidas, problema com um pedido ou sugestão? Escolha um dos canais abaixo e respondemos rapidamente.</p>
+          <div class="mt-4 flex flex-wrap items-center gap-2 text-[11px] sm:text-xs">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20"><i class="fa-solid fa-bolt text-yellow-300"></i> Resposta rápida em horário comercial</span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20"><i class="fa-solid fa-shield-halved"></i> Atendimento 100% oficial</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANAIS DE CONTATO PRINCIPAIS (área segura para não ficar abaixo do bottomNav) -->
+    <div class="space-y-4 sm:space-y-5 pb-[calc(env(safe-area-inset-bottom)+128px)] sm:pb-28">
+
+      <!-- CANAL 1 — WHATSAPP OFICIAL (DESTAQUE) -->
+      <a href="https://wa.me/5561992518130?text=Ol%C3%A1%21%20Vim%20pelo%20AjeitaA%C3%AD%20e%20preciso%20de%20ajuda%20com%3A%20" target="_blank" rel="noopener noreferrer"
+         class="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 p-5 sm:p-6 border-2 border-emerald-300/40 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.995]">
+        <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-emerald-200/30 blur-3xl group-hover:bg-emerald-100/45 transition-all duration-500"></div>
+        <div class="absolute -left-6 -bottom-8 w-28 h-28 rounded-full bg-teal-200/25 blur-2xl group-hover:bg-teal-100/40 transition-all duration-500"></div>
+        <div class="relative flex items-center justify-between gap-4 sm:gap-5">
+          <div class="flex items-center gap-4 sm:gap-5 min-w-0">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-white/20 backdrop-blur-sm border-2 border-white/40 shadow-lg flex items-center justify-center flex-shrink-0 group-hover:rotate-[-4deg] transition-all duration-300">
+              <i class="fa-brands fa-whatsapp text-white text-3xl sm:text-4xl drop-shadow"></i>
+            </div>
+            <div class="text-left min-w-0">
+              <div class="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-[2px] border border-white/25 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.16em] px-2.5 py-1 rounded-full mb-1.5 sm:mb-2 shadow-sm">
+                <i class="fa-solid fa-sparkles text-[9px] sm:text-[10px]"></i> Mais rápido · WhatsApp
+              </div>
+              <div class="text-[17px] sm:text-xl font-black tracking-tight text-white leading-tight drop-shadow-sm">Atendimento por WhatsApp</div>
+              <div class="text-[12px] sm:text-sm text-white/90 font-semibold leading-tight mt-0.5 sm:mt-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-phone text-[11px] sm:text-xs"></i>
+                <span class="tracking-wide">(61) 99251-8130</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex-shrink-0 inline-flex flex-col items-center gap-1 bg-white text-emerald-700 font-black px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-white/60 group-hover:scale-105 group-hover:text-emerald-800 group-hover:shadow-2xl transition-all duration-300">
+            <span class="text-xs sm:text-sm">Iniciar chat</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[11px] sm:text-sm group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+          </div>
+        </div>
+      </a>
+
+      <!-- CANAL 2 — E-MAIL SUPORTE -->
+      <a href="mailto:ti.santos.melo@gmail.com?subject=Suporte%20AjeitaA%C3%AD%20-%20%5Binforme%20seu%20assunto%5D&body=Ol%C3%A1%2C%0D%0A%0D%0AMeu%20nome%20%C3%A9%3A%20%0D%0AMeu%20e-mail%20cadastrado%3A%20%0D%0A%0D%0AEstou%20entrando%20em%20contato%20porque%3A%20%0D%0A%0D%0AAtenciosamente.%0D%0A"
+         class="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-5 sm:p-6 border-2 border-sky-100 hover:border-sky-200 shadow-sm hover:shadow-md transition-all duration-300 active:scale-[0.995]">
+        <div class="absolute -left-8 -top-8 w-28 h-28 rounded-full bg-sky-200/30 blur-2xl group-hover:bg-sky-200/45 transition"></div>
+        <div class="relative flex items-center justify-between gap-4 sm:gap-5">
+          <div class="flex items-center gap-4 sm:gap-5 min-w-0">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-sky-500 to-blue-600 border-2 border-white/60 shadow-md flex items-center justify-center flex-shrink-0 group-hover:from-sky-600 group-hover:to-blue-700 group-hover:rotate-[-3deg] transition-all duration-300">
+              <i class="fa-solid fa-envelope text-white text-2xl sm:text-3xl"></i>
+            </div>
+            <div class="text-left min-w-0">
+              <div class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-700 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.16em] px-2.5 py-1 rounded-full border border-sky-200 mb-1.5 sm:mb-2">
+                <i class="fa-solid fa-file-lines text-[9px] sm:text-[10px]"></i> E-mail detalhado
+              </div>
+              <div class="text-[17px] sm:text-xl font-black tracking-tight text-slate-900 leading-tight">Enviar e-mail</div>
+              <div class="text-[12px] sm:text-sm text-slate-600 font-medium leading-tight mt-0.5 sm:mt-1 break-all">ti.santos.melo@gmail.com</div>
+            </div>
+          </div>
+          <div class="flex-shrink-0 inline-flex items-center gap-1.5 bg-white text-sky-700 font-black px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl shadow-md border border-sky-100 group-hover:scale-105 group-hover:text-sky-800 transition-all duration-300">
+            <span class="text-xs sm:text-sm">Abrir e-mail</span>
+            <i class="fa-solid fa-chevron-right text-[11px] sm:text-sm group-hover:translate-x-0.5 transition-transform"></i>
+          </div>
+        </div>
+      </a>
+
+      <!-- BLOCO: HORÁRIO DE ATENDIMENTO + DÚVIDAS FREQUENTES (compacto, informativo) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+        <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center flex-shrink-0">
+              <i class="fa-regular fa-clock text-lg"></i>
+            </div>
+            <div>
+              <div class="font-black text-slate-800 text-sm sm:text-base">Horário comercial</div>
+              <div class="text-[11px] text-slate-500 font-medium">Resposta oficial</div>
+            </div>
+          </div>
+          <ul class="space-y-1.5 text-[12px] sm:text-sm text-slate-600 font-medium leading-relaxed">
+            <li class="flex items-center justify-between gap-2"><span>Segunda a sexta-feira</span><strong class="text-slate-800">08h às 18h</strong></li>
+            <li class="flex items-center justify-between gap-2"><span>Sábado</span><strong class="text-slate-800">09h às 13h</strong></li>
+            <li class="flex items-center justify-between gap-2"><span>Domingo / feriados</span><span class="text-slate-400 italic">Retorno próximo dia útil</span></li>
+          </ul>
+        </div>
+
+        <div class="bg-gradient-to-br from-slate-50 to-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-primary-50 text-primary-700 border border-primary-200 flex items-center justify-center flex-shrink-0">
+              <i class="fa-regular fa-circle-question text-lg"></i>
+            </div>
+            <div>
+              <div class="font-black text-slate-800 text-sm sm:text-base">Precisa de ajuda rápida?</div>
+              <div class="text-[11px] text-slate-500 font-medium">Primeiro chame o WhatsApp</div>
+            </div>
+          </div>
+          <p class="text-[12px] sm:text-sm text-slate-600 leading-relaxed mb-3">
+            Para assuntos urgentes como orçamentos pendentes, problemas de pagamento ou cancelamentos, envie um WhatsApp agora — nosso time prioriza esse canal.
+          </p>
+          <button onclick="navigateTo('view-home')" class="w-full inline-flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-xl transition text-xs sm:text-sm">
+            <i class="fa-solid fa-house"></i> Voltar para a página inicial
+          </button>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -3337,6 +3513,22 @@ function fbSyncPedidosRealtimeENotificar() {
         try {
           var arrPedFull = [];
           snapshot.forEach(function(ds){ if (ds && ds.exists) arrPedFull.push(Object.assign({}, ds.data() || {}, { id: ds.id })); });
+          // -------------------------------------------------------------------
+          // PROTEÇÃO CAMADA (A): Stripping WHATSAPP BRUTO IMEDIATAMENTE após download.
+          // Regra AC-R01 / AC-R02: O NÚMERO DO CLIENTE NÃO PODE FICAR NO NAVEGADOR.
+          // NÃO confiamos em Firestore rules (campo-level não existe); removemos aqui
+          // e só reconstituímos o número via backend endpoint atômico após desbloqueio.
+          // -------------------------------------------------------------------
+          arrPedFull.forEach(function(p) {
+            p.whatsapp = null;
+            p.clienteTelefone = null;
+            p.clienteWhatsapp = null;
+            p.telefone = null;
+            p.clienteFone = null;
+            p.foneCliente = null;
+            p.customerPhone = null;
+            p.clientPhone = null;
+          });
           if (arrPedFull.length > 0) pedidos = arrPedFull;
         } catch(eFull){}
         // 2) SEMPRE re-renderiza mural (modificações e remoções também precisam aparecer)
@@ -4402,17 +4594,98 @@ let profissionais = [];
 let pedidos = [];
 let profissionalLogado = null; // { id, ... } — pode ter googleId
 let adminLogado = false;
-let desbloqueios = []; // { id, pedidoId, profissionalId, custo, timestamp }
+let desbloqueios = []; // { id, pedidoId, profissionalId, custo, timestamp, confirmadoBackend?, repetidoBackend? }
 let recargas = []; // { id, pacoteKey, qtd, preco, timestamp, profissionalId }
 let avaliacoes = []; // { id, pedidoId, profissionalId, nota, comentario, data }
 let configEconomia = null;
 let meusPedidosClienteIds = []; // [pedidoId1, pedidoId2,...] apenas pedidos CRIADOS neste navegador
 let clienteUltimosDados = null; // {nome, whatsapp, cidade, bairro} autocomplete próximo pedido
+
+// ============================================================================
+// PROTEÇÃO CAMADA (C): WHATSAPP_LIBERADOS_CACHE + helper lazy fetch.
+// REGRA SEGURANÇA: O número do cliente NUNCA é lido de pedidos[].whatsapp
+// (esse campo SEMPRE está null por causa do stripping da camada A).
+// O número SÓ entra no navegador através de 2 fontes exclusivas:
+//   (1) Resposta 200 do POST /api/profissional/pedido/desbloquear-atômico
+//   (2) Resposta 200 do POST /api/profissional/pedido/whatsapp-seguro (lazy
+//       load após reload de página quando desbloqueios[] prova pagamento)
+// ============================================================================
+const WHATSAPP_LIBERADOS_CACHE = new Map(); // key = `${profId}|${pedId}` -> { whatsapp, whatsapp_formatado, nome_cliente, unlocked_at_ms }
+let PROFISSIONAL_SENHA_SESSAO_VOLATIL = ''; // limpa ao fechar aba; NUNCA persiste em storage
+async function obterSenhaProfissionalVolatil() {
+  // tenta de 3 fontes (nenhuma = localStorage): (a) memória volátil, (b) profissionalLogado.senha,
+  // (c) credenciaisUsuarios hash match. Se nenhuma, pede input pro usuário.
+  if (PROFISSIONAL_SENHA_SESSAO_VOLATIL) return PROFISSIONAL_SENHA_SESSAO_VOLATIL;
+  if (profissionalLogado && profissionalLogado.senha && typeof profissionalLogado.senha === 'string') {
+    PROFISSIONAL_SENHA_SESSAO_VOLATIL = profissionalLogado.senha;
+    return PROFISSIONAL_SENHA_SESSAO_VOLATIL;
+  }
+  if (profissionalLogado && Array.isArray(credenciaisUsuarios) && credenciaisUsuarios.length) {
+    const ref = String(profissionalLogado.emailLogin || profissionalLogado.email || '').toLowerCase().trim();
+    const id = String(profissionalLogado.id || '');
+    const row = credenciaisUsuarios.find(function(c) {
+      if (!c || c.tipo !== 'profissional') return false;
+      const cem = String(c.email || '').toLowerCase().trim();
+      const cref = String(c.refId || '');
+      return (ref && cem === ref) || (id && (cref === id || cref === ('local_' + id) || cref.substring(6) === id));
+    });
+    if (row && row._senhaPlainText && typeof row._senhaPlainText === 'string') {
+      PROFISSIONAL_SENHA_SESSAO_VOLATIL = row._senhaPlainText;
+      return PROFISSIONAL_SENHA_SESSAO_VOLATIL;
+    }
+  }
+  // pede input
+  try {
+    const res = prompt('Digite sua SENHA da conta profissional para autorizar o desbloqueio por backend (não é armazenada no armazenamento local):', '');
+    if (!res) return '';
+    PROFISSIONAL_SENHA_SESSAO_VOLATIL = String(res).trim();
+    return PROFISSIONAL_SENHA_SESSAO_VOLATIL;
+  } catch(e){ return ''; }
+}
+async function obterWhatsAppLiberado(pedidoId, profissionalObj) {
+  pedidoId = String(pedidoId || '').trim();
+  if (!pedidoId) return null;
+  const profId = String(profissionalObj && profissionalObj.id || '').trim();
+  if (!profId) return null;
+  const cacheKey = profId + '|' + pedidoId;
+  if (WHATSAPP_LIBERADOS_CACHE.has(cacheKey)) return WHATSAPP_LIBERADOS_CACHE.get(cacheKey);
+  // Verifica se existe prova de desbloqueio no storage local
+  const temProvaLocal = Array.isArray(desbloqueios) && desbloqueios.some(function(d) {
+    return d && String(d.pedidoId||'') === pedidoId && String(d.profissionalId||'') === profId;
+  });
+  if (!temProvaLocal) return null;
+  // Lazy fetch por /whatsapp-seguro (a prova é os marcadores no Firestore do pedido,
+  // escritos pelo backend quando passou por desbloquear-atômico)
+  try {
+    if (typeof AJEITA_PIX_BACKEND_URL === 'undefined' || !AJEITA_PIX_BACKEND_URL) window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com';
+    const senha = await obterSenhaProfissionalVolatil();
+    if (!senha) return null;
+    const resp = await fetch(AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/whatsapp-seguro', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({ pedido_id: pedidoId, profissional_id: profId, profissional_senha: senha })
+    });
+    const j = await resp.json().catch(()=>({ok:false}));
+    if (j && j.ok === true && j.whatsapp) {
+      const waNum = String(j.whatsapp).replace(/\D/g,'');
+      if (!waNum) return null;
+      const formatado = formataWhatsAppBrasil(waNum);
+      const obj = { whatsapp: waNum, whatsapp_formatado: formatado, nome_cliente: j.nomeCliente || null, unlocked_at_ms: Date.now(), _origem: 'lazy' };
+      WHATSAPP_LIBERADOS_CACHE.set(cacheKey, obj);
+      return obj;
+    }
+    return null;
+  } catch(e) {
+    return null;
+  }
+}
+
 // 👇 Google Login vars
 let clienteGoogleLogado = null; // { googleId, email, nome, foto, tipo: 'cliente', timestamp }
 let googleLoginIntent = null; // 'cliente' | 'profissional' — onde o usuário clicou no botao Google
 // 👇 Credenciais de e-mail/senha (cliente e profissional cadastrados via form)
-let credenciaisUsuarios = []; // [{email, senhaHash, tipo: 'cliente'|'profissional', refId, criadoEm}]
+let credenciaisUsuarios = []; // [{email, senhaHash, tipo: 'cliente'|'profissional', refId, criadoEm, _senhaPlainText? (memória apenas)}]
 
 // Temporários de fluxo
 let pedidoDesbloqueioAtual = null;
@@ -4626,37 +4899,107 @@ function salvarTodosGlobaisNoStorage() {
 // (NOVO) TARJA GLOBAL DE COMUNICADO + PWA INSTALAÇÃO
 // ============================================================
 const _COMUNICADO_STORAGE_FECHADO_KEY = 'tarja_comunicado_fechado_hash';
+const _COMUNICADO_FECHADO_TTL_MS = 24 * 60 * 60 * 1000;
 var _COMUNICADO_ULTIMO_CONFIG = null;
+function _tsParaString(v) {
+  try {
+    if (v == null) return '';
+    if (typeof v === 'number') return String(v);
+    if (typeof v === 'string') return v;
+    if (typeof v.toDate === 'function') { try { return String(v.toDate().getTime()); } catch(e){} }
+    if (typeof v.seconds === 'number') return String(v.seconds * 1000 + Math.floor((v.nanoseconds||0)/1e6));
+    return JSON.stringify(v);
+  } catch(e){ return ''; }
+}
 function _comunicadoHashConfig(cfg) {
   try {
-    const s = JSON.stringify({ ativo: Boolean(cfg && cfg.ativo), msg: String(cfg && cfg.mensagem || ''), bt: String(cfg && cfg.botao_texto || ''), bl: String(cfg && cfg.botao_link || '') });
+    const s = JSON.stringify({
+      ativo: Boolean(cfg && cfg.ativo),
+      msg: String(cfg && cfg.mensagem || ''),
+      bt: String(cfg && cfg.botao_texto || ''),
+      bl: String(cfg && cfg.botao_link || ''),
+      ic: String(cfg && cfg.icone || ''),
+      up: _tsParaString(cfg && cfg.atualizado_em)
+    });
     var h = 0; for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return String(h);
   } catch(e){ return 'none'; }
 }
-async function inicializarTarjaComunicado() {
+function _lerComunicadoFechadoStorage() {
+  try {
+    const raw = pegarDoStorage(_COMUNICADO_STORAGE_FECHADO_KEY, null);
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      if (raw.length <= 12) { return { h: raw, ts: 0 }; }
+      try { const j = JSON.parse(raw); if (j && typeof j === 'object' && j.h) return j; } catch(e){ return { h: String(raw), ts: 0 }; }
+    }
+    if (raw && typeof raw === 'object' && raw.h) return raw;
+    return null;
+  } catch(e){ return null; }
+}
+function _salvarComunicadoFechadoStorage(hash) {
+  try {
+    const obj = { h: String(hash || ''), ts: Date.now() };
+    salvarNoStorage(_COMUNICADO_STORAGE_FECHADO_KEY, JSON.stringify(obj));
+  } catch(e){}
+}
+function _comunicadoFechadoAindaValido(fechado, cfgHash) {
+  if (!fechado || !fechado.h || !cfgHash) return false;
+  if (String(fechado.h) !== String(cfgHash)) return false;
+  const ts = Number(fechado.ts) || 0;
+  if (ts <= 0) return true;
+  return (Date.now() - ts) < _COMUNICADO_FECHADO_TTL_MS;
+}
+async function inicializarTarjaComunicado(opts) {
+  opts = opts || {};
   try {
     const elTarja = document.getElementById('tarjaComunicadoGlobal');
     if (!elTarja) return;
-    // (1) Tenta buscar no backend
+    // (1) Tenta buscar no backend primeiro (caminho rápido, offline falha cai para fallback)
     let cfg = null;
-    try {
-      const url = (window.AJEITA_PIX_BACKEND_URL || '') + '/api/comunicado/public';
-      const resp = await fetch(url, { method:'GET', headers:{ 'Accept':'application/json' }, cache:'no-store' }).catch(()=>null);
-      if (resp && resp.ok) {
-        const json = await resp.json().catch(()=>null);
-        if (json && json.config) cfg = json.config;
-      }
-    } catch(eReq){ cfg = null; }
+    const backendUrl = String(window.AJEITA_PIX_BACKEND_URL || '').trim();
+    if (backendUrl && (backendUrl.startsWith('http://') || backendUrl.startsWith('https://'))) {
+      try {
+        const resp = await fetch(backendUrl + '/api/comunicado/public', { method:'GET', headers:{ 'Accept':'application/json' }, cache:'no-store' }).catch(()=>null);
+        if (resp && resp.ok) {
+          const json = await resp.json().catch(()=>null);
+          if (json && json.config) cfg = json.config;
+        }
+      } catch(eReq){ cfg = null; }
+    }
+    // (2) FALLBACK DIRETO NO FIRESTORE SDK (se carregado) — evita CORS/indisponibilidade backend.
+    //     Também usado quando opts.forcarDb=true (para o hook firebase:loaded).
+    if (!cfg || opts.forcarDb === true) {
+      try {
+        const mods = window.__fbModules || null;
+        const db = window.FbDb || null;
+        if (mods && mods.doc && mods.getDoc && mods.collection && db) {
+          const colPrefix = String(window.FIRESTORE_COL_PREFIX || '').trim();
+          const colNome = (colPrefix || '') + 'sistema_configs';
+          const snap = await mods.getDoc(mods.doc(db, colNome, 'comunicado_global')).catch(()=>null);
+          if (snap && typeof snap.data === 'function' && snap.exists) {
+            const raw = Object.assign({}, snap.data() || {});
+            cfg = {
+              ativo: Boolean(raw.ativo === true || String(raw.ativo).toLowerCase() === 'true'),
+              mensagem: String(raw.mensagem || '').substring(0, 500),
+              icone: String(raw.icone || '📢').substring(0, 8),
+              botao_texto: String(raw.botao_texto || '').substring(0, 40),
+              botao_link: String(raw.botao_link || '').substring(0, 800),
+              atualizado_em: raw.atualizado_em || null
+            };
+          }
+        }
+      } catch(eDb){}
+    }
     if (!cfg || typeof cfg !== 'object') {
-      cfg = { ativo:false, mensagem:'', icone:'📢', botao_texto:'', botao_link:'' };
+      cfg = { ativo:false, mensagem:'', icone:'📢', botao_texto:'', botao_link:'', atualizado_em:null };
     }
     _COMUNICADO_ULTIMO_CONFIG = cfg;
     if (!cfg.ativo) { elTarja.classList.add('hidden'); return; }
-    // (2) Se comunicado igual o que o usuário já fechou, não reabre
-    const fechadoHash = pegarDoStorage(_COMUNICADO_STORAGE_FECHADO_KEY, null);
+    // (3) Se comunicado igual o que o usuário já fechou, não reabre (TTL 24h)
+    const fechado = _lerComunicadoFechadoStorage();
     const cfgHash = _comunicadoHashConfig(cfg);
-    if (fechadoHash && fechadoHash === cfgHash) { elTarja.classList.add('hidden'); return; }
-    // (3) Renderiza
+    if (!opts.ignorarFechadoStorage && _comunicadoFechadoAindaValido(fechado, cfgHash)) { elTarja.classList.add('hidden'); return; }
+    // (4) Renderiza
     const msgEl = document.getElementById('tarjaComunicadoMensagem');
     const iconeEl = document.getElementById('tarjaComunicadoIcone');
     const btnEl = document.getElementById('tarjaComunicadoBotao');
@@ -4673,6 +5016,13 @@ async function inicializarTarjaComunicado() {
     elTarja.classList.remove('hidden');
   } catch(e){ console.warn('[inicializarTarjaComunicado erro]', e && e.message); }
 }
+try {
+  window.addEventListener('firebase:loaded', function _tarjaFbCarregado() {
+    try { window.removeEventListener('firebase:loaded', _tarjaFbCarregado); } catch(e){}
+    setTimeout(function(){ inicializarTarjaComunicado({ forcarDb:false }); }, 150);
+  }, { once:true });
+  setInterval(function(){ inicializarTarjaComunicado({ ignorarFechadoStorage:false }); }, 5 * 60 * 1000);
+} catch(e){}
 function fecharTarjaComunicadoGlobal() {
   try {
     const elTarja = document.getElementById('tarjaComunicadoGlobal');
@@ -4680,9 +5030,9 @@ function fecharTarjaComunicadoGlobal() {
     elTarja.classList.add('hidden');
     if (_COMUNICADO_ULTIMO_CONFIG) {
       const h = _comunicadoHashConfig(_COMUNICADO_ULTIMO_CONFIG);
-      salvarNoStorage(_COMUNICADO_STORAGE_FECHADO_KEY, h);
+      _salvarComunicadoFechadoStorage(h);
     } else {
-      salvarNoStorage(_COMUNICADO_STORAGE_FECHADO_KEY, 'v');
+      _salvarComunicadoFechadoStorage('v');
     }
   } catch(e){}
 }
@@ -6449,20 +6799,42 @@ function abrirDetalhePedido(pedId) {
     if (!body) return;
     if (titulo) titulo.textContent = (ped.categoria || 'Pedido') + ' — Detalhes';
     if (sub) sub.textContent = (ped.bairro || '') + (ped.bairro && ped.cidade ? ' — ' : '') + (ped.cidade || '');
-    const temPermissaoCompleta = _usuarioPodeVerDetalhePedidoCompleto(ped);
+
+    const custoDesbloq = (configEconomia && configEconomia.custoMoedasPorDesbloqueio) || 2;
     const temFotos = Array.isArray(ped.fotos) && ped.fotos.length > 0;
     const jaDesbloqueado = profissionalLogado ? euJaDesbloquei(ped.id) : false;
-    let waExibir, waLink = null;
-    if (temPermissaoCompleta) {
-      waExibir = formataWhatsAppBrasil(ped.whatsapp);
-      waLink = `https://wa.me/55${numeroLimpoWaLink(ped.whatsapp)}?text=${encodeURIComponent('Olá! Vi seu pedido no AjeitaAí e gostaria de oferecer um orçamento para: ' + (ped.categoria||'') + '.')}`;
-    } else {
-      waExibir = '🔒 Telefone protegido • Desbloqueie o contato para visualizar';
-      waLink = null;
-    }
-    // Galeria de fotos só se tem permissão ou se o usuário for o dono/profissional/admin
-    const galeriaHtml = (temFotos && temPermissaoCompleta) ? (function(){
-      return `
+    let eClienteDono = Array.isArray(meusPedidosClienteIds) && meusPedidosClienteIds.includes(ped.id);
+    let eAdmin = !!adminLogado;
+
+    // ================================================================================
+    // (DEFESA CRÍTICA — NÍVEL 1: INVALIDAR SESSÃO HÍBRIDA)
+    // Se profissional ESTÁ LOGADO, NUNCA cai nos branches Admin nem ClienteDono
+    // para exibição do WhatsApp. Obriga passar pela trilha monetária de desbloqueio.
+    // Resolve 2 vazamentos conhecidos:
+    //   (A) Profissional = mesmo usuário que criou o pedido como cliente (mesmo navegador,
+    //       id em meusPedidosClienteIds) → caía em eClienteDono e lia ped.whatsapp bruto.
+    //   (B) Profissional logou como admin antes (adminLogado=true persistido) → caía
+    //       em eAdmin e mostrava número sem desbloquear.
+    // ================================================================================
+    if (profissionalLogado) { eClienteDono = false; }
+    if (profissionalLogado) { eAdmin = false; }
+
+    // ================================================================================
+    // CAMADA DE SEGURANÇA WHATSAPP:
+    // - Admin e Cliente dono → pode usar o número (mas NÃO confiamos em ped.whatsapp pós stripping.
+    //   Cliente tem seu próprio número anyway; admin tem rotas próprias).
+    // - Profissional → NUNCA renderiza número direto. SEMPRE passa por obterWhatsAppLiberado()
+    //   se jaDesbloqueado=true. Placeholder inicialmente.
+    // ================================================================================
+    const precisaLazyWa = profissionalLogado && jaDesbloqueado;
+    const mostraWaLiberado = precisaLazyWa;
+
+    // ================= GALERIA DE FOTOS =================
+    // Admin / cliente dono → sempre mostra. Profissional → mostra apenas se tem marcador desbloqueio.
+    let galeriaHtml = '';
+    const permissaoFotos = eAdmin || eClienteDono || (profissionalLogado && jaDesbloqueado);
+    if (temFotos && permissaoFotos) {
+      galeriaHtml = `
         <div class="bg-gradient-to-br from-slate-50 to-primary-50 rounded-3xl border border-primary-100 p-5 sm:p-6">
           <h4 class="font-black text-slate-800 text-base sm:text-lg mb-4 flex items-center gap-2">
             <i class="fa-solid fa-images text-primary-600"></i>📸 Fotos enviadas pelo cliente
@@ -6478,16 +6850,112 @@ function abrirDetalhePedido(pedId) {
           </div>
         </div>
       `;
-    })() : (temFotos && !temPermissaoCompleta ? `
+    } else if (temFotos && !permissaoFotos) {
+      galeriaHtml = `
       <div class="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-4 flex items-start gap-3">
         <div class="w-9 h-9 rounded-xl bg-slate-200 text-slate-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-lock"></i></div>
         <div>
           <div class="font-bold text-slate-700 text-sm mb-0.5">📸 ${ped.fotos.length} foto(s) anexada(s)</div>
           <div class="text-xs text-slate-500">Desbloqueie o contato deste pedido para visualizar as imagens completas enviadas pelo cliente.</div>
         </div>
-      </div>
-    ` : '');
+      </div>`;
+    }
 
+    // ================= BLOCO WHATSAPP =================
+    let blocoWhatsappHtml = '';
+    const waCardPlaceholderId = 'detalheWaCard-' + String(ped.id||'');
+    const waFooterPlaceholderId = 'detalheWaFooter-' + String(ped.id||'');
+    // (DEFESA CRÍTICA — NÍVEL 2: guarda de branch duplo)
+    // Mesmo que sessão híbrida passe despercebida por nível 1, aqui obriga !profissionalLogado.
+    if ((eAdmin || eClienteDono) && !profissionalLogado) {
+      // Admin/Cliente: mostra bloco normal (número NÃO sai do backend para profissional; aqui é ok)
+      let waBruto = ped.whatsapp || ped.clienteTelefone || ped.clienteWhatsapp || null;
+      if (profissionalLogado) waBruto = null; // última barreira sanitária
+      const waLimpo = String(waBruto||'').replace(/\D/g,'');
+      const waExibir = waLimpo ? formataWhatsAppBrasil(waLimpo) : '—';
+      const waLink = waLimpo ? `https://wa.me/55${waLimpo}?text=${encodeURIComponent('Olá! Vi seu pedido no AjeitaAí e gostaria de oferecer um orçamento para: ' + (ped.categoria||'') + '.')}` : null;
+      if (eAdmin) {
+        blocoWhatsappHtml = `
+          <div id="${waCardPlaceholderId}" class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl border-2 border-emerald-200 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+            <div class="flex items-center gap-4 flex-1 min-w-0">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shadow-lg flex-shrink-0"><i class="fa-brands fa-whatsapp text-2xl"></i></div>
+              <div class="min-w-0">
+                <div class="text-[10px] font-black uppercase tracking-wider text-emerald-700 mb-1">WhatsApp do cliente (Admin)</div>
+                <div class="font-black text-slate-800 text-lg truncate">${waExibir}</div>
+                ${ped.nomeCliente ? `<div class="text-xs sm:text-sm text-emerald-700 font-semibold">Cliente: ${ped.nomeCliente}</div>` : ''}
+              </div>
+            </div>
+            ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="shrink-0 w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+              <i class="fa-brands fa-whatsapp text-lg"></i>Abrir conversa WhatsApp
+            </a>` : ''}
+          </div>`;
+      } else {
+        // Cliente dono: bloco neutro
+        blocoWhatsappHtml = `
+          <div id="${waCardPlaceholderId}" class="bg-gradient-to-br from-slate-50 to-primary-50 rounded-3xl border-2 border-primary-200 p-5 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white flex items-center justify-center shadow-lg flex-shrink-0"><i class="fa-solid fa-circle-user text-2xl"></i></div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[10px] font-black uppercase tracking-wider text-primary-700 mb-1">Seu pedido</div>
+              <div class="font-black text-slate-800 text-lg truncate">${ped.nomeCliente ? ped.nomeCliente : 'Cliente'}</div>
+              <div class="text-xs sm:text-sm text-primary-700 font-semibold">Acompanhe os orçamentos recebidos aqui.</div>
+            </div>
+          </div>`;
+      }
+    } else if (profissionalLogado && jaDesbloqueado) {
+      // Placeholder inicial (spinner) → await obterWhatsAppLiberado depois
+      blocoWhatsappHtml = `
+        <div id="${waCardPlaceholderId}" class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl border-2 border-emerald-200 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shadow-lg flex-shrink-0"><i class="fa-solid fa-spinner fa-spin text-xl"></i></div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-black uppercase tracking-wider text-emerald-700 mb-1">WhatsApp do cliente</div>
+              <div class="font-black text-emerald-700 text-base sm:text-lg truncate"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Carregando contato liberado...</div>
+            </div>
+          </div>
+        </div>`;
+    } else {
+      // Bloqueado: NENHUM número, NENHUM link wa.me em lugar nenhum
+      blocoWhatsappHtml = `
+        <div id="${waCardPlaceholderId}" class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border-2 border-amber-200 p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <div class="w-14 h-14 rounded-2xl bg-white border-2 border-amber-200 text-amber-500 flex items-center justify-center shadow-sm flex-shrink-0"><i class="fa-solid fa-lock text-2xl"></i></div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-black uppercase tracking-wider text-amber-700 mb-1">WhatsApp PROTEGIDO</div>
+              <div class="font-bold text-slate-800">🔒 Contato protegido</div>
+              <div class="text-xs sm:text-sm text-amber-700 mt-0.5">Desbloqueie este contato para visualizar o WhatsApp do cliente.</div>
+            </div>
+          </div>
+          ${(!ped.finalizado && (ped.qtdDesbloqueios||0)<4 && profissionalLogado) ? `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="shrink-0 w-full sm:w-auto bg-gradient-to-br from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-unlock-keyhole"></i>🔓 Desbloquear (${custoDesbloq} 🪙)
+          </button>` : (!profissionalLogado ? `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){navigateTo('view-profissional-cadastro');},150);" class="shrink-0 w-full sm:w-auto bg-gradient-to-br from-primary-500 to-primary-700 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-user-plus"></i>Cadastre-se para desbloquear
+          </button>` : '')}
+        </div>`;
+    }
+
+    // ================================================================================
+    // (DEFESA CRÍTICA — NÍVEL 3: OVERWRITE FINAL)
+    // Última barreira. Se profissional logou MAS não tem prova de desbloqueio,
+    // NÃO importa o que os branches anteriores decidiram → força a UI bloqueada.
+    // ================================================================================
+    if (profissionalLogado && !jaDesbloqueado) {
+      blocoWhatsappHtml = `
+        <div id="${waCardPlaceholderId}" class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border-2 border-amber-200 p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <div class="w-14 h-14 rounded-2xl bg-white border-2 border-amber-200 text-amber-500 flex items-center justify-center shadow-sm flex-shrink-0"><i class="fa-solid fa-lock text-2xl"></i></div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-black uppercase tracking-wider text-amber-700 mb-1">WhatsApp PROTEGIDO</div>
+              <div class="font-bold text-slate-800">🔒 Contato protegido</div>
+              <div class="text-xs sm:text-sm text-amber-700 mt-0.5">Desbloqueie este contato para visualizar o WhatsApp do cliente.</div>
+            </div>
+          </div>
+          ${(!ped.finalizado && (ped.qtdDesbloqueios||0)<4) ? `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="shrink-0 w-full sm:w-auto bg-gradient-to-br from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-unlock-keyhole"></i>🔓 Desbloquear (${custoDesbloq} 🪙)
+          </button>` : ''}
+        </div>`;
+    }
+
+    // ================= RENDER BODY =================
     body.innerHTML = `
       <!-- Badges status -->
       <div class="flex flex-wrap items-center gap-2">
@@ -6533,55 +7001,84 @@ function abrirDetalhePedido(pedId) {
         <p class="text-slate-700 text-sm sm:text-base leading-relaxed whitespace-pre-line">${(ped.descricao||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
       </div>
 
-      <!-- Galeria fotos (bloco isolado condicional) -->
       ${galeriaHtml || ''}
-
-      ${temPermissaoCompleta ? `
-      <!-- WhatsApp -->
-      <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl border-2 border-emerald-200 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
-        <div class="flex items-center gap-4 flex-1 min-w-0">
-          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shadow-lg flex-shrink-0"><i class="fa-brands fa-whatsapp text-2xl"></i></div>
-          <div class="min-w-0">
-            <div class="text-[10px] font-black uppercase tracking-wider text-emerald-700 mb-1">WhatsApp do cliente</div>
-            <div class="font-black text-slate-800 text-lg truncate">${waExibir}</div>
-            ${ped.nomeCliente ? `<div class="text-xs sm:text-sm text-emerald-700 font-semibold">Cliente: ${ped.nomeCliente}</div>` : ''}
-          </div>
-        </div>
-        ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="shrink-0 w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
-          <i class="fa-brands fa-whatsapp text-lg"></i>Abrir conversa WhatsApp
-        </a>` : ''}
-      </div>
-      ` : `
-      <!-- WhatsApp bloqueado -->
-      <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border-2 border-amber-200 p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
-        <div class="flex items-center gap-4 flex-1 min-w-0">
-          <div class="w-14 h-14 rounded-2xl bg-white border-2 border-amber-200 text-amber-500 flex items-center justify-center shadow-sm flex-shrink-0"><i class="fa-solid fa-lock text-2xl"></i></div>
-          <div class="min-w-0">
-            <div class="text-[10px] font-black uppercase tracking-wider text-amber-700 mb-1">WhatsApp PROTEGIDO</div>
-            <div class="font-bold text-slate-700">${waExibir}</div>
-            <div class="text-xs sm:text-sm text-amber-700 mt-0.5">Desbloqueie com moedas para ter acesso ao contato e às fotos.</div>
-          </div>
-        </div>
-        ${(!ped.finalizado && (ped.qtdDesbloqueios||0)<4 && profissionalLogado) ? `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="shrink-0 w-full sm:w-auto bg-gradient-to-br from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
-          <i class="fa-solid fa-unlock-keyhole"></i>🔓 Desbloquear (${(configEconomia?.custoMoedasPorDesbloqueio)||2} 🪙)
-        </button>` : ''}
-      </div>
-      `}
+      ${blocoWhatsappHtml}
     `;
 
-    // Footer com botões
+    // ================= FOOTER =================
+    let footerWaBtnHtml = '';
+    if (profissionalLogado && jaDesbloqueado) {
+      footerWaBtnHtml = `<div id="${waFooterPlaceholderId}"><button disabled class="flex-1 px-5 sm:px-6 py-3 bg-slate-200 text-slate-500 font-extrabold rounded-2xl shadow-md transition flex items-center justify-center gap-2 opacity-70 cursor-not-allowed"><i class="fa-solid fa-spinner fa-spin"></i> Carregando WhatsApp...</button></div>`;
+    } else if (profissionalLogado && !jaDesbloqueado && !ped.finalizado && (ped.qtdDesbloqueios||0)<4) {
+      footerWaBtnHtml = `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="flex-1 px-5 sm:px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition">
+        🔒 Desbloquear contato
+      </button>`;
+    }
     footer.innerHTML = `
       <div class="flex flex-col sm:flex-row sm:items-center gap-3">
         <button onclick="fecharModal('modal-pedido-detalhe')" class="flex-1 px-5 sm:px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition">Fechar</button>
-        ${(!ped.finalizado && (ped.qtdDesbloqueios||0)<4 && profissionalLogado && !jaDesbloqueado) ? `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="flex-1 px-5 sm:px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition">
-          🔓 Desbloquear contato
-        </button>` : ''}
-        ${(profissionalLogado && jaDesbloqueado && waLink) ? `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="flex-1 px-5 sm:px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
-          <i class="fa-brands fa-whatsapp"></i> Conversar no WhatsApp
-        </a>` : ''}
+        ${footerWaBtnHtml}
       </div>
     `;
     abrirModal('modal-pedido-detalhe');
+
+    // ================================================================================
+    // LAZY ASYNC: se precisou de lazy wa → agora busca e popula CARD + FOOTER
+    // Número SÓ vem do backend/cache; NUNCA de ped.whatsapp local.
+    // ================================================================================
+    if (precisaLazyWa) {
+      setTimeout(async function(){
+        try {
+          const cardEl = document.getElementById(waCardPlaceholderId);
+          const footerEl = document.getElementById(waFooterPlaceholderId);
+          const waSeg = await obterWhatsAppLiberado(ped.id, profissionalLogado);
+          const fallbackBlock = function(){
+            if (cardEl) {
+              cardEl.className = 'bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border-2 border-amber-200 p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5';
+              cardEl.innerHTML = `
+                <div class="flex items-center gap-4 flex-1 min-w-0">
+                  <div class="w-14 h-14 rounded-2xl bg-white border-2 border-amber-200 text-amber-500 flex items-center justify-center shadow-sm flex-shrink-0"><i class="fa-solid fa-lock text-2xl"></i></div>
+                  <div class="min-w-0">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-amber-700 mb-1">WhatsApp PROTEGIDO</div>
+                    <div class="font-bold text-slate-800">🔒 Contato protegido</div>
+                    <div class="text-xs sm:text-sm text-amber-700 mt-0.5">Desbloqueie novamente com o botão abaixo para ter acesso.</div>
+                  </div>
+                </div>
+                ${(!ped.finalizado && (ped.qtdDesbloqueios||0)<4) ? `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="shrink-0 w-full sm:w-auto bg-gradient-to-br from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-unlock-keyhole"></i>🔓 Desbloquear (${custoDesbloq} 🪙)
+                </button>` : ''}`;
+            }
+            if (footerEl) footerEl.innerHTML = `<button onclick="fecharModal('modal-pedido-detalhe');setTimeout(function(){confirmarDesbloquearPedido('${ped.id}');},200);" class="flex-1 px-5 sm:px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition">
+              🔒 Desbloquear contato
+            </button>`;
+          };
+          if (!waSeg || !waSeg.whatsapp) { fallbackBlock(); return; }
+          const waLimpo = String(waSeg.whatsapp||'').replace(/\D/g,'');
+          if (waLimpo.length < 10) { fallbackBlock(); return; }
+          const waFormatado = waSeg.whatsapp_formatado || formataWhatsAppBrasil(waLimpo);
+          const nomeCliente = waSeg.nome_cliente || ped.nomeCliente || '';
+          const waLink = `https://wa.me/55${waLimpo}?text=${encodeURIComponent('Olá! Vi seu pedido no AjeitaAí e gostaria de oferecer um orçamento para: ' + (ped.categoria||'') + '.')}`;
+          if (cardEl) {
+            cardEl.className = 'bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl border-2 border-emerald-200 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5';
+            cardEl.innerHTML = `
+              <div class="flex items-center gap-4 flex-1 min-w-0">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shadow-lg flex-shrink-0"><i class="fa-brands fa-whatsapp text-2xl"></i></div>
+                <div class="min-w-0">
+                  <div class="text-[10px] font-black uppercase tracking-wider text-emerald-700 mb-1">WhatsApp do cliente</div>
+                  <div class="font-black text-slate-800 text-lg truncate">${waFormatado}</div>
+                  ${nomeCliente ? `<div class="text-xs sm:text-sm text-emerald-700 font-semibold">Cliente: ${nomeCliente}</div>` : ''}
+                </div>
+              </div>
+              <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="shrink-0 w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 text-white font-black px-6 sm:px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+                <i class="fa-brands fa-whatsapp text-lg"></i>🟢 Abrir conversa no WhatsApp
+              </a>`;
+          }
+          if (footerEl) footerEl.innerHTML = `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="flex-1 px-5 sm:px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+            <i class="fa-brands fa-whatsapp"></i> 🟢 Conversar no WhatsApp
+          </a>`;
+        } catch(eLazy){ console.error('[abrirDetalhePedido lazy wa]', eLazy); }
+      }, 0);
+    }
   } catch(eDet){
     console.error('[abrirDetalhePedido]', eDet);
     toast('error','Erro detalhe','Tente novamente em alguns segundos.');
@@ -6721,6 +7218,7 @@ function atualizarContadorNotificacoesProfissional() {
   try {
     const badge1 = document.getElementById('headerProfSinoBadge');
     const badge2 = document.getElementById('mobileProfSinoBadge');
+    const badge3 = document.getElementById('headerProfSinoBadgeTopo');
     const naoLidas = NOTIFICACOES_PROF_LISTA.filter(function(n){ return n && n.lida !== true; }).length;
     if (badge1) {
       if (naoLidas > 0) {
@@ -6733,6 +7231,12 @@ function atualizarContadorNotificacoesProfissional() {
         badge2.classList.remove('hidden');
         badge2.textContent = String(naoLidas > 99 ? '99+' : naoLidas);
       } else badge2.classList.add('hidden');
+    }
+    if (badge3) {
+      if (naoLidas > 0) {
+        badge3.classList.remove('hidden');
+        badge3.textContent = String(naoLidas > 99 ? '99+' : naoLidas);
+      } else badge3.classList.add('hidden');
     }
   } catch(e){}
 }
@@ -7017,6 +7521,7 @@ function atualizarContadorNotificacoesCliente() {
   try {
     const badge1 = document.getElementById('headerClienteSinoBadge');
     const badge2 = document.getElementById('mobileClienteSinoBadge');
+    const badge3 = document.getElementById('headerClienteSinoBadgeTopo');
     const naoLidas = NOTIFICACOES_CLIENTE_LISTA.filter(function(n){ return n && n.lida !== true; }).length;
     if (badge1) {
       if (naoLidas > 0) {
@@ -7029,6 +7534,12 @@ function atualizarContadorNotificacoesCliente() {
         badge2.classList.remove('hidden');
         badge2.textContent = String(naoLidas > 99 ? '99+' : naoLidas);
       } else badge2.classList.add('hidden');
+    }
+    if (badge3) {
+      if (naoLidas > 0) {
+        badge3.classList.remove('hidden');
+        badge3.textContent = String(naoLidas > 99 ? '99+' : naoLidas);
+      } else badge3.classList.add('hidden');
     }
   } catch(e){}
 }
@@ -7740,6 +8251,20 @@ function atualizarHeaderBoasVindasPorHora() {
   if (elE) elE.textContent = emoji;
   if (elT) elT.textContent = texto;
 }
+function abrirDrawerNotificacoesGlobal() {
+  try {
+    if (profissionalLogado) {
+      abrirDrawerNotificacoes();
+    } else {
+      abrirDrawerNotificacoesCliente();
+      if (clienteGoogleLogado) {
+        try { inicializarNotificacoesCliente(false); } catch(e){}
+      }
+    }
+  } catch(e){
+    try { abrirDrawerNotificacoesCliente(); } catch(e2){}
+  }
+}
 function atualizarHeaderPorSessao() {
   // #region debug-point H3:H4:header-entry
   DBG('H3','2352','atualizarHeaderPorSessao: ENTRY (chamado após atribuição sessão)', {
@@ -7764,6 +8289,8 @@ function atualizarHeaderPorSessao() {
   const mobileBtnLogoutGoogleCliente = document.getElementById('mobileBtnLogoutGoogleCliente');
   const mobileBtnEntrarUnificado = document.getElementById('mobileBtnEntrarUnificado');
   const headerBtnSinoCliente = document.getElementById('headerBtnSinoCliente');
+  const badgeClienteTopo = document.getElementById('headerClienteSinoBadgeTopo');
+  const badgeProfTopo = document.getElementById('headerProfSinoBadgeTopo');
   // ===== V3: GRUPOS DE NAVEGAÇÃO SEPARADOS CLIENTE vs PROFISSIONAL =====
   const headerGroupCliente = document.getElementById('headerNavGroupCliente');
   const headerGroupProfissional = document.getElementById('headerNavGroupProfissional');
@@ -7789,10 +8316,12 @@ function atualizarHeaderPorSessao() {
 
   const clienteGoogleLogadoAtivo = !!clienteGoogleLogado;
 
-  // --- AVATAR GOOGLE CLIENTE + SININHO (header) ---
+  // --- AVATAR GOOGLE CLIENTE + BADGES SININHO TOPO (header) ---
+  headerBtnSinoCliente?.classList.remove('hidden'); headerBtnSinoCliente?.classList.add('flex');
   if (clienteGoogleLogadoAtivo && !profissionalLogado) {
     avatarContainer?.classList.remove('hidden'); avatarContainer?.classList.add('flex');
-    headerBtnSinoCliente?.classList.remove('hidden'); headerBtnSinoCliente?.classList.add('flex');
+    badgeClienteTopo?.classList.remove('hidden'); badgeClienteTopo?.classList.add('flex');
+    badgeProfTopo?.classList.add('hidden'); badgeProfTopo?.classList.remove('flex');
     if (avatarNome) avatarNome.textContent = clienteGoogleLogado.primeiroNome || clienteGoogleLogado.nome || 'Cliente Google';
     if (avatarFoto && clienteGoogleLogado.foto) { avatarFoto.src = clienteGoogleLogado.foto; avatarFoto.style.display='block'; }
     else if (avatarFoto) { avatarFoto.src=''; avatarFoto.style.display='none'; }
@@ -7801,7 +8330,7 @@ function atualizarHeaderPorSessao() {
     try { inicializarNotificacoesCliente(false); } catch(eNotif){}
   } else {
     avatarContainer?.classList.add('hidden'); avatarContainer?.classList.remove('flex');
-    headerBtnSinoCliente?.classList.add('hidden'); headerBtnSinoCliente?.classList.remove('flex');
+    if (!profissionalLogado) { badgeClienteTopo?.classList.add('hidden'); badgeClienteTopo?.classList.remove('flex'); }
     if (mobileBtnLogoutGoogleCliente) mobileBtnLogoutGoogleCliente.classList.add('hidden');
     if (mobileBtnEntrarUnificado && !profissionalLogado) {
       mobileBtnEntrarUnificado.classList.remove('hidden');
@@ -7813,6 +8342,8 @@ function atualizarHeaderPorSessao() {
   if (profissionalLogado) {
     const noArray = profissionais.find(p => p.id === profissionalLogado.id);
     if (noArray) profissionalLogado = noArray;
+    badgeProfTopo?.classList.remove('hidden'); badgeProfTopo?.classList.add('flex');
+    badgeClienteTopo?.classList.add('hidden'); badgeClienteTopo?.classList.remove('flex');
     saldoContainer.classList.remove('hidden');
     saldoContainer.classList.add('flex');
     btnCadastrar.classList.add('hidden');
@@ -7823,6 +8354,7 @@ function atualizarHeaderPorSessao() {
     if (mobileCadastro) mobileCadastro.classList.add('hidden');
     if (mobileLogout) { mobileLogout.classList.remove('hidden'); mobileLogout.classList.add('block'); }
   } else {
+    badgeProfTopo?.classList.add('hidden'); badgeProfTopo?.classList.remove('flex');
     saldoContainer.classList.add('hidden');
     saldoContainer.classList.remove('flex');
     // ===== (NOVO Item 1) NÃO mostrar mais o botão GRANDE "Cadastrar como profissional" no topo header. =====
@@ -8328,38 +8860,34 @@ function renderMuralPedidos() {
     return;
   }
   const custoDesbloq = (configEconomia && configEconomia.custoMoedasPorDesbloqueio) || 2;
+  const listaPedidosRender = (Array.isArray(pedidos)?pedidos:[]).filter(ped => ped && typeof ped === 'object');
 
-  container.innerHTML = (Array.isArray(pedidos)?pedidos:[]).filter(ped => ped && typeof ped === 'object').map(ped => {
+  container.innerHTML = listaPedidosRender.map(ped => {
     ped.categoria = String(ped.categoria || 'Serviço Geral');
     ped.bairro = String(ped.bairro || '');
     ped.cidade = String(ped.cidade || '');
     ped.descricao = String(ped.descricao || '');
-    ped.whatsapp = String(ped.whatsapp || '');
+    // CAMADA SEGURANÇA: NUNCA usa ped.whatsapp para renderizar UI (exceto PEDIDOS_MOCK).
     ped.data = ped.data || new Date().toISOString();
     const fechado = (ped.qtdDesbloqueios||0) >= 4;
     const jaDesbloqueado = euJaDesbloquei(ped.id);
-    let waExibir; let waLink = null; let numWa = null;
+    const cardWaCellId = 'waCard-' + String(ped.id||'');
+    const cardAcaoId = 'waAcao-' + String(ped.id||'');
+
+    let waInicialHtml, acaoInicialHtml;
     if (jaDesbloqueado) {
-      waExibir = formataWhatsAppBrasil(ped.whatsapp);
-      numWa = numeroLimpoWaLink(ped.whatsapp);
+      waInicialHtml = `<div id="${cardWaCellId}" class="font-bold text-slate-800 text-sm truncate text-emerald-700"><i class="fa-solid fa-spinner fa-spin mr-1 text-emerald-600"></i>Carregando WhatsApp...</div>`;
+      acaoInicialHtml = `<div id="${cardAcaoId}"><button disabled class="w-full bg-slate-200 text-slate-500 font-bold py-3 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 opacity-70"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</button></div>`;
     } else {
-      waExibir = '🔒 Telefone protegido';
-      numWa = null;
+      waInicialHtml = `<div id="${cardWaCellId}" class="font-bold text-slate-800 text-sm truncate">🔒 Contato protegido</div>`;
+      acaoInicialHtml = `<div id="${cardAcaoId}"><button onclick="confirmarDesbloquearPedido('${ped.id}')" class="w-full bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-bold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">🔓 Desbloquear Contato (Custo: ${custoDesbloq} 🪙)</button></div>`;
     }
     const dataBadge = dataRelativa(ped.data);
-    waLink = numWa ? `https://wa.me/55${numWa}?text=${encodeURIComponent(`Olá! Vi seu pedido no AjeitaAí (${ped.categoria}) e gostaria de oferecer um orçamento.`)}` : null;
     const catIco = CATEGORIAS_ICONE[ped.categoria] || 'fa-clipboard';
 
-    let acaoHtml = '';
+    let acaoExtraFechado = '';
     if (fechado) {
-      acaoHtml = `<button disabled class="w-full bg-slate-200 text-slate-500 font-bold py-3 rounded-xl cursor-not-allowed flex items-center justify-center gap-2">
-        <i class="fa-solid fa-lock"></i> Pedido fechado (4 desbloqueios)</button>`;
-    } else if (jaDesbloqueado) {
-      acaoHtml = `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-bold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">
-        <i class="fa-brands fa-whatsapp text-lg"></i> Abrir conversa WhatsApp</a>`;
-    } else {
-      acaoHtml = `<button onclick="confirmarDesbloquearPedido('${ped.id}')" class="w-full bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-bold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">
-        🔓 Desbloquear Contato (Custo: ${custoDesbloq} 🪙)</button>`;
+      acaoInicialHtml = `<div id="${cardAcaoId}"><button disabled class="w-full bg-slate-200 text-slate-500 font-bold py-3 rounded-xl cursor-not-allowed flex items-center justify-center gap-2"><i class="fa-solid fa-lock"></i> Pedido fechado (4 desbloqueios)</button></div>`;
     }
 
     return `
@@ -8405,16 +8933,45 @@ function renderMuralPedidos() {
               <i class="fa-brands fa-whatsapp"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">WhatsApp ${jaDesbloqueado ? '' : 'protegido'}</div>
-              <div class="font-bold text-slate-800 text-sm truncate">${waExibir}</div>
+              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">WhatsApp ${jaDesbloqueado ? 'liberado' : 'protegido'}</div>
+              ${waInicialHtml}
             </div>
             ${jaDesbloqueado ? '<i class="fa-solid fa-unlock text-emerald-500"></i>' : '<i class="fa-solid fa-lock text-slate-400"></i>'}
           </div>
-          ${acaoHtml}
+          ${acaoInicialHtml}
         </div>
       </div>
     </div>`;
   }).join('');
+
+  // ---------------- LAZY ASYNC POPULATE: se jaDesbloqueado=true, busca WhatsApp no backend/cache e atualiza o DOM ----------------
+  setTimeout(function(){
+    listaPedidosRender.forEach(async function(ped){
+      try {
+        if (!ped || !ped.id) return;
+        const jaDesb = euJaDesbloquei(ped.id);
+        if (!jaDesb) return;
+        const cellEl = document.getElementById('waCard-' + String(ped.id));
+        const acaoEl = document.getElementById('waAcao-' + String(ped.id));
+        if (!cellEl) return;
+        const waSeg = await obterWhatsAppLiberado(ped.id, profissionalLogado);
+        if (!waSeg || !waSeg.whatsapp) {
+          cellEl.innerHTML = '🔒 Contato protegido';
+          cellEl.classList.remove('text-emerald-700');
+          cellEl.classList.add('text-slate-800');
+          if (acaoEl) acaoEl.innerHTML = `<button onclick="confirmarDesbloquearPedido('${ped.id}')" class="w-full bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-bold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2">🔓 Desbloquear Contato (Custo: ${custoDesbloq} 🪙)</button>`;
+          return;
+        }
+        const waFormatado = waSeg.whatsapp_formatado || formataWhatsAppBrasil(waSeg.whatsapp);
+        const numWa = String(waSeg.whatsapp||'').replace(/\D/g,'');
+        const waLink = numWa ? `https://wa.me/55${numWa}?text=${encodeURIComponent('Olá! Vi seu pedido no AjeitaAí (' + (ped.categoria||'') + ') e gostaria de oferecer um orçamento.')}` : null;
+        cellEl.innerHTML = waFormatado;
+        cellEl.classList.remove('text-emerald-700');
+        cellEl.classList.add('text-slate-800');
+        if (acaoEl && waLink) acaoEl.innerHTML = `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-bold py-3 rounded-xl shadow-card hover:shadow-pop transition flex items-center justify-center gap-2"><i class="fa-brands fa-whatsapp text-lg"></i> 🟢 Abrir conversa WhatsApp</a>`;
+      } catch(ePop){}
+    });
+  }, 0);
 }
 
 // --------------- CORE DESBLOQUEIO ---------------
@@ -8453,53 +9010,128 @@ function confirmarDesbloquearPedido(pedId) {
   abrirModal('modal-desbloquear');
 }
 
-function executarDesbloqueio() {
+async function executarDesbloqueio() {
   const pedId = pedidoDesbloqueioAtual;
   if (!pedId || !profissionalLogado) return;
   const ped = pedidos.find(x => x.id === pedId);
-  if (!ped) return;
-  const custo = (configEconomia && configEconomia.custoMoedasPorDesbloqueio) || 2;
+  if (!ped) { pedidoDesbloqueioAtual = null; return; }
+  const custoLocal = (configEconomia && configEconomia.custoMoedasPorDesbloqueio) || 2;
 
-  if ((profissionalLogado.saldoMoedas||0) < custo) {
+  if ((profissionalLogado.saldoMoedas||0) < custoLocal) {
     toast('error','Saldo insuficiente','Compre mais moedas na loja.');
+    setTimeout(()=>{ try { fecharModal('modal-desbloquear'); } catch(e){} abrirLojaMoedas(); }, 400);
     return;
   }
 
-  // 1) Subtrai moedas do profissional (logado e array global)
-  var _saldoAntesDesb = Number(profissionalLogado.saldoMoedas || 0);
-  profissionalLogado.saldoMoedas = (profissionalLogado.saldoMoedas||0) - custo;
-  const proIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
-  if (proIdx >= 0) profissionais[proIdx].saldoMoedas = profissionalLogado.saldoMoedas;
+  const btnExec = document.getElementById('executarDesbloqueioBtn');
+  if (btnExec) { btnExec.disabled = true; btnExec.classList.add('opacity-60','cursor-not-allowed'); btnExec.textContent = 'Processando...'; }
 
-  // 2) Incrementa contador de desbloqueios do pedido
-  ped.qtdDesbloqueios = (ped.qtdDesbloqueios||0) + 1;
-  if (ped.qtdDesbloqueios >= 4) ped.status = 'fechado';
-
-  // 3) Registra histórico — SEGURANÇA: NÃO armazena whatsappCliente no array/localStorage para evitar leitura via DevTools
-  desbloqueios.push({
-    id: 'desb_' + Date.now() + Math.random().toString(36).slice(2,5),
-    pedidoId: ped.id, profissionalId: profissionalLogado.id,
-    custo, timestamp: Date.now()
-  });
-
-  pedidoDesbloqueioAtual = null;
-  salvarTodosGlobaisNoStorage();
   try {
-    if (profissionalLogado && typeof fbSyncAddProfissional === 'function') {
-      fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) }));
-    }
-  } catch(eSyncDesb){}
-  atualizarHeaderPorSessao();
-  // Alerta saldo baixo moedas: após débito de desbloqueio.
-  try { _alertaSaldoVerificarProfissionalLogado(_saldoAntesDesb, 'debito'); } catch(e){}
-  renderMuralPedidos();
-  if (!document.getElementById('view-meus-pedidos').classList.contains('hidden')) renderMeusPedidos();
-  fecharModal('modal-desbloquear');
+    const profissional_senha = await obterSenhaProfissionalVolatil();
+    if (!AJEITA_PIX_BACKEND_URL) window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com';
+    const body = {
+      pedido_id: pedId,
+      profissional_id: profissionalLogado.id,
+      profissional_senha: profissional_senha || ''
+    };
+    const r = await fetch(AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/desbloquear-atômico', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json','Accept':'application/json' },
+      body: JSON.stringify(body)
+    });
+    let resp = null;
+    try { resp = await r.json(); } catch(eJ){ resp = { ok:false, contactLocked:true, whatsapp:null, error:'RESP_PARSE' }; }
 
-  const numWa = numeroLimpoWaLink(ped.whatsapp);
-  const waLink = `https://wa.me/55${numWa}?text=${encodeURIComponent(`Olá! Vi seu pedido no AjeitaAí (${ped.categoria}) e gostaria de oferecer um orçamento.`)}`;
-  toast('success','Contato desbloqueado!',`Você pagou ${custo} 🪙. Agora é só chamar o cliente no WhatsApp.`,6000);
-  setTimeout(()=>{ window.open(waLink,'_blank'); }, 700);
+    if (!resp || !resp.ok || !resp.whatsapp) {
+      const err = resp && resp.error ? String(resp.error) : '';
+      const msg = resp && resp.msg ? String(resp.msg) : 'Tente novamente.';
+      if (err === 'SALDO_INSUFICIENTE') {
+        toast('error','Saldo insuficiente',`${msg} Recarregue moedas agora.`);
+        try { fecharModal('modal-desbloquear'); } catch(e){}
+        setTimeout(()=>abrirLojaMoedas(), 500);
+        return;
+      }
+      if (err === 'SENHA_INVALIDA' || err === 'PROFISSIONAL_NAO_AUTENTICADO') {
+        PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
+        toast('error','Senha inválida','Confira sua senha de profissional e tente novamente.');
+        return;
+      }
+      if (err === 'DESBLOQUEIO_EM_ANDAMENTO') {
+        toast('warning','Aguarde','Já existe uma solicitação em processamento. Tente novamente em alguns segundos.');
+        return;
+      }
+      toast('error','Não foi possível desbloquear', msg || 'Verifique sua conexão e tente novamente.');
+      return;
+    }
+
+    // ================= SUCESSO: backend autorizou, WhatsApp REAL veio na resposta =================
+    const waLimpo = String(resp.whatsapp || '').replace(/\D/g,'');
+    if (waLimpo.length < 10) {
+      toast('error','Número inválido','O WhatsApp retornado pelo servidor é inválido.');
+      return;
+    }
+
+    // (a) Cache volátil do WhatsApp liberado — NÃO vai para localStorage
+    const cacheKey = `${profissionalLogado.id}|${pedId}`;
+    WHATSAPP_LIBERADOS_CACHE.set(cacheKey, {
+      whatsapp: waLimpo,
+      whatsapp_formatado: formataWhatsAppBrasil(waLimpo),
+      nome_cliente: resp.nome_cliente || ped.nomeCliente || '',
+      unlocked_at_ms: resp.unlocked_at_ms || Date.now(),
+      unlock_id: resp.unlock_id || null
+    });
+
+    // (b) Atualizar estado local SOMENTE com source-of-truth do backend
+    const saldoRestanteBackend = Number.isFinite(+resp.saldo_restante) ? Math.floor(+resp.saldo_restante) : (profissionalLogado.saldoMoedas||0) - (Number(resp.custo_moedas)||0);
+    profissionalLogado.saldoMoedas = Math.max(0, saldoRestanteBackend);
+    const pIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
+    if (pIdx >= 0) profissionais[pIdx].saldoMoedas = profissionalLogado.saldoMoedas;
+
+    // (c) Marcar pedido local como desbloqueado por este profissional (para euJaDesbloquei e UI)
+    if (!Array.isArray(ped.profissionaisDesbloquearamIds)) ped.profissionaisDesbloquearamIds = [];
+    if (!ped.profissionaisDesbloquearamIds.includes(profissionalLogado.id)) ped.profissionaisDesbloquearamIds.push(profissionalLogado.id);
+    ped.qtdDesbloqueios = Math.max((ped.qtdDesbloqueios||0), (Number(resp.repetido) ? (ped.qtdDesbloqueios||0) : ((ped.qtdDesbloqueios||0) + 1)));
+    if ((ped.qtdDesbloqueios||0) >= 4) { ped.finalizado = true; if (ped.status === 'aberto') ped.status = 'fechado'; }
+
+    // (d) Registrar desbloqueio local storage com flags de confirmação backend
+    const custoRealBackend = resp.repetido ? 0 : (Number(resp.custo_moedas) || 0);
+    const jaTemLocal = desbloqueios.some(function(d){ return d && d.pedidoId === pedId && d.profissionalId === profissionalLogado.id; });
+    if (!jaTemLocal) {
+      desbloqueios.push({
+        id: resp.unlock_id || ('desb_' + Date.now() + Math.random().toString(36).slice(2,5)),
+        pedidoId: pedId, profissionalId: profissionalLogado.id,
+        custo: custoRealBackend, timestamp: Date.now(),
+        confirmadoBackend: true, repetidoBackend: !!resp.repetido
+      });
+    } else {
+      const existente = desbloqueios.find(function(d){ return d && d.pedidoId === pedId && d.profissionalId === profissionalLogado.id; });
+      if (existente) { existente.confirmadoBackend = true; existente.repetidoBackend = !!resp.repetido; existente.custo = custoRealBackend; }
+    }
+
+    pedidoDesbloqueioAtual = null;
+    salvarTodosGlobaisNoStorage();
+    try { atualizarHeaderPorSessao(); } catch(e){}
+    try { renderMuralPedidos(); } catch(e){}
+    try { if (!document.getElementById('view-meus-pedidos').classList.contains('hidden')) renderMeusPedidos(); } catch(e){}
+    try { _alertaSaldoVerificarProfissionalLogado(null, 'debito'); } catch(e){}
+    try { fecharModal('modal-desbloquear'); } catch(e){}
+
+    // (e) Construir wa.link SOMENTE a partir do WhatsApp REAL recebido do backend
+    const waLink = `https://wa.me/55${waLimpo}?text=${encodeURIComponent(`Olá! Vi seu pedido no AjeitaAí (${ped.categoria}) e gostaria de oferecer um orçamento.`)}`;
+    const msgSucesso = resp.repetido
+      ? 'Você já tinha desbloqueado este contato. WhatsApp disponível!'
+      : `Contato desbloqueado! Você pagou ${custoRealBackend} 🪙. Agora é só chamar o cliente no WhatsApp.`;
+    toast('success', resp.repetido ? 'Contato já liberado' : 'Contato desbloqueado!', msgSucesso, 6000);
+
+    // (f) Re-abrir o modal detalhe se ele estava ou deveria estar aberto? Abrir direto WhatsApp
+    setTimeout(()=>{ try { window.open(waLink,'_blank'); } catch(e){} }, resp.repetido ? 300 : 700);
+
+  } catch(e){
+    console.error('[executarDesbloqueio] ERRO GERAL:', e && e.message);
+    toast('error','Erro ao desbloquear','Verifique sua conexão e tente novamente.');
+  } finally {
+    if (btnExec) { btnExec.disabled = false; btnExec.classList.remove('opacity-60','cursor-not-allowed'); btnExec.textContent = '🔓 Confirmar desbloqueio'; }
+  }
 }
 
 // --------------- LOJA DE MOEDAS + PIX ---------------
