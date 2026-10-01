@@ -291,6 +291,12 @@ tailwind.config = {
           </button>
         </div>
 
+        <!-- SININHO NOTIFICAÇÕES CLIENTE (desktop) -->
+        <button id="headerBtnSinoCliente" onclick="abrirDrawerNotificacoesCliente()" class="hidden items-center justify-center relative w-10 h-10 rounded-xl bg-primary-50 hover:bg-primary-100 border border-primary-200 text-primary-700 transition" title="Notificações">
+          <i class="fa-solid fa-bell text-base"></i>
+          <span id="headerClienteSinoBadge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md border-2 border-white">0</span>
+        </button>
+
         <!-- AVATAR GOOGLE CLIENTE (se logado) -->
         <div id="headerAvatarGoogleContainer" class="hidden items-center gap-2">
           <div class="hidden sm:flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-xl px-3 py-1.5">
@@ -365,6 +371,7 @@ tailwind.config = {
             <span>Notificações</span>
             <span id="mobileClienteSinoBadge" class="hidden absolute right-4 top-1/2 -translate-y-1/2 min-w-[22px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md">0</span>
           </button>
+          <button onclick="abrirMeuPerfilCliente(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-sm transition"><i class="fa-solid fa-user-gear w-5"></i>Meu Perfil</button>
           <button onclick="navigateTo('view-profissional-cadastro'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-user-tie text-primary-500 w-5"></i>Quero ser Profissional</button>
         </div>
         <!-- ===== GRUPO PROFISSIONAL (mostra SOMENTE se profissional LOGADO) ===== -->
@@ -624,6 +631,30 @@ tailwind.config = {
           </div>
         </button>
       </div>
+    </div>
+
+    <!-- ============ BLOCO 5 — CTA COMPACTO: SEJA UM PARCEIRO (não botão gigante, não gigante) ============ -->
+    <!-- Recuperado: componente reutiliza navigateTo('view-area-patrocinador') fluxo existente. Compacto. Mobile cabe completo. -->
+    <div class="mb-6 sm:mb-8">
+      <button onclick="navigateTo('view-area-patrocinador')"
+              class="group w-full relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-gradient-to-br from-fuchsia-50 via-purple-50 to-violet-50 border-2 border-fuchsia-100 hover:border-fuchsia-200 shadow-sm hover:shadow-md transition active:scale-[0.995]">
+        <div class="absolute -left-8 -top-8 w-28 h-28 rounded-full bg-fuchsia-200/30 blur-2xl group-hover:bg-fuchsia-200/40 transition"></div>
+        <div class="relative flex items-center justify-between gap-3 sm:gap-5">
+          <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-fuchsia-500 to-purple-600 border-2 border-white/60 shadow-md flex items-center justify-center flex-shrink-0 group-hover:from-fuchsia-600 group-hover:to-purple-700 transition">
+              <i class="fa-solid fa-handshake text-white text-lg sm:text-xl"></i>
+            </div>
+            <div class="text-left min-w-0">
+              <div class="text-[15px] sm:text-lg font-black tracking-tight text-fuchsia-900 leading-tight">Seja um parceiro</div>
+              <div class="text-[12px] sm:text-sm text-fuchsia-700/80 font-medium leading-tight mt-0.5 sm:mt-1">Ofereça seus serviços aos clientes da sua cidade</div>
+            </div>
+          </div>
+          <div class="flex-shrink-0 inline-flex items-center gap-1.5 bg-white text-fuchsia-700 font-black px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl shadow-md border border-fuchsia-100 group-hover:scale-105 group-hover:text-fuchsia-800 transition">
+            <span class="text-xs sm:text-sm">Entrar</span>
+            <i class="fa-solid fa-arrow-right text-[11px] sm:text-sm"></i>
+          </div>
+        </div>
+      </button>
     </div>
 
     <!-- ============ BLOCO 9 — CARD DESTAQUE PATROCINADORES (mantém IDs originais para JS não quebrar; reduzido) ============ -->
@@ -1515,6 +1546,131 @@ tailwind.config = {
   </section>
 
   <!-- VIEW MEU PERFIL (PROFISSIONAL) -->
+  <section id="view-perfil-cliente" class="view-section">
+    <div class="max-w-3xl mx-auto">
+      <div class="mb-8">
+        <div class="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-bold px-3 py-1.5 rounded-full border border-primary-200 mb-3">
+          👤 MEU PERFIL
+        </div>
+        <h2 id="perfilClienteTituloNome" class="text-3xl sm:text-4xl font-black text-slate-800 mb-2">Minha Conta</h2>
+        <p class="text-slate-500 text-lg">Gerencie suas informações e preferências como cliente.</p>
+      </div>
+
+      <!-- CARD PERFIL CLIENTE -->
+      <div class="bg-gradient-to-br from-primary-50 via-white to-white border border-primary-200 rounded-3xl shadow-sm overflow-hidden mb-8">
+        <div class="p-6 sm:p-8">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-5 mb-6 pb-6 border-b border-primary-100">
+            <div id="perfilClienteAvatarBox" class="flex-shrink-0 mx-auto sm:mx-0">
+              <img id="perfilClienteFoto" src="" alt="" class="w-24 h-24 rounded-3xl border-4 border-white shadow-lg ring-2 ring-primary-200 bg-slate-100 object-cover" onerror="this.style.display='none'">
+              <div id="perfilClienteFotoFallback" class="w-24 h-24 rounded-3xl border-4 border-white shadow-lg ring-2 ring-primary-200 bg-gradient-to-br from-primary-500 to-primary-700 text-white text-3xl font-black flex items-center justify-center hidden">?</div>
+            </div>
+            <div class="flex-1 text-center sm:text-left min-w-0">
+              <h3 id="perfilClienteNome" class="text-2xl sm:text-3xl font-black text-slate-800 mb-1 leading-tight truncate">—</h3>
+              <p id="perfilClienteEmail" class="text-primary-600 font-semibold mb-2 truncate">—</p>
+              <span class="inline-flex items-center gap-1.5 bg-white text-primary-700 text-[11px] font-bold px-3 py-1 rounded-full border border-primary-200">
+                <i class="fa-brands fa-google"></i> Conta Google Cliente
+              </span>
+            </div>
+          </div>
+
+          <!-- DADOS DA CONTA -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+              <div class="text-[10px] uppercase font-black tracking-wider text-slate-400 mb-1.5">Nome completo</div>
+              <div id="perfilClienteCampoNome" class="text-base font-bold text-slate-800 leading-tight">—</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+              <div class="text-[10px] uppercase font-black tracking-wider text-slate-400 mb-1.5">E-mail</div>
+              <div id="perfilClienteCampoEmail" class="text-base font-bold text-slate-800 leading-tight break-all">—</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+              <div class="text-[10px] uppercase font-black tracking-wider text-slate-400 mb-1.5">Telefone</div>
+              <div id="perfilClienteCampoTelefone" class="text-base font-bold text-slate-800 leading-tight">—</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+              <div class="text-[10px] uppercase font-black tracking-wider text-slate-400 mb-1.5">Cidade</div>
+              <div id="perfilClienteCampoCidade" class="text-base font-bold text-slate-800 leading-tight">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÕES AÇÕES -->
+        <div class="bg-slate-50 border-t border-slate-200 p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onclick="navigateTo('view-meus-pedidos')" class="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold px-4 py-3 rounded-2xl shadow-sm transition text-sm">
+            <i class="fa-solid fa-briefcase text-accent-500"></i>
+            Ver meus pedidos
+          </button>
+          <button onclick="try{abrirDrawerNotificacoesCliente();}catch(e){}" class="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold px-4 py-3 rounded-2xl shadow-sm transition text-sm">
+            <i class="fa-solid fa-bell text-primary-500"></i>
+            Notificações
+          </button>
+          <button onclick="logoutGoogleTotal()" class="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-3 rounded-2xl shadow-sm transition text-sm">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Sair da conta
+          </button>
+        </div>
+      </div>
+
+      <!-- ZONA DE PERIGO -->
+      <div id="perfilClienteZonaPerigo" class="bg-gradient-to-br from-rose-50 to-white border-2 border-rose-200 rounded-3xl shadow-sm overflow-hidden mb-8">
+        <div class="p-6 sm:p-8">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-11 h-11 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center text-2xl flex-shrink-0">⚠️</div>
+            <div>
+              <h3 class="font-black text-rose-900 text-lg leading-tight mb-1">Zona de Perigo</h3>
+              <p class="text-sm text-rose-700 leading-relaxed">Ações abaixo são irreversíveis. Leia com atenção antes de confirmar.</p>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white border border-rose-100 rounded-2xl p-5">
+            <div class="min-w-0">
+              <h4 class="font-bold text-slate-800 mb-1">Excluir minha conta</h4>
+              <p class="text-sm text-slate-500 leading-relaxed">Remove permanentemente sua conta, dados pessoais e histórico. Não pode ser desfeito.</p>
+            </div>
+            <button onclick="abrirModalExcluirContaCliente()" class="flex-shrink-0 flex items-center justify-center gap-2 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-bold px-5 py-3 rounded-xl shadow-sm transition text-sm border border-rose-500">
+              <i class="fa-solid fa-trash-can"></i>
+              Excluir minha conta
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CONFIRMAÇÃO EXCLUIR CONTA CLIENTE -->
+    <div id="modalExcluirContaCliente" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onclick="fecharModalExcluirContaCliente()"></div>
+      <div class="relative bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-modalPop">
+        <div class="bg-gradient-to-r from-rose-50 to-white border-b border-rose-100 px-6 py-5">
+          <div class="flex items-start gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center text-2xl flex-shrink-0">⚠️</div>
+            <div class="min-w-0 flex-1">
+              <h3 class="font-black text-rose-900 text-xl leading-tight mb-1">Excluir sua conta?</h3>
+              <p class="text-sm text-rose-700 leading-relaxed">Essa ação não pode ser desfeita.</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="bg-rose-50 border border-rose-100 rounded-2xl p-4 mb-5">
+            <div class="text-xs font-bold text-rose-800 mb-1">O que será removido:</div>
+            <ul class="text-xs text-rose-700 space-y-1.5 leading-relaxed">
+              <li class="flex items-start gap-2"><span class="mt-0.5">•</span> Sua conta de autenticação Google</li>
+              <li class="flex items-start gap-2"><span class="mt-0.5">•</span> Dados pessoais (nome, e-mail, telefone)</li>
+              <li class="flex items-start gap-2"><span class="mt-0.5">•</span> Histórico de pedidos e notificações</li>
+            </ul>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onclick="fecharModalExcluirContaCliente()" class="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-3.5 rounded-xl shadow-sm transition text-sm">
+              Cancelar
+            </button>
+            <button onclick="confirmarExcluirContaCliente()" id="btnConfirmarExcluirContaCliente" class="flex items-center justify-center gap-2 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-bold px-4 py-3.5 rounded-xl shadow-sm transition text-sm border border-rose-500">
+              <i class="fa-solid fa-trash-can"></i>
+              Excluir minha conta
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="view-profissional-perfil" class="view-section">
     <div class="max-w-5xl mx-auto">
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
@@ -5472,8 +5628,46 @@ function fecharModal(id) {
 }
 function toggleMobileMenu() {
   const ov = document.getElementById('mobileMenuOverlay');
+  if (!ov) return;
+  const vaiAbrir = ov.classList.contains('hidden');
   ov.classList.toggle('hidden');
   document.body.style.overflow = ov.classList.contains('hidden') ? '' : 'hidden';
+  // ===== (NOVO Item 5) Listeners lazy de fechamento: ESC + clique fora do <aside> + toggle novamente =====
+  try {
+    if (!window._ajeitaMobileMenuListenersAttached) {
+      // --- 1) ESC key fecha ---
+      document.addEventListener('keydown', function(e){
+        const o = document.getElementById('mobileMenuOverlay');
+        if (o && !o.classList.contains('hidden') && (e.key === 'Escape' || e.keyCode === 27)) {
+          e.preventDefault();
+          o.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+      }, { passive: false });
+      // --- 2) Clique FORA do <aside> (no overlay e também em elementos do body quando o menu está aberto)
+      // O backdrop L341 já trata clique no overlay; aqui garantimos que qualquer clique FORA do <aside>
+      // (ex: clique no scrollbar, clique em área do body por sobreposição parcial) também fecha.
+      document.addEventListener('click', function(e){
+        const o = document.getElementById('mobileMenuOverlay');
+        if (!o || o.classList.contains('hidden')) return;
+        // <aside> alvo = primeiro filho do overlay
+        const aside = (o.querySelector && o.querySelector('aside')) ? o.querySelector('aside') : null;
+        if (!aside) return;
+        // Fecha se o clique NÃO está dentro do <aside> e NÃO no botão toggleMobileMenu (hambúrguer)
+        const target = e.target || e.srcElement;
+        const botaoToggle = target && target.closest && target.closest('[onclick*="toggleMobileMenu()"]');
+        const clicouDentroAside = aside.contains(target);
+        if (!clicouDentroAside && !botaoToggle) {
+          // só fecha se for backdrop / área fora; para não conflitar com botão toggle próprio
+          if (target === o || (target && target.classList && target.classList.contains('modal-backdrop'))) {
+            o.classList.add('hidden');
+            document.body.style.overflow = '';
+          }
+        }
+      }, false);
+      window._ajeitaMobileMenuListenersAttached = true;
+    }
+  } catch(eL){}
 }
 
 // SPA Navigation
@@ -6258,8 +6452,14 @@ function abrirDetalhePedido(pedId) {
     const temPermissaoCompleta = _usuarioPodeVerDetalhePedidoCompleto(ped);
     const temFotos = Array.isArray(ped.fotos) && ped.fotos.length > 0;
     const jaDesbloqueado = profissionalLogado ? euJaDesbloquei(ped.id) : false;
-    const waExibir = temPermissaoCompleta ? formataWhatsAppBrasil(ped.whatsapp) : mascararWhatsApp(ped.whatsapp);
-    const waLink = temPermissaoCompleta ? (`https://wa.me/55${numeroLimpoWaLink(ped.whatsapp)}?text=${encodeURIComponent('Olá! Vi seu pedido no AjeitaAí e gostaria de oferecer um orçamento para: ' + (ped.categoria||'') + '.')}`) : null;
+    let waExibir, waLink = null;
+    if (temPermissaoCompleta) {
+      waExibir = formataWhatsAppBrasil(ped.whatsapp);
+      waLink = `https://wa.me/55${numeroLimpoWaLink(ped.whatsapp)}?text=${encodeURIComponent('Olá! Vi seu pedido no AjeitaAí e gostaria de oferecer um orçamento para: ' + (ped.categoria||'') + '.')}`;
+    } else {
+      waExibir = '🔒 Telefone protegido • Desbloqueie o contato para visualizar';
+      waLink = null;
+    }
     // Galeria de fotos só se tem permissão ou se o usuário for o dono/profissional/admin
     const galeriaHtml = (temFotos && temPermissaoCompleta) ? (function(){
       return `
@@ -7563,6 +7763,7 @@ function atualizarHeaderPorSessao() {
   const avatarNome = document.getElementById('headerAvatarNomeGoogle');
   const mobileBtnLogoutGoogleCliente = document.getElementById('mobileBtnLogoutGoogleCliente');
   const mobileBtnEntrarUnificado = document.getElementById('mobileBtnEntrarUnificado');
+  const headerBtnSinoCliente = document.getElementById('headerBtnSinoCliente');
   // ===== V3: GRUPOS DE NAVEGAÇÃO SEPARADOS CLIENTE vs PROFISSIONAL =====
   const headerGroupCliente = document.getElementById('headerNavGroupCliente');
   const headerGroupProfissional = document.getElementById('headerNavGroupProfissional');
@@ -7588,16 +7789,19 @@ function atualizarHeaderPorSessao() {
 
   const clienteGoogleLogadoAtivo = !!clienteGoogleLogado;
 
-  // --- AVATAR GOOGLE CLIENTE (header) ---
+  // --- AVATAR GOOGLE CLIENTE + SININHO (header) ---
   if (clienteGoogleLogadoAtivo && !profissionalLogado) {
     avatarContainer?.classList.remove('hidden'); avatarContainer?.classList.add('flex');
+    headerBtnSinoCliente?.classList.remove('hidden'); headerBtnSinoCliente?.classList.add('flex');
     if (avatarNome) avatarNome.textContent = clienteGoogleLogado.primeiroNome || clienteGoogleLogado.nome || 'Cliente Google';
     if (avatarFoto && clienteGoogleLogado.foto) { avatarFoto.src = clienteGoogleLogado.foto; avatarFoto.style.display='block'; }
     else if (avatarFoto) { avatarFoto.src=''; avatarFoto.style.display='none'; }
     if (mobileBtnEntrarUnificado) mobileBtnEntrarUnificado.classList.add('hidden');
     if (mobileBtnLogoutGoogleCliente) { mobileBtnLogoutGoogleCliente.classList.remove('hidden'); mobileBtnLogoutGoogleCliente.classList.add('block'); }
+    try { inicializarNotificacoesCliente(false); } catch(eNotif){}
   } else {
     avatarContainer?.classList.add('hidden'); avatarContainer?.classList.remove('flex');
+    headerBtnSinoCliente?.classList.add('hidden'); headerBtnSinoCliente?.classList.remove('flex');
     if (mobileBtnLogoutGoogleCliente) mobileBtnLogoutGoogleCliente.classList.add('hidden');
     if (mobileBtnEntrarUnificado && !profissionalLogado) {
       mobileBtnEntrarUnificado.classList.remove('hidden');
@@ -7621,7 +7825,12 @@ function atualizarHeaderPorSessao() {
   } else {
     saldoContainer.classList.add('hidden');
     saldoContainer.classList.remove('flex');
-    btnCadastrar.classList.remove('hidden');
+    // ===== (NOVO Item 1) NÃO mostrar mais o botão GRANDE "Cadastrar como profissional" no topo header. =====
+    // Permanecerá hidden em QUALQUER cenário (anônimo / cliente logado). Acesso profissional:
+    //  - chip compacto "Entrar" na home view-home L430
+    //  - menu mobile "Quero ser Profissional" L368
+    btnCadastrar.classList.add('hidden');
+    btnCadastrar.classList.remove('sm:flex');
     btnLogout.classList.add('hidden');
     btnLogout.classList.remove('flex');
     if (mobileRecarga) { mobileRecarga.classList.add('hidden'); mobileRecarga.classList.remove('block'); }
@@ -8129,10 +8338,16 @@ function renderMuralPedidos() {
     ped.data = ped.data || new Date().toISOString();
     const fechado = (ped.qtdDesbloqueios||0) >= 4;
     const jaDesbloqueado = euJaDesbloquei(ped.id);
-    const waExibir = jaDesbloqueado ? formataWhatsAppBrasil(ped.whatsapp) : mascararWhatsApp(ped.whatsapp);
+    let waExibir; let waLink = null; let numWa = null;
+    if (jaDesbloqueado) {
+      waExibir = formataWhatsAppBrasil(ped.whatsapp);
+      numWa = numeroLimpoWaLink(ped.whatsapp);
+    } else {
+      waExibir = '🔒 Telefone protegido';
+      numWa = null;
+    }
     const dataBadge = dataRelativa(ped.data);
-    const numWa = jaDesbloqueado ? numeroLimpoWaLink(ped.whatsapp) : null;
-    const waLink = numWa ? `https://wa.me/55${numWa}?text=${encodeURIComponent(`Olá! Vi seu pedido no AjeitaAí (${ped.categoria}) e gostaria de oferecer um orçamento.`)}` : null;
+    waLink = numWa ? `https://wa.me/55${numWa}?text=${encodeURIComponent(`Olá! Vi seu pedido no AjeitaAí (${ped.categoria}) e gostaria de oferecer um orçamento.`)}` : null;
     const catIco = CATEGORIAS_ICONE[ped.categoria] || 'fa-clipboard';
 
     let acaoHtml = '';
@@ -8260,11 +8475,11 @@ function executarDesbloqueio() {
   ped.qtdDesbloqueios = (ped.qtdDesbloqueios||0) + 1;
   if (ped.qtdDesbloqueios >= 4) ped.status = 'fechado';
 
-  // 3) Registra histórico
+  // 3) Registra histórico — SEGURANÇA: NÃO armazena whatsappCliente no array/localStorage para evitar leitura via DevTools
   desbloqueios.push({
     id: 'desb_' + Date.now() + Math.random().toString(36).slice(2,5),
     pedidoId: ped.id, profissionalId: profissionalLogado.id,
-    custo, whatsappCliente: ped.whatsapp, timestamp: Date.now()
+    custo, timestamp: Date.now()
   });
 
   pedidoDesbloqueioAtual = null;
@@ -9521,6 +9736,126 @@ function abrirMeuPerfil() {
     initPerfilEventListeners();
   }, 40);
   return true;
+}
+
+// --------------- PERFIL CLIENTE ---------------
+function abrirMeuPerfilCliente() {
+  if (!clienteGoogleLogado) {
+    toast('warning','Acesso restrito','Faça login com Google para acessar seu perfil.',4500);
+    navigateTo('view-login');
+    return false;
+  }
+  navigateTo('view-perfil-cliente');
+  setTimeout(function() {
+    try {
+      const dados = clienteGoogleLogado;
+      const nomeExibir = dados.primeiroNome || dados.nome || 'Cliente';
+      const nomeCompleto = dados.nome || dados.primeiroNome || '—';
+      const email = dados.email || '—';
+      const telefone = dados.telefone || '—';
+      const cidade = dados.cidade || '—';
+      const foto = dados.foto || '';
+      const elTitulo = document.getElementById('perfilClienteTituloNome');
+      const elNome = document.getElementById('perfilClienteNome');
+      const elEmail = document.getElementById('perfilClienteEmail');
+      const elCampoNome = document.getElementById('perfilClienteCampoNome');
+      const elCampoEmail = document.getElementById('perfilClienteCampoEmail');
+      const elCampoTelefone = document.getElementById('perfilClienteCampoTelefone');
+      const elCampoCidade = document.getElementById('perfilClienteCampoCidade');
+      const elFoto = document.getElementById('perfilClienteFoto');
+      const elFotoFallback = document.getElementById('perfilClienteFotoFallback');
+      if (elTitulo) elTitulo.textContent = nomeExibir;
+      if (elNome) elNome.textContent = nomeExibir;
+      if (elEmail) elEmail.textContent = email;
+      if (elCampoNome) elCampoNome.textContent = nomeCompleto;
+      if (elCampoEmail) elCampoEmail.textContent = email;
+      if (elCampoTelefone) elCampoTelefone.textContent = telefone;
+      if (elCampoCidade) elCampoCidade.textContent = cidade;
+      if (elFoto && foto) {
+        elFoto.src = foto;
+        elFoto.style.display = 'block';
+        if (elFotoFallback) elFotoFallback.classList.add('hidden');
+      } else if (elFoto && elFotoFallback) {
+        elFoto.style.display = 'none';
+        const inicial = (nomeExibir || 'C').trim().charAt(0).toUpperCase();
+        elFotoFallback.textContent = inicial;
+        elFotoFallback.classList.remove('hidden');
+      }
+    } catch(ePerfil){ console.error('abrirMeuPerfilCliente erro:', ePerfil); }
+  }, 40);
+  return true;
+}
+
+function abrirModalExcluirContaCliente() {
+  const m = document.getElementById('modalExcluirContaCliente');
+  if (m) { m.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+}
+function fecharModalExcluirContaCliente() {
+  const m = document.getElementById('modalExcluirContaCliente');
+  if (m) { m.classList.add('hidden'); document.body.style.overflow = ''; }
+}
+
+async function confirmarExcluirContaCliente() {
+  if (!clienteGoogleLogado) {
+    fecharModalExcluirContaCliente();
+    toast('error','Erro','Nenhuma conta cliente encontrada para exclusão.',4500);
+    return;
+  }
+  const btn = document.getElementById('btnConfirmarExcluirContaCliente');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; btn.textContent = 'Excluindo...'; }
+  try {
+    const clienteUid = clienteGoogleLogado.uid || clienteGoogleLogado.googleId || null;
+    const clienteEmail = clienteGoogleLogado.email || null;
+    let excluidoBackend = false;
+    try {
+      const payload = {
+        cliente_uid: clienteUid,
+        cliente_email: clienteEmail,
+        excluir_tipo: 'cliente'
+      };
+      if (typeof AJEITA_PIX_BACKEND_URL !== 'undefined' && AJEITA_PIX_BACKEND_URL) {
+        const resp = await fetch(AJEITA_PIX_BACKEND_URL + '/api/cliente/excluir-conta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (resp && resp.ok) excluidoBackend = true;
+      }
+    } catch(eFetch){ console.warn('Exclusão backend falhou, tentando fallback local:', eFetch); }
+
+    try {
+      if (typeof FbAuth !== 'undefined' && FbAuth && FbAuth.currentUser && clienteUid && (FbAuth.currentUser.uid === clienteUid || !clienteUid.startsWith('local_'))) {
+        try { await FbAuth.currentUser.delete(); } catch(eFbDel){ console.warn('Firebase client delete falhou:', eFbDel); }
+      }
+    } catch(eFbAuth){}
+
+    try {
+      if (Array.isArray(pedidos)) {
+        const donoEmail = clienteEmail;
+        const donoUid = clienteUid;
+        for (let i = pedidos.length - 1; i >= 0; i--) {
+          const p = pedidos[i];
+          if (p && ((donoEmail && p.clienteEmail && String(p.clienteEmail).toLowerCase() === String(donoEmail).toLowerCase()) || (donoUid && p.clienteUid && String(p.clienteUid) === String(donoUid)))) {
+            pedidos.splice(i,1);
+          }
+        }
+      }
+    } catch(ePedidos){}
+
+    fecharModalExcluirContaCliente();
+    try { logoutGoogleTotal(); } catch(eOut){}
+    try {
+      clienteGoogleLogado = null;
+      if (typeof salvarTodosGlobaisNoStorage === 'function') salvarTodosGlobaisNoStorage();
+    } catch(eClean){}
+    try { atualizarHeaderPorSessao(); } catch(eHeader){}
+    try { navigateTo('view-home'); } catch(eNav){}
+    toast('success','Conta excluída','Sua conta foi removida permanentemente.', 5000);
+  } catch(eFinal) {
+    console.error('confirmarExcluirContaCliente erro:', eFinal);
+    toast('error','Erro','Não foi possível excluir a conta. Tente novamente.',5000);
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.pointerEvents = ''; btn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Excluir minha conta'; }
+  }
 }
 
 function atualizarCardsEstatisticasPerfil() {

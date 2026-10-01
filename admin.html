@@ -14,7 +14,8 @@
   window.__firebaseLoaded = false;
   import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
   import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, setDoc, query, where, orderBy, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
-  window.__fbModules = { initializeApp, getApp, getApps, getFirestore, collection, addDoc, getDocs, onSnapshot, doc, setDoc, query, where, orderBy, deleteDoc, serverTimestamp };
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+  window.__fbModules = { initializeApp, getApp, getApps, getFirestore, collection, addDoc, getDocs, onSnapshot, doc, setDoc, query, where, orderBy, deleteDoc, serverTimestamp, getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged };
   window.__firebaseLoaded = true;
   window.dispatchEvent(new CustomEvent('firebase:loaded', { detail: { ok: true } }));
   try { if (typeof window.__fbInit === 'function') setTimeout(window.__fbInit, 0); } catch(e){}
@@ -893,11 +894,35 @@ function fecharModal(id) {
   if (qualquerAberto.length === 0) document.body.style.overflow = '';
 }
 /* Auth admin */
-function submitAdminLogin(e) {
+async function submitAdminLogin(e) {
   if (e) e.preventDefault();
   const login = (document.getElementById('adminLoginInput').value||'').trim();
   const senha = (document.getElementById('adminSenhaInput').value||'').trim();
-  if (login === 'admin10' && senha === 'bolo2024') {
+  if (!login || !senha) { toast('error','Campos obrigatórios','Informe login e senha.'); return; }
+
+  let autorizado = false;
+
+  const pareceEmail = login.indexOf('@') !== -1;
+  if (pareceEmail && window.__fbModules && window.__fbModules.signInWithEmailAndPassword && FbApp) {
+    try {
+      const mods = window.__fbModules;
+      const auth = mods.getAuth(FbApp);
+      const credencial = await mods.signInWithEmailAndPassword(auth, login, senha);
+      if (credencial && credencial.user) {
+        autorizado = true;
+      }
+    } catch (errAuth) {
+      autorizado = false;
+    }
+  }
+
+  if (!autorizado) {
+    if (login === 'admin10' && senha === 'bolo2024') {
+      autorizado = true;
+    }
+  }
+
+  if (autorizado) {
     adminLogado = true;
     salvarTodosGlobaisNoStorage();
     toast('success','✅ Login admin efetuado!','Bem-vindo(a) ao painel administrativo.');
@@ -910,6 +935,13 @@ function submitAdminLogin(e) {
 function fazerLogoutAdmin() {
   adminLogado = false;
   salvarTodosGlobaisNoStorage();
+  try {
+    if (window.__fbModules && window.__fbModules.signOut && FbApp) {
+      const mods = window.__fbModules;
+      const auth = mods.getAuth(FbApp);
+      mods.signOut(auth).catch(()=>{});
+    }
+  } catch(e){}
   toast('info','Logout efetuado','Você saiu do painel administrativo.');
   navigateTo('view-admin-login');
 }
@@ -1203,7 +1235,7 @@ async function adminBuscarProfissionais(q) {
     renderAdminProfissionaisTabela(prof);
     if (_tabAdminAtual === 'clientes') { _adminCacheClientes = cli; renderAdminClientesTabela(cli); }
     const total = prof.length + cli.length;
-    toast('success','Busca concluída', `${total} resultado(s) encontrado(s).');
+    toast('success','Busca concluída', `${total} resultado(s) encontrado(s).`);
   } catch(e){ console.error('[adminBuscarProfissionais erro:', e && e.message); }
 }
 async function adminBuscarClientes(q) {
@@ -1220,7 +1252,7 @@ async function adminBuscarClientes(q) {
     renderAdminClientesTabela(cli);
     if (_tabAdminAtual === 'profissionais') { _adminCacheProfissionais = prof; renderAdminProfissionaisTabela(prof); }
     const total = prof.length + cli.length;
-    toast('success','Busca concluída', `${total} resultado(s) encontrado(s).');
+    toast('success','Busca concluída', `${total} resultado(s) encontrado(s).`);
   } catch(e){ console.error('[adminBuscarClientes erro:', e && e.message); }
 }
 
@@ -1937,13 +1969,14 @@ function excluirProfissionalPorAdmin(idProfissional) {
 /* Firestore sync: atualiza profissional doc (via uid se tiver, senão por inner id). Sem side effects, seguro. */
 window.fbSyncAtualizarProfissional = function(objProfissional) {
   try {
-    if (!window.mods || !window.FbDb || !objProfissional) return;
-    const mods = window.mods;
+    const mods = (typeof mods !== 'undefined') ? mods : (window.__fbModules || window.mods);
+    const fbDb = (typeof FbDb !== 'undefined') ? FbDb : window.FbDb;
+    if (!mods || !fbDb || !objProfissional) return;
     const uid = objProfissional.uid || (objProfissional.id ? ('local_' + String(objProfissional.id)) : null);
     if (!uid) return;
     const safe = Object.assign({}, objProfissional);
     if (safe.uid) delete safe.uid;
-    mods.setDoc(mods.doc(window.FbDb, 'profissionais', String(uid)), safe, { merge: true }).catch(function(err){ console.warn('fbSyncAtualizarProfissional warn:', err && err.message); });
+    mods.setDoc(mods.doc(fbDb, 'profissionais', String(uid)), safe, { merge: true }).catch(function(err){ console.warn('fbSyncAtualizarProfissional warn:', err && err.message); });
   } catch(eSync){ console.warn('fbSyncAtualizarProfissional fail:', eSync && eSync.message); }
 };
 

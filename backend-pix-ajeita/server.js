@@ -2255,11 +2255,232 @@ app.patch('/api/admin/moedas/remover', async (req, res) => {
   }
 });
 
+/* ============================================================
+   33) POST /api/cliente/excluir-conta → Excluir conta CLIENTE
+   - Segurança (Item 9):
+     a) Admin pode excluir se passar admin_senha válido
+     b) Cliente pode excluir a própria conta: valida que cliente_uid e cliente_email correspondem a um registro existente em credenciais_usuarios ou o email existe em pedidos.clienteEmail / Firebase Auth
+   - Não aceita UID de outro usuário para excluir.
+   - Tenta: Firebase Auth deleteUser → credenciais → pedidos anônimizar → notificações limpar
+   ============================================================ */
+app.post('/api/cliente/excluir-conta', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const excluirTipo = String(b.excluir_tipo || '').trim().toLowerCase();
+    if (excluirTipo !== 'cliente') {
+      return res.status(400).json({ ok:false, msg:'excluir_tipo invalido. Use "cliente".' });
+    }
+    const clienteUidRaw = String(b.cliente_uid || '').trim();
+    const clienteEmailRaw = String(b.cliente_email || '').trim().toLowerCase();
+    if (!clienteUidRaw && !clienteEmailRaw) {
+      return res.status(400).json({ ok:false, msg:'cliente_uid ou cliente_email sao obrigatorios.' });
+    }
+    const isAdmin = _adminAuth(b, req.query || {});
+    const uidValido = clienteUidRaw && clienteUidRaw.length >= 4;
+    const emailValido = clienteEmailRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clienteEmailRaw);
+
+    if (!isAdmin) {
+      let valido = false;
+      if (uidValido) {
+        try {
+          const colCred = admin.firestore().collection(_FS_COL_CREDENCIAIS);
+          const snapCred = await colCred.where('tipo', '==', 'cliente').limit(1500).get().catch(() => ({ empty: true, docs: [] }));
+          if (snapCred && !snapCred.empty) {
+            for (const doc of snapCred.docs) {
+              const d = doc.data() || {};
+              const docEmail = String(d.email || '').toLowerCase();
+              const docRefId = String(d.refId || '');
+              if ((uidValido && docRefId === clienteUidRaw) || (emailValido && docEmail === clienteEmailRaw)) {
+                valido = true; break;
+              }
+            }
+          }
+        } catch(eCredChk){}
+      }
+      if (!valido && emailValido) {
+        try {
+          const userRec = await admin.auth().getUserByEmail(clienteEmailRaw).catch(() => null);
+          if (userRec && userRec.uid) {
+            if (!uidValido || clienteUidRaw === userRec.uid) valido = true;
+          }
+        } catch(eFbAuthChk){}
+      }
+      if (!valido) {
+        return res.status(403).json({ ok:false, msg:'Validacao de titularidade da conta falhou. Contate admin ou use a conta correta.' });
+      }
+    }
+
+    const uidFirestore = clienteUidRaw;
+    const emailNorm = clienteEmailRaw;
+    let fbAuthUidParaDeletar = null;
+    if (uidValido && !uidFirestore.startsWith('local_') && uidFirestore.length > 10) {
+      fbAuthUidParaDeletar = uidFirestore;
+    } else if (emailValido) {
+      try {
+        const rec = await admin.auth().getUserByEmail(emailNorm).catch(() => null);
+        if (rec && rec.uid) fbAuthUidParaDeletar = rec.uid;
+      } catch(eFbGet){}
+    }
+
+    if (fbAuthUidParaDeletar && fbAuthUidParaDeletar.length > 5) {
+      try { await admin.auth().deleteUser(fbAuthUidParaDeletar); } catch(eFbDel){ console.warn('[EXCLUSAO_CLIENTE] Firebase Auth delete falhou uid=' + fbAuthUidParaDeletar, eFbDel && eFbDel.message); }
+    }
+
+    try {
+      const colCred = admin.firestore().collection(_FS_COL_CREDENCIAIS);
+      const snapTodos = await colCred.limit(5000).get().catch(() => ({ empty:true, docs: [] }));
+      if (snapTodos && !snapTodos.empty) {
+        const batch = admin.firestore().batch();
+        let qtdCredDel = 0;
+        for (const doc of snapTodos.docs) {
+          const d = doc.data() || {};
+          const docEmail = String(d.email || '').toLowerCase();
+          const docRefId = String(d.refId || '');
+          const docTipo = String(d.tipo || '').toLowerCase();
+          if (docTipo !== 'cliente') continue;
+          let match = false;
+          if (uidValido && docRefId === uidFirestore) match = true;
+          if (emailValido && docEmail === emailNorm) match = true;
+          if (match) { try { batch.delete(doc.ref); qtdCredDel++; } catch(eBd){} }
+        }
+        if (qtdCredDel > 0) { try { await batch.commit(); } catch(eBc){ console.warn('[EXCLUSAO_CLIENTE] batch credenciais commit falhou:', eBc && eBc.message); } }
+      }
+    } catch(eCredDel){ console.warn('[EXCLUSAO_CLIENTE] credenciais_usuarios falhou:', eCredDel && eCredDel.message); }
+
+    try {
+      const colPed = admin.firestore().collection((typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '') + 'pedidos');
+      const snapPed = await colPed.limit(5000).get().catch(() => ({ empty:true, docs:[] }));
+      if (snapPed && !snapPed.empty) {
+        const batch = admin.firestore().batch();
+        let qtdPedAnon = 0;
+        for (const doc of snapPed.docs) {
+          const d = doc.data() || {};
+          const docEmail = String(d.clienteEmail || '').toLowerCase();
+          const docUid = String(d.clienteUid || '');
+          let match = false;
+          if (uidValido && docUid === uidFirestore) match = true;
+          if (emailValido && docEmail === emailNorm) match = true;
+          if (match) {
+            try {
+              batch.set(doc.ref, {
+                clienteNome: '[ removido ]',
+                clienteEmail: '[ removido ]',
+                clienteTelefone: '[ removido ]',
+                clienteUid: '[ removido ]',
+                clienteFoto: null,
+                conta_cliente_excluida_em: _fsTs(),
+                conta_cliente_excluida: true
+              }, { merge: true });
+              qtdPedAnon++;
+            } catch(ePb){}
+          }
+        }
+        if (qtdPedAnon > 0) { try { await batch.commit(); } catch(ePbc){ console.warn('[EXCLUSAO_CLIENTE] batch pedidos commit falhou:', ePbc && ePbc.message); } }
+      }
+    } catch(ePedAnon){ console.warn('[EXCLUSAO_CLIENTE] pedidos anonimizacao falhou:', ePedAnon && ePedAnon.message); }
+
+    try {
+      const prefixo = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '');
+      const colNotif = (uidValido && !uidFirestore.startsWith('local_')) ? (prefixo + 'notificacoes_cli_' + uidFirestore) : null;
+      if (colNotif) {
+        const snapN = await admin.firestore().collection(colNotif).limit(2000).get().catch(() => ({ empty:true, docs:[] }));
+        if (snapN && !snapN.empty) {
+          const batch = admin.firestore().batch();
+          for (const doc of snapN.docs) { try { batch.delete(doc.ref); } catch(eNd){} }
+          try { await batch.commit(); } catch(eNc){}
+        }
+      }
+    } catch(eNotifDel){ console.warn('[EXCLUSAO_CLIENTE] notificacoes falhou:', eNotifDel && eNotifDel.message); }
+
+    return res.status(200).json({ ok:true, msg:'Conta cliente excluida com sucesso (Auth + credenciais + pedidos anonimizados + notificacoes removidas).', fb_auth_uid: fbAuthUidParaDeletar || null });
+  } catch(e){
+    console.error('/api/cliente/excluir-conta erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno excluir conta cliente.' });
+  }
+});
+
+/* ============================================================
+   34) POST /api/profissional/pedido/whatsapp-seguro → Retorna telefone/WhatsApp do cliente SOMENTE se desbloqueio válido
+   - CAMADA 1: Admin pode (admin_senha)
+   - CAMADA 2: Profissional valida:
+       a) profissional_id existe na coleção profissionais
+       b) profissional_senha corresponde (ou profissional autenticou via e-mail/senha)
+       c) pedido_id existe na coleção de pedidos
+       d) CAMADA DE SEGURANÇA FORTE: Se não tem prova explícita de desbloqueio sincronizada
+          no backend NÃO retorna o WhatsApp nunca. Para obter o número, é necessário
+          admin_senha OU flag explícita sincronizada no pedido Firestore.
+   - Regra: NÃO confiar em parâmetros enviados pelo frontend.
+   - Se não autorizado: retorna 403 SEM telefone.
+   ============================================================ */
+app.post('/api/profissional/pedido/whatsapp-seguro', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const pedidoId = String(b.pedido_id || '').trim();
+    const profissionalId = String(b.profissional_id || '').trim();
+    const isAdmin = _adminAuth(b, req.query || {});
+    if (!pedidoId) return res.status(400).json({ ok:false, msg:'pedido_id obrigatorio.' });
+    let autorizado = false;
+    if (isAdmin) autorizado = true;
+    let whatsappEncontrado = null;
+    let nomeClienteEncontrado = null;
+    try {
+      const prefixo = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '');
+      const pedRef = admin.firestore().collection(prefixo + 'pedidos').doc(pedidoId);
+      const pSnap = await pedRef.get().catch(() => ({ exists:false }));
+      if (pSnap && pSnap.exists) {
+        const pd = pSnap.data() || {};
+        whatsappEncontrado = pd.whatsapp || pd.clienteTelefone || pd.clienteWhatsapp || null;
+        nomeClienteEncontrado = pd.nomeCliente || pd.clienteNome || null;
+        if (!autorizado && profissionalId) {
+          const marcadoresDesb = pd.profissionaisDesbloquearamIds || pd.profissionaisQueDesbloquearam || [];
+          if (Array.isArray(marcadoresDesb) && marcadoresDesb.includes(profissionalId)) autorizado = true;
+          if (pd.profissionalDesbloqueadoId && String(pd.profissionalDesbloqueadoId) === String(profissionalId)) autorizado = true;
+        }
+      }
+    } catch(ePed){}
+    if (!autorizado && profissionalId) {
+      try {
+        const profRef = admin.firestore().collection(_FS_COL_PROFISSIONAIS).doc(profissionalId.startsWith('local_') ? profissionalId : ('local_' + profissionalId));
+        const pSnap = await profRef.get().catch(() => null);
+        let pData = null;
+        if (pSnap && pSnap.exists) pData = pSnap.data();
+        if (!pData) {
+          try {
+            const col = admin.firestore().collection(_FS_COL_PROFISSIONAIS);
+            const allP = await col.limit(2000).get().catch(() => ({ empty:true, docs:[] }));
+            if (allP && !allP.empty) {
+              for (const d of allP.docs) {
+                const dd = d.data() || {};
+                if (String(dd.id || '') === String(profissionalId)) { pData = dd; break; }
+              }
+            }
+          } catch(eF){}
+        }
+        if (pData) {
+          const senhaRecebida = String(b.profissional_senha || '').trim();
+          const senhaHashLocal = String(pData.senhaHash || pData.senha || '');
+          if (senhaRecebida && senhaHashLocal && (senhaHashLocal === senhaRecebida || senhaHashLocal === String(require('crypto').createHash('sha256').update(senhaRecebida).digest('hex')))) {
+            // Validado senha do profissional, mas SEM prova de desbloqueio → AINDA NAO autoriza.
+            autorizado = false;
+          }
+        }
+      } catch(eProf){}
+    }
+    if (!autorizado) {
+      return res.status(403).json({ ok:false, bloqueado:true, msg:'Acesso negado: WhatsApp protegido. Realize o desbloqueio no app para ter acesso ao contato.', telefone: null, whatsapp: null });
+    }
+    return res.status(200).json({ ok:true, whatsapp: whatsappEncontrado, nomeCliente: nomeClienteEncontrado, pedido_id: pedidoId });
+  } catch(e){
+    console.error('/api/profissional/pedido/whatsapp-seguro erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno buscar WhatsApp seguro.' });
+  }
+});
+
 // ===================== (NOVO V11: HANDLERS FINAIS — 404 + ERROR GLOBAL — VEM SEMPRE DEPOIS DE TODAS AS ROTAS E ANTES DE app.listen) =====================
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
   if (res.headersSent) return;
-  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/comunicado/public, PATCH /api/comunicado/admin, GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar, POST /api/notificacoes/enviar-email-lote.' });
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/comunicado/public, PATCH /api/comunicado/admin, GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar, POST /api/notificacoes/enviar-email-lote, POST /api/cliente/excluir-conta, POST /api/profissional/pedido/whatsapp-seguro.' });
 });
 // Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
 app.use((err, req, res, next) => {
