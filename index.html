@@ -338,7 +338,7 @@ tailwind.config = {
         </button>
 
         <!-- Mobile Hambúrguer -->
-        <button onclick="toggleMobileMenu()" class="xl:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-700">
+        <button onclick="toggleMobileMenu()" class="xl:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-700" aria-label="Abrir menu de navegação" aria-controls="mobileMenuOverlay" aria-haspopup="dialog" aria-expanded="false">
           <i class="fa-solid fa-bars text-xl"></i>
         </button>
       </div>
@@ -346,12 +346,12 @@ tailwind.config = {
   </div>
 
   <!-- Mobile Menu Overlay -->
-  <div id="mobileMenuOverlay" class="hidden fixed inset-0 z-50 xl:hidden">
-    <div class="absolute inset-0 modal-backdrop" onclick="toggleMobileMenu()"></div>
-    <aside class="absolute top-0 right-0 w-80 max-w-[90vw] h-full bg-white shadow-pop flex flex-col animate-slideRight">
+  <div id="mobileMenuOverlay" class="hidden fixed inset-0 z-50 xl:hidden" role="dialog" aria-modal="true" aria-label="Menu principal">
+    <div class="absolute inset-0 modal-backdrop" onclick="toggleMobileMenu()" aria-hidden="true"></div>
+    <aside class="absolute top-0 right-0 w-80 max-w-[90vw] h-full bg-white shadow-pop flex flex-col animate-slideRight" role="document" aria-label="Menu de navegação">
       <div class="flex items-center justify-between p-5 border-b border-slate-100">
         <div class="flex items-center gap-2">
-          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center" aria-hidden="true">
             <i class="fa-solid fa-screwdriver-wrench text-white"></i>
           </div>
           <div>
@@ -359,7 +359,7 @@ tailwind.config = {
             <div class="text-xs text-slate-500">Menu</div>
           </div>
         </div>
-        <button onclick="toggleMobileMenu()" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600">
+        <button onclick="toggleMobileMenu()" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600" aria-label="Fechar menu" type="button">
           <i class="fa-solid fa-xmark text-xl"></i>
         </button>
       </div>
@@ -389,8 +389,9 @@ tailwind.config = {
             <span id="mobileProfSinoBadge" class="hidden absolute right-4 top-1/2 -translate-y-1/2 min-w-[22px] h-5 px-1.5 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md">0</span>
           </button>
           <button onclick="navigateTo('view-area-patrocinador'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-fuchsia-700 bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-fuchsia-200 hover:from-fuchsia-100 hover:to-purple-100 transition"><i class="fa-solid fa-handshake text-fuchsia-600 w-5"></i>Seja um parceiro do AjeitaAí</button>
-          <button onclick="abrirLojaMoedas(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:from-amber-100 hover:to-orange-100 transition"><i class="fa-solid fa-coins text-amber-600 w-5"></i>Loja / Saldo de Moedas</button>
-          <button onclick="abrirHistoricoLeadsProfissional(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-book-open text-primary-500 w-5"></i>Histórico Leads Desbloqueados</button>
+          <button onclick="abrirLojaMoedas(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:from-amber-100 hover:to-orange-100 transition"><i class="fa-solid fa-coins text-amber-600 w-5"></i>Minhas Moedas (Saldo)</button>
+          <button onclick="abrirLojaMoedas(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-semibold text-amber-800 bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-300 hover:from-amber-200 hover:to-orange-200 transition"><i class="fa-solid fa-plus-circle text-amber-700 w-5"></i>Recarregar Moedas (Pacotes)</button>
+          <button onclick="abrirHistoricoLeadsProfissional(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition"><i class="fa-solid fa-book-open text-primary-500 w-5"></i>Histórico / Meus Leads Desbloqueados</button>
           <button onclick="abrirMeuPerfil(); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-sm transition"><i class="fa-solid fa-user-gear w-5"></i>Meu Perfil Profissional</button>
           <button onclick="navigateTo('view-suporte'); toggleMobileMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sky-700 bg-gradient-to-r from-sky-50 to-cyan-50 border border-sky-200 hover:from-sky-100 hover:to-cyan-100 transition"><i class="fa-solid fa-headset text-sky-600 w-5"></i>Suporte ao Usuário</button>
         </div>
@@ -3314,6 +3315,8 @@ function fbInit() {
     try { setTimeout(function(){ try { inicializarNotificacoesProfissional(false); } catch(eNotif){} }, 1800); } catch(eDly){}
     // (NOVO) Inicializa listener realtime notificações de CLIENTE no bootstrap inicial (se já tiver cliente logado)
     try { setTimeout(function(){ try { inicializarNotificacoesCliente(false); } catch(eNotifCli){} }, 1850); } catch(eDlyCli){}
+    try { setTimeout(function(){ try { __garanteAtualizacaoNotificacoesRodando(); } catch(eG){} }, 2200); } catch(eDly2){}
+    try { setTimeout(function(){ try { __forcarReconectarNotificacoes(); } catch(eG){} }, 4000); } catch(eDly3){}
   } catch (e) {
     FB_FIRESTORE_DISPONIVEL = false;
     DBG('FB', '1416', 'Firebase init FALHOU (tentaremos novamente em 2s). Erro: ' + String(e && e.message || e), {});
@@ -5982,6 +5985,10 @@ function toggleMobileMenu() {
   const vaiAbrir = ov.classList.contains('hidden');
   ov.classList.toggle('hidden');
   document.body.style.overflow = ov.classList.contains('hidden') ? '' : 'hidden';
+  try {
+    const hamb = document.querySelector('button[onclick*="toggleMobileMenu()"]');
+    if (hamb) hamb.setAttribute('aria-expanded', vaiAbrir ? 'true' : 'false');
+  } catch(eAria){}
   // ===== (NOVO Item 5) Listeners lazy de fechamento: ESC + clique fora do <aside> + toggle novamente =====
   try {
     if (!window._ajeitaMobileMenuListenersAttached) {
@@ -5992,6 +5999,10 @@ function toggleMobileMenu() {
           e.preventDefault();
           o.classList.add('hidden');
           document.body.style.overflow = '';
+          try {
+            const hb = document.querySelector('button[onclick*="toggleMobileMenu()"]');
+            if (hb) hb.setAttribute('aria-expanded', 'false');
+          } catch(eAria2){}
         }
       }, { passive: false });
       // --- 2) Clique FORA do <aside> (no overlay e também em elementos do body quando o menu está aberto)
@@ -6012,6 +6023,10 @@ function toggleMobileMenu() {
           if (target === o || (target && target.classList && target.classList.contains('modal-backdrop'))) {
             o.classList.add('hidden');
             document.body.style.overflow = '';
+            try {
+              const hb = document.querySelector('button[onclick*="toggleMobileMenu()"]');
+              if (hb) hb.setAttribute('aria-expanded', 'false');
+            } catch(eAria3){}
           }
         }
       }, false);
@@ -6401,7 +6416,7 @@ async function carregarEBannersPatrocinadores() {
             <button onclick="document.getElementById('carrosselPatrocinios').scrollBy({left:360,behavior:'smooth'})" class="w-10 h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 flex items-center justify-center shadow-sm transition"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
         </div>
-        <div id="carrosselPatrocinios" class="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto pb-5 hide-scrollbar snap-x snap-mandatory">
+        <div id="carrosselPatrocinios" class="w-full px-4 sm:px-0 overflow-x-auto pb-5 hide-scrollbar snap-x snap-mandatory">
           <div class="flex gap-4 min-w-max sm:grid sm:grid-cols-1 sm:min-w-0 sm:grid-flow-col sm:auto-cols-[minmax(0,1fr)] sm:gap-4 sm:animate-[scrollCarrosselPatrocinios_40s_linear_infinite] sm:hover:[animation-play-state:paused]" style="grid-template-rows: 1">
             ${items.concat(items.length < 3 ? items : []).slice(0, Math.max(3, items.length*2)).map(function(p,i){
               const bgLogo = (i % 4) === 0 ? 'from-rose-50 to-pink-50' : (i%4===1 ? 'from-amber-50 to-yellow-50' : (i%4===2 ? 'from-primary-50 to-accent-50' : 'from-emerald-50 to-teal-50'));
@@ -7094,6 +7109,37 @@ function abrirDetalhePedido(pedId) {
 var NOTIFICACOES_PROF_LISTA = [];
 var NOTIFICACOES_PROF_UNSUB = null;
 var NOTIFICACOES_PROF_ID_USUARIO = null;
+var NOTIFICACOES_CLIENTE_LISTA = [];
+var NOTIFICACOES_CLIENTE_UNSUB = null;
+var NOTIFICACOES_CLIENTE_ID_USUARIO = null;
+var __NOTIFICACOES_POLLING_ID = null;
+function __garanteAtualizacaoNotificacoesRodando() {
+  try {
+    if (__NOTIFICACOES_POLLING_ID) return;
+    __NOTIFICACOES_POLLING_ID = setInterval(function () {
+      try {
+        if (profissionalLogado && FB_FIRESTORE_DISPONIVEL) {
+          try { inicializarNotificacoesProfissional(false); } catch (e) {}
+          try { atualizarContadorNotificacoesProfissional(); } catch (e) {}
+        }
+        if ((clienteGoogleLogado || clienteUltimosDados) && FB_FIRESTORE_DISPONIVEL) {
+          try { inicializarNotificacoesCliente(false); } catch (e) {}
+          try { atualizarContadorNotificacoesCliente(); } catch (e) {}
+        }
+      } catch (eGeral) {}
+    }, 8000);
+  } catch (e) {}
+}
+function __forcarReconectarNotificacoes() {
+  try {
+    if (NOTIFICACOES_PROF_UNSUB) { try { NOTIFICACOES_PROF_UNSUB(); } catch (e) {} NOTIFICACOES_PROF_UNSUB = null; }
+    NOTIFICACOES_PROF_ID_USUARIO = null;
+    if (NOTIFICACOES_CLIENTE_UNSUB) { try { NOTIFICACOES_CLIENTE_UNSUB(); } catch (e) {} NOTIFICACOES_CLIENTE_UNSUB = null; }
+    NOTIFICACOES_CLIENTE_ID_USUARIO = null;
+    if (profissionalLogado) { try { inicializarNotificacoesProfissional(true); } catch (e) {} try { atualizarContadorNotificacoesProfissional(); } catch (e) {} }
+    if (clienteGoogleLogado || clienteUltimosDados) { try { inicializarNotificacoesCliente(true); } catch (e) {} try { atualizarContadorNotificacoesCliente(); } catch (e) {} }
+  } catch (e) {}
+}
 
 async function _salvarNotificacaoFirestore(novaNotif) {
   try {
@@ -7488,9 +7534,6 @@ function inicializarNotificacoesProfissional(forcar) {
 }
 
 // =============== (NOVO) SISTEMA DE NOTIFICAÇÕES CLIENTE 🔔 ===============
-var NOTIFICACOES_CLIENTE_LISTA = [];
-var NOTIFICACOES_CLIENTE_UNSUB = null;
-var NOTIFICACOES_CLIENTE_ID_USUARIO = null;
 
 function _getClienteIdUnico() {
   try {
