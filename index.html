@@ -9192,7 +9192,7 @@ async function executarDesbloqueio() {
     return;
   }
 
-  const btnExec = document.getElementById('btnConfirmarDesbloq');
+  const btnExec = document.getElementById('btnConfirmarDesbloquear') || document.getElementById('btnConfirmarDesbloq');
   if (btnExec) {
     btnExec.disabled = true;
     btnExec.classList.add('opacity-60','cursor-not-allowed');
@@ -9200,6 +9200,19 @@ async function executarDesbloqueio() {
     btnExec.textContent = '⏳ Processando...';
   } else {
     console.warn('[FLUXO-DESBLOQUEIO] AVISO: botão btnConfirmarDesbloq não encontrado no DOM (modal talvez não montado?)');
+  }
+  var __resetouBtnProcessando = false;
+  function _resetBtnExecProcessando() {
+    if (__resetouBtnProcessando) return;
+    __resetouBtnProcessando = true;
+    if (btnExec) {
+      try {
+        btnExec.disabled = false;
+        btnExec.classList.remove('opacity-60','cursor-not-allowed');
+        var txtOriginal = String(btnExec.dataset.textoOriginal || '').trim();
+        btnExec.textContent = (txtOriginal && txtOriginal.length > 4) ? txtOriginal : '✅ Sim, desbloquear contato';
+      } catch(eRst){}
+    }
   }
 
   try {
@@ -9226,6 +9239,7 @@ async function executarDesbloqueio() {
     }
 
     if (!sessaoTok && !senhaFallback) {
+      _resetBtnExecProcessando();
       toast('warning','Autorização cancelada','A senha é obrigatória para autorizar o desbloqueio no backend. Tente novamente.');
       return;
     }
@@ -9240,7 +9254,7 @@ async function executarDesbloqueio() {
     console.info('[FLUXO-DESBLOQUEIO] Enviando fetch POST para:', urlFinal, 'body.pedido_id=', body.pedido_id, 'body.profissional_id=', body.profissional_id, 'body.tem_sessao=', !!body.profissional_sessao, 'body.tem_senha=', !!body.profissional_senha);
     let r;
     const controllerFetchDesb = (typeof AbortController === 'function') ? new AbortController() : null;
-    const idTimeoutFetchDesb = controllerFetchDesb ? setTimeout(function(){ try { controllerFetchDesb.abort(); } catch(e){} }, 18000) : null;
+    const idTimeoutFetchDesb = controllerFetchDesb ? setTimeout(function(){ try { controllerFetchDesb.abort(); } catch(e){} }, 30000) : null;
     try {
       const optsFetch = {
         method:'POST',
@@ -9255,8 +9269,9 @@ async function executarDesbloqueio() {
       if (idTimeoutFetchDesb) try { clearTimeout(idTimeoutFetchDesb); } catch(eCl){}
       console.error('[FLUXO-DESBLOQUEIO] EXCECAO DE REDE no fetch:', eFetch && eFetch.message, eFetch && eFetch.stack);
       const foiAbort = eFetch && (String(eFetch.name || '').toLowerCase() === 'aborterror' || String(eFetch.message || '').indexOf('abort') >= 0);
+      _resetBtnExecProcessando();
       if (foiAbort) {
-        toast('error','Backend demorou muito','O servidor não respondeu em 18 segundos. Tente novamente em 30 segundos (ou recarregue a página).',6500);
+        toast('error','Backend demorou muito','O servidor não respondeu em 30 segundos. Tente novamente em 30 segundos (ou recarregue a página).',6500);
       } else {
         toast('error','Sem conexão com backend','Verifique sua internet e tente novamente. Se persistir, recarregue a página.',5500);
       }
@@ -9270,6 +9285,7 @@ async function executarDesbloqueio() {
     if (!r || r.status < 200 || r.status >= 300 || !resp || !resp.ok || !resp.whatsapp) {
       const err = resp && resp.error ? String(resp.error) : '';
       const msg = resp && resp.msg ? String(resp.msg) : 'Tente novamente.';
+      _resetBtnExecProcessando();
       if (r && (r.status === 404 || r.status === 502 || r.status === 503)) {
         toast('error','Backend indisponível (status '+r.status+')','O servidor do Pix/Ajeitaí está fora do ar temporariamente. Tente novamente em 30 segundos.',6000);
         return;
@@ -9298,6 +9314,7 @@ async function executarDesbloqueio() {
     // ================= SUCESSO: backend autorizou, WhatsApp REAL veio na resposta =================
     const waLimpo = String(resp.whatsapp || '').replace(/\D/g,'');
     if (waLimpo.length < 10) {
+      _resetBtnExecProcessando();
       toast('error','Número inválido','O WhatsApp retornado pelo servidor é inválido.');
       return;
     }
@@ -9360,14 +9377,10 @@ async function executarDesbloqueio() {
 
   } catch(e){
     console.trace('[FLUXO-DESBLOQUEIO] EXCECAO GERAL (fora do try principal):', e && e.message, e && e.stack);
+    try { _resetBtnExecProcessando(); } catch(eRst2){}
     toast('error','Erro ao desbloquear', (e && e.message ? e.message : 'Verifique sua conexão e tente novamente.'));
   } finally {
-    if (btnExec) {
-      btnExec.disabled = false;
-      btnExec.classList.remove('opacity-60','cursor-not-allowed');
-      var txtOriginal = String(btnExec.dataset.textoOriginal || '').trim();
-      btnExec.textContent = (txtOriginal && txtOriginal.length > 4) ? txtOriginal : '✅ Sim, desbloquear contato';
-    }
+    try { _resetBtnExecProcessando(); } catch(eRst3){}
   }
 }
 if (typeof window !== 'undefined') window.executarDesbloqueio = executarDesbloqueio;
