@@ -9106,81 +9106,178 @@ function renderMuralPedidos() {
 
 // --------------- CORE DESBLOQUEIO ---------------
 function confirmarDesbloquearPedido(pedId) {
-  const ped = pedidos.find(x => x.id === pedId);
-  if (!ped) return;
-  const custo = (configEconomia && configEconomia.custoMoedasPorDesbloqueio) || 2;
+  try {
+    console.trace('[FLUXO-DESBLOQUEIO] confirmarDesbloquearPedido INVOCADO com pedId=', pedId);
+    const ped = pedidos.find(x => x.id === pedId);
+    if (!ped) {
+      console.warn('[FLUXO-DESBLOQUEIO] early return: pedido NAO encontrado na lista global pedidos. pedidos.length=', pedidos && pedidos.length);
+      toast('error','Pedido não encontrado','Este pedido não está mais disponível. Atualize a página e tente novamente.',4500);
+      return;
+    }
+    const custo = (configEconomia && configEconomia.custoMoedasPorDesbloqueio) || 2;
+    if (!profissionalLogado) {
+      toast('warning','Crie uma conta','Cadastre-se como profissional grátis (ganha +10 moedas bônus!) para desbloquear leads.');
+      navigateTo('view-profissional-cadastro');
+      return;
+    }
+    if (!_verificarAceiteObrigatorio('desbloquear_lead_pedido')) {
+      console.warn('[FLUXO-DESBLOQUEIO] early return: _verificarAceiteObrigatorio retornou false (modal-aceite-pendente deve ter sido aberto)');
+      return;
+    }
+    if ((ped.qtdDesbloqueios||0) >= 4) {
+      toast('error','Pedido fechado','Este pedido já atingiu o limite de 4 desbloqueios.');
+      return;
+    }
+    if (euJaDesbloquei(pedId)) {
+      toast('info','Você já desbloqueou','Seu WhatsApp já está liberado para este pedido.');
+      return;
+    }
+    if ((profissionalLogado.saldoMoedas||0) < custo) {
+      toast('error','Saldo insuficiente',`Você tem ${profissionalLogado.saldoMoedas||0} 🪙 e precisa de ${custo}. Compre mais moedas na loja.`);
+      setTimeout(()=>{ try { abrirLojaMoedas(); } catch(eLoja){} }, 600);
+      return;
+    }
 
-  // Guard clauses
-  if (!profissionalLogado) {
-    toast('warning','Crie uma conta','Cadastre-se como profissional grátis (ganha +10 moedas bônus!) para desbloquear leads.');
-    navigateTo('view-profissional-cadastro');
-    return;
+    // Preenche modal de confirmação
+    pedidoDesbloqueioAtual = pedId;
+    const nomeEl  = document.getElementById('desbloqPedidoNome');
+    const localEl = document.getElementById('desbloqPedidoLocal');
+    const custoEl = document.getElementById('desbloqCusto');
+    const saldoEl = document.getElementById('desbloqSaldoDepois');
+    if (!nomeEl || !localEl || !custoEl || !saldoEl) {
+      console.warn('[FLUXO-DESBLOQUEIO] UM ou MAIS elementos do modal não existem no DOM. IDs: desbloqPedidoNome=', !!nomeEl, 'desbloqPedidoLocal=', !!localEl, 'desbloqCusto=', !!custoEl, 'desbloqSaldoDepois=', !!saldoEl);
+      toast('warning','Elementos do modal não encontrados','Recarregue a página para garantir todos os componentes da UI.',4500);
+    }
+    if (nomeEl)  nomeEl.textContent  = `${ped.categoria} em ${ped.bairro}`;
+    if (localEl) localEl.textContent = `${ped.bairro} - ${ped.cidade}`;
+    if (custoEl) custoEl.textContent = custo;
+    if (saldoEl) saldoEl.textContent = `${(profissionalLogado.saldoMoedas||0) - custo} Moedas`;
+    console.info('[FLUXO-DESBLOQUEIO] campos do modal preenchidos. Chamando abrirModal(modal-desbloquear)...');
+    abrirModal('modal-desbloquear');
+    console.info('[FLUXO-DESBLOQUEIO] abrirModal executou. Classes do modal:', document.getElementById('modal-desbloquear').className);
+    toast('info','Confirmar desbloqueio','Verifique os dados e clique em Sim para confirmar.',2500);
+  } catch(eGlobal) {
+    console.error('[FLUXO-DESBLOQUEIO] EXCECAO EM confirmarDesbloquearPedido:', eGlobal && eGlobal.message, eGlobal && eGlobal.stack);
+    toast('error','Erro ao preparar desbloqueio', (eGlobal && eGlobal.message) || 'Erro interno. Atualize a página e tente novamente.', 5000);
   }
-  if (!_verificarAceiteObrigatorio('desbloquear_lead_pedido')) { return; }
-  if ((ped.qtdDesbloqueios||0) >= 4) {
-    toast('error','Pedido fechado','Este pedido já atingiu o limite de 4 desbloqueios.');
-    return;
-  }
-  if (euJaDesbloquei(pedId)) {
-    toast('info','Você já desbloqueou','Seu WhatsApp já está liberado para este pedido.');
-    return;
-  }
-  if ((profissionalLogado.saldoMoedas||0) < custo) {
-    toast('error','Saldo insuficiente',`Você tem ${profissionalLogado.saldoMoedas||0} 🪙 e precisa de ${custo}. Compre mais moedas na loja.`);
-    setTimeout(()=>abrirLojaMoedas(), 600);
-    return;
-  }
-
-  // Preenche modal de confirmação
-  pedidoDesbloqueioAtual = pedId;
-  document.getElementById('desbloqPedidoNome').textContent = `${ped.categoria} em ${ped.bairro}`;
-  document.getElementById('desbloqPedidoLocal').textContent = `${ped.bairro} - ${ped.cidade}`;
-  document.getElementById('desbloqCusto').textContent = custo;
-  document.getElementById('desbloqSaldoDepois').textContent = `${(profissionalLogado.saldoMoedas||0) - custo} Moedas`;
-  abrirModal('modal-desbloquear');
 }
+if (typeof window !== 'undefined') window.confirmarDesbloquearPedido = confirmarDesbloquearPedido;
 
 async function executarDesbloqueio() {
+  console.trace('[FLUXO-DESBLOQUEIO] executarDesbloqueio() INICIADO. pedidoDesbloqueioAtual=', pedidoDesbloqueioAtual);
   const pedId = pedidoDesbloqueioAtual;
-  if (!pedId || !profissionalLogado) return;
+  if (!pedId) {
+    toast('warning','Pedido não selecionado','Selecione um pedido no mural antes de desbloquear.');
+    try { fecharModal('modal-desbloquear'); } catch(e){}
+    return;
+  }
+  if (!profissionalLogado) {
+    toast('error','Sessão expirada','Faça login novamente como profissional.');
+    try { fecharModal('modal-desbloquear'); } catch(e){}
+    setTimeout(()=>navigateTo('view-login'), 600);
+    return;
+  }
   const ped = pedidos.find(x => x.id === pedId);
-  if (!ped) { pedidoDesbloqueioAtual = null; return; }
+  if (!ped) {
+    pedidoDesbloqueioAtual = null;
+    toast('error','Pedido não encontrado','Este pedido não existe mais na lista. Atualize a página.');
+    try { fecharModal('modal-desbloquear'); } catch(e){}
+    return;
+  }
   const custoLocal = (configEconomia && configEconomia.custoMoedasPorDesbloqueio) || 2;
 
   if ((profissionalLogado.saldoMoedas||0) < custoLocal) {
     toast('error','Saldo insuficiente','Compre mais moedas na loja.');
-    setTimeout(()=>{ try { fecharModal('modal-desbloquear'); } catch(e){} abrirLojaMoedas(); }, 400);
+    setTimeout(()=>{ try { fecharModal('modal-desbloquear'); } catch(e){} try { abrirLojaMoedas(); } catch(eLoja){} }, 400);
     return;
   }
 
-  const btnExec = document.getElementById('executarDesbloqueioBtn');
-  if (btnExec) { btnExec.disabled = true; btnExec.classList.add('opacity-60','cursor-not-allowed'); btnExec.textContent = 'Processando...'; }
+  const btnExec = document.getElementById('btnConfirmarDesbloq');
+  if (btnExec) {
+    btnExec.disabled = true;
+    btnExec.classList.add('opacity-60','cursor-not-allowed');
+    btnExec.dataset.textoOriginal = String(btnExec.textContent || '');
+    btnExec.textContent = '⏳ Processando...';
+  } else {
+    console.warn('[FLUXO-DESBLOQUEIO] AVISO: botão btnConfirmarDesbloq não encontrado no DOM (modal talvez não montado?)');
+  }
 
   try {
-    const sessaoTok = await obterSessaoIdProfissional();
-    const senhaFallback = sessaoTok ? '' : await obterSenhaProfissionalVolatil();
-    if (!AJEITA_PIX_BACKEND_URL) window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com';
+    let sessaoTok = '';
+    try {
+      console.info('[FLUXO-DESBLOQUEIO] chamando obterSessaoIdProfissional()...');
+      sessaoTok = await obterSessaoIdProfissional();
+      console.info('[FLUXO-DESBLOQUEIO] obterSessaoIdProfissional retornou:', sessaoTok ? '[tamanho=' + sessaoTok.length + ']' : 'vazio/null');
+    } catch(eSess) {
+      console.error('[FLUXO-DESBLOQUEIO] EXCECAO em obterSessaoIdProfissional:', eSess && eSess.message);
+      sessaoTok = '';
+    }
+
+    let senhaFallback = '';
+    if (!sessaoTok) {
+      try {
+        console.info('[FLUXO-DESBLOQUEIO] sessão vazia, chamando obterSenhaProfissionalVolatil()...');
+        senhaFallback = await obterSenhaProfissionalVolatil();
+        console.info('[FLUXO-DESBLOQUEIO] obterSenhaProfissionalVolatil retornou:', senhaFallback ? '[tamanho=' + senhaFallback.length + ']' : 'vazio/null (usuário talvez cancelou prompt)');
+      } catch(eSenha) {
+        console.error('[FLUXO-DESBLOQUEIO] EXCECAO em obterSenhaProfissionalVolatil:', eSenha && eSenha.message);
+        senhaFallback = '';
+      }
+    }
+
+    if (!sessaoTok && !senhaFallback) {
+      toast('warning','Autorização cancelada','A senha é obrigatória para autorizar o desbloqueio no backend. Tente novamente.');
+      return;
+    }
+    if (!AJEITA_PIX_BACKEND_URL) { window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com'; }
     const body = {
       pedido_id: pedId,
       profissional_id: profissionalLogado.id,
       profissional_sessao: sessaoTok || '',
       profissional_senha: senhaFallback || ''
     };
-    const r = await fetch(AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/desbloquear-atomico', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json','Accept':'application/json' },
-      body: JSON.stringify(body)
-    });
-    let resp = null;
-    try { resp = await r.json(); } catch(eJ){ resp = { ok:false, contactLocked:true, whatsapp:null, error:'RESP_PARSE' }; }
+    const urlFinal = AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/desbloquear-atomico';
+    console.info('[FLUXO-DESBLOQUEIO] Enviando fetch POST para:', urlFinal, 'body.pedido_id=', body.pedido_id, 'body.profissional_id=', body.profissional_id, 'body.tem_sessao=', !!body.profissional_sessao, 'body.tem_senha=', !!body.profissional_senha);
+    let r;
+    const controllerFetchDesb = (typeof AbortController === 'function') ? new AbortController() : null;
+    const idTimeoutFetchDesb = controllerFetchDesb ? setTimeout(function(){ try { controllerFetchDesb.abort(); } catch(e){} }, 18000) : null;
+    try {
+      const optsFetch = {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json','Accept':'application/json' },
+        body: JSON.stringify(body)
+      };
+      if (controllerFetchDesb && controllerFetchDesb.signal) optsFetch.signal = controllerFetchDesb.signal;
+      r = await fetch(urlFinal, optsFetch);
+      if (idTimeoutFetchDesb) try { clearTimeout(idTimeoutFetchDesb); } catch(eCl){}
+      console.info('[FLUXO-DESBLOQUEIO] fetch concluído — HTTP status =', r && r.status, r && r.statusText);
+    } catch(eFetch) {
+      if (idTimeoutFetchDesb) try { clearTimeout(idTimeoutFetchDesb); } catch(eCl){}
+      console.error('[FLUXO-DESBLOQUEIO] EXCECAO DE REDE no fetch:', eFetch && eFetch.message, eFetch && eFetch.stack);
+      const foiAbort = eFetch && (String(eFetch.name || '').toLowerCase() === 'aborterror' || String(eFetch.message || '').indexOf('abort') >= 0);
+      if (foiAbort) {
+        toast('error','Backend demorou muito','O servidor não respondeu em 18 segundos. Tente novamente em 30 segundos (ou recarregue a página).',6500);
+      } else {
+        toast('error','Sem conexão com backend','Verifique sua internet e tente novamente. Se persistir, recarregue a página.',5500);
+      }
+      return;
+    }
 
-    if (!resp || !resp.ok || !resp.whatsapp) {
+    let resp = null;
+    try { resp = await r.json(); } catch(eJ){ console.error('[FLUXO-DESBLOQUEIO] parse JSON da resposta falhou:', eJ && eJ.message); resp = { ok:false, contactLocked:true, whatsapp:null, error:'RESP_PARSE', msg:'Resposta inválida do servidor.' }; }
+    console.info('[FLUXO-DESBLOQUEIO] JSON da resposta:', resp && Object.assign({}, resp, resp && resp.whatsapp ? { whatsapp: '[OCULTO_PII tamanho=' + String(resp.whatsapp).length + ']' } : {}));
+
+    if (!r || r.status < 200 || r.status >= 300 || !resp || !resp.ok || !resp.whatsapp) {
       const err = resp && resp.error ? String(resp.error) : '';
       const msg = resp && resp.msg ? String(resp.msg) : 'Tente novamente.';
+      if (r && (r.status === 404 || r.status === 502 || r.status === 503)) {
+        toast('error','Backend indisponível (status '+r.status+')','O servidor do Pix/Ajeitaí está fora do ar temporariamente. Tente novamente em 30 segundos.',6000);
+        return;
+      }
       if (err === 'SALDO_INSUFICIENTE') {
         toast('error','Saldo insuficiente',`${msg} Recarregue moedas agora.`);
         try { fecharModal('modal-desbloquear'); } catch(e){}
-        setTimeout(()=>abrirLojaMoedas(), 500);
+        setTimeout(()=>{ try { abrirLojaMoedas(); } catch(eLoja){} }, 500);
         return;
       }
       if (err === 'SESSAO_INVALIDA' || err === 'PROFISSIONAL_NAO_AUTENTICADO' || err === 'SENHA_INVALIDA') {
@@ -9258,15 +9355,22 @@ async function executarDesbloqueio() {
     toast('success', resp.repetido ? 'Contato já liberado' : 'Contato desbloqueado!', msgSucesso, 6000);
 
     // (f) Re-abrir o modal detalhe se ele estava ou deveria estar aberto? Abrir direto WhatsApp
+    console.info('[FLUXO-DESBLOQUEIO] SUCESSO COMPLETO. waLink preparado. custoRealBackend=', custoRealBackend, 'repetido=', !!resp.repetido);
     setTimeout(()=>{ try { window.open(waLink,'_blank'); } catch(e){} }, resp.repetido ? 300 : 700);
 
   } catch(e){
-    console.error('[executarDesbloqueio] ERRO GERAL:', e && e.message);
-    toast('error','Erro ao desbloquear','Verifique sua conexão e tente novamente.');
+    console.trace('[FLUXO-DESBLOQUEIO] EXCECAO GERAL (fora do try principal):', e && e.message, e && e.stack);
+    toast('error','Erro ao desbloquear', (e && e.message ? e.message : 'Verifique sua conexão e tente novamente.'));
   } finally {
-    if (btnExec) { btnExec.disabled = false; btnExec.classList.remove('opacity-60','cursor-not-allowed'); btnExec.textContent = '🔓 Confirmar desbloqueio'; }
+    if (btnExec) {
+      btnExec.disabled = false;
+      btnExec.classList.remove('opacity-60','cursor-not-allowed');
+      var txtOriginal = String(btnExec.dataset.textoOriginal || '').trim();
+      btnExec.textContent = (txtOriginal && txtOriginal.length > 4) ? txtOriginal : '✅ Sim, desbloquear contato';
+    }
   }
 }
+if (typeof window !== 'undefined') window.executarDesbloqueio = executarDesbloqueio;
 
 // --------------- LOJA DE MOEDAS + PIX ---------------
 function abrirLojaMoedas() {
