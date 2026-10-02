@@ -5485,7 +5485,7 @@ function decodeGoogleJwtPayload(jwt) {
  * o usuário clicar no botão "Continuar com o Google" e aceitar.
  * @param {object} resp — credential response do GSI {credential, clientId, select_by}
  */
-function handleGoogleCredentialResponse(resp) {
+async function handleGoogleCredentialResponse(resp) {
   // #region debug-point H2:H3:handleGoogleCredEntry
   DBG('H2','1647','handleGoogleCredentialResponse: CALLBACK DISPARADO PELO GOOGLE! (ponto crítico H2)', {
     respExiste: !!resp,
@@ -5566,7 +5566,11 @@ function handleGoogleCredentialResponse(resp) {
       if (dadosGoogle.foto && !profissionais[idxPro].foto) profissionais[idxPro].foto = dadosGoogle.foto;
       if (!profissionais[idxPro].nome || profissionais[idxPro].nome.includes('Profissional')) profissionais[idxPro].nome = dadosGoogle.nome;
       profissionalLogado = profissionais[idxPro];
-      _garantirSessaoProfissionalAtiva(true).catch(function(){});
+      // IMPORTANTE: AWAIT na sincronia do token sessao antes de navegar para
+      // tela de orçamentos. Sem o await, o usuário clicava em "Desbloquear contato"
+      // menos de 2s após o login, o token ainda não estava salvo no backend,
+      // e o fluxo caía no fallback de senha que usuário GOOGLE NUNCA CADASTROU.
+      try { await _garantirSessaoProfissionalAtiva(true); } catch(eSes){ console.error('[LOGIN_GOOGLE_PROF] erro registrar sessao token:', eSes && eSes.message); }
       salvarTodosGlobaisNoStorage();
       // (TASK 8) Inicializa listener notificações em tempo real pós login
       try { setTimeout(function(){ try { inicializarNotificacoesProfissional(true); } catch(eNotif){} }, 400); } catch(eDly){}
@@ -9226,21 +9230,24 @@ async function executarDesbloqueio() {
       sessaoTok = '';
     }
 
-    let senhaFallback = '';
-    if (!sessaoTok) {
-      try {
-        console.info('[FLUXO-DESBLOQUEIO] sessão vazia, chamando obterSenhaProfissionalVolatil()...');
-        senhaFallback = await obterSenhaProfissionalVolatil();
-        console.info('[FLUXO-DESBLOQUEIO] obterSenhaProfissionalVolatil retornou:', senhaFallback ? '[tamanho=' + senhaFallback.length + ']' : 'vazio/null (usuário talvez cancelou prompt)');
-      } catch(eSenha) {
-        console.error('[FLUXO-DESBLOQUEIO] EXCECAO em obterSenhaProfissionalVolatil:', eSenha && eSenha.message);
-        senhaFallback = '';
-      }
-    }
+    // (CORREÇÃO MÍNIMA SOLICITADA):
+    // O login do profissional é Google/Firebase; não existe "senha própria"
+    // para o usuário do Google. A autenticação do desbloqueio é feita
+    // EXCLUSIVAMENTE via token sessão (profissional_sessao) gerado
+    // logo após login Google e salvo no doc do profissional via /sessao-registrar.
+    // Fallback de senha (window.prompt e profissional_senha no body) foi
+    // REMOVIDO aqui (mantido apenas no backend, para retrocompatibilidade
+    // com profissionais legado cadastrados sem Google).
+    const senhaFallback = '';
 
-    if (!sessaoTok && !senhaFallback) {
+    if (!sessaoTok) {
       _resetBtnExecProcessando();
-      toast('warning','Autorização cancelada','A senha é obrigatória para autorizar o desbloqueio no backend. Tente novamente.');
+      toast('warning','Sessão não sincronizada','O token de sessão do profissional ainda não foi confirmado pelo backend. Aguarde 2 segundos e clique em "Sim, desbloquear" novamente. Se persistir, faça login novamente com o Google.', 7000);
+      try {
+        _garantirSessaoProfissionalAtiva(true).then(function(){
+          console.info('[FLUXO-DESBLOQUEIO] sessao token re-salva em background.');
+        }).catch(function(){});
+      } catch(eBgr){}
       return;
     }
     if (!AJEITA_PIX_BACKEND_URL) { window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com'; }
