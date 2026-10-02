@@ -2426,14 +2426,52 @@ app.post('/api/profissional/sessao-registrar', async (req, res) => {
     if (!dbFirestore) return res.status(200).json({ ok:false, msg:'Firestore indisponível.' });
 
     const r = await _buscarProfissionalFirestorePorIdOuDoc(profissionalId);
-    if (!r.docId || !r.data) return res.status(404).json({ ok:false, msg:'Profissional não encontrado no Firestore.' });
+    let docIdSalvar = null;
+    let docDataExistente = null;
+    if (r && r.docId && r.data) {
+      docIdSalvar = r.docId;
+      docDataExistente = r.data;
+    } else {
+      // (CORREÇÃO MÍNIMA AUTOCURA): Quando o frontend chama sessao-registrar mas
+      // o doc do profissional NÃO EXISTE AINDA no Firestore (caso comum:
+      // fbSyncAddProfissional estava em background no login Google e não
+      // terminou a tempo), backend CRIA o documento MÍNIMO AGORA (com o
+      // profissional_id recebido + email/google_id de prova) e já salva o
+      // token de sessão nele na mesma operação. Evita ciclo infinito 404
+      // → false → nunca registra → 401 no desbloqueio.
+      try {
+        const docIdCanonico = profissionalId.startsWith('local_') ? profissionalId : ('local_' + profissionalId);
+        const payloadMin = {
+          id: profissionalId,
+          cadastroEm: _fsTs ? _fsTs() : new Date().toISOString(),
+          _criado_por: 'sessao_registrar_autocura',
+          _criado_em_ts: Date.now()
+        };
+        if (emailProof) {
+          payloadMin.emailLogin = emailProof;
+          payloadMin.email = emailProof;
+          payloadMin.emailGoogle = emailProof;
+        }
+        if (googleIdProof) {
+          payloadMin.googleId = googleIdProof;
+        }
+        try {
+          await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(docIdCanonico).set(payloadMin, { merge:true });
+          docIdSalvar = docIdCanonico;
+          docDataExistente = Object.assign({}, payloadMin);
+        } catch(eCriaMin){
+          console.warn('[SESSAO_REGISTRAR][AUTOCURA] Falhou criar doc minimo docIdCanonico='+docIdCanonico, eCriaMin && eCriaMin.message);
+        }
+      } catch(eAutocura){}
+      if (!docIdSalvar) return res.status(404).json({ ok:false, msg:'Profissional não encontrado no Firestore.' });
+    }
 
-    if (emailProof) {
-      const docEmail = String((r.data && (r.data.emailLogin || r.data.email || r.data.emailGoogle)) || '').toLowerCase().trim();
+    if (emailProof && docDataExistente) {
+      const docEmail = String((docDataExistente.emailLogin || docDataExistente.email || docDataExistente.emailGoogle)) || '').toLowerCase().trim();
       if (docEmail && docEmail !== emailProof) return res.status(403).json({ ok:false, msg:'E-mail de prova não corresponde ao profissional.' });
     }
-    if (googleIdProof) {
-      const docGoogleId = String(r.data && r.data.googleId || '').trim();
+    if (googleIdProof && docDataExistente) {
+      const docGoogleId = String(docDataExistente.googleId || '').trim();
       if (docGoogleId && docGoogleId !== googleIdProof) return res.status(403).json({ ok:false, msg:'GoogleId de prova não corresponde.' });
     }
 
@@ -2442,12 +2480,12 @@ app.post('/api/profissional/sessao-registrar', async (req, res) => {
       sessao_token_ultima_em: _fsTs ? _fsTs() : new Date().toISOString()
     };
     try {
-      await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(r.docId).set(patch, { merge:true });
+      await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(docIdSalvar).set(patch, { merge:true });
     } catch(eW){
-      console.error('[SESSAO_REGISTRAR] Firestore write falhou docId='+r.docId, eW && eW.message);
+      console.error('[SESSAO_REGISTRAR] Firestore write falhou docId='+docIdSalvar, eW && eW.message);
       return res.status(500).json({ ok:false, msg:'Erro interno salvar sessao no Firestore.' });
     }
-    return res.status(200).json({ ok:true, doc_id: r.docId, msg:'Sessão registrada com sucesso.', sessao_registrada_em: new Date().toISOString() });
+    return res.status(200).json({ ok:true, doc_id: docIdSalvar, msg:'Sessão registrada com sucesso.', sessao_registrada_em: new Date().toISOString() });
   } catch(e){
     console.error('/api/profissional/sessao-registrar erro:', e && e.message);
     return res.status(500).json({ ok:false, msg:'Erro interno registrar sessao profissional.' });

@@ -4664,6 +4664,18 @@ async function _garantirSessaoProfissionalAtiva(forceRegistrar) {
   }
   if (tem && (forceRegistrar === true || !profissionalLogado._sessao_registrada_backend)) {
     var ok = await _registrarSessaoProfissionalBackend(profissionalLogado);
+    if (!ok) {
+      // (CORREÇÃO MÍNIMA AUTOCURA): Quando registrar sessao retorna false,
+      // 99% é pq doc do profissional NÃO EXISTIA no Firestore.
+      // Tenta criar o doc agora (fbSyncAddProfissional) DEPOIS re-tenta
+      // registrar sessao DE NOVO (agora doc existe).
+      try {
+        if (typeof fbSyncAddProfissional === 'function') {
+          try { await fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) })); } catch(eSyncInner){}
+        }
+      } catch(eSyncWrap){}
+      try { ok = await _registrarSessaoProfissionalBackend(profissionalLogado); } catch(eReRegistrar){ ok = false; }
+    }
     if (ok) {
       profissionalLogado._sessao_registrada_backend = true;
       try { salvarTodosGlobaisNoStorage(); } catch(eS2){}
@@ -5566,10 +5578,16 @@ async function handleGoogleCredentialResponse(resp) {
       if (dadosGoogle.foto && !profissionais[idxPro].foto) profissionais[idxPro].foto = dadosGoogle.foto;
       if (!profissionais[idxPro].nome || profissionais[idxPro].nome.includes('Profissional')) profissionais[idxPro].nome = dadosGoogle.nome;
       profissionalLogado = profissionais[idxPro];
-      // IMPORTANTE: AWAIT na sincronia do token sessao antes de navegar para
-      // tela de orçamentos. Sem o await, o usuário clicava em "Desbloquear contato"
-      // menos de 2s após o login, o token ainda não estava salvo no backend,
-      // e o fluxo caía no fallback de senha que usuário GOOGLE NUNCA CADASTROU.
+      // (CORREÇÃO MÍNIMA): ordem CORRETA para evitar 401 no primeiro desbloqueio.
+      // (1) PRIMEIRO: garante que o doc do profissional EXISTA no Firestore
+      //     (fbSyncAddProfissional cria doc minimo caso não exista).
+      // (2) DEPOIS: grava o token sessao nesse doc (sessao-registrar agora
+      //     vai encontrar o doc e retornar 200 ok=true → flag true).
+      try {
+        if (typeof fbSyncAddProfissional === 'function' && profissionalLogado) {
+          try { await fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) })); } catch(eSyncFs){ console.warn('[LOGIN_GOOGLE_PROF] fbSyncAddProfissional warning:', eSyncFs && eSyncFs.message); }
+        }
+      } catch(eSyncWrap){}
       try { await _garantirSessaoProfissionalAtiva(true); } catch(eSes){ console.error('[LOGIN_GOOGLE_PROF] erro registrar sessao token:', eSes && eSes.message); }
       salvarTodosGlobaisNoStorage();
       // (TASK 8) Inicializa listener notificações em tempo real pós login
@@ -9242,7 +9260,7 @@ async function executarDesbloqueio() {
 
     if (!sessaoTok) {
       _resetBtnExecProcessando();
-      toast('warning','Sessão não sincronizada','O token de sessão do profissional ainda não foi confirmado pelo backend. Aguarde 2 segundos e clique em "Sim, desbloquear" novamente. Se persistir, faça login novamente com o Google.', 7000);
+      toast('warning','Sessão não sincronizada','O token de sessão do profissional ainda não foi gerado. Tente novamente (ou faça login novamente com o Google se o problema persistir).', 7000);
       try {
         _garantirSessaoProfissionalAtiva(true).then(function(){
           console.info('[FLUXO-DESBLOQUEIO] sessao token re-salva em background.');
@@ -9251,43 +9269,92 @@ async function executarDesbloqueio() {
       return;
     }
     if (!AJEITA_PIX_BACKEND_URL) { window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com'; }
-    const body = {
+    const urlFinal = AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/desbloquear-atomico';
+
+    // (CORREÇÃO MÍNIMA): Extrai fetch+parse para helper, permitindo 1 retry
+    // AUTOMÁTICO (sem clique do usuário, sem setTimeout/2s) quando a primeira
+    // chamada retorna 401 SESSAO_INVALIDA/PROFISSIONAL_NAO_AUTENTICADO.
+    // No retry, primeiro forçamos criação do doc no Firestore + re-salvamos
+    // token sessao, depois reenviamos o mesmo pedido.
+    async function _chamarBackendDesbloquear(bodyArg) {
+      console.info('[FLUXO-DESBLOQUEIO] Enviando fetch POST para:', urlFinal, 'body.pedido_id=', bodyArg.pedido_id, 'body.profissional_id=', bodyArg.profissional_id, 'body.tem_sessao=', !!bodyArg.profissional_sessao, 'body.tem_senha=', !!bodyArg.profissional_senha);
+      const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+      const idTO = ctrl ? setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, 30000) : null;
+      let rRes = null;
+      try {
+        const opts = {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json','Accept':'application/json' },
+          body: JSON.stringify(bodyArg)
+        };
+        if (ctrl && ctrl.signal) opts.signal = ctrl.signal;
+        rRes = await fetch(urlFinal, opts);
+        if (idTO) try { clearTimeout(idTO); } catch(eCl){}
+        console.info('[FLUXO-DESBLOQUEIO] fetch concluído — HTTP status =', rRes && rRes.status, rRes && rRes.statusText);
+      } catch(eFetch) {
+        if (idTO) try { clearTimeout(idTO); } catch(eCl){}
+        const foiAbort = eFetch && (String(eFetch.name || '').toLowerCase() === 'aborterror' || String(eFetch.message || '').indexOf('abort') >= 0);
+        _resetBtnExecProcessando();
+        if (foiAbort) toast('error','Backend demorou muito','O servidor não respondeu em 30 segundos. Tente novamente em 30 segundos (ou recarregue a página).',6500);
+        else toast('error','Sem conexão com backend','Verifique sua internet e tente novamente. Se persistir, recarregue a página.',5500);
+        return { fatal:true, r:rRes, resp:null };
+      }
+      let respRes = null;
+      try { respRes = await rRes.json(); } catch(eJ){ console.error('[FLUXO-DESBLOQUEIO] parse JSON da resposta falhou:', eJ && eJ.message); respRes = { ok:false, contactLocked:true, whatsapp:null, error:'RESP_PARSE', msg:'Resposta inválida do servidor.' }; }
+      console.info('[FLUXO-DESBLOQUEIO] JSON da resposta:', respRes && Object.assign({}, respRes, respRes && respRes.whatsapp ? { whatsapp: '[OCULTO_PII tamanho=' + String(respRes.whatsapp).length + ']' } : {}));
+      return { fatal:false, r:rRes, resp:respRes };
+    }
+
+    let body = {
       pedido_id: pedId,
       profissional_id: profissionalLogado.id,
       profissional_sessao: sessaoTok || '',
-      profissional_senha: senhaFallback || ''
+      profissional_senha: ''
     };
-    const urlFinal = AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/desbloquear-atomico';
-    console.info('[FLUXO-DESBLOQUEIO] Enviando fetch POST para:', urlFinal, 'body.pedido_id=', body.pedido_id, 'body.profissional_id=', body.profissional_id, 'body.tem_sessao=', !!body.profissional_sessao, 'body.tem_senha=', !!body.profissional_senha);
-    let r;
-    const controllerFetchDesb = (typeof AbortController === 'function') ? new AbortController() : null;
-    const idTimeoutFetchDesb = controllerFetchDesb ? setTimeout(function(){ try { controllerFetchDesb.abort(); } catch(e){} }, 30000) : null;
-    try {
-      const optsFetch = {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json','Accept':'application/json' },
-        body: JSON.stringify(body)
-      };
-      if (controllerFetchDesb && controllerFetchDesb.signal) optsFetch.signal = controllerFetchDesb.signal;
-      r = await fetch(urlFinal, optsFetch);
-      if (idTimeoutFetchDesb) try { clearTimeout(idTimeoutFetchDesb); } catch(eCl){}
-      console.info('[FLUXO-DESBLOQUEIO] fetch concluído — HTTP status =', r && r.status, r && r.statusText);
-    } catch(eFetch) {
-      if (idTimeoutFetchDesb) try { clearTimeout(idTimeoutFetchDesb); } catch(eCl){}
-      console.error('[FLUXO-DESBLOQUEIO] EXCECAO DE REDE no fetch:', eFetch && eFetch.message, eFetch && eFetch.stack);
-      const foiAbort = eFetch && (String(eFetch.name || '').toLowerCase() === 'aborterror' || String(eFetch.message || '').indexOf('abort') >= 0);
-      _resetBtnExecProcessando();
-      if (foiAbort) {
-        toast('error','Backend demorou muito','O servidor não respondeu em 30 segundos. Tente novamente em 30 segundos (ou recarregue a página).',6500);
-      } else {
-        toast('error','Sem conexão com backend','Verifique sua internet e tente novamente. Se persistir, recarregue a página.',5500);
-      }
-      return;
-    }
+    let chamada = await _chamarBackendDesbloquear(body);
+    if (chamada.fatal) return;
+    let r = chamada.r;
+    let resp = chamada.resp;
 
-    let resp = null;
-    try { resp = await r.json(); } catch(eJ){ console.error('[FLUXO-DESBLOQUEIO] parse JSON da resposta falhou:', eJ && eJ.message); resp = { ok:false, contactLocked:true, whatsapp:null, error:'RESP_PARSE', msg:'Resposta inválida do servidor.' }; }
-    console.info('[FLUXO-DESBLOQUEIO] JSON da resposta:', resp && Object.assign({}, resp, resp && resp.whatsapp ? { whatsapp: '[OCULTO_PII tamanho=' + String(resp.whatsapp).length + ']' } : {}));
+    // ================= RETRY AUTOMÁTICO (1 única vez) para 401 de sessão =================
+    // Se primeira chamada falhou por SESSAO_INVALIDA / PROFISSIONAL_NAO_AUTENTICADO / SENHA_INVALIDA:
+    //   1) await fbSyncAddProfissional → cria doc no Firestore se faltava
+    //   2) await _garantirSessaoProfissionalAtiva(true) → salva sessao token no doc
+    //   3) pega sessaoTok NOVO (atualizado)
+    //   4) reenvia fetch de desbloqueio MAIS UMA VEZ
+    // Se retry der certo (200 ok wa), segue fluxo sucesso normal abaixo.
+    // Se retry ainda falhar, aí sim mostra toast e return. Nenhum setTimeout/2s.
+    let _tentativaRetryJaFoiFeita = false;
+    if (r && (r.status === 401 || r.status === 403) && resp) {
+      const errPrimeira = String(resp && resp.error || '').trim();
+      if ((errPrimeira === 'SESSAO_INVALIDA' || errPrimeira === 'PROFISSIONAL_NAO_AUTENTICADO' || errPrimeira === 'SENHA_INVALIDA') && !_tentativaRetryJaFoiFeita) {
+        _tentativaRetryJaFoiFeita = true;
+        PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
+        try { profissionalLogado._sessao_registrada_backend = false; } catch(eS){}
+        console.info('[FLUXO-DESBLOQUEIO] 401 na 1a chamada. Iniciando autocura e retry AUTOMATICO (1 tentativa, sem clique do usuario)...');
+        try {
+          if (typeof fbSyncAddProfissional === 'function' && profissionalLogado) {
+            try { await fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) })); } catch(eSync1){}
+          }
+        } catch(eSyncWrap){}
+        try {
+          sessaoTok = await _garantirSessaoProfissionalAtiva(true);
+          console.info('[FLUXO-DESBLOQUEIO] autocura sessao concluida. sessaoTok.length =', sessaoTok && sessaoTok.length);
+        } catch(eReGarantir){ sessaoTok = ''; }
+        if (sessaoTok && sessaoTok.length >= 20) {
+          const bodyRetry = {
+            pedido_id: pedId,
+            profissional_id: profissionalLogado.id,
+            profissional_sessao: sessaoTok,
+            profissional_senha: ''
+          };
+          const chamada2 = await _chamarBackendDesbloquear(bodyRetry);
+          if (!chamada2.fatal) {
+            r = chamada2.r; resp = chamada2.resp;
+          }
+        }
+      }
+    }
 
     if (!r || r.status < 200 || r.status >= 300 || !resp || !resp.ok || !resp.whatsapp) {
       const err = resp && resp.error ? String(resp.error) : '';
@@ -9306,23 +9373,11 @@ async function executarDesbloqueio() {
       if (err === 'SESSAO_INVALIDA' || err === 'PROFISSIONAL_NAO_AUTENTICADO' || err === 'SENHA_INVALIDA') {
         PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
         try { profissionalLogado._sessao_registrada_backend = false; } catch(eS){}
-        // (CORREÇÃO MÍNIMA): login profissional é Google/Firebase.
-        // Esta mensagem NÃO menciona senha (pois o usuário Google não tem).
-        // Ao receber 401 tentamos re-sincronizar o profissional no Firestore
-        // (caso o doc não exista lá) e re-gerar/re-salvar o token de sessão
-        // automaticamente em background. Usuário só precisa clicar de novo.
-        try {
-          if (typeof fbSyncAddProfissional === 'function' && profissionalLogado) {
-            try { fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) })); } catch(eSync1){}
-          }
-        } catch(eSyncWrap){}
-        try {
-          _garantirSessaoProfissionalAtiva(true).then(function(){
-            console.info('[FLUXO-DESBLOQUEIO] sessao token re-salva (resp 401).');
-          }).catch(function(){});
-        } catch(eReGarantir){}
-        toast('error','Não foi possível confirmar sua sessão profissional.',
-          'A sessão do backend ainda não foi sincronizada. Aguarde 2 segundos e clique em "Sim, desbloquear contato" novamente. Você continua logado normalmente.', 8000);
+        // (CORREÇÃO MÍNIMA): retry automático já rodou acima e falhou.
+        // NÃO desloga, NÃO pede senha, NÃO pede clique em 2s.
+        // Apenas informa e deixa usuário tentar manualmente se quiser.
+        toast('error','Não foi possível confirmar sua sessão.',
+          'A autenticação com o backend falhou mesmo após tentativa automática de sincronia. Verifique sua conexão com a internet e tente novamente. (Você continua logado normalmente.)', 9000);
         return;
       }
       if (err === 'DESBLOQUEIO_EM_ANDAMENTO') {
