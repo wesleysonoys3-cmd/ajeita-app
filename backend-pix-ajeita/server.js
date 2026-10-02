@@ -2587,22 +2587,37 @@ async function _lerCustoDesbloqueioFirestore() {
 
 async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
   if (!dbFirestore) return { docId:null, data:null };
-  const tentativas = [];
-  if (profissionalId.startsWith('local_')) tentativas.push(profissionalId);
-  tentativas.push('local_' + profissionalId);
-  tentativas.push(profissionalId);
-  for (const tid of tentativas) {
-    const ref = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(tid);
-    const s = await _fsGetComTimeout(ref, 2000);
-    if (s && s.exists) return { docId: tid, data: s.data() || {} };
+  const idLimpo = String(profissionalId || '').trim();
+  if (!idLimpo) return { docId:null, data:null };
+
+  // MESMA LÓGICA DA ROTA /whatsapp-seguro (funcionando desde a V12):
+  // Tenta o doc CANÔNICO "local_${id}" primeiro (padrão do app desde sempre).
+  const docIdCanonico = idLimpo.startsWith('local_') ? idLimpo : ('local_' + idLimpo);
+
+  const refCanon = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(docIdCanonico);
+  const sCanon = await _fsGetComTimeout(refCanon, 2000);
+  if (sCanon && sCanon.exists) {
+    return { docId: docIdCanonico, data: (sCanon.data() || {}) };
   }
+
+  // Segunda tentativa: doc puro SEM prefixo "local_" (caso raro, docs criados manualmente no console)
+  if (idLimpo !== docIdCanonico) {
+    const refPuro = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(idLimpo);
+    const sPuro = await _fsGetComTimeout(refPuro, 2000);
+    if (sPuro && sPuro.exists) {
+      return { docId: idLimpo, data: (sPuro.data() || {}) };
+    }
+  }
+
+  // Último fallback: varre collection até 400 docs procurando profissional onde
+  // o CAMPO dd.id === idLimpo (padrão whatsapp-seguro linhas 2508-2515)
   try {
-    const refAll = dbFirestore.collection(_FS_COL_PROFISSIONAIS).limit(300);
+    const refAll = dbFirestore.collection(_FS_COL_PROFISSIONAIS).limit(400);
     const allP = await _fsGetComTimeout(refAll, 2000) || {empty:true, docs:[]};
     if (allP && !allP.empty && Array.isArray(allP.docs)) {
       for (const d of allP.docs) {
         const dd = d.data() || {};
-        if (String(dd.id || '') === String(profissionalId) || String(dd.docId || d.id) === String(profissionalId)) {
+        if (String(dd.id || '') === idLimpo) {
           return { docId: d.id, data: dd };
         }
       }

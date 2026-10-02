@@ -9299,8 +9299,14 @@ async function executarDesbloqueio() {
       if (err === 'SESSAO_INVALIDA' || err === 'PROFISSIONAL_NAO_AUTENTICADO' || err === 'SENHA_INVALIDA') {
         PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
         try { profissionalLogado._sessao_registrada_backend = false; } catch(eS){}
-        toast('error','Sessão inválida','Faça login novamente como profissional e tente.');
-        setTimeout(()=>{ try { logoutGoogleTotal(); } catch(eLg){ navigateTo('view-login'); } }, 900);
+        // IMPORTANTE: NÃO fazemos logout automático cego aqui.
+        // Apenas invalidamos a senha cacheada, marcamos a sessao como
+        // não-registrada para tentar re-sincronizar e chamamos o fluxo
+        // de prompt de senha + retry autorizacao do zero na PROXIMA vez
+        // que usuario clicar em "Sim, desbloquear".
+        // O logout TOTAL só ocorre se a pessoa clicar explicitamente em Sair.
+        toast('error','Autenticação pendente','Sessão ou senha do profissional não foi confirmada. Clique em "Sim, desbloquear" novamente para digitar sua senha (você NÃO foi deslogado).', 7000);
+        try { _garantirSessaoProfissionalAtiva(true); } catch(eReGarantir){}
         return;
       }
       if (err === 'DESBLOQUEIO_EM_ANDAMENTO') {
