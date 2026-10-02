@@ -4609,15 +4609,70 @@ let clienteUltimosDados = null; // {nome, whatsapp, cidade, bairro} autocomplete
 // REGRA SEGURANÇA: O número do cliente NUNCA é lido de pedidos[].whatsapp
 // (esse campo SEMPRE está null por causa do stripping da camada A).
 // O número SÓ entra no navegador através de 2 fontes exclusivas:
-//   (1) Resposta 200 do POST /api/profissional/pedido/desbloquear-atômico
+//   (1) Resposta 200 do POST /api/profissional/pedido/desbloquear-atomico (ASCII-safe; alias desbloquear-atômico)
 //   (2) Resposta 200 do POST /api/profissional/pedido/whatsapp-seguro (lazy
 //       load após reload de página quando desbloqueios[] prova pagamento)
 // ============================================================================
 const WHATSAPP_LIBERADOS_CACHE = new Map(); // key = `${profId}|${pedId}` -> { whatsapp, whatsapp_formatado, nome_cliente, unlocked_at_ms }
-let PROFISSIONAL_SENHA_SESSAO_VOLATIL = ''; // limpa ao fechar aba; NUNCA persiste em storage
+function _gerarSessaoTokenProfissional() {
+  try {
+    var rndArr = new Uint8Array(32);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(rndArr);
+    } else {
+      for (var ii = 0; ii < 32; ii++) rndArr[ii] = Math.floor(Math.random() * 256);
+    }
+    var hex = '';
+    for (var jj = 0; jj < rndArr.length; jj++) hex += ('0' + rndArr[jj].toString(16)).slice(-2);
+    return 'sesspro_' + Date.now().toString(36) + '_' + hex + '_' + Math.random().toString(36).slice(2, 10);
+  } catch(e){
+    return 'sesspro_fallback_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) + '_' + Math.random().toString(36).slice(2);
+  }
+}
+async function _registrarSessaoProfissionalBackend(profissionalObj) {
+  if (!profissionalObj || !profissionalObj.id) return false;
+  try {
+    var backendUrl = (typeof AJEITA_PIX_BACKEND_URL !== 'undefined' && AJEITA_PIX_BACKEND_URL)
+      ? AJEITA_PIX_BACKEND_URL
+      : 'https://ajeita-backend-pix.onrender.com';
+    var body = {
+      profissional_id: String(profissionalObj.id || ''),
+      sessao_token: String(profissionalObj._sessao_token || '')
+    };
+    var em = String(profissionalObj.emailLogin || profissionalObj.email || profissionalObj.emailGoogle || '').toLowerCase().trim();
+    if (em) body.email_proof = em;
+    var gid = String(profissionalObj.googleId || '').trim();
+    if (gid) body.google_id_proof = gid;
+    var r = await fetch(backendUrl + '/api/profissional/sessao-registrar', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify(body)
+    });
+    var j = null;
+    try { j = await r.json(); } catch(eJ){ j = null; }
+    return !!(j && j.ok === true);
+  } catch(e){ return false; }
+}
+async function _garantirSessaoProfissionalAtiva(forceRegistrar) {
+  if (!profissionalLogado || !profissionalLogado.id) return '';
+  var tem = typeof profissionalLogado._sessao_token === 'string' && profissionalLogado._sessao_token.length >= 20;
+  if (!tem) {
+    profissionalLogado._sessao_token = _gerarSessaoTokenProfissional();
+    try { salvarTodosGlobaisNoStorage(); } catch(eS){}
+    tem = true;
+  }
+  if (tem && (forceRegistrar === true || !profissionalLogado._sessao_registrada_backend)) {
+    var ok = await _registrarSessaoProfissionalBackend(profissionalLogado);
+    if (ok) {
+      profissionalLogado._sessao_registrada_backend = true;
+      try { salvarTodosGlobaisNoStorage(); } catch(eS2){}
+    }
+  }
+  return profissionalLogado._sessao_token;
+}
+let PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
 async function obterSenhaProfissionalVolatil() {
-  // tenta de 3 fontes (nenhuma = localStorage): (a) memória volátil, (b) profissionalLogado.senha,
-  // (c) credenciaisUsuarios hash match. Se nenhuma, pede input pro usuário.
   if (PROFISSIONAL_SENHA_SESSAO_VOLATIL) return PROFISSIONAL_SENHA_SESSAO_VOLATIL;
   if (profissionalLogado && profissionalLogado.senha && typeof profissionalLogado.senha === 'string') {
     PROFISSIONAL_SENHA_SESSAO_VOLATIL = profissionalLogado.senha;
@@ -4637,13 +4692,32 @@ async function obterSenhaProfissionalVolatil() {
       return PROFISSIONAL_SENHA_SESSAO_VOLATIL;
     }
   }
-  // pede input
+  if (!profissionalLogado) return '';
   try {
-    const res = prompt('Digite sua SENHA da conta profissional para autorizar o desbloqueio por backend (não é armazenada no armazenamento local):', '');
-    if (!res) return '';
-    PROFISSIONAL_SENHA_SESSAO_VOLATIL = String(res).trim();
-    return PROFISSIONAL_SENHA_SESSAO_VOLATIL;
-  } catch(e){ return ''; }
+    var tentativa = 0;
+    while (tentativa < 3) {
+      tentativa++;
+      var dig = null;
+      try {
+        dig = (typeof window !== 'undefined' && typeof window.prompt === 'function')
+          ? window.prompt('Digite sua SENHA da conta profissional para autorizar o desbloqueio por backend (não é armazenada no armazenamento local):')
+          : null;
+      } catch (ePrompt) { dig = null; }
+      if (dig === null) return '';
+      dig = String(dig || '');
+      if (!dig || dig.length < 6) {
+        toast('warning','Senha inválida','Informe sua senha (mínimo 6 caracteres).');
+        continue;
+      }
+      PROFISSIONAL_SENHA_SESSAO_VOLATIL = dig;
+      return PROFISSIONAL_SENHA_SESSAO_VOLATIL;
+    }
+    toast('error','Muitas tentativas','Senha não informada corretamente. Faça login novamente.');
+  } catch(eGlobal){}
+  return '';
+}
+async function obterSessaoIdProfissional() {
+  try { return await _garantirSessaoProfissionalAtiva(false); } catch(e){ return ''; }
 }
 async function obterWhatsAppLiberado(pedidoId, profissionalObj) {
   pedidoId = String(pedidoId || '').trim();
@@ -4652,22 +4726,24 @@ async function obterWhatsAppLiberado(pedidoId, profissionalObj) {
   if (!profId) return null;
   const cacheKey = profId + '|' + pedidoId;
   if (WHATSAPP_LIBERADOS_CACHE.has(cacheKey)) return WHATSAPP_LIBERADOS_CACHE.get(cacheKey);
-  // Verifica se existe prova de desbloqueio no storage local
   const temProvaLocal = Array.isArray(desbloqueios) && desbloqueios.some(function(d) {
     return d && String(d.pedidoId||'') === pedidoId && String(d.profissionalId||'') === profId;
   });
   if (!temProvaLocal) return null;
-  // Lazy fetch por /whatsapp-seguro (a prova é os marcadores no Firestore do pedido,
-  // escritos pelo backend quando passou por desbloquear-atômico)
   try {
     if (typeof AJEITA_PIX_BACKEND_URL === 'undefined' || !AJEITA_PIX_BACKEND_URL) window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com';
-    const senha = await obterSenhaProfissionalVolatil();
-    if (!senha) return null;
+    const sessaoTok = await obterSessaoIdProfissional();
+    const senhaFallback = sessaoTok ? '' : await obterSenhaProfissionalVolatil();
     const resp = await fetch(AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/whatsapp-seguro', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
       cache: 'no-store',
-      body: JSON.stringify({ pedido_id: pedidoId, profissional_id: profId, profissional_senha: senha })
+      body: JSON.stringify({
+        pedido_id: pedidoId,
+        profissional_id: profId,
+        profissional_sessao: sessaoTok || '',
+        profissional_senha: senhaFallback || ''
+      })
     });
     const j = await resp.json().catch(()=>({ok:false}));
     if (j && j.ok === true && j.whatsapp) {
@@ -5374,6 +5450,12 @@ function carregarDadosStorageBootstrap() {
   });
 
   salvarTodosGlobaisNoStorage();
+
+  if (profissionalLogado && profissionalLogado.id) {
+    setTimeout(function(){
+      try { _garantirSessaoProfissionalAtiva(false).catch(function(){}); } catch(eG){}
+    }, 1800);
+  }
 }
 
 // ======================================================
@@ -5484,6 +5566,7 @@ function handleGoogleCredentialResponse(resp) {
       if (dadosGoogle.foto && !profissionais[idxPro].foto) profissionais[idxPro].foto = dadosGoogle.foto;
       if (!profissionais[idxPro].nome || profissionais[idxPro].nome.includes('Profissional')) profissionais[idxPro].nome = dadosGoogle.nome;
       profissionalLogado = profissionais[idxPro];
+      _garantirSessaoProfissionalAtiva(true).catch(function(){});
       salvarTodosGlobaisNoStorage();
       // (TASK 8) Inicializa listener notificações em tempo real pós login
       try { setTimeout(function(){ try { inicializarNotificacoesProfissional(true); } catch(eNotif){} }, 400); } catch(eDly){}
@@ -5844,6 +5927,7 @@ function htmlBotaoContinuarComGoogle(tipoIntent='cliente', labelExtra='') {
 function logoutGoogleTotal() {
   // Profissional local (se logado)
   profissionalLogado = null;
+  PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
   // Cliente Google (se logado)
   clienteGoogleLogado = null;
   profissionalGoogleLogadoDados = null;
@@ -6300,6 +6384,8 @@ function submitLoginGeral(e) {
     return;
   }
   profissionalLogado = Object.assign({}, pLogar);
+  PROFISSIONAL_SENHA_SESSAO_VOLATIL = senha;
+  _garantirSessaoProfissionalAtiva(true).catch(function(){});
   salvarTodosGlobaisNoStorage();
   try { setTimeout(function(){ try { inicializarNotificacoesProfissional(true); } catch(eNotif){} }, 400); } catch(eDly){}
   atualizarHeaderPorSessao();
@@ -8431,6 +8517,7 @@ function fazerLogoutProfissional() {
     try { atualizarContadorNotificacoesProfissional(); } catch(eCnt){}
   } catch(eNotifClear){}
   profissionalLogado = null;
+  PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
   salvarTodosGlobaisNoStorage();
   atualizarHeaderPorSessao();
   toast('success','Desconectado','Você saiu da sua conta de profissional.');
@@ -9070,14 +9157,16 @@ async function executarDesbloqueio() {
   if (btnExec) { btnExec.disabled = true; btnExec.classList.add('opacity-60','cursor-not-allowed'); btnExec.textContent = 'Processando...'; }
 
   try {
-    const profissional_senha = await obterSenhaProfissionalVolatil();
+    const sessaoTok = await obterSessaoIdProfissional();
+    const senhaFallback = sessaoTok ? '' : await obterSenhaProfissionalVolatil();
     if (!AJEITA_PIX_BACKEND_URL) window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com';
     const body = {
       pedido_id: pedId,
       profissional_id: profissionalLogado.id,
-      profissional_senha: profissional_senha || ''
+      profissional_sessao: sessaoTok || '',
+      profissional_senha: senhaFallback || ''
     };
-    const r = await fetch(AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/desbloquear-atômico', {
+    const r = await fetch(AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/desbloquear-atomico', {
       method:'POST',
       headers:{ 'Content-Type':'application/json','Accept':'application/json' },
       body: JSON.stringify(body)
@@ -9094,9 +9183,11 @@ async function executarDesbloqueio() {
         setTimeout(()=>abrirLojaMoedas(), 500);
         return;
       }
-      if (err === 'SENHA_INVALIDA' || err === 'PROFISSIONAL_NAO_AUTENTICADO') {
+      if (err === 'SESSAO_INVALIDA' || err === 'PROFISSIONAL_NAO_AUTENTICADO' || err === 'SENHA_INVALIDA') {
         PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
-        toast('error','Senha inválida','Confira sua senha de profissional e tente novamente.');
+        try { profissionalLogado._sessao_registrada_backend = false; } catch(eS){}
+        toast('error','Sessão inválida','Faça login novamente como profissional e tente.');
+        setTimeout(()=>{ try { logoutGoogleTotal(); } catch(eLg){ navigateTo('view-login'); } }, 900);
         return;
       }
       if (err === 'DESBLOQUEIO_EM_ANDAMENTO') {
@@ -10359,7 +10450,8 @@ function submitCadastroProfissional(e) {
 
   // Login automático
   profissionalLogado = { ...novo };
-  // (TASK 8) Inicializa listener notificações em tempo real pós novo cadastro
+  if (senha && senha.length >= 6) PROFISSIONAL_SENHA_SESSAO_VOLATIL = senha;
+  _garantirSessaoProfissionalAtiva(true).catch(function(){});
   try { setTimeout(function(){ try { inicializarNotificacoesProfissional(true); } catch(eNotif){} }, 800); } catch(eDly){}
   // Limpa dados pendentes
   profissionalGoogleFotoPending = null;

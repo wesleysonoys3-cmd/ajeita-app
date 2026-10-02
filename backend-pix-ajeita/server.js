@@ -2405,12 +2405,62 @@ app.post('/api/cliente/excluir-conta', async (req, res) => {
   }
 });
 
+/* 32.5) POST /api/profissional/sessao-registrar
+   Chamado pelo FRONTEND logo após login / cadastro profissional.
+   Objetivo: substituir validação de "senha plana via prompt()" do cliente
+   por um TOKEN DE SESSÃO gerado aleatoriamente no navegador e sincronizado
+   no Firestore. Segurança: token NÃO é senha do usuário; expira
+   naturalmente quando usuário faz logout.
+   Body: { profissional_id (obrigatório), sessao_token (obrigatório, >= 20 chars),
+           email_proof (opcional, email para cruzamento adicional), google_id_proof (opcional) }
+   Retorna ok=true se token foi salvo no doc do profissional Firestore. */
+app.post('/api/profissional/sessao-registrar', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const profissionalId = String(b.profissional_id || '').trim();
+    const sessaoToken = String(b.sessao_token || '').trim();
+    const emailProof = String(b.email_proof || '').toLowerCase().trim();
+    const googleIdProof = String(b.google_id_proof || '').trim();
+    if (!profissionalId || !sessaoToken) return res.status(400).json({ ok:false, msg:'profissional_id e sessao_token sao obrigatórios.' });
+    if (sessaoToken.length < 20) return res.status(400).json({ ok:false, msg:'sessao_token muito curto (min 20 chars).' });
+    if (!dbFirestore) return res.status(200).json({ ok:false, msg:'Firestore indisponível.' });
+
+    const r = await _buscarProfissionalFirestorePorIdOuDoc(profissionalId);
+    if (!r.docId || !r.data) return res.status(404).json({ ok:false, msg:'Profissional não encontrado no Firestore.' });
+
+    if (emailProof) {
+      const docEmail = String((r.data && (r.data.emailLogin || r.data.email || r.data.emailGoogle)) || '').toLowerCase().trim();
+      if (docEmail && docEmail !== emailProof) return res.status(403).json({ ok:false, msg:'E-mail de prova não corresponde ao profissional.' });
+    }
+    if (googleIdProof) {
+      const docGoogleId = String(r.data && r.data.googleId || '').trim();
+      if (docGoogleId && docGoogleId !== googleIdProof) return res.status(403).json({ ok:false, msg:'GoogleId de prova não corresponde.' });
+    }
+
+    const patch = {
+      sessao_token_ultima: sessaoToken,
+      sessao_token_ultima_em: _fsTs ? _fsTs() : new Date().toISOString()
+    };
+    try {
+      await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(r.docId).set(patch, { merge:true });
+    } catch(eW){
+      console.error('[SESSAO_REGISTRAR] Firestore write falhou docId='+r.docId, eW && eW.message);
+      return res.status(500).json({ ok:false, msg:'Erro interno salvar sessao no Firestore.' });
+    }
+    return res.status(200).json({ ok:true, doc_id: r.docId, msg:'Sessão registrada com sucesso.', sessao_registrada_em: new Date().toISOString() });
+  } catch(e){
+    console.error('/api/profissional/sessao-registrar erro:', e && e.message);
+    return res.status(500).json({ ok:false, msg:'Erro interno registrar sessao profissional.' });
+  }
+});
+
 /* ============================================================
    34) POST /api/profissional/pedido/whatsapp-seguro → Retorna telefone/WhatsApp do cliente SOMENTE se desbloqueio válido
    - CAMADA 1: Admin pode (admin_senha)
    - CAMADA 2: Profissional valida:
        a) profissional_id existe na coleção profissionais
-       b) profissional_senha corresponde (ou profissional autenticou via e-mail/senha)
+       b) profissional_sessao (TOKEN NOVO) corresponde ao sessao_token_ultima no Firestore
+          OU profissional_senha corresponde (fallback compatibilidade)
        c) pedido_id existe na coleção de pedidos
        d) CAMADA DE SEGURANÇA FORTE: Se não tem prova explícita de desbloqueio sincronizada
           no backend NÃO retorna o WhatsApp nunca. Para obter o número, é necessário
@@ -2466,10 +2516,16 @@ app.post('/api/profissional/pedido/whatsapp-seguro', async (req, res) => {
           } catch(eF){}
         }
         if (pData) {
-          const senhaRecebida = String(b.profissional_senha || '').trim();
-          const senhaHashLocal = String(pData.senhaHash || pData.senha || '');
-          if (senhaRecebida && senhaHashLocal && (senhaHashLocal === senhaRecebida || senhaHashLocal === String(require('crypto').createHash('sha256').update(senhaRecebida).digest('hex')))) {
-            autorizado = false;
+          const sessaoRecebida = String(b.profissional_sessao || '').trim();
+          const tokenDoc = String(pData.sessao_token_ultima || '').trim();
+          if (sessaoRecebida && tokenDoc && sessaoRecebida.length >= 20 && sessaoRecebida === tokenDoc) {
+            autorizado = true;
+          } else {
+            const senhaRecebida = String(b.profissional_senha || '').trim();
+            const senhaHashLocal = String(pData.senhaHash || pData.senha || '');
+            if (senhaRecebida && senhaHashLocal && (senhaHashLocal === senhaRecebida || senhaHashLocal === String(require('crypto').createHash('sha256').update(senhaRecebida).digest('hex')))) {
+              autorizado = true;
+            }
           }
         }
       } catch(eProf){}
@@ -2539,7 +2595,7 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
   return { docId:null, data:null };
 }
 
-app.post('/api/profissional/pedido/desbloquear-atômico', async (req, res) => {
+async function _handlerDesbloquearAtomicoPedidos(req, res) {
   const PASSO_ERRO = function(codHttp, codigoErro, msgExtra) {
     return res.status(codHttp).json({
       ok:false, contactLocked:true, whatsapp:null,
@@ -2567,13 +2623,20 @@ app.post('/api/profissional/pedido/desbloquear-atômico', async (req, res) => {
       const r = await _buscarProfissionalFirestorePorIdOuDoc(profissionalId);
       profDocId = r.docId; profData = r.data;
       if (!profDocId || !profData) return PASSO_ERRO(401, 'PROFISSIONAL_NAO_AUTENTICADO', 'Profissional não encontrado.');
-      const senhaRecebida = String(b.profissional_senha || '').trim();
-      const senhaHashLocal = String(profData.senhaHash || profData.senha || '');
-      if (senhaRecebida && senhaHashLocal) {
-        const sha256Recebida = String(require('crypto').createHash('sha256').update(senhaRecebida).digest('hex'));
-        if (senhaHashLocal === senhaRecebida || senhaHashLocal === sha256Recebida) autenticado = true;
+
+      const sessaoRecebida = String(b.profissional_sessao || '').trim();
+      const tokenDoc = String(profData.sessao_token_ultima || '').trim();
+      if (sessaoRecebida && tokenDoc && sessaoRecebida.length >= 20 && sessaoRecebida === tokenDoc) {
+        autenticado = true;
+      } else {
+        const senhaRecebida = String(b.profissional_senha || '').trim();
+        const senhaHashLocal = String(profData.senhaHash || profData.senha || '');
+        if (senhaRecebida && senhaHashLocal) {
+          const sha256Recebida = String(require('crypto').createHash('sha256').update(senhaRecebida).digest('hex'));
+          if (senhaHashLocal === senhaRecebida || senhaHashLocal === sha256Recebida) autenticado = true;
+        }
       }
-      if (!autenticado) return PASSO_ERRO(401, 'SENHA_INVALIDA', 'Senha do profissional inválida.');
+      if (!autenticado) return PASSO_ERRO(401, 'SESSAO_INVALIDA', 'Sessão do profissional inválida ou expirada. Faça login novamente.');
     }
 
     // PASSO 2 e 3: Buscar pedido e extrair WhatsApp REAL (não retorna agora)
@@ -2725,13 +2788,15 @@ app.post('/api/profissional/pedido/desbloquear-atômico', async (req, res) => {
     console.error('/api/profissional/pedido/desbloquear-atômico erro topo:', e && e.message);
     return res.status(500).json({ ok:false, contactLocked:true, whatsapp:null, error:'ERRO_DESCONHECIDO', msg:'Erro geral. Contato permanece protegido.' });
   }
-});
+}
+app.post('/api/profissional/pedido/desbloquear-atômico', _handlerDesbloquearAtomicoPedidos);
+app.post('/api/profissional/pedido/desbloquear-atomico',  _handlerDesbloquearAtomicoPedidos);
 
 // ===================== (NOVO V11: HANDLERS FINAIS — 404 + ERROR GLOBAL — VEM SEMPRE DEPOIS DE TODAS AS ROTAS E ANTES DE app.listen) =====================
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
   if (res.headersSent) return;
-  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/comunicado/public, PATCH /api/comunicado/admin, GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar, POST /api/notificacoes/enviar-email-lote, POST /api/cliente/excluir-conta, POST /api/profissional/pedido/whatsapp-seguro, POST /api/profissional/pedido/desbloquear-atômico.' });
+  res.status(404).json({ ok: false, msg: 'Endpoint nao encontrado (AjeitaAí Pix Backend). Rotas validas: GET / (healthcheck com versao), GET /api/comunicado/public, PATCH /api/comunicado/admin, GET /api/patrocinadores/ativos, POST /api/pix/criar-recarga-moedas, POST /api/patrocinadores/criar-pagamento, POST /api/pix/aprovar-manual-admin, POST /webhook-pix, GET /api/admin/email/status, POST /api/admin/email/teste, GET /api/admin/email/teste-manual, POST /api/admin/2fa/docs/gerar, POST /api/admin/2fa/docs/validar, POST /api/admin/2fa/docs/checar, POST /api/notificacoes/enviar-email-lote, POST /api/cliente/excluir-conta, POST /api/profissional/sessao-registrar, POST /api/profissional/pedido/whatsapp-seguro, POST /api/profissional/pedido/desbloquear-atomico (ou alias desbloquear-atômico com acento).' });
 });
 // Error Global handler: qualquer next(err) ou exception nao capturada vira JSON, NUNCA MAIS HTML <title>Error</title>
 app.use((err, req, res, next) => {
