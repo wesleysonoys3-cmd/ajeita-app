@@ -9306,14 +9306,23 @@ async function executarDesbloqueio() {
       if (err === 'SESSAO_INVALIDA' || err === 'PROFISSIONAL_NAO_AUTENTICADO' || err === 'SENHA_INVALIDA') {
         PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
         try { profissionalLogado._sessao_registrada_backend = false; } catch(eS){}
-        // IMPORTANTE: NÃO fazemos logout automático cego aqui.
-        // Apenas invalidamos a senha cacheada, marcamos a sessao como
-        // não-registrada para tentar re-sincronizar e chamamos o fluxo
-        // de prompt de senha + retry autorizacao do zero na PROXIMA vez
-        // que usuario clicar em "Sim, desbloquear".
-        // O logout TOTAL só ocorre se a pessoa clicar explicitamente em Sair.
-        toast('error','Autenticação pendente','Sessão ou senha do profissional não foi confirmada. Clique em "Sim, desbloquear" novamente para digitar sua senha (você NÃO foi deslogado).', 7000);
-        try { _garantirSessaoProfissionalAtiva(true); } catch(eReGarantir){}
+        // (CORREÇÃO MÍNIMA): login profissional é Google/Firebase.
+        // Esta mensagem NÃO menciona senha (pois o usuário Google não tem).
+        // Ao receber 401 tentamos re-sincronizar o profissional no Firestore
+        // (caso o doc não exista lá) e re-gerar/re-salvar o token de sessão
+        // automaticamente em background. Usuário só precisa clicar de novo.
+        try {
+          if (typeof fbSyncAddProfissional === 'function' && profissionalLogado) {
+            try { fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) })); } catch(eSync1){}
+          }
+        } catch(eSyncWrap){}
+        try {
+          _garantirSessaoProfissionalAtiva(true).then(function(){
+            console.info('[FLUXO-DESBLOQUEIO] sessao token re-salva (resp 401).');
+          }).catch(function(){});
+        } catch(eReGarantir){}
+        toast('error','Não foi possível confirmar sua sessão profissional.',
+          'A sessão do backend ainda não foi sincronizada. Aguarde 2 segundos e clique em "Sim, desbloquear contato" novamente. Você continua logado normalmente.', 8000);
         return;
       }
       if (err === 'DESBLOQUEIO_EM_ANDAMENTO') {

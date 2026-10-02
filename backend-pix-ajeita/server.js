@@ -2590,8 +2590,8 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
   const idLimpo = String(profissionalId || '').trim();
   if (!idLimpo) return { docId:null, data:null };
 
-  // MESMA LÓGICA DA ROTA /whatsapp-seguro (funcionando desde a V12):
-  // Tenta o doc CANÔNICO "local_${id}" primeiro (padrão do app desde sempre).
+  // (1) MESMA LÓGICA DA ROTA /whatsapp-seguro (funcionando desde a V12):
+  // doc CANÔNICO "local_${id}" (padrão do app desde sempre)
   const docIdCanonico = idLimpo.startsWith('local_') ? idLimpo : ('local_' + idLimpo);
 
   const refCanon = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(docIdCanonico);
@@ -2600,7 +2600,9 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
     return { docId: docIdCanonico, data: (sCanon.data() || {}) };
   }
 
-  // Segunda tentativa: doc puro SEM prefixo "local_" (caso raro, docs criados manualmente no console)
+  // (2) doc puro SEM prefixo "local_" (caso raro: docs criados manualmente no console
+  //     OU docs criados pelo FRONTEND Firebase SDK com uid Google DIRETO como nome
+  //     — linha 3397 index.html: `if (novoProfissional.uid) uidDocFs = uid`)
   if (idLimpo !== docIdCanonico) {
     const refPuro = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(idLimpo);
     const sPuro = await _fsGetComTimeout(refPuro, 2000);
@@ -2609,15 +2611,20 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
     }
   }
 
-  // Último fallback: varre collection até 400 docs procurando profissional onde
-  // o CAMPO dd.id === idLimpo (padrão whatsapp-seguro linhas 2508-2515)
+  // (3) Último fallback: varre collection (até 400 docs) procurando profissional onde
+  //     (a) CAMPO .id === idLimpo (padrão whatsapp-seguro)
+  //     OU (b) CAMPO .googleId === idLimpo (login Google salvo como .googleId no doc)
+  //     OU (c) NOME DO DOCUMENTO (d.id) === idLimpo (quando doc foi salvo como uid Google)
   try {
     const refAll = dbFirestore.collection(_FS_COL_PROFISSIONAIS).limit(400);
     const allP = await _fsGetComTimeout(refAll, 2000) || {empty:true, docs:[]};
     if (allP && !allP.empty && Array.isArray(allP.docs)) {
       for (const d of allP.docs) {
         const dd = d.data() || {};
-        if (String(dd.id || '') === idLimpo) {
+        const campoId   = String(dd.id || '').trim();
+        const campoGId  = String(dd.googleId || '').trim();
+        const nomeDoc   = String(d.id || '').trim();
+        if (campoId === idLimpo || campoGId === idLimpo || nomeDoc === idLimpo) {
           return { docId: d.id, data: dd };
         }
       }
