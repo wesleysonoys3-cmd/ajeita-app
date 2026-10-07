@@ -9279,8 +9279,9 @@ async function executarDesbloqueio() {
     async function _chamarBackendDesbloquear(bodyArg) {
       console.info('[FLUXO-DESBLOQUEIO] Enviando fetch POST para:', urlFinal, 'body.pedido_id=', bodyArg.pedido_id, 'body.profissional_id=', bodyArg.profissional_id, 'body.tem_sessao=', !!bodyArg.profissional_sessao, 'body.tem_senha=', !!bodyArg.profissional_senha);
       const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
-      const idTO = ctrl ? setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, 30000) : null;
+      const idTO = ctrl ? setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, 40000) : null;
       let rRes = null;
+      let foiAbortExplicitamente = false;
       try {
         const opts = {
           method:'POST',
@@ -9294,15 +9295,16 @@ async function executarDesbloqueio() {
       } catch(eFetch) {
         if (idTO) try { clearTimeout(idTO); } catch(eCl){}
         const foiAbort = eFetch && (String(eFetch.name || '').toLowerCase() === 'aborterror' || String(eFetch.message || '').indexOf('abort') >= 0);
-        _resetBtnExecProcessando();
-        if (foiAbort) toast('error','Backend demorou muito','O servidor não respondeu em 30 segundos. Tente novamente em 30 segundos (ou recarregue a página).',6500);
-        else toast('error','Sem conexão com backend','Verifique sua internet e tente novamente. Se persistir, recarregue a página.',5500);
-        return { fatal:true, r:rRes, resp:null };
+        foiAbortExplicitamente = !!foiAbort;
+        console.warn('[FLUXO-DESBLOQUEIO] fetch caiu no catch() network. foiAbort=', foiAbort, 'err=', eFetch && eFetch.message);
+        // NÃO mostra toast aqui. Deixa o caller (retry automático) decidir.
+        // Retorna um objeto "falso-r" para poder ser tratado no loop de retry do caller.
+        return { fatal:false, r:{ status: (foiAbort ? 408 : 0), statusText: String(eFetch && eFetch.message || '') }, resp:null, _networkError:true, _abortError: foiAbort };
       }
       let respRes = null;
       try { respRes = await rRes.json(); } catch(eJ){ console.error('[FLUXO-DESBLOQUEIO] parse JSON da resposta falhou:', eJ && eJ.message); respRes = { ok:false, contactLocked:true, whatsapp:null, error:'RESP_PARSE', msg:'Resposta inválida do servidor.' }; }
       console.info('[FLUXO-DESBLOQUEIO] JSON da resposta:', respRes && Object.assign({}, respRes, respRes && respRes.whatsapp ? { whatsapp: '[OCULTO_PII tamanho=' + String(respRes.whatsapp).length + ']' } : {}));
-      return { fatal:false, r:rRes, resp:respRes };
+      return { fatal:false, r:rRes, resp:respRes, _networkError:false, _abortError:foiAbortExplicitamente };
     }
 
     let body = {
@@ -9311,10 +9313,44 @@ async function executarDesbloqueio() {
       profissional_sessao: sessaoTok || '',
       profissional_senha: ''
     };
-    let chamada = await _chamarBackendDesbloquear(body);
-    if (chamada.fatal) return;
+
+    function _eErroTransienteParaRetry(hr) {
+      if (!hr) return false;
+      if (hr._networkError === true) return true;
+      if (hr._abortError === true) return false;
+      const s = hr.r && hr.r.status ? Number(hr.r.status) : 0;
+      if (!s) return true;
+      if (s === 408 || s === 425 || s === 429) return true;
+      if (s >= 500 && s <= 599) return true;
+      return false;
+    }
+    function _eErro404ForaDoAr(hr) {
+      if (!hr || !hr.r) return false;
+      const s = Number(hr.r.status || 0);
+      return (s === 404 || s === 408 || s === 409 || s === 499 || s === 429 || (s >= 500 && s <= 599));
+    }
+
+    let chamada = null;
+    for (let _t = 0; _t < 2; _t++) {
+      chamada = await _chamarBackendDesbloquear(body);
+      if (chamada.fatal) break;
+      const okResp = chamada.r && chamada.r.status >= 200 && chamada.r.status < 300 && chamada.resp && chamada.resp.ok && chamada.resp.whatsapp;
+      if (okResp) break;
+      if (_t === 0 && _eErroTransienteParaRetry(chamada)) {
+        console.info('[FLUXO-DESBLOQUEIO] Tentativa 1 falhou com erro transiente. Esperando 2,5s e reenviando automaticamente (retry tentativa 2/2, sem clique)...');
+        try { await new Promise(rv => setTimeout(rv, 2500)); } catch(eSleep){}
+        continue;
+      }
+      break;
+    }
+    if (chamada && chamada.fatal) {
+      _resetBtnExecProcessando();
+      toast('error','Sem conexão com backend','Verifique sua internet e tente novamente. Se persistir, recarregue a página.',5500);
+      return;
+    }
     let r = chamada.r;
     let resp = chamada.resp;
+    const statusNum = r ? Number(r.status || 0) : 0;
 
     // ================= RETRY AUTOMÁTICO (1 única vez) para 401 de sessão =================
     // Se primeira chamada falhou por SESSAO_INVALIDA / PROFISSIONAL_NAO_AUTENTICADO / SENHA_INVALIDA:
@@ -9325,13 +9361,13 @@ async function executarDesbloqueio() {
     // Se retry der certo (200 ok wa), segue fluxo sucesso normal abaixo.
     // Se retry ainda falhar, aí sim mostra toast e return. Nenhum setTimeout/2s.
     let _tentativaRetryJaFoiFeita = false;
-    if (r && (r.status === 401 || r.status === 403) && resp) {
+    if (r && (statusNum === 401 || statusNum === 403) && resp) {
       const errPrimeira = String(resp && resp.error || '').trim();
       if ((errPrimeira === 'SESSAO_INVALIDA' || errPrimeira === 'PROFISSIONAL_NAO_AUTENTICADO' || errPrimeira === 'SENHA_INVALIDA') && !_tentativaRetryJaFoiFeita) {
         _tentativaRetryJaFoiFeita = true;
         PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
         try { profissionalLogado._sessao_registrada_backend = false; } catch(eS){}
-        console.info('[FLUXO-DESBLOQUEIO] 401 na 1a chamada. Iniciando autocura e retry AUTOMATICO (1 tentativa, sem clique do usuario)...');
+        console.info('[FLUXO-DESBLOQUEIO] 401 na chamada. Iniciando autocura e retry AUTOMATICO (1 tentativa, sem clique do usuario)...');
         try {
           if (typeof fbSyncAddProfissional === 'function' && profissionalLogado) {
             try { await fbSyncAddProfissional(Object.assign({}, profissionalLogado, { uid: ('local_' + String(profissionalLogado.id || Date.now())) })); } catch(eSync1){}
@@ -9348,20 +9384,31 @@ async function executarDesbloqueio() {
             profissional_sessao: sessaoTok,
             profissional_senha: ''
           };
-          const chamada2 = await _chamarBackendDesbloquear(bodyRetry);
-          if (!chamada2.fatal) {
-            r = chamada2.r; resp = chamada2.resp;
+          let ch2 = null;
+          for (let _t = 0; _t < 2; _t++) {
+            ch2 = await _chamarBackendDesbloquear(bodyRetry);
+            if (ch2.fatal) break;
+            const okR = ch2.r && ch2.r.status >= 200 && ch2.r.status < 300 && ch2.resp && ch2.resp.ok && ch2.resp.whatsapp;
+            if (okR) break;
+            if (_t === 0 && _eErroTransienteParaRetry(ch2)) { try { await new Promise(rv => setTimeout(rv, 2300)); } catch(eS){} continue; }
+            break;
+          }
+          if (!ch2.fatal) {
+            r = ch2.r; resp = ch2.resp;
           }
         }
       }
     }
 
-    if (!r || r.status < 200 || r.status >= 300 || !resp || !resp.ok || !resp.whatsapp) {
+    if (!r || statusNum < 200 || statusNum >= 300 || !resp || !resp.ok || !resp.whatsapp) {
       const err = resp && resp.error ? String(resp.error) : '';
       const msg = resp && resp.msg ? String(resp.msg) : 'Tente novamente.';
       _resetBtnExecProcessando();
-      if (r && (r.status === 404 || r.status === 502 || r.status === 503)) {
-        toast('error','Backend indisponível (status '+r.status+')','O servidor do Pix/Ajeitaí está fora do ar temporariamente. Tente novamente em 30 segundos.',6000);
+      if (_eErro404ForaDoAr(chamada) || (chamada && chamada._networkError === true)) {
+        const statusReal = (r && r.status) ? r.status : (chamada && chamada._networkError ? 'REDE' : '?');
+        toast('error','Servidor temporariamente indisponível (HTTP '+statusReal+')',
+          'O servidor do Pix/Ajeitaí está respondendo com falha transitória (status '+statusReal+'). Isso geralmente passa em 30 segundos enquanto a instância acorda. Tente novamente em 30 segundos. Se continuar, feche e abra a página.',
+          9000);
         return;
       }
       if (err === 'SALDO_INSUFICIENTE') {
@@ -9373,9 +9420,6 @@ async function executarDesbloqueio() {
       if (err === 'SESSAO_INVALIDA' || err === 'PROFISSIONAL_NAO_AUTENTICADO' || err === 'SENHA_INVALIDA') {
         PROFISSIONAL_SENHA_SESSAO_VOLATIL = '';
         try { profissionalLogado._sessao_registrada_backend = false; } catch(eS){}
-        // (CORREÇÃO MÍNIMA): retry automático já rodou acima e falhou.
-        // NÃO desloga, NÃO pede senha, NÃO pede clique em 2s.
-        // Apenas informa e deixa usuário tentar manualmente se quiser.
         toast('error','Não foi possível confirmar sua sessão.',
           'A autenticação com o backend falhou mesmo após tentativa automática de sincronia. Verifique sua conexão com a internet e tente novamente. (Você continua logado normalmente.)', 9000);
         return;
@@ -9384,7 +9428,8 @@ async function executarDesbloqueio() {
         toast('warning','Aguarde','Já existe uma solicitação em processamento. Tente novamente em alguns segundos.');
         return;
       }
-      toast('error','Não foi possível desbloquear', msg || 'Verifique sua conexão e tente novamente.');
+      const statusStr = (r && r.status) ? (' (HTTP ' + r.status + ')') : '';
+      toast('error','Não foi possível desbloquear'+statusStr, msg || 'Verifique sua conexão e tente novamente.');
       return;
     }
 

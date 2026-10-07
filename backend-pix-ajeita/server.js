@@ -213,7 +213,7 @@ app.get('/', (req, res) => {
     ok: true,
     app: 'ajeita-pix-backend',
     versao: '2.3-smtp-sendgrid-render-timeout-fallback',
-    build_tag: '20261007_desbloquear_timeout_2s_para_20s_coldstart_render',
+    build_tag: '20261007_retry_auto_erros_transientes_2x_timeout40s_log_render',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -2676,7 +2676,15 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
 }
 
 async function _handlerDesbloquearAtomicoPedidos(req, res) {
+  const _tsInicioMs = Date.now();
+  try { req.setTimeout(120000); } catch(eST){}
+  try { if (res && res.setTimeout) res.setTimeout(120000); } catch(eST2){}
+  console.log('[DESBLOQUEIO_ATOMICO_INICIO ts=' + _tsInicioMs + ' ip=' + String(req.ip || '').slice(0,45) + ' ua=' + String(req.headers && req.headers['user-agent'] ? String(req.headers['user-agent']).length + 'chars' : '?') + '] body.pedido_id=' + String((req.body && req.body.pedido_id) || '').slice(0,80) + ' body.profissional_id=' + String((req.body && req.body.profissional_id) || '').slice(0,80) + ' sessao_len=' + String(((req.body && req.body.profissional_sessao) || '')).length);
   const PASSO_ERRO = function(codHttp, codigoErro, msgExtra) {
+    try {
+      const _dur = Date.now() - _tsInicioMs;
+      console.log('[DESBLOQUEIO_ATOMICO_FIM_ERRO ts=' + _tsInicioMs + ' durMs=' + _dur + '] codHttp=' + codHttp + ' codigoErro=' + String(codigoErro || '?') + ' msg=' + String(msgExtra || '').slice(0,140));
+    } catch(eL){}
     return res.status(codHttp).json({
       ok:false, contactLocked:true, whatsapp:null,
       error: codigoErro,
@@ -2877,6 +2885,10 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
       }
 
       // PASSO 10: Retorna 200 com WhatsApp REAL liberado
+      try {
+        const _dur = Date.now() - _tsInicioMs;
+        console.log('[DESBLOQUEIO_ATOMICO_FIM_SUCESSO ts=' + _tsInicioMs + ' durMs=' + _dur + '] pedido_id=' + String(pedidoId || '').slice(0,80) + ' prof_id=' + String(profissionalId || '').slice(0,80) + ' custo=' + custoCobrado + ' saldo_rest=' + saldoRestante + ' unlock=' + String(unlockId || '').slice(0,24));
+      } catch(eL){}
       return res.status(200).json({
         ok:true, contactLocked:false, repetido:false,
         whatsapp: whatsappLimpo, whatsapp_formatado: null, nome_cliente: nomeClienteReal,
@@ -2887,12 +2899,20 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
       });
 
     } catch(eInterno) {
+      try {
+        const _dur = Date.now() - _tsInicioMs;
+        console.error('[DESBLOQUEIO_ATOMICO_FIM_ERRO_INTERNO ts=' + _tsInicioMs + ' durMs=' + _dur + '] err=' + String(eInterno && eInterno.message || '').slice(0,280));
+      } catch(eL){}
       console.error('/api/profissional/pedido/desbloquear-atômico ERRO INTERNO (passos 6-9):', eInterno && eInterno.message);
       return PASSO_ERRO(500, 'ERRO_INTERNO_DESBLOQUEIO', 'Erro interno ao processar desbloqueio. Nenhuma moeda foi debitada. WhatsApp permanece bloqueado.');
     } finally {
       setTimeout(()=>{ try { _DESBLOQUEIO_ATOMICO_INFLIGHT.delete(chaveInflight); } catch(e){} }, 2000);
     }
   } catch(e){
+    try {
+      const _dur = Date.now() - _tsInicioMs;
+      console.error('[DESBLOQUEIO_ATOMICO_FIM_ERRO_TOPO ts=' + _tsInicioMs + ' durMs=' + _dur + '] err=' + String(e && e.message || '').slice(0,280));
+    } catch(eL){}
     console.error('/api/profissional/pedido/desbloquear-atômico erro topo:', e && e.message);
     return res.status(500).json({ ok:false, contactLocked:true, whatsapp:null, error:'ERRO_DESCONHECIDO', msg:'Erro geral. Contato permanece protegido.' });
   }
