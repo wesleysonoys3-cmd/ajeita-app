@@ -28,7 +28,6 @@ if (svcAccount && svcAccount.project_id) {
   console.warn('[FIREBASE_ADMIN] AVISO: Service Account valido NAO encontrado. Modo LOCAL storage apenas.');
 }
 const dbFirestore = admin.firestore ? admin.firestore() : null;
-
 /* ============================
    MERCADO PAGO SDK CONFIG
    - TOKEN via ENV VAR: MERCADO_PAGO_ACCESS_TOKEN
@@ -214,7 +213,7 @@ app.get('/', (req, res) => {
     ok: true,
     app: 'ajeita-pix-backend',
     versao: '2.3-smtp-sendgrid-render-timeout-fallback',
-    build_tag: '20261007_fix_desbloquear_contato_utf8_404_regex_middleware_autocura_sessao',
+    build_tag: '20261007_fsTs_sessao_registrar_ternario_removido',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -2443,7 +2442,7 @@ app.post('/api/profissional/sessao-registrar', async (req, res) => {
         const docIdCanonico = profissionalId.startsWith('local_') ? profissionalId : ('local_' + profissionalId);
         const payloadMin = {
           id: profissionalId,
-          cadastroEm: _fsTs ? _fsTs() : new Date().toISOString(),
+          cadastroEm: _fsTs(),
           _criado_por: 'sessao_registrar_autocura',
           _criado_em_ts: Date.now()
         };
@@ -2477,7 +2476,7 @@ app.post('/api/profissional/sessao-registrar', async (req, res) => {
 
     const patch = {
       sessao_token_ultima: sessaoToken,
-      sessao_token_ultima_em: _fsTs ? _fsTs() : new Date().toISOString()
+      sessao_token_ultima_em: _fsTs()
     };
     try {
       await dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(docIdSalvar).set(patch, { merge:true });
