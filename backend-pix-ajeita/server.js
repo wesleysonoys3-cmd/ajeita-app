@@ -213,7 +213,7 @@ app.get('/', (req, res) => {
     ok: true,
     app: 'ajeita-pix-backend',
     versao: '2.3-smtp-sendgrid-render-timeout-fallback',
-    build_tag: '20261007_buscar_profissional_otimizada_3buscas_limit1_400_removido',
+    build_tag: '20261007_passo1_buscas_paralelo_allsSettled_where_sessao_token_ultima',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -2704,17 +2704,52 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
     let autenticado = false;
     let profDocId = null;
     let profData = null;
+    const sessaoRecebida = String(b.profissional_sessao || '').trim();
     if (isAdminBypass) {
       autenticado = true;
       const r = await _buscarProfissionalFirestorePorIdOuDoc(profissionalId);
       profDocId = r.docId; profData = r.data;
       if (!profDocId) return PASSO_ERRO(404, 'PROFISSIONAL_NAO_ENCONTRADO', 'Admin bypass: profissional não encontrado.');
     } else {
-      const r = await _buscarProfissionalFirestorePorIdOuDoc(profissionalId);
-      profDocId = r.docId; profData = r.data;
+      // PASSO 1A: 4 buscas indexadas em PARALELO (Promise.allSettled) para eliminar latência serial 4x7s≈28s.
+      //   Ordem: (1) docId local_, (2) docId puro (sem prefixo), (3) where(googleId), (4) where(emailGoogle) — idêntico a função _buscarProfissionalFirestorePorIdOuDoc,
+      //   + EXTRA (5): where(sessao_token_ultima, ==, sessaoRecebida).limit(1) — localiza o profissional PELO TOKEN DE SESSÃO RECÉM-GERADO
+      //     (útil quando profissional_id = 'pro_1790...' gerado pelo frontend e não coincide com nome do doc Firestore,
+      //      mas sessaoRegistrar já escreveu sessao_token_ultima = sessaoRecebida com sucesso 200 no Firestore).
+      if (dbFirestore) {
+        const colProf = dbFirestore.collection(_FS_COL_PROFISSIONAIS);
+        const docIdCanonico = String(profissionalId || '').startsWith('local_') ? String(profissionalId) : ('local_' + String(profissionalId));
+        const promessasBusca = [];
+        // (1) doc canônico
+        promessasBusca.push(
+          (async () => { try { const s = await _fsGetComTimeout(colProf.doc(docIdCanonico), 20000); if (s && s.exists) return { docId: docIdCanonico, data: s.data() || {} }; } catch(e){} return null; })()
+        );
+        // (2) doc puro sem prefixo local_
+        if (docIdCanonico !== String(profissionalId)) {
+          promessasBusca.push(
+            (async () => { try { const s = await _fsGetComTimeout(colProf.doc(String(profissionalId)), 20000); if (s && s.exists) return { docId: String(profissionalId), data: s.data() || {} }; } catch(e){} return null; })()
+          );
+        }
+        // (3) where googleId == profissionalId
+        promessasBusca.push(
+          (async () => { try { const s = await _fsGetComTimeout(colProf.where('googleId','==',String(profissionalId)).limit(1), 20000); if (s && !s.empty && Array.isArray(s.docs) && s.docs[0]) return { docId: s.docs[0].id, data: s.docs[0].data() || {} }; } catch(e){} return null; })()
+        );
+        // (4) where sessao_token_ultima == sessaoRecebida (IDENTIFICAÇÃO DIRETA PELO TOKEN GERADO NA sessao-registrar)
+        if (sessaoRecebida && sessaoRecebida.length >= 20) {
+          promessasBusca.push(
+            (async () => { try { const s = await _fsGetComTimeout(colProf.where('sessao_token_ultima','==',sessaoRecebida).limit(1), 20000); if (s && !s.empty && Array.isArray(s.docs) && s.docs[0]) return { docId: s.docs[0].id, data: s.docs[0].data() || {} }; } catch(e){} return null; })()
+          );
+        }
+        const resultados = await Promise.allSettled(promessasBusca);
+        for (const rr of resultados) {
+          if (rr && rr.status === 'fulfilled' && rr.value && rr.value.docId && rr.value.data) {
+            profDocId = rr.value.docId; profData = rr.value.data;
+            break;
+          }
+        }
+      }
       if (!profDocId || !profData) return PASSO_ERRO(401, 'PROFISSIONAL_NAO_AUTENTICADO', 'Profissional não encontrado.');
 
-      const sessaoRecebida = String(b.profissional_sessao || '').trim();
       const tokenDoc = String(profData.sessao_token_ultima || '').trim();
       if (sessaoRecebida && tokenDoc && sessaoRecebida.length >= 20 && sessaoRecebida === tokenDoc) {
         autenticado = true;
