@@ -2466,7 +2466,12 @@ app.post('/api/profissional/sessao-registrar', async (req, res) => {
     }
 
     if (emailProof && docDataExistente) {
-      const docEmail = String((docDataExistente.emailLogin || docDataExistente.email || docDataExistente.emailGoogle)) || '').toLowerCase().trim();
+      const docEmail = String(
+        docDataExistente.emailLogin ||
+        docDataExistente.email ||
+        docDataExistente.emailGoogle ||
+        ''
+      ).toLowerCase().trim();
       if (docEmail && docEmail !== emailProof) return res.status(403).json({ ok:false, msg:'E-mail de prova não corresponde ao profissional.' });
     }
     if (googleIdProof && docDataExistente) {
