@@ -2700,6 +2700,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
     if (!pedidoId || !profissionalId) return PASSO_ERRO(400, 'PARAMETROS_OBRIGATORIOS', 'pedido_id e profissional_id são obrigatórios.');
 
     // PASSO 1: Autenticar profissional OU admin
+    try { console.log('[DESBLOQUEIO_PASSO 1_AUTH INIC ts=' + _tsInicioMs + ']'); } catch(e){}
     let autenticado = false;
     let profDocId = null;
     let profData = null;
@@ -2729,6 +2730,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
     }
 
     // PASSO 2 e 3: Buscar pedido e extrair WhatsApp REAL (não retorna agora)
+    try { console.log('[DESBLOQUEIO_PASSO 2_PEDIDO_3_WA INIC ts=' + _tsInicioMs + ']'); } catch(e){}
     const prefixoCol = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '');
     const pedRef = dbFirestore ? dbFirestore.collection(prefixoCol + 'pedidos').doc(pedidoId) : null;
     let pedidoDocData = null;
@@ -2743,8 +2745,11 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
     nomeClienteReal = pedidoDocData.nomeCliente || pedidoDocData.clienteNome || '';
     const whatsappLimpo = String(whatsappReal || '').replace(/\D/g,'');
     if (!whatsappLimpo || whatsappLimpo.length < 10) return PASSO_ERRO(422, 'PEDIDO_SEM_WHATSAPP', 'Pedido não possui WhatsApp do cliente cadastrado.');
+    try { console.log('[DESBLOQUEIO_PASSO_FIM_PARCIAL ts=' + _tsInicioMs + ' parcialMs=' + (Date.now() - _tsInicioMs) + ']'); } catch(e){}
 
-    // PASSO 4: Idempotência DURADOURA — verificação de desbloqueio JÁ EXISTENTE no banco
+    
+    try { console.log('[DESBLOQUEIO_PASSO_FIM_PARCIAL ts=' + _tsInicioMs + ' parcialMs=' + (Date.now() - _tsInicioMs) + ']'); } catch(e){}// PASSO 4: Idempotência DURADOURA — verificação de desbloqueio JÁ EXISTENTE no banco
+    try { console.log('[DESBLOQUEIO_PASSO 4_IDEMPOTENCIA_DURADOURA INIC ts=' + _tsInicioMs + ']'); } catch(e){}
     const marcadoresDesb = pedidoDocData.profissionaisDesbloquearamIds || pedidoDocData.profissionaisQueDesbloquearam || [];
     const jaTemMarcadorPedido = Array.isArray(marcadoresDesb) && marcadoresDesb.includes(profissionalId);
     let jaTemRegistroContabil = false;
@@ -2780,8 +2785,11 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
         msg: 'Contato já estava desbloqueado. Nenhum custo cobrado.'
       });
     }
+    try { console.log('[DESBLOQUEIO_PASSO_FIM_PARCIAL ts=' + _tsInicioMs + ' parcialMs=' + (Date.now() - _tsInicioMs) + ']'); } catch(e){}
 
-    // PASSO 5: Idempotência INFLIGHT — impede duplo clique concorrente < 120s
+    
+    try { console.log('[DESBLOQUEIO_PASSO_FIM_PARCIAL ts=' + _tsInicioMs + ' parcialMs=' + (Date.now() - _tsInicioMs) + ']'); } catch(e){}// PASSO 5: Idempotência INFLIGHT — impede duplo clique concorrente < 120s
+    try { console.log('[DESBLOQUEIO_PASSO 5_INFLIGHT INIC ts=' + _tsInicioMs + ']'); } catch(e){}
     const chaveInflight = pedidoId + '|' + profissionalId;
     if (_DESBLOQUEIO_ATOMICO_INFLIGHT.has(chaveInflight)) {
       return PASSO_ERRO(409, 'DESBLOQUEIO_EM_ANDAMENTO', 'Uma solicitação de desbloqueio já está em processamento. Aguarde.');
@@ -2790,7 +2798,10 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
     setTimeout(()=>{ try { _DESBLOQUEIO_ATOMICO_INFLIGHT.delete(chaveInflight); } catch(e){} }, 120 * 1000);
 
     try {
-      // PASSO 6: Ler SALDO e CUSTO DO FIRESTORE (NÃO aceita body params)
+    try { console.log('[DESBLOQUEIO_PASSO_FIM_PARCIAL ts=' + _tsInicioMs + ' parcialMs=' + (Date.now() - _tsInicioMs) + ']'); } catch(e){}
+      
+    try { console.log('[DESBLOQUEIO_PASSO_FIM_PARCIAL ts=' + _tsInicioMs + ' parcialMs=' + (Date.now() - _tsInicioMs) + ']'); } catch(e){}// PASSO 6: Ler SALDO e CUSTO DO FIRESTORE (NÃO aceita body params)
+    try { console.log('[DESBLOQUEIO_PASSO 6_SALDO_E_CUSTO INIC ts=' + _tsInicioMs + ']'); } catch(e){}
       const custoMoedas = await _lerCustoDesbloqueioFirestore();
       let profAtual = profData || {};
       if (profDocId && dbFirestore) {
@@ -2799,8 +2810,10 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
         if (profAtualSnap && profAtualSnap.exists) profAtual = (profAtualSnap.data() || {});
       }
       const saldoMoedasAtual = Number.isFinite(+profAtual.saldoMoedas) ? Math.floor(+profAtual.saldoMoedas) : 0;
+    try { console.log('[DESBLOQUEIO_PASSO_FIM_PARCIAL ts=' + _tsInicioMs + ' parcialMs=' + (Date.now() - _tsInicioMs) + ']'); } catch(e){}
 
       // PASSO 7: Admin bypass NÃO debita moedas. Caso contrário, saldo < custo → 402
+    try { console.log('[DESBLOQUEIO_PASSO 7_VALIDA_SALDO INIC ts=' + _tsInicioMs + ']'); } catch(e){}
       let saldoRestante = saldoMoedasAtual;
       let custoCobrado = custoMoedas;
       if (isAdminBypass) custoCobrado = 0;
@@ -2811,6 +2824,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
       if (!isAdminBypass) saldoRestante = saldoMoedasAtual - custoCobrado;
 
       // PASSO 8 e 9: 4 writes PROVA idempotentes + fechar pedido se ≥4
+    try { console.log('[DESBLOQUEIO_PASSO 8_9_WRITES_PROVA INIC ts=' + _tsInicioMs + ']'); } catch(e){}
       const unlockId = 'unl_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
       const agoraMs = Date.now();
       const fv = admin && admin.firestore ? admin.firestore.FieldValue : null;
@@ -2886,6 +2900,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
       }
 
       // PASSO 10: Retorna 200 com WhatsApp REAL liberado
+    try { console.log('[DESBLOQUEIO_PASSO 10_RETORNO_WHATSAPP_200 INIC ts=' + _tsInicioMs + ']'); } catch(e){}
       try {
         const _dur = Date.now() - _tsInicioMs;
         console.log('[DESBLOQUEIO_ATOMICO_FIM_SUCESSO ts=' + _tsInicioMs + ' durMs=' + _dur + '] pedido_id=' + String(pedidoId || '').slice(0,80) + ' prof_id=' + String(profissionalId || '').slice(0,80) + ' custo=' + custoCobrado + ' saldo_rest=' + saldoRestante + ' unlock=' + String(unlockId || '').slice(0,24));
