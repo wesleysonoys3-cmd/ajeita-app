@@ -213,7 +213,7 @@ app.get('/', (req, res) => {
     ok: true,
     app: 'ajeita-pix-backend',
     versao: '2.3-smtp-sendgrid-render-timeout-fallback',
-    build_tag: '20261007_fsTs_sessao_registrar_ternario_removido',
+    build_tag: '20261007_desbloquear_timeout_2s_para_20s_coldstart_render',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -2609,7 +2609,7 @@ async function _fsGetComTimeout(queryOrRef, maxMs) {
   try {
     if (!queryOrRef) return null;
     const p = typeof queryOrRef.get === 'function' ? queryOrRef.get() : Promise.resolve(queryOrRef);
-    return await Promise.race([p, _timeoutPromise(Number(maxMs) || 2000, 'FS_GET_TIMEOUT_' + (Number(maxMs) || 2000))]);
+    return await Promise.race([p, _timeoutPromise(Number(maxMs) || 20000, 'FS_GET_TIMEOUT_' + (Number(maxMs) || 20000))]);
   } catch(eGet){ return null; }
 }
 
@@ -2617,7 +2617,7 @@ async function _lerCustoDesbloqueioFirestore() {
   try {
     if (!dbFirestore) return _CUSTO_DESBLOQUEIO_FALLBACK;
     const ref = dbFirestore.collection(_FS_COL_CONFIGS).doc('configEconomia');
-    const snap = await _fsGetComTimeout(ref, 2000);
+    const snap = await _fsGetComTimeout(ref, 20000);
     if (snap && snap.exists) {
       const d = snap.data() || {};
       const c = Math.round(Number(d.custoMoedasPorDesbloqueio) || 0);
@@ -2637,7 +2637,7 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
   const docIdCanonico = idLimpo.startsWith('local_') ? idLimpo : ('local_' + idLimpo);
 
   const refCanon = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(docIdCanonico);
-  const sCanon = await _fsGetComTimeout(refCanon, 2000);
+  const sCanon = await _fsGetComTimeout(refCanon, 20000);
   if (sCanon && sCanon.exists) {
     return { docId: docIdCanonico, data: (sCanon.data() || {}) };
   }
@@ -2647,7 +2647,7 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
   //     — linha 3397 index.html: `if (novoProfissional.uid) uidDocFs = uid`)
   if (idLimpo !== docIdCanonico) {
     const refPuro = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(idLimpo);
-    const sPuro = await _fsGetComTimeout(refPuro, 2000);
+    const sPuro = await _fsGetComTimeout(refPuro, 20000);
     if (sPuro && sPuro.exists) {
       return { docId: idLimpo, data: (sPuro.data() || {}) };
     }
@@ -2659,7 +2659,7 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
   //     OU (c) NOME DO DOCUMENTO (d.id) === idLimpo (quando doc foi salvo como uid Google)
   try {
     const refAll = dbFirestore.collection(_FS_COL_PROFISSIONAIS).limit(400);
-    const allP = await _fsGetComTimeout(refAll, 2000) || {empty:true, docs:[]};
+    const allP = await _fsGetComTimeout(refAll, 20000) || {empty:true, docs:[]};
     if (allP && !allP.empty && Array.isArray(allP.docs)) {
       for (const d of allP.docs) {
         const dd = d.data() || {};
@@ -2726,7 +2726,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
     let whatsappReal = null;
     let nomeClienteReal = null;
     if (pedRef) {
-      const pSnap = await _fsGetComTimeout(pedRef, 2000);
+      const pSnap = await _fsGetComTimeout(pedRef, 20000);
       if (pSnap && pSnap.exists) pedidoDocData = pSnap.data() || {};
     }
     if (!pedidoDocData) return PASSO_ERRO(404, 'PEDIDO_NAO_ENCONTRADO', 'Pedido não existe.');
@@ -2746,7 +2746,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
         // Resolve TIMEOUT infinito quando indice composto nao existia no Console Firebase.
         const snapCol = await _fsGetComTimeout(
           dbFirestore.collection(_FS_COL_DESBLOQUEIOS).where('order_id','==',pedidoId).limit(20),
-          2000
+          20000
         ) || {empty:true, docs:[]};
         if (snapCol && !snapCol.empty && Array.isArray(snapCol.docs)) {
           for (const d of snapCol.docs) {
@@ -2786,7 +2786,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
       let profAtual = profData || {};
       if (profDocId && dbFirestore) {
         const refProf = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(profDocId);
-        const profAtualSnap = await _fsGetComTimeout(refProf, 2000);
+        const profAtualSnap = await _fsGetComTimeout(refProf, 20000);
         if (profAtualSnap && profAtualSnap.exists) profAtual = (profAtualSnap.data() || {});
       }
       const saldoMoedasAtual = Number.isFinite(+profAtual.saldoMoedas) ? Math.floor(+profAtual.saldoMoedas) : 0;
@@ -2813,7 +2813,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
         try {
           const refProf = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(profDocId);
           const pA = refProf.set(patchProf, { merge:true });
-          await Promise.race([pA, _timeoutPromise(2000, 'WRITE_A_TIMEOUT')]).catch(()=>null);
+          await Promise.race([pA, _timeoutPromise(20000, 'WRITE_A_TIMEOUT')]).catch(()=>null);
         } catch(eW){}
         try {
           await _logTransacaoMoedas('remover_desbloqueio', profDocId, 'profissional',
@@ -2838,17 +2838,17 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
         }
         try {
           const pB = pedRef.set(patchPed, { merge:true });
-          await Promise.race([pB, _timeoutPromise(2000, 'WRITE_B_TIMEOUT')]).catch(()=>null);
+          await Promise.race([pB, _timeoutPromise(20000, 'WRITE_B_TIMEOUT')]).catch(()=>null);
         } catch(eW){}
 
         // Write EXTRA: fecha o pedido (finalizado:true, status:'fechado') se qtd ≥ 4
         try {
-          const pedReSnap = await _fsGetComTimeout(pedRef, 2000);
+          const pedReSnap = await _fsGetComTimeout(pedRef, 20000);
           const pd2 = pedReSnap && pedReSnap.exists ? (pedReSnap.data()||{}) : pedidoDocData;
           const qtd = Number(pd2.qtdDesbloqueios) || 0;
           if (qtd >= 4) {
             const pFech = pedRef.set({ finalizado:true, status: (pd2.status === 'aberto' ? 'fechado' : pd2.status), fechado_em: agoraTs }, { merge:true });
-            try { await Promise.race([pFech, _timeoutPromise(2000, 'WRITE_FECHAMENTO_TIMEOUT')]).catch(()=>null); } catch(eFech){}
+            try { await Promise.race([pFech, _timeoutPromise(20000, 'WRITE_FECHAMENTO_TIMEOUT')]).catch(()=>null); } catch(eFech){}
           }
         } catch(eReSnap){}
       }
@@ -2872,7 +2872,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
         };
         try {
           const pD = dbFirestore.collection(_FS_COL_DESBLOQUEIOS).doc(unlockId).set(payloadDesb);
-          await Promise.race([pD, _timeoutPromise(2000, 'WRITE_D_TIMEOUT')]).catch(()=>null);
+          await Promise.race([pD, _timeoutPromise(20000, 'WRITE_D_TIMEOUT')]).catch(()=>null);
         } catch(eW){}
       }
 
