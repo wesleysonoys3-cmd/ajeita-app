@@ -2896,6 +2896,20 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
 app.post('/api/profissional/pedido/desbloquear-atômico', _handlerDesbloquearAtomicoPedidos);
 app.post('/api/profissional/pedido/desbloquear-atomico',  _handlerDesbloquearAtomicoPedidos);
 
+// (CORREÇÃO MÍNIMA PARA 404 UTF-8): Alias fallback normalizador.
+// Proxies reversos (ex: Render → nginx) enviam o caractere "ô" codificado de
+// formas diferentes (NFC, NFD, %C3%B4 etc.) e o literal "/desbloquear-atômico"
+// registrado acima não bate. Aqui normalizamos req.path com NFC ASCII-safe
+// e despachamos diretamente para o mesmo handler se casar.
+app.use((req, res, next) => {
+  if (req.method !== 'POST' || !req.path || typeof req.path !== 'string') return next();
+  const norm = String(req.path).normalize('NFC').toLowerCase().replace(/[^a-z0-9/_\-]/g, 'o');
+  if (norm.indexOf('/api/profissional/pedido/desbloquear-at') === 0 && norm.indexOf('mico') >= 0) {
+    return _handlerDesbloquearAtomicoPedidos(req, res, next);
+  }
+  next();
+});
+
 // ===================== (NOVO V11: HANDLERS FINAIS — 404 + ERROR GLOBAL — VEM SEMPRE DEPOIS DE TODAS AS ROTAS E ANTES DE app.listen) =====================
 // 404: se nenhuma rota acima bateu, retorna JSON amigavel
 app.use((req, res) => {
