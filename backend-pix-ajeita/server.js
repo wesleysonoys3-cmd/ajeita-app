@@ -213,7 +213,7 @@ app.get('/', (req, res) => {
     ok: true,
     app: 'ajeita-pix-backend',
     versao: '2.3-smtp-sendgrid-render-timeout-fallback',
-    build_tag: '20261007_retry_auto_erros_transientes_2x_timeout40s_log_render',
+    build_tag: '20261007_buscar_profissional_otimizada_3buscas_limit1_400_removido',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -2627,24 +2627,21 @@ async function _lerCustoDesbloqueioFirestore() {
   return _CUSTO_DESBLOQUEIO_FALLBACK;
 }
 
-async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
+async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId, emailHint) {
   if (!dbFirestore) return { docId:null, data:null };
   const idLimpo = String(profissionalId || '').trim();
   if (!idLimpo) return { docId:null, data:null };
+  const emailLimpo = String((typeof emailHint === 'string' ? emailHint : '') || '').trim().toLowerCase();
 
-  // (1) MESMA LÓGICA DA ROTA /whatsapp-seguro (funcionando desde a V12):
-  // doc CANÔNICO "local_${id}" (padrão do app desde sempre)
+  // (1) Busca DIRETA por docId canônico: "local_${id}"
   const docIdCanonico = idLimpo.startsWith('local_') ? idLimpo : ('local_' + idLimpo);
-
   const refCanon = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(docIdCanonico);
   const sCanon = await _fsGetComTimeout(refCanon, 20000);
   if (sCanon && sCanon.exists) {
     return { docId: docIdCanonico, data: (sCanon.data() || {}) };
   }
 
-  // (2) doc puro SEM prefixo "local_" (caso raro: docs criados manualmente no console
-  //     OU docs criados pelo FRONTEND Firebase SDK com uid Google DIRETO como nome
-  //     — linha 3397 index.html: `if (novoProfissional.uid) uidDocFs = uid`)
+  // (2) Busca DIRETA por docId puro SEM prefixo "local_"
   if (idLimpo !== docIdCanonico) {
     const refPuro = dbFirestore.collection(_FS_COL_PROFISSIONAIS).doc(idLimpo);
     const sPuro = await _fsGetComTimeout(refPuro, 20000);
@@ -2653,25 +2650,29 @@ async function _buscarProfissionalFirestorePorIdOuDoc(profissionalId) {
     }
   }
 
-  // (3) Último fallback: varre collection (até 400 docs) procurando profissional onde
-  //     (a) CAMPO .id === idLimpo (padrão whatsapp-seguro)
-  //     OU (b) CAMPO .googleId === idLimpo (login Google salvo como .googleId no doc)
-  //     OU (c) NOME DO DOCUMENTO (d.id) === idLimpo (quando doc foi salvo como uid Google)
+  // (3) Busca por campo googleId (WHERE indexado, limit 1)
   try {
-    const refAll = dbFirestore.collection(_FS_COL_PROFISSIONAIS).limit(400);
-    const allP = await _fsGetComTimeout(refAll, 20000) || {empty:true, docs:[]};
-    if (allP && !allP.empty && Array.isArray(allP.docs)) {
-      for (const d of allP.docs) {
-        const dd = d.data() || {};
-        const campoId   = String(dd.id || '').trim();
-        const campoGId  = String(dd.googleId || '').trim();
-        const nomeDoc   = String(d.id || '').trim();
-        if (campoId === idLimpo || campoGId === idLimpo || nomeDoc === idLimpo) {
-          return { docId: d.id, data: dd };
-        }
-      }
+    const refGId = dbFirestore.collection(_FS_COL_PROFISSIONAIS).where('googleId', '==', idLimpo).limit(1);
+    const sGId = await _fsGetComTimeout(refGId, 20000);
+    if (sGId && !sGId.empty && Array.isArray(sGId.docs) && sGId.docs[0]) {
+      const d = sGId.docs[0];
+      return { docId: d.id, data: (d.data() || {}) };
     }
-  } catch(eF){}
+  } catch(eGId){}
+
+  // (4) Busca por campo emailGoogle (WHERE indexado, limit 1) — SOMENTE se emailHint fornecido
+  if (emailLimpo && emailLimpo.length >= 5) {
+    try {
+      const refE = dbFirestore.collection(_FS_COL_PROFISSIONAIS).where('emailGoogle', '==', emailLimpo).limit(1);
+      const sE = await _fsGetComTimeout(refE, 20000);
+      if (sE && !sE.empty && Array.isArray(sE.docs) && sE.docs[0]) {
+        const d = sE.docs[0];
+        return { docId: d.id, data: (d.data() || {}) };
+      }
+    } catch(eE){}
+  }
+
+  // NÃO ENCONTRADO
   return { docId:null, data:null };
 }
 
