@@ -2895,6 +2895,11 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
 }
 app.post('/api/profissional/pedido/desbloquear-atômico', _handlerDesbloquearAtomicoPedidos);
 app.post('/api/profissional/pedido/desbloquear-atomico',  _handlerDesbloquearAtomicoPedidos);
+// (CORREÇÃO MÍNIMA GARANTIDA): RegEx path cobre QUALQUER encoding do caractere
+// "ô" (NFC: U+00F4, NFD: o + ̂ , UTF-8 bytes %C3%B4 que chega como string lixo, etc.)
+// — casa qualquer coisa "desbloquear-at" + (1 a 5 chars) + "mico" = 6 combinações
+// possíveis de encoding. Dispensa middleware, é mais rápido.
+app.post(/\/api\/profissional\/pedido\/desbloquear-at.{1,5}mico$/i, _handlerDesbloquearAtomicoPedidos);
 
 // (CORREÇÃO MÍNIMA PARA 404 UTF-8): Alias fallback normalizador.
 // Proxies reversos (ex: Render → nginx) enviam o caractere "ô" codificado de
