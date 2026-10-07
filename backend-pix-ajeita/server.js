@@ -214,7 +214,7 @@ app.get('/', (req, res) => {
     ok: true,
     app: 'ajeita-pix-backend',
     versao: '2.3-smtp-sendgrid-render-timeout-fallback',
-    build_tag: '20260924_smtp_sendgrid_587_2525_465_fallback_timeout',
+    build_tag: '20261007_fix_desbloquear_contato_utf8_404_regex_middleware_autocura_sessao',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
