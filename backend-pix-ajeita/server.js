@@ -564,13 +564,20 @@ async function _consultarPagamentoMpPorExternalRef(externalRef) {
   const valorMp = Number(pag.transaction_amount || 0);
   const idPag = String(pag.id || mpPaymentId || '');
   // Atualiza Firestore com status atual do MP SEMPRE (mesmo pendente, user vê progresso)
+  // (CORREÇÃO CIRÚRGICA 2026-10-08): também gravar campo top-level `status` = statusMp.
+  // Antes, o cron nunca atualizava `status` para cancelled/rejected/expired — o doc
+  // permanecia com status='pendente' no Firestore, fazendo o cron varrer a mesma
+  // transação cancelada TODAS as rodadas, gerando logs infinitos e gastando quota MP.
+  // Gravando `status` real no doc, o loop do cron abaixo (where status!='aprovado' E
+  // status!='cancelled' etc.) pode filtrar e parar de consultar cancelados/expirados.
   if (dbFirestore && externalRef) {
     try {
       await dbFirestore.collection('pix_transacoes').doc(externalRef).set({
         mp_payment_id: idPag,
         mp_status_consulta_manual: statusMp,
         mp_valor_retornado: valorMp,
-        ultima_consulta_manual_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString()
+        ultima_consulta_manual_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),
+        status: statusMp
       }, { merge: true });
     } catch(eFbUp2){}
   }
@@ -696,10 +703,22 @@ app.post('/webhook-pix', async (req, res) => {
       console.log(`[WEBHOOK_MP] status nao aprovado: paymentId=${paymentId} status=${statusMP}`);
       if (dbFirestore && externalRef) {
         try {
-          await dbFirestore.collection('pix_transacoes').doc(externalRef).update({
+          // (CORREÇÃO CIRÚRGICA 2026-10-08): trocar update → set({merge:true}).
+          // update falha com "documento nao existe" em cenários onde a transação
+          // pix_transacoes ainda não foi criada no Firestore mas o webhook chegou
+          // primeiro (ex: usuario fechou a aba antes do backend gravar pix_transacoes
+          // e só depois MP enviou o webhook de cancelamento). set com merge:true
+          // cria ou atualiza o doc, garantindo que `status: cancelled/rejected`
+          // seja gravado de forma permanente e o cron ignore nas proximas rodadas.
+          // Também grava mp_payment_id e mp_valor_retornado para consistência.
+          await dbFirestore.collection('pix_transacoes').doc(externalRef).set({
             status: statusMP,
-            status_atualizado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString()
-          });
+            status_atualizado_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString(),
+            mp_payment_id: paymentId,
+            mp_valor_retornado: valor,
+            mp_status_consulta_manual: statusMP,
+            ultima_consulta_manual_em: admin.firestore.Timestamp ? admin.firestore.Timestamp.now() : new Date().toISOString()
+          }, { merge: true });
         } catch(e){}
       }
     }
@@ -2981,11 +3000,29 @@ app.post(/\/api\/profissional\/pedido\/desbloquear-at.{1,5}mico$/i, _handlerDesb
 // formas diferentes (NFC, NFD, %C3%B4 etc.) e o literal "/desbloquear-atômico"
 // registrado acima não bate. Aqui normalizamos req.path com NFC ASCII-safe
 // e despachamos diretamente para o mesmo handler se casar.
+// (CORREÇÃO 2026-10-08): também normalizamos req.originalUrl e req.url, pois
+// em alguns proxies (Cloudflare Workers / Render edge + query strings) o req.path
+// contém caracteres já codificados e a normalização anterior falhava.
 app.use((req, res, next) => {
-  if (req.method !== 'POST' || !req.path || typeof req.path !== 'string') return next();
-  const norm = String(req.path).normalize('NFC').toLowerCase().replace(/[^a-z0-9/_\-]/g, 'o');
-  if (norm.indexOf('/api/profissional/pedido/desbloquear-at') === 0 && norm.indexOf('mico') >= 0) {
-    return _handlerDesbloquearAtomicoPedidos(req, res, next);
+  if (req.method !== 'POST') return next();
+  const _candidatos = [];
+  if (typeof req.path === 'string') _candidatos.push(req.path);
+  if (typeof req.originalUrl === 'string') _candidatos.push(req.originalUrl);
+  if (typeof req.url === 'string') _candidatos.push(req.url);
+  for (let _i = 0; _i < _candidatos.length; _i++) {
+    let s = _candidatos[_i];
+    // Remove query string se existir
+    const _q = s.indexOf('?');
+    if (_q >= 0) s = s.substring(0, _q);
+    try {
+      if (typeof decodeURIComponent === 'function' && s.indexOf('%') >= 0) {
+        s = decodeURIComponent(s);
+      }
+    } catch (eDec) {}
+    const norm = String(s).normalize('NFC').toLowerCase().replace(/[^a-z0-9/_\-]/g, 'o');
+    if (norm.indexOf('/api/profissional/pedido/desbloquear-at') === 0 && norm.indexOf('mico') >= 0) {
+      return _handlerDesbloquearAtomicoPedidos(req, res, next);
+    }
   }
   next();
 });

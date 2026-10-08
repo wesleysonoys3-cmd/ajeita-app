@@ -3315,8 +3315,6 @@ function fbInit() {
     try { setTimeout(function(){ try { inicializarNotificacoesProfissional(false); } catch(eNotif){} }, 1800); } catch(eDly){}
     // (NOVO) Inicializa listener realtime notificações de CLIENTE no bootstrap inicial (se já tiver cliente logado)
     try { setTimeout(function(){ try { inicializarNotificacoesCliente(false); } catch(eNotifCli){} }, 1850); } catch(eDlyCli){}
-    try { setTimeout(function(){ try { __garanteAtualizacaoNotificacoesRodando(); } catch(eG){} }, 2200); } catch(eDly2){}
-    try { setTimeout(function(){ try { __forcarReconectarNotificacoes(); } catch(eG){} }, 4000); } catch(eDly3){}
   } catch (e) {
     FB_FIRESTORE_DISPONIVEL = false;
     DBG('FB', '1416', 'Firebase init FALHOU (tentaremos novamente em 2s). Erro: ' + String(e && e.message || e), {});
@@ -3385,6 +3383,93 @@ async function fbInitCarregarConfigEconomiaGlobal() {
   }
 }
 
+window.fbSyncAtualizarProfissional = function(objProfissional) {
+  try {
+    const mods = (typeof mods !== 'undefined') ? mods : (window.__fbModules || window.mods);
+    const fbDb = (typeof FbDb !== 'undefined') ? FbDb : window.FbDb;
+    if (!mods || !fbDb || !objProfissional) return;
+    const idProfCanonico = (objProfissional.id) ? String(objProfissional.id) : null;
+    const uidObj = objProfissional.uid || (idProfCanonico ? ('local_' + idProfCanonico) : null);
+    if (!uidObj || !idProfCanonico) return;
+    const safe = Object.assign({}, objProfissional);
+    if (safe.uid) delete safe.uid;
+    const docsIds = new Set([String(uidObj)]);
+    if (!String(uidObj).startsWith('local_') && idProfCanonico) {
+      docsIds.add('local_' + idProfCanonico);
+    }
+    // Descobrir duplicatas por Google UID (se o objeto carrega googleId)
+    var googleIdConhecido = null;
+    try {
+      if (objProfissional.googleId && String(objProfissional.googleId).length >= 4) {
+        googleIdConhecido = String(objProfissional.googleId);
+        docsIds.add(googleIdConhecido);
+      } else if (safe && safe.googleId && String(safe.googleId).length >= 4) {
+        googleIdConhecido = String(safe.googleId);
+        docsIds.add(googleIdConhecido);
+      }
+    } catch(eGid){}
+    // ============================================================
+    // CORREÇÃO COTA FIRESTORE (cirúrgica):
+    // NÃO FAZEMOS MAIS getDocs(collection('profissionais')) full scan.
+    // Usamos 2 queries pequenas por índice (onde existir):
+    //   (A) where('id','==', idProfCanonico).limit(20)   — campo canônico
+    //   (B) where('_id','==', idProfCanonico).limit(20)  — fallback antigo
+    //   (C) where('googleId','==', googleIdConhecido).limit(20) — se conhecermos o GID
+    // Cada uma retorna no máximo 20 docs (poucos). Muito mais barato.
+    // ============================================================
+    var queriesParaRodar = [];
+    try {
+      queriesParaRodar.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('id', '==', idProfCanonico), mods.limit(20)));
+    } catch(eQ1){}
+    try {
+      queriesParaRodar.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('_id', '==', idProfCanonico), mods.limit(20)));
+    } catch(eQ2){}
+    if (googleIdConhecido) {
+      try {
+        queriesParaRodar.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('googleId', '==', googleIdConhecido), mods.limit(20)));
+      } catch(eQ3){}
+    }
+    function _escreverFanoutAgora() {
+      docsIds.forEach(function(docId){
+        try {
+          mods.setDoc(mods.doc(fbDb, 'profissionais', String(docId)), safe, { merge: true }).catch(function(err){ console.warn('fbSyncAtualizarProfissional warn doc=' + String(docId) + ':', err && err.message); });
+        } catch(eW){}
+      });
+    }
+    try {
+      if (queriesParaRodar.length === 0) {
+        _escreverFanoutAgora();
+        return;
+      }
+      Promise.allSettled(queriesParaRodar.map(function(q){ return mods.getDocs(q); })).then(function(resultados){
+        try {
+          resultados.forEach(function(res){
+            try {
+              if (!res || res.status !== 'fulfilled' || !res.value) return;
+              var snap = res.value;
+              if (!snap || !snap.docs) return;
+              snap.forEach(function(ds){
+                try {
+                  if (!ds || !ds.exists) return;
+                  var dd = ds.data() || {};
+                  var innerId = dd.id ? String(dd.id) : (dd._id ? String(dd._id) : null);
+                  if (innerId && innerId === idProfCanonico) docsIds.add(ds.id);
+                  else if (googleIdConhecido && dd.googleId && String(dd.googleId) === googleIdConhecido) docsIds.add(ds.id);
+                } catch(eI){}
+              });
+            } catch(eR){}
+          });
+        } catch(eScan){}
+        _escreverFanoutAgora();
+      }).catch(function(errAll){
+        _escreverFanoutAgora();
+      });
+    } catch(eAsync){
+      _escreverFanoutAgora();
+    }
+  } catch(eSync){ console.warn('fbSyncAtualizarProfissional fail:', eSync && eSync.message); }
+};
+
 function fbSyncAddProfissional(novoProfissional) {
   return new Promise(function(resolve, reject) {
     if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules) {
@@ -3397,13 +3482,11 @@ function fbSyncAddProfissional(novoProfissional) {
       if (novoProfissional && novoProfissional.uid && String(novoProfissional.uid).length > 4) uidDocFs = String(novoProfissional.uid);
       const docRef = mods.doc(FbDb, 'profissionais', uidDocFs);
       const payload = Object.assign({}, novoProfissional || {}, { _syncType: 'localStorage_to_firestore', _syncedAt: Date.now() });
-      mods.setDoc(docRef, payload).then(function(){
+      mods.setDoc(docRef, payload, { merge: true }).then(function(){
         DBG('FB', '1445', '✅ Profissional SINCRONIZADO no Firestore! docId/profissionais/'+uidDocFs, { docId: uidDocFs, nome: (novoProfissional && novoProfissional.nome) });
-        toast('success','💾 Firebase salvo!','O profissional foi cadastrado também no banco de dados central.',3000);
         resolve({ status: 'ok', docId: uidDocFs });
       }).catch(function(errFs){
         DBG('FB', '1450', '❌ Falha addDoc Firestore profissionais: ' + String(errFs && errFs.message || errFs), {});
-        toast('warn','Local salvo só','Cadastro foi salvo no seu celular, mas falhou ao sincronizar com o banco. Verifique sua conexão.');
         resolve({ status: 'error', err: String(errFs && errFs.message || errFs) });
       });
     } catch(eSync) {
@@ -3421,14 +3504,26 @@ function fbSyncProfissionaisRealtime() {
   }
   const mods = window.__fbModules;
   try {
-    const q = mods.query(mods.collection(FbDb, 'profissionais'));
-    FB_PROFISSIONAIS_UNSUBSCRIBE = mods.onSnapshot(q, function(snapshot) {
+    // ============================================================
+    // CORREÇÃO COTA FIRESTORE (cirúrgica — versão SEGURA sem
+    // filtro por 'id'/'_id' para não quebrar selo verificado e
+    // saldo de moedas em docs duplicados ou cadastros legados).
+    // Carregamos no máximo 500 documentos da coleção (teto seguro
+    // para não carregar infinito) e o handler interno se encarrega
+    // de fazer o merge de status (VERIFIED>REJECTED>PENDING) e
+    // saldoMoedas entre duplicatas do mesmo profissional, como
+    // antes — mas agora com o teto de 500 docs para reduzir reads.
+    // Se por algum motivo a query com limit falhar, temos o
+    // fallback idêntico à consulta original SEM limit.
+    // ============================================================
+    function _handler(snapshot) {
       try {
         if (!snapshot || !snapshot.docs) return;
         var totalMudancas = snapshot.docChanges().length;
         DBG('FB', '1477', '📡 Firestore onSnapshot disparou! Atualizando '+totalMudancas+' documentos no catálogo localStorage.', { docs: snapshot.size, changes: totalMudancas });
         var novoArray = [];
         var idsVistos = {};
+        var idxPorIdLocal = {};
         snapshot.forEach(function(docSnap) {
           if (!docSnap || !docSnap.exists) return;
           var dados = docSnap.data() || {};
@@ -3438,30 +3533,55 @@ function fbSyncProfissionaisRealtime() {
           else if (docSnap.id && docSnap.id.indexOf('local_') === 0) idProfLocal = docSnap.id.substring(6);
           else idProfLocal = docSnap.id;
           if (!idProfLocal) return;
-          if (idsVistos[idProfLocal]) return;
-          idsVistos[idProfLocal] = true;
           var mergeProf = Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() });
-          // ============================================================
-          // ✅ CORREÇÃO: PRESERVAR SALDO DE MOEDAS ENTRE STORAGE ↔ FIRESTORE
-          // Evita que onSnapshot volte o saldo para 0/null/valor antigo
-          // quando o Firestore está desatualizado ou a alteração local
-          // ainda não foi sincronizada.
-          // ============================================================
-          try {
-            var existenteAgora = Array.isArray(profissionais) ? profissionais.find(function(pp){ return pp && String(pp.id||'') === String(idProfLocal); }) : null;
-            var saldoLocalNum = (existenteAgora && typeof existenteAgora.saldoMoedas === 'number' && !Number.isNaN(existenteAgora.saldoMoedas)) ? existenteAgora.saldoMoedas : null;
-            var saldoFsNum = (typeof dados.saldoMoedas === 'number' && !Number.isNaN(dados.saldoMoedas)) ? dados.saldoMoedas : null;
-            if (saldoLocalNum !== null || saldoFsNum !== null) {
-              if (saldoLocalNum !== null && saldoFsNum !== null) {
-                mergeProf.saldoMoedas = Math.max(saldoFsNum, saldoLocalNum);
-              } else if (saldoFsNum !== null) {
-                mergeProf.saldoMoedas = saldoFsNum;
-              } else {
-                mergeProf.saldoMoedas = saldoLocalNum;
+          if (!idsVistos[idProfLocal]) {
+            idsVistos[idProfLocal] = true;
+            try {
+              var existenteAgora = Array.isArray(profissionais) ? profissionais.find(function(pp){ return pp && String(pp.id||'') === String(idProfLocal); }) : null;
+              var saldoLocalNum = (existenteAgora && typeof existenteAgora.saldoMoedas === 'number' && !Number.isNaN(existenteAgora.saldoMoedas)) ? existenteAgora.saldoMoedas : null;
+              var saldoFsNum = (typeof dados.saldoMoedas === 'number' && !Number.isNaN(dados.saldoMoedas)) ? dados.saldoMoedas : null;
+              if (saldoLocalNum !== null || saldoFsNum !== null) {
+                if (saldoLocalNum !== null && saldoFsNum !== null) {
+                  mergeProf.saldoMoedas = Math.max(saldoFsNum, saldoLocalNum);
+                } else if (saldoFsNum !== null) {
+                  mergeProf.saldoMoedas = saldoFsNum;
+                } else {
+                  mergeProf.saldoMoedas = saldoLocalNum;
+                }
               }
+            } catch(eSaldoMerge){}
+            idxPorIdLocal[idProfLocal] = novoArray.length;
+            novoArray.push(mergeProf);
+            return;
+          }
+          var iExistente = idxPorIdLocal[idProfLocal];
+          if (typeof iExistente !== 'number') return;
+          var existente = novoArray[iExistente];
+          function _prioridadeStatus(s) {
+            var x = String(s || '').toUpperCase();
+            if (x === 'VERIFIED') return 30;
+            if (x === 'REJECTED') return 20;
+            if (x === 'PENDING') return 10;
+            return 0;
+          }
+          try {
+            var vExistente = (existente.verificacao && typeof existente.verificacao === 'object') ? existente.verificacao : null;
+            var vNovo = (dados.verificacao && typeof dados.verificacao === 'object') ? dados.verificacao : null;
+            var pEx = vExistente ? _prioridadeStatus(vExistente.status) : 0;
+            var pNv = vNovo ? _prioridadeStatus(vNovo.status) : 0;
+            if (pNv > pEx && vNovo) {
+              existente.verificacao = Object.assign({}, vNovo);
+            } else if (vNovo && vExistente && pNv === pEx && pEx > 0) {
+              if (!vExistente.data_decicao && vNovo.data_decicao) existente.verificacao.data_decicao = vNovo.data_decicao;
+              if (!vExistente.admin_responsavel && vNovo.admin_responsavel) existente.verificacao.admin_responsavel = vNovo.admin_responsavel;
+              if (!vExistente.motivo_rejeicao && vNovo.motivo_rejeicao) existente.verificacao.motivo_rejeicao = vNovo.motivo_rejeicao;
             }
-          } catch(eSaldoMerge){}
-          novoArray.push(mergeProf);
+          } catch(eMergeVer){}
+          try {
+            if ((typeof existente.saldoMoedas !== 'number' || Number.isNaN(existente.saldoMoedas)) && (typeof dados.saldoMoedas === 'number' && !Number.isNaN(dados.saldoMoedas))) {
+              existente.saldoMoedas = dados.saldoMoedas;
+            }
+          } catch(eMergeSaldo){}
         });
         // Preservar profissionais que existem LOCALMENTE mas ainda não chegaram ao Firestore
         // (evita perda de cadastros novos quando o onSnapshot demora)
@@ -3478,8 +3598,31 @@ function fbSyncProfissionaisRealtime() {
         try {
           if (profissionalLogado && profissionalLogado.id) {
             var atualizado = profissionais.find(function(pp){ return pp && String(pp.id||'') === String(profissionalLogado.id); });
-            if (atualizado && typeof atualizado.saldoMoedas === 'number' && profissionalLogado.saldoMoedas !== atualizado.saldoMoedas) {
-              profissionalLogado.saldoMoedas = atualizado.saldoMoedas;
+            if (atualizado) {
+              var houveAtualizacao = false;
+              if (typeof atualizado.saldoMoedas === 'number' && profissionalLogado.saldoMoedas !== atualizado.saldoMoedas) {
+                profissionalLogado.saldoMoedas = atualizado.saldoMoedas;
+                houveAtualizacao = true;
+              }
+              if (atualizado.verificacao && typeof atualizado.verificacao === 'object') {
+                var needUpdateVer = false;
+                if (!profissionalLogado.verificacao || typeof profissionalLogado.verificacao !== 'object') {
+                  profissionalLogado.verificacao = {};
+                  needUpdateVer = true;
+                }
+                var camposParaCopiar = ['status','data_solicitacao','data_decicao','admin_responsavel','motivo_rejeicao','versao_envio','inicializado'];
+                for (var iVC = 0; iVC < camposParaCopiar.length; iVC++) {
+                  var k = camposParaCopiar[iVC];
+                  if (atualizado.verificacao.hasOwnProperty(k) && profissionalLogado.verificacao[k] !== atualizado.verificacao[k]) {
+                    profissionalLogado.verificacao[k] = atualizado.verificacao[k];
+                    needUpdateVer = true;
+                  }
+                }
+                if (needUpdateVer) houveAtualizacao = true;
+              }
+              if (houveAtualizacao) {
+                try { salvarProfissionalLogadoNoStorage(); } catch(eSalvPro){}
+              }
             }
           }
         } catch(eUpdLog){}
@@ -3487,13 +3630,33 @@ function fbSyncProfissionaisRealtime() {
           if (typeof renderCatalogoProfissionais === 'function') renderCatalogoProfissionais();
           if (typeof renderMuralPedidos === 'function') renderMuralPedidos();
           if (typeof atualizarHeaderPorSessao === 'function') atualizarHeaderPorSessao();
+          try { if (typeof window.IIFE_validacaoProfissionais === 'object' && window.IIFE_validacaoProfissionais && typeof window.IIFE_validacaoProfissionais.renderPerfilAreaDoc === 'function') window.IIFE_validacaoProfissionais.renderPerfilAreaDoc(); } catch(eReRenderBadge){}
         } catch(ePersist){}
       } catch(eInner) {
         DBG('FB', '1503', 'Erro interno onSnapshot handler: ' + String(eInner && eInner.message || eInner), {});
       }
-    }, function(errOnsnap){
-      DBG('FB', '1506', 'Firestore onSnapshot ERRO (regra de seguranca provavelmente bloqueou leitura). Ver firestore.rules allow read: if true; . Detalhe: ' + String(errOnsnap && errOnsnap.message || errOnsnap), {});
-    });
+    }
+    function _onError(errOnsnap, modo) {
+      if (modo === 'fallback') {
+        DBG('FB', '1506', 'Firestore onSnapshot (FALLBACK / SEM FILTRO) ERRO. Detalhe: ' + String(errOnsnap && errOnsnap.message || errOnsnap), {});
+        return;
+      }
+      DBG('FB', '1506b', 'Firestore onSnapshot (PRINCIPAL, com filtro id!=null) FALHOU — provavelmente índice composto ausente. Vamos re-assinar com a query original SEM filtro (fallback, seguro). Detalhe: ' + String(errOnsnap && errOnsnap.message || errOnsnap), {});
+      try {
+        if (typeof FB_PROFISSIONAIS_UNSUBSCRIBE === 'function') { try { FB_PROFISSIONAIS_UNSUBSCRIBE(); } catch(eClean){} }
+        FB_PROFISSIONAIS_UNSUBSCRIBE = null;
+        var qFallback = mods.query(mods.collection(FbDb, 'profissionais'));
+        FB_PROFISSIONAIS_UNSUBSCRIBE = mods.onSnapshot(qFallback, _handler, function(err2){ _onError(err2, 'fallback'); });
+      } catch(eFall){ DBG('FB', '1506c', 'Falha ao assinar fallback profissionais: '+String(eFall && eFall.message || eFall), {}); }
+    }
+    try {
+      var qPrincipal = mods.query(mods.collection(FbDb, 'profissionais'), mods.limit(500));
+      FB_PROFISSIONAIS_UNSUBSCRIBE = mods.onSnapshot(qPrincipal, _handler, function(err){ _onError(err, 'principal'); });
+    } catch(eQryBuild) {
+      DBG('FB', '1506d', 'Impossível montar query principal, provavel versão SDK antiga. Indo direto para fallback. Detalhe: '+String(eQryBuild && eQryBuild.message || eQryBuild), {});
+      var qFallbackDireto = mods.query(mods.collection(FbDb, 'profissionais'));
+      FB_PROFISSIONAIS_UNSUBSCRIBE = mods.onSnapshot(qFallbackDireto, _handler, function(err3){ _onError(err3, 'fallback'); });
+    }
   } catch(eQry) {
     DBG('FB', '1510', 'Exception fbSyncProfissionaisRealtime: ' + String(eQry && eQry.message || eQry), {});
   }
@@ -9269,15 +9432,63 @@ async function executarDesbloqueio() {
       return;
     }
     if (!AJEITA_PIX_BACKEND_URL) { window.AJEITA_PIX_BACKEND_URL = 'https://ajeita-backend-pix.onrender.com'; }
-    const urlFinal = AJEITA_PIX_BACKEND_URL + '/api/profissional/pedido/desbloquear-atomico';
-
-    // (CORREÇÃO MÍNIMA): Extrai fetch+parse para helper, permitindo 1 retry
-    // AUTOMÁTICO (sem clique do usuário, sem setTimeout/2s) quando a primeira
-    // chamada retorna 401 SESSAO_INVALIDA/PROFISSIONAL_NAO_AUTENTICADO.
-    // No retry, primeiro forçamos criação do doc no Firestore + re-salvamos
-    // token sessao, depois reenviamos o mesmo pedido.
+    const _backendBaseRaw = String(window.AJEITA_PIX_BACKEND_URL || AJEITA_PIX_BACKEND_URL || '').replace(/\/+$/, '');
+    // (CORREÇÃO MÍNIMA 404 DESBLOQUEIO — V2, 2026-10-08):
+    // Tenta 3 URLs idênticas em conteúdo mas com 3 NORMALIZAÇÕES DIFERENTES do path,
+    // para cobrir TODAS as formas possíveis que o proxy Render/Cloudflare/nginx de
+    // borda pode encaminhar a requisição (ASCII, UTF-8 NFC, %C3%B4 URL-encoded).
+    // O backend já tem aliases para as 3, mas alguns navegadores/engines fetch
+    // forçam encode automático em URLs com caracteres UTF-8 no path, enquanto
+    // outros repassam o literal e a borda normaliza de forma diferente.
+    // Para evitar ambiguidades, a URL #2 (com acento) usa new URL() + pathname
+    // definido SEPARADAMENTE do origin/base, garantindo que encodeURI seja feito
+    // apenas no path, sem encodar a base ou o scheme duas vezes.
+    // (Backend handler: _handlerDesbloquearAtomicoPedidos em server.js L2593-L2970.
+    //  Registro de rotas: L2971 literal acento, L2972 literal ASCII, L2977 regex,
+    //  fallback NFC em L2984-L3009 agora também checa req.originalUrl/req.url
+    //  com decodeURIComponent prévio para não perder %C3%B4 codificado na borda.)
+    const _pathAscii = '/api/profissional/pedido/desbloquear-atomico';
+    const _pathAcento = '/api/profissional/pedido/desbloquear-atômico';
+    const _urlsTentativa = [];
+    try {
+      const _u1 = new URL(_pathAscii,  (_backendBaseRaw || 'https://example.com') + '/');
+      _urlsTentativa.push(_u1.toString());
+    } catch (e) {
+      _urlsTentativa.push(_backendBaseRaw + _pathAscii);
+    }
+    try {
+      const _u3 = new URL(_pathAcento, (_backendBaseRaw || 'https://example.com') + '/');
+      _u3.pathname = _pathAcento;
+      _urlsTentativa.push(_u3.toString());
+    } catch (e3) {
+      _urlsTentativa.push(_backendBaseRaw + _pathAcento);
+    }
+    try {
+      const _u4 = new URL(_pathAscii, (_backendBaseRaw || 'https://example.com') + '/');
+      try { _u4.pathname = _pathAscii; } catch(eDummy){}
+      try { _u4.searchParams.set('r', String(Date.now() % 1000000)); } catch(eDummy){}
+      const _u4Str = _u4.toString();
+      if (_u4Str && _urlsTentativa.indexOf(_u4Str) < 0) {
+        _urlsTentativa.push(_u4Str);
+      }
+    } catch (e4) {}
+    if (_urlsTentativa.length < 2) {
+      _urlsTentativa.length = 0;
+      _urlsTentativa.push(_backendBaseRaw + _pathAscii);
+      _urlsTentativa.push(_backendBaseRaw + _pathAcento);
+    }
+    var _urlIdxAtual = 0;
     async function _chamarBackendDesbloquear(bodyArg) {
-      console.info('[FLUXO-DESBLOQUEIO] Enviando fetch POST para:', urlFinal, 'body.pedido_id=', bodyArg.pedido_id, 'body.profissional_id=', bodyArg.profissional_id, 'body.tem_sessao=', !!bodyArg.profissional_sessao, 'body.tem_senha=', !!bodyArg.profissional_senha);
+      var urlFinalTentativa = _urlsTentativa[Math.min(_urlIdxAtual, _urlsTentativa.length - 1)];
+      try {
+        if (typeof URL === 'function' && urlFinalTentativa && (urlFinalTentativa.indexOf('%') < 0 || urlFinalTentativa.indexOf('\u00f4') >= 0 || urlFinalTentativa.indexOf('ô') >= 0)) {
+          const _probe = new URL(urlFinalTentativa);
+          if (_probe && typeof _probe.toString === 'function') {
+            urlFinalTentativa = _probe.toString();
+          }
+        }
+      } catch (eNormaliza) {}
+      console.info('[FLUXO-DESBLOQUEIO] Enviando fetch POST para (tentativa idx='+_urlIdxAtual+'):', urlFinalTentativa, 'body.pedido_id=', bodyArg.pedido_id, 'body.profissional_id=', bodyArg.profissional_id, 'body.tem_sessao=', !!bodyArg.profissional_sessao, 'body.tem_senha=', !!bodyArg.profissional_senha);
       const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
       const idTO = ctrl ? setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, 40000) : null;
       let rRes = null;
@@ -9289,16 +9500,22 @@ async function executarDesbloqueio() {
           body: JSON.stringify(bodyArg)
         };
         if (ctrl && ctrl.signal) opts.signal = ctrl.signal;
-        rRes = await fetch(urlFinal, opts);
+        rRes = await fetch(urlFinalTentativa, opts);
         if (idTO) try { clearTimeout(idTO); } catch(eCl){}
         console.info('[FLUXO-DESBLOQUEIO] fetch concluído — HTTP status =', rRes && rRes.status, rRes && rRes.statusText);
+        // (CORREÇÃO MÍNIMA 404): se status 404 e ainda temos URL alternativa, não lançar erro.
+        // Retornar sinalizador para o caller usar a próxima URL.
+        if (rRes && Number(rRes.status || 0) === 404 && (_urlIdxAtual + 1) < _urlsTentativa.length) {
+          _urlIdxAtual++;
+          let resp404 = null;
+          try { resp404 = await rRes.json(); } catch(e404){ resp404 = null; }
+          return { fatal:false, r:rRes, resp: resp404, _networkError:false, _abortError:false, _404TryNextUrl:true };
+        }
       } catch(eFetch) {
         if (idTO) try { clearTimeout(idTO); } catch(eCl){}
         const foiAbort = eFetch && (String(eFetch.name || '').toLowerCase() === 'aborterror' || String(eFetch.message || '').indexOf('abort') >= 0);
         foiAbortExplicitamente = !!foiAbort;
         console.warn('[FLUXO-DESBLOQUEIO] fetch caiu no catch() network. foiAbort=', foiAbort, 'err=', eFetch && eFetch.message);
-        // NÃO mostra toast aqui. Deixa o caller (retry automático) decidir.
-        // Retorna um objeto "falso-r" para poder ser tratado no loop de retry do caller.
         return { fatal:false, r:{ status: (foiAbort ? 408 : 0), statusText: String(eFetch && eFetch.message || '') }, resp:null, _networkError:true, _abortError: foiAbort };
       }
       let respRes = null;
@@ -9332,8 +9549,22 @@ async function executarDesbloqueio() {
 
     let chamada = null;
     for (let _t = 0; _t < 2; _t++) {
+      // (CORREÇÃO MÍNIMA 404): a cada tentativa do loop de erro transiente,
+      // resetar o índice de URL para GARANTIR que sempre tentaremos AMBAS
+      // as grafias do path (ASCII-safe / com acento) antes de desistir.
+      // Evita bug onde 1a tentativa já usou idx 1 e a 2a (loop de retry)
+      // começava do idx 1, perdendo a chance de acertar a outra grafia
+      // que não tinha sido tentada ainda.
+      _urlIdxAtual = 0;
       chamada = await _chamarBackendDesbloquear(body);
       if (chamada.fatal) break;
+      // (CORREÇÃO MÍNIMA 404): se ainda tivermos outra grafia de URL para
+      // tentar e a primeira retornou 404 Puro → chamar a 2ª imediatamente
+      // SEM interação do usuário, antes de decidir erro transiente.
+      while (chamada && chamada._404TryNextUrl === true) {
+        console.info('[FLUXO-DESBLOQUEIO] primeira URL deu 404 puro. Tentando automaticamente grafia alternativa (com acento) do path desbloquear-atômico... (tentativa URL idx=', _urlIdxAtual, '/', _urlsTentativa.length-1, ')');
+        chamada = await _chamarBackendDesbloquear(body);
+      }
       const okResp = chamada.r && chamada.r.status >= 200 && chamada.r.status < 300 && chamada.resp && chamada.resp.ok && chamada.resp.whatsapp;
       if (okResp) break;
       if (_t === 0 && _eErroTransienteParaRetry(chamada)) {
@@ -9386,7 +9617,11 @@ async function executarDesbloqueio() {
           };
           let ch2 = null;
           for (let _t = 0; _t < 2; _t++) {
+            _urlIdxAtual = 0;
             ch2 = await _chamarBackendDesbloquear(bodyRetry);
+            while (ch2 && ch2._404TryNextUrl === true) {
+              ch2 = await _chamarBackendDesbloquear(bodyRetry);
+            }
             if (ch2.fatal) break;
             const okR = ch2.r && ch2.r.status >= 200 && ch2.r.status < 300 && ch2.resp && ch2.resp.ok && ch2.resp.whatsapp;
             if (okR) break;
@@ -10881,7 +11116,13 @@ function atualizarCardsEstatisticasPerfil() {
     document.getElementById('perfilCardQtdAval').textContent = `${profissionalLogado.qtdAvaliacoes||0} avaliações recebidas`;
   }
   if (document.getElementById('perfilTituloNome')) {
-    document.getElementById('perfilTituloNome').textContent = `Olá, ${(profissionalLogado.nome||'').split(' ')[0]} 👋`;
+    var primNome = String(profissionalLogado.nome || '').split(' ')[0] || '';
+    var stV = (profissionalLogado.verificacao && profissionalLogado.verificacao.status) ? String(profissionalLogado.verificacao.status).toUpperCase() : '';
+    if (stV === 'VERIFIED') {
+      document.getElementById('perfilTituloNome').innerHTML = `Olá, ${primNome} 👋 <span class="inline-flex items-center gap-1.5 align-middle ml-2 px-3 py-1 rounded-full text-[11px] font-black bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white border-2 border-white shadow-md"><i class="fa-solid fa-circle-check"></i>VERIFICADO</span>`;
+    } else {
+      document.getElementById('perfilTituloNome').textContent = `Olá, ${primNome} 👋`;
+    }
   }
 }
 

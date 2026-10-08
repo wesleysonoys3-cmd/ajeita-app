@@ -817,6 +817,7 @@ function fbSyncProfissionaisRealtime() {
         var totalMudancas = snapshot.docChanges().length;
         var novoArray = [];
         var idsVistos = {};
+        var idxPorIdLocal = {};
         snapshot.forEach(function(docSnap) {
           if (!docSnap || !docSnap.exists) return;
           var dados = docSnap.data() || {};
@@ -826,9 +827,36 @@ function fbSyncProfissionaisRealtime() {
           else if (docSnap.id && docSnap.id.indexOf('local_') === 0) idProfLocal = docSnap.id.substring(6);
           else idProfLocal = docSnap.id;
           if (!idProfLocal) return;
-          if (idsVistos[idProfLocal]) return;
-          idsVistos[idProfLocal] = true;
-          novoArray.push(Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() }));
+          var mergeProf = Object.assign({}, dados, { id: idProfLocal, cadastroEm: dados.cadastroEm || Date.now() });
+          if (!idsVistos[idProfLocal]) {
+            idsVistos[idProfLocal] = true;
+            idxPorIdLocal[idProfLocal] = novoArray.length;
+            novoArray.push(mergeProf);
+            return;
+          }
+          var iExistente = idxPorIdLocal[idProfLocal];
+          if (typeof iExistente !== 'number') return;
+          var existente = novoArray[iExistente];
+          function _prioridadeStatusAdm(s) {
+            var x = String(s || '').toUpperCase();
+            if (x === 'VERIFIED') return 30;
+            if (x === 'REJECTED') return 20;
+            if (x === 'PENDING') return 10;
+            return 0;
+          }
+          try {
+            var vExistente = (existente.verificacao && typeof existente.verificacao === 'object') ? existente.verificacao : null;
+            var vNovo = (dados.verificacao && typeof dados.verificacao === 'object') ? dados.verificacao : null;
+            var pEx = vExistente ? _prioridadeStatusAdm(vExistente.status) : 0;
+            var pNv = vNovo ? _prioridadeStatusAdm(vNovo.status) : 0;
+            if (pNv > pEx && vNovo) {
+              existente.verificacao = Object.assign({}, vNovo);
+            } else if (vNovo && vExistente && pNv === pEx && pEx > 0) {
+              if (!vExistente.data_decicao && vNovo.data_decicao) existente.verificacao.data_decicao = vNovo.data_decicao;
+              if (!vExistente.admin_responsavel && vNovo.admin_responsavel) existente.verificacao.admin_responsavel = vNovo.admin_responsavel;
+              if (!vExistente.motivo_rejeicao && vNovo.motivo_rejeicao) existente.verificacao.motivo_rejeicao = vNovo.motivo_rejeicao;
+            }
+          } catch(eMV){}
         });
         profissionais = novoArray;
         salvarTodosGlobaisNoStorage();
@@ -2039,17 +2067,79 @@ function excluirProfissionalPorAdmin(idProfissional) {
   })();
 }
 
-/* Firestore sync: atualiza profissional doc (via uid se tiver, senão por inner id). Sem side effects, seguro. */
+/* Firestore sync: atualiza profissional doc (via uid se tiver, senão por inner id). SEMPRE grava em TODOS os docs duplicados do mesmo profissional via inner_id (dados.id == idProfCanonico) — garante que VERIFIED nao some ao ler doc Google UID sem sincronia. Sem side effects, seguro. */
 window.fbSyncAtualizarProfissional = function(objProfissional) {
   try {
     const mods = (typeof mods !== 'undefined') ? mods : (window.__fbModules || window.mods);
     const fbDb = (typeof FbDb !== 'undefined') ? FbDb : window.FbDb;
     if (!mods || !fbDb || !objProfissional) return;
-    const uid = objProfissional.uid || (objProfissional.id ? ('local_' + String(objProfissional.id)) : null);
-    if (!uid) return;
+    const idProfCanonico = (objProfissional.id) ? String(objProfissional.id) : null;
+    const uidObj = objProfissional.uid || (idProfCanonico ? ('local_' + idProfCanonico) : null);
+    if (!uidObj || !idProfCanonico) return;
     const safe = Object.assign({}, objProfissional);
     if (safe.uid) delete safe.uid;
-    mods.setDoc(mods.doc(fbDb, 'profissionais', String(uid)), safe, { merge: true }).catch(function(err){ console.warn('fbSyncAtualizarProfissional warn:', err && err.message); });
+    const docsIds = new Set([String(uidObj)]);
+    if (!String(uidObj).startsWith('local_') && idProfCanonico) {
+      docsIds.add('local_' + idProfCanonico);
+    }
+    var googleIdConhecido = null;
+    try {
+      if (objProfissional.googleId && String(objProfissional.googleId).length >= 4) {
+        googleIdConhecido = String(objProfissional.googleId);
+        docsIds.add(googleIdConhecido);
+      } else if (safe && safe.googleId && String(safe.googleId).length >= 4) {
+        googleIdConhecido = String(safe.googleId);
+        docsIds.add(googleIdConhecido);
+      }
+    } catch(eGid){}
+    // ============================================================
+    // CORREÇÃO COTA FIRESTORE (cirúrgica):
+    // NÃO FAZEMOS MAIS getDocs(collection('profissionais')) full scan.
+    // Usamos queries pequenas com índice + limit(20).
+    // ============================================================
+    var queriesParaRodar = [];
+    try {
+      queriesParaRodar.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('id', '==', idProfCanonico), mods.limit(20)));
+    } catch(eQ1){}
+    try {
+      queriesParaRodar.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('_id', '==', idProfCanonico), mods.limit(20)));
+    } catch(eQ2){}
+    if (googleIdConhecido) {
+      try {
+        queriesParaRodar.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('googleId', '==', googleIdConhecido), mods.limit(20)));
+      } catch(eQ3){}
+    }
+    function _escreverFanoutAgora() {
+      docsIds.forEach(function(docId){
+        try {
+          mods.setDoc(mods.doc(fbDb, 'profissionais', String(docId)), safe, { merge: true }).catch(function(err){ console.warn('fbSyncAtualizarProfissional warn doc=' + String(docId) + ':', err && err.message); });
+        } catch(eW){}
+      });
+    }
+    try {
+      if (queriesParaRodar.length === 0) { _escreverFanoutAgora(); return; }
+      Promise.allSettled(queriesParaRodar.map(function(q){ return mods.getDocs(q); })).then(function(resultados){
+        try {
+          resultados.forEach(function(res){
+            try {
+              if (!res || res.status !== 'fulfilled' || !res.value) return;
+              var snap = res.value;
+              if (!snap || !snap.docs) return;
+              snap.forEach(function(ds){
+                try {
+                  if (!ds || !ds.exists) return;
+                  var dd = ds.data() || {};
+                  var innerId = dd.id ? String(dd.id) : (dd._id ? String(dd._id) : null);
+                  if (innerId && innerId === idProfCanonico) docsIds.add(ds.id);
+                  else if (googleIdConhecido && dd.googleId && String(dd.googleId) === googleIdConhecido) docsIds.add(ds.id);
+                } catch(eI){}
+              });
+            } catch(eR){}
+          });
+        } catch(eScan){}
+        _escreverFanoutAgora();
+      }).catch(function(errAll){ _escreverFanoutAgora(); });
+    } catch(eAsync){ _escreverFanoutAgora(); }
   } catch(eSync){ console.warn('fbSyncAtualizarProfissional fail:', eSync && eSync.message); }
 };
 
@@ -2381,7 +2471,7 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
       toast('error','Erro ao abrir análise', String(e.message||e).slice(0,120));
     }
   }
-  function _persistirEnotificar(pId, novosDadosVerificacao, msgToast, tituloToast) {
+  async function _persistirEnotificar(pId, novosDadosVerificacao, msgToast, tituloToast) {
     try {
       if (!adminLogado) { toast('error','Acesso negado','Faça login como admin.'); return false; }
       if (!pId || !Array.isArray(profissionais)) return false;
@@ -2389,13 +2479,114 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
       if (idxG < 0) { toast('error','Profissional não encontrado','Tente limpar cache e atualizar a página.'); return false; }
       _garante(profissionais[idxG]);
       profissionais[idxG].verificacao = Object.assign({}, profissionais[idxG].verificacao || {}, novosDadosVerificacao);
-      // Sync Firestore
+      // ============================================================
+      // ✅ CORREÇÃO PERSISTÊNCIA REAL: 2 camadas de garantia
+      // Camada 1: fanout write em TODOS os docs duplicados do mesmo
+      //          profissional (dados.id) com merge:true — feito por
+      //          fbSyncAtualizarProfissional() que implementa a rotina.
+      // Camada 2: APÓS os writes, rodamos NOVAMENTE o scan getDocs()
+      //          coleção e para cada doc duplicado do mesmo id fazemos
+      //          getDoc() e CONFIRMAMOS que verificacao.status bate com
+      //          o status solicitado (VERIFIED / REJECTED / PENDING).
+      //          Se faltar algum, retentamos 1 vez e ainda assim se
+      //          der errado, retornamos false + toast de erro.
+      // ============================================================
+      const statusEsperado = String(novosDadosVerificacao && novosDadosVerificacao.status || '').toUpperCase();
+      const idProfCanonico = String(profissionais[idxG].id || '');
+      const mods = window.__fbModules;
+      const fbDb = (typeof FbDb !== 'undefined') ? FbDb : (window.FbDb || null);
+      // Sync Firestore (Camada 1: fanout write)
       try {
         if (typeof window.fbSyncAtualizarProfissional === 'function') {
           window.fbSyncAtualizarProfissional(Object.assign({}, profissionais[idxG], { uid: ('local_' + String(profissionais[idxG].id)) }));
         }
       } catch(eFbSync){ console.warn(eFbSync); }
       if (typeof salvarTodosGlobaisNoStorage === 'function') salvarTodosGlobaisNoStorage();
+
+      // --- Camada 2: confirmação imediata por getDoc em todas duplicatas ---
+      var confirmouTudo = true;
+      var docsProblemas = [];
+      try {
+        if (mods && fbDb && idProfCanonico && statusEsperado) {
+          var docIdsAlvo = new Set();
+          docIdsAlvo.add('local_' + idProfCanonico);
+          var gidProf = profissionais[idxG] && profissionais[idxG].googleId ? String(profissionais[idxG].googleId) : null;
+          if (gidProf) docIdsAlvo.add(gidProf);
+          // ========================================================
+          // CORREÇÃO COTA: NÃO rodar getDocs(collection inteira).
+          // Rodar 2 queries pequenas por id/_id e (se houver) googleId.
+          // ========================================================
+          try {
+            var qs = [];
+            try { qs.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('id', '==', idProfCanonico), mods.limit(20))); } catch(eQ1){}
+            try { qs.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('_id', '==', idProfCanonico), mods.limit(20))); } catch(eQ2){}
+            if (gidProf) { try { qs.push(mods.query(mods.collection(fbDb, 'profissionais'), mods.where('googleId', '==', gidProf), mods.limit(20))); } catch(eQ3){} }
+            if (qs.length > 0) {
+              var arrSnaps = await Promise.allSettled(qs.map(function(q){ return mods.getDocs(q); }));
+              arrSnaps.forEach(function(ress){
+                try {
+                  if (!ress || ress.status !== 'fulfilled' || !ress.value) return;
+                  var snap = ress.value;
+                  if (!snap || !snap.docs) return;
+                  snap.forEach(function(ds){
+                    try {
+                      if (!ds || !ds.exists) return;
+                      var ddSnap = ds.data() || {};
+                      var innerIdSnap = ddSnap.id ? String(ddSnap.id) : (ddSnap._id ? String(ddSnap._id) : null);
+                      if (innerIdSnap && innerIdSnap === idProfCanonico) docIdsAlvo.add(ds.id);
+                      else if (gidProf && ddSnap.googleId && String(ddSnap.googleId) === gidProf) docIdsAlvo.add(ds.id);
+                    } catch(eI){}
+                  });
+                } catch(eR){}
+              });
+            }
+          } catch(eQryAll){}
+          // 1a rodada de getDoc confirmar
+          for (var tent = 0; tent < 2 && confirmouTudo === false || (tent === 0); tent++) {
+            confirmouTudo = true;
+            docsProblemas = [];
+            var arrIds = Array.from(docIdsAlvo);
+            for (var iD = 0; iD < arrIds.length; iD++) {
+              var esteDocId = arrIds[iD];
+              try {
+                var dsRead = await mods.getDoc(mods.doc(fbDb, 'profissionais', String(esteDocId)));
+                var temDocExiste = !!(dsRead && dsRead.exists);
+                var dadoLido = temDocExiste ? (dsRead.data() || {}) : {};
+                var stLido = temDocExiste && dadoLido.verificacao && dadoLido.verificacao.status ? String(dadoLido.verificacao.status).toUpperCase() : '';
+                if (!temDocExiste || stLido !== statusEsperado) {
+                  // Retentativa: re-escrever o patch especifico só deste docId
+                  var rePayload = Object.assign({}, profissionais[idxG] || {});
+                  if (rePayload.uid) delete rePayload.uid;
+                  try {
+                    await mods.setDoc(mods.doc(fbDb, 'profissionais', String(esteDocId)), Object.assign({}, rePayload, {
+                      verificacao: Object.assign({}, (dadoLido.verificacao || {}), (rePayload.verificacao || {}), novosDadosVerificacao || {})
+                    }), { merge: true });
+                  } catch(eReWrite){}
+                  docsProblemas.push({ docId: String(esteDocId), existia: temDocExiste, statusLido: stLido || '(sem campo)' });
+                  confirmouTudo = false;
+                }
+              } catch(eDocGet){
+                docsProblemas.push({ docId: String(esteDocId), erro: String(eDocGet && eDocGet.message || eDocGet).slice(0,80) });
+                confirmouTudo = false;
+              }
+            }
+            if (confirmouTudo) break;
+            if (tent === 0) {
+              try { await new Promise(function(r){ setTimeout(r, 250); }); } catch(eW){}
+            }
+          }
+        }
+      } catch(eConfirm){
+        console.warn('[adminVer.persistirEnotificar] confirmacao imediata falhou:', eConfirm && eConfirm.message);
+        confirmouTudo = false;
+      }
+      if (!confirmouTudo) {
+        var detalhe = '';
+        try { detalhe = 'Docs com pendencia: ' + (docsProblemas||[]).map(function(x){ return String(x.docId||'?')+'='+String(x.statusLido||x.erro||'?'); }).join(' · '); } catch(eDet){}
+        toast('error','Falha ao gravar aprovação no Firestore', (detalhe || 'Alguns documentos duplicados não receberam o status '+(statusEsperado||'solicitado')+'. Tente novamente ou contate suporte.') , 9000);
+        try { console.warn('[adminVer.persistirEnotificar] docs que NAO ficaram VERIFIED/REJECTED:', docsProblemas); } catch(eLog){}
+        return false;
+      }
       toast(tituloToast || 'success', msgToast || 'Salvo.', msgToast, 6000);
       return true;
     } catch(e){
@@ -2404,7 +2595,7 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
       return false;
     }
   }
-  function aprovarAtual() {
+  async function aprovarAtual() {
     try {
       if (!adminLogado) { toast('error','Acesso negado','Apenas administradores.'); return; }
       if (!_atualProId) { toast('warning','Nenhum profissional aberto','Abra uma análise primeiro.'); return; }
@@ -2416,7 +2607,7 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
         admin_responsavel: 'admin10',
         motivo_rejeicao: null
       };
-      var salvou = _persistirEnotificar(_atualProId, novosDados, '✅ Profissional marcado como VERIFIED. Selo ✓ Profissional verificado exibido no perfil público.', 'Sucesso');
+      var salvou = await _persistirEnotificar(_atualProId, novosDados, '✅ Profissional marcado como VERIFIED. Selo ✓ Profissional verificado exibido no perfil público.', 'Sucesso');
       if (salvou) {
         try { fecharModal('modalAdminVerificacaoProfissional'); } catch(e){}
         _atualProId = null;
@@ -2428,7 +2619,7 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
       toast('error','Erro ao aprovar', String(e.message||e).slice(0,120));
     }
   }
-  function abrirDialogRejeitar() {
+  async function abrirDialogRejeitar() {
     try {
       if (!adminLogado) { toast('error','Acesso negado','Apenas administradores.'); return; }
       if (!_atualProId) { toast('warning','Nenhum profissional aberto','Abra uma análise primeiro.'); return; }
@@ -2444,7 +2635,7 @@ window.fbSyncAtualizarProfissional = function(objProfissional) {
         admin_responsavel: 'admin10',
         motivo_rejeicao: m
       };
-      var salvou = _persistirEnotificar(_atualProId, novosDados, '❌ Profissional REJEITADO. Motivo registrado e visível no perfil do profissional para correção.', 'Feito');
+      var salvou = await _persistirEnotificar(_atualProId, novosDados, '❌ Profissional REJEITADO. Motivo registrado e visível no perfil do profissional para correção.', 'Feito');
       if (salvou) {
         try { fecharModal('modalAdminVerificacaoProfissional'); } catch(e){}
         _atualProId = null;
