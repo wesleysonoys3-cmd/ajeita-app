@@ -213,7 +213,7 @@ app.get('/', (req, res) => {
     ok: true,
     app: 'ajeita-pix-backend',
     versao: '2.3-smtp-sendgrid-render-timeout-fallback',
-    build_tag: '20261007_passo1_buscas_paralelo_allsSettled_where_sessao_token_ultima',
+    build_tag: '20261009_fix_raiz_404_desbloqueio_422_PEDIDO_NAO_ENCONTRADO_401_PROFISSIONAL_NAO_ENCONTRADO_autocura_preflight_retry',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,

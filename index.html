@@ -7046,10 +7046,29 @@ async function _pedidoSyncFirestore(pedidoObj) {
     if (!FB_FIRESTORE_DISPONIVEL || !window.__fbModules || !pedidoObj) return { status:'skipped' };
     const mods = window.__fbModules;
     const col = mods.collection(FbDb, 'pedidos');
-    const docId = pedidoObj.id || ('ped_' + Date.now());
+    const docId = String(pedidoObj.id || ('ped_' + Date.now())).trim();
+    if (!docId) return { status:'erro', err: new Error('pedido sem id') };
     const docRef = mods.doc(col, docId);
     const payload = Object.assign({}, pedidoObj || {}, { _syncType: 'localStorage_to_firestore', _syncedAt: Date.now() });
-    await mods.setDoc(docRef, payload).catch(function(){});
+    // (CORREÇÃO 2026-10-09): Removido .catch(function(){}) que ENGOLIA erros de escrita no Firestore.
+    // Antes: setDoc podia falhar (regras, offline, SDK indisponível) e a função retornava falso "ok".
+    // Agora: se setDoc falhar, cai no catch geral e retorna status: 'erro' com err real, para quem
+    // chama (preflight / autocura) poder tratar e dar feedback útil.
+    // Observação: SDK Firebase v9 resolve setDoc em cache LOCAL (quase instantâneo), não no servidor.
+    //   Quem chama deve adicionar ~700–1500ms de buffer pós-setDoc para dar tempo da escrita
+    //   propagar para os servidores do Firestore (onde o backend Node lê via Admin SDK).
+    try {
+      await mods.setDoc(docRef, payload, { merge: true });
+    } catch (eSetDoc) {
+      return { status:'erro', err: eSetDoc, docId: docId, _erroNome: String((eSetDoc && eSetDoc.name) || 'setDoc_error') };
+    }
+    try {
+      if (typeof pedidoObj === 'object' && pedidoObj) {
+        try { pedidoObj._syncType = payload._syncType; } catch(eA){}
+        try { pedidoObj._syncedAt = payload._syncedAt; } catch(eA){}
+        try { delete pedidoObj._fsSyncPendente; } catch(eD){}
+      }
+    } catch(eAttrib){}
     return { status:'ok', docId: docId };
   } catch(e){ return { status:'erro', err: e }; }
 }
@@ -9469,6 +9488,23 @@ async function executarDesbloqueio() {
             try { delete ped._fsSyncPendente; } catch(eDel){}
             salvarTodosGlobaisNoStorage();
             console.info('[FLUXO-DESBLOQUEIO] sync preflight pedido FS OK. docId=', _syncRPre.docId);
+            // (CORREÇÃO 2026-10-09 — robustez propagação Firestore):
+            // SDK Firebase v9 resolve a Promise do setDoc em cache LOCAL (~0ms),
+            // não no servidor. O backend Node usa Admin SDK que lê DIRETO do servidor.
+            // Sem espera, às vezes o servidor ainda não recebeu a escrita (latência rede
+            // ou replicação entre nós do Firestore). Buffer de 750ms após sync OK
+            // praticamente elimina a janela de corrida "escrita local → servidor ainda não vê".
+            try { await new Promise(function(rv){ setTimeout(rv, 750); }); } catch(eSl){}
+          } else if (_syncRPre && _syncRPre.status === 'skipped') {
+            // Firebase SDK não está disponível neste navegador.
+            // O pedido pode ter sido sincronizado por OUTRO navegador antes;
+            // prosseguimos mesmo assim (fetch normal).
+            console.warn('[FLUXO-DESBLOQUEIO] sync preflight SKIPPED (Firebase SDK indisponível neste navegador). Prosseguindo com fetch normal...');
+          } else if (_syncRPre && _syncRPre.status === 'erro') {
+            // Falha REAL ao escrever (regras, offline etc.).
+            // Ainda assim enviamos o fetch (talvez o doc já exista no FS por sincronia antiga
+            // ou por outro dispositivo).
+            console.warn('[FLUXO-DESBLOQUEIO] sync preflight ERRO ao gravar FS:', _syncRPre._erroNome || (_syncRPre.err && _syncRPre.err.message));
           }
         } catch(eSyncPreErr){ console.error('[FLUXO-DESBLOQUEIO] sync preflight exceção:', eSyncPreErr && eSyncPreErr.message); }
       }
@@ -9699,34 +9735,61 @@ async function executarDesbloqueio() {
       //   (b) Reenviar o fetch de desbloqueio UMA vez automaticamente
       //   (c) Se ainda falhar, mostrar mensagem ESPECÍFICA e útil
       if (err === 'PEDIDO_NAO_ENCONTRADO') {
-        console.warn('[FLUXO-DESBLOQUEIO] Backend retornou PEDIDO_NAO_ENCONTRADO. Iniciando autocura: sync pedido + retry 1x AUTOMÁTICO sem clique...');
+        console.warn('[FLUXO-DESBLOQUEIO] Backend retornou PEDIDO_NAO_ENCONTRADO. Iniciando autocura: sync pedido + retry 3x AUTOMÁTICO sem clique...');
+        let _autocuraSyncR = null;
         try {
           if (typeof _pedidoSyncFirestore === 'function' && ped) {
             try {
-              const sCur = await _pedidoSyncFirestore(Object.assign({}, ped));
-              if (sCur && sCur.status === 'ok') {
+              _autocuraSyncR = await _pedidoSyncFirestore(Object.assign({}, ped));
+              if (_autocuraSyncR && _autocuraSyncR.status === 'ok') {
                 try { ped._syncType = 'autocura_pedido_nao_encontrado'; } catch(eA){}
                 try { ped._syncedAt = Date.now(); } catch(eA){}
                 try { delete ped._fsSyncPendente; } catch(eA){}
                 salvarTodosGlobaisNoStorage();
-                console.info('[FLUXO-DESBLOQUEIO] autocura sync FS OK. docId=', sCur.docId);
+                console.info('[FLUXO-DESBLOQUEIO] autocura sync FS OK. docId=', _autocuraSyncR.docId);
+              } else if (_autocuraSyncR && _autocuraSyncR.status === 'skipped') {
+                console.warn('[FLUXO-DESBLOQUEIO] autocura sync SKIPPED (Firebase SDK indisponível NESTE navegador). O pedido precisa ser sincronizado no navegador do cliente que o criou.');
+              } else if (_autocuraSyncR && _autocuraSyncR.status === 'erro') {
+                console.warn('[FLUXO-DESBLOQUEIO] autocura sync ERRO FS:', _autocuraSyncR._erroNome || (_autocuraSyncR.err && _autocuraSyncR.err.message));
               }
             } catch(eSyncCur){ console.error('[FLUXO-DESBLOQUEIO] autocura sync FS exceção:', eSyncCur && eSyncCur.message); }
           }
         } catch(eSyncCurWrap){}
-        try { await new Promise(rv => setTimeout(rv, 1100)); } catch(eSleep1){}
+        // (CORREÇÃO 2026-10-09): Tempo de espera aumentado de 1100ms → 2200ms.
+        // Racional: Firestore grava localmente ~imediatamente, mas a escrita
+        // precisa chegar aos servidores (backend lê via Admin SDK do servidor).
+        // 2,2s é confortável para cobrir: latência rede BR → us-central,
+        // replicação entre nós do Firestore e cache em múltiplas regiões.
+        // Além disso, se SDK indisponível → este buffer também ajuda a
+        // esperar o SDK carregar caso ele estivesse em loading inicial.
+        try { await new Promise(rv => setTimeout(rv, 2200)); } catch(eSleep1){}
         let chCura = null;
         if (sessaoTok && sessaoTok.length >= 8) {
           const bodyCura = { pedido_id:pedId, profissional_id:profissionalLogado.id, profissional_sessao:sessaoTok, profissional_senha:'' };
-          for (let _tc = 0; _tc < 2; _tc++) {
+          // (CORREÇÃO 2026-10-09): retries aumentado de 2 → 3.
+          // 1ª tentativa: imediata após 2,2s de espera de propagação.
+          // 2ª tentativa: erro transiente? espera +1,6s e tenta de novo.
+          // 3ª tentativa: último esforço.
+          for (let _tc = 0; _tc < 3; _tc++) {
             _urlIdxAtual = 0;
             chCura = await _chamarBackendDesbloquear(bodyCura);
             while (chCura && chCura._404TryNextUrl === true) { chCura = await _chamarBackendDesbloquear(bodyCura); }
             if (chCura.fatal) break;
             const okCura = chCura.r && chCura.r.status>=200 && chCura.r.status<300 && chCura.resp && chCura.resp.ok && chCura.resp.whatsapp;
             if (okCura) break;
-            if (_tc === 0 && _eErroTransienteParaRetry(chCura)) { try { await new Promise(rv => setTimeout(rv, 1400)); } catch(eS){} continue; }
-            break;
+            // Se ainda retornar PEDIDO_NAO_ENCONTRADO na primeira tentativa,
+            // podemos tentar RE-sincronizar + esperar mais 1,4s ANTES do retry.
+            if (_tc < 2) {
+              const aindaNaoEncontrado = chCura.resp && chCura.resp.error === 'PEDIDO_NAO_ENCONTRADO';
+              if (aindaNaoEncontrado && typeof _pedidoSyncFirestore === 'function' && ped) {
+                try { await _pedidoSyncFirestore(Object.assign({}, ped)); } catch(eReSync){}
+                try { await new Promise(rv => setTimeout(rv, 1400)); } catch(eS){ continue; }
+              } else if (_eErroTransienteParaRetry(chCura)) {
+                try { await new Promise(rv => setTimeout(rv, 1800)); } catch(eS){ continue; }
+              } else {
+                try { await new Promise(rv => setTimeout(rv, 800)); } catch(eS){}
+              }
+            }
           }
           if (!chCura.fatal && chCura.r && chCura.r.status>=200 && chCura.r.status<300 && chCura.resp && chCura.resp.ok && chCura.resp.whatsapp) {
             // SUCESSO na autocura. Redirecionar para o fluxo de sucesso mais abaixo.
@@ -9772,11 +9835,18 @@ async function executarDesbloqueio() {
             }
           }
         }
-        // Falhou mesmo após autocura → mostrar mensagem CORRETA e ESPECÍFICA.
+        // Falhou mesmo após autocura → mostrar mensagem CORRETA e ESPECÍFICA,
+        // com informação adicional se o Firebase SDK estava indisponível.
         _resetBtnExecProcessando();
+        let msgExtraFinal = '';
+        if (_autocuraSyncR && _autocuraSyncR.status === 'skipped') {
+          msgExtraFinal = ' (Firebase indisponível neste navegador: peça para quem criou o pedido recarregar a página OU recarregue esta página aqui e tente novamente.)';
+        } else if (_autocuraSyncR && _autocuraSyncR.status === 'erro') {
+          msgExtraFinal = ' (Erro ao gravar no Firestore. Verifique sua conexão com a internet e recarregue a página.)';
+        }
         toast('error','Pedido ainda não sincronizado com a nuvem',
-          msg || 'O pedido foi criado localmente mas ainda não foi salvo no servidor. Aguarde 10 segundos e tente novamente, ou peça para quem criou o pedido recarregar a página uma vez (isso força a sincronia). Se persistir, recarregue esta página também.',
-          11000);
+          (msg || 'O pedido foi criado localmente mas ainda não foi salvo no servidor. Aguarde 10 segundos e tente novamente, ou peça para quem criou o pedido recarregar a página uma vez (isso força a sincronia). Se persistir, recarregue esta página também.') + msgExtraFinal,
+          13000);
         return;
       }
 
