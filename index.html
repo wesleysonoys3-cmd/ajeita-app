@@ -7087,8 +7087,30 @@ async function _garantirPedidoViaBackend(pedidoObj) {
     const sessaoTok = String((profissionalLogado && profissionalLogado.sessao_token_ultima) || '').trim();
     const pedId = String(pedidoObj.id || '').trim();
     if (!profId || !pedId) return { status:'skipped', reason:'sem_ids_para_envio' };
+    // (CORRECAO 2026-10-09 RAIZ CORROMPER_WHATSAPP): Remove campos de telefone ANTES de enviar
+    // para o backend. Motivo: fbSyncPedidosRealtimeENotificar (linha 3689) zera TODOS esses
+    // campos na memoria do navegador do profissional (camada de seguranca AC-R01/AC-R02). Se
+    // a gente enviar {whatsapp:null} c/ merge:true no backend Admin SDK, o doc EXISTENTE no
+    // Firestore (que tem WhatsApp REAL do cliente) tem campo sobrescrito para null ->
+    // PEDIDO_SEM_WHATSAPP e desbloqueio nunca funciona. Solucao: enviar UMA copia limpa.
+    const pedidoLimpo = Object.assign({}, pedidoObj || {});
+    delete pedidoLimpo.whatsapp;
+    delete pedidoLimpo.clienteTelefone;
+    delete pedidoLimpo.clienteWhatsapp;
+    delete pedidoLimpo.telefone;
+    delete pedidoLimpo.clienteFone;
+    delete pedidoLimpo.foneCliente;
+    delete pedidoLimpo.customerPhone;
+    delete pedidoLimpo.clientPhone;
+    delete pedidoLimpo.cliente_telefone;
+    delete pedidoLimpo.cliente_whatsapp;
+    delete pedidoLimpo.cliente_tel;
+    delete pedidoLimpo.numero;
+    delete pedidoLimpo.numeroCliente;
+    delete pedidoLimpo.numero_cliente;
+    delete pedidoLimpo.wa;
     const bodyEnv = {
-      pedido: pedidoObj,
+      pedido: pedidoLimpo,
       pedido_id: pedId,
       profissional_id: profId,
       profissional_sessao: sessaoTok,

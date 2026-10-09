@@ -213,7 +213,7 @@ app.get('/', (req, res) => {
     ok: true,
     app: 'ajeita-pix-backend',
     versao: '2.3-smtp-sendgrid-render-timeout-fallback',
-    build_tag: '20261009_fix_raiz_404_desbloqueio_422_PEDIDO_NAO_ENCONTRADO_401_PROFISSIONAL_NAO_ENCONTRADO_autocura_preflight_retry',
+    build_tag: '20261009_fix_raiz_corromper_whatsapp_pedido_fs_prefixoCol_garantir_pedido_defesa_profundidade',
     modo: MODO_PRODUCAO_REAL ? 'PRODUCAO_REAL_DINHEIRO' : MODO_HOMOLOGACAO_TESTE ? 'HOMOLOGACAO_TESTE' : 'MOCK_LOCAL_DESENVOLVIMENTO',
     firebase_project: svcAccount ? svcAccount.project_id : null,
     mp_ativado: !!mercadopago,
@@ -3018,6 +3018,7 @@ async function _handlerGarantirPedidoFs(req, res) {
   try {
     if (!dbFirestore) return PASSO_ERRO(503, 'FIRESTORE_INDISPONIVEL_BACKEND', 'Admin SDK Firestore indisponível no servidor.');
     if (!req.body) return PASSO_ERRO(400, 'PARAMETROS_OBRIGATORIOS', 'Body obrigatório ausente.');
+    const prefixoColFs = (typeof FIRESTORE_COL_PREFIX === 'string' ? FIRESTORE_COL_PREFIX : '');
     const pedido = req.body.pedido || null;
     const pedidoId = String((pedido && pedido.id) || req.body.pedido_id || '').trim();
     const profissionalId = String(req.body.profissional_id || '').trim();
@@ -3047,8 +3048,40 @@ async function _handlerGarantirPedidoFs(req, res) {
     }
     // ---- ESCREVE DOC VIA ADMIN SDK (merge:true, idempotente) ----
     try {
-      const docRef = dbFirestore.collection('pedidos').doc(pedidoId);
-      const payload = Object.assign({}, pedido || {}, {
+      const docRef = dbFirestore.collection(prefixoColFs + 'pedidos').doc(pedidoId);
+      // (CORRECAO 2026-10-09 RAIZ_CORROMPER_WHATSAPP): LER doc EXISTENTE ANTES de sobrescrever.
+      // Motivo: A camada de seguranca no frontend (fbSyncPedidosRealtimeENotificar, linha 3689)
+      // zera TODOS os campos de telefone na memoria do profissional (p.whatsapp = null etc.).
+      // Se o frontend enviar esses campos nulos e fizermos set(merge:true), o doc EXISTENTE
+      // (que tem WhatsApp REAL do cliente) TEM CAMPO SOBRESCRITO PARA NULL, resultando em
+      // PEDIDO_SEM_WHATSAPP no desbloqueio e WhatsApp nunca liberado.
+      // Solucao defensiva em profundidade: se doc jah existe no FS e o payload tem null/empty
+      // em campos de telefone, PRESERVAMOS os valores ORIGINAIS do doc.
+      let docExistenteData = null;
+      try {
+        const snapExistente = await _fsGetComTimeout(docRef, 18000);
+        if (snapExistente && snapExistente.exists) docExistenteData = snapExistente.data() || {};
+      } catch(eSnapEx){}
+      const CAMPOS_FONE_PRESERVAR = ['whatsapp','clienteTelefone','clienteWhatsapp','telefone','clienteFone','foneCliente','customerPhone','clientPhone','cliente_telefone','cliente_whatsapp','cliente_tel','numero','numeroCliente','numero_cliente','wa'];
+      let payloadPedido = Object.assign({}, pedido || {});
+      if (docExistenteData && typeof docExistenteData === 'object') {
+        CAMPOS_FONE_PRESERVAR.forEach(function(campoNome){
+          try {
+            const veioNoPayload = (campoNome in payloadPedido) && (payloadPedido[campoNome] !== undefined);
+            const valorPayload = veioNoPayload ? String(payloadPedido[campoNome] || '').replace(/\s+/g,'').trim() : '';
+            const valorOriginal = (campoNome in docExistenteData) ? String(docExistenteData[campoNome] || '').replace(/\s+/g,'').trim() : '';
+            if (veioNoPayload && valorPayload.length === 0 && valorOriginal.length > 0) {
+              // Payload enviou null/vazio MAS doc original tem valor: PRESERVAR original.
+              payloadPedido[campoNome] = docExistenteData[campoNome];
+            } else if (!veioNoPayload && valorOriginal.length > 0) {
+              // Payload NAO enviou o campo MAS doc original tem valor: MANTER no objeto
+              // (Object.assign jah teria perdido, mas merge:true manteria; soh por seguranca.)
+              payloadPedido[campoNome] = docExistenteData[campoNome];
+            }
+          } catch(eCampo){}
+        });
+      }
+      const payload = Object.assign({}, payloadPedido || {}, {
         _ultimaSincroniaViaBackendProfissionalAt_ms: Date.now(),
         _sincronizadoPorProfissional_docId: profissionalDocId,
         _syncType: 'backend_profissional_fallback_garantir_pedido_fs',
