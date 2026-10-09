@@ -2728,7 +2728,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
       autenticado = true;
       const r = await _buscarProfissionalFirestorePorIdOuDoc(profissionalId);
       profDocId = r.docId; profData = r.data;
-      if (!profDocId) return PASSO_ERRO(404, 'PROFISSIONAL_NAO_ENCONTRADO', 'Admin bypass: profissional não encontrado.');
+      if (!profDocId) return PASSO_ERRO(401, 'PROFISSIONAL_NAO_ENCONTRADO', 'Admin bypass: profissional não encontrado.');
     } else {
       // PASSO 1A: 4 buscas indexadas em PARALELO (Promise.allSettled) para eliminar latência serial 4x7s≈28s.
       //   Ordem: (1) docId local_, (2) docId puro (sem prefixo), (3) where(googleId), (4) where(emailGoogle) — idêntico a função _buscarProfissionalFirestorePorIdOuDoc,
@@ -2794,7 +2794,7 @@ async function _handlerDesbloquearAtomicoPedidos(req, res) {
       const pSnap = await _fsGetComTimeout(pedRef, 20000);
       if (pSnap && pSnap.exists) pedidoDocData = pSnap.data() || {};
     }
-    if (!pedidoDocData) return PASSO_ERRO(404, 'PEDIDO_NAO_ENCONTRADO', 'Pedido não existe.');
+    if (!pedidoDocData) return PASSO_ERRO(422, 'PEDIDO_NAO_ENCONTRADO', 'Pedido não existe no Firestore. Ele foi criado localmente mas ainda não foi sincronizado com a nuvem. Aguarde alguns segundos e tente novamente, ou recarregue a página para forçar a sincronização.');
     whatsappReal = pedidoDocData.whatsapp || pedidoDocData.clienteTelefone || pedidoDocData.clienteWhatsapp || null;
     nomeClienteReal = pedidoDocData.nomeCliente || pedidoDocData.clienteNome || '';
     const whatsappLimpo = String(whatsappReal || '').replace(/\D/g,'');

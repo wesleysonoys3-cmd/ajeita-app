@@ -9087,7 +9087,7 @@ function abrirModalSolicitarOrcamento() {
   _pedidoResetarFotos();
   abrirModal('modal-solicitar-orcamento');
 }
-function submitSolicitarOrcamento(e) {
+async function submitSolicitarOrcamento(e) {
   if (e) e.preventDefault();
   const nomeCli = (document.getElementById('solicNomeCliente').value||'').trim();
   let cat = (document.getElementById('solicCategoria').value || '').trim();
@@ -9127,10 +9127,36 @@ function submitSolicitarOrcamento(e) {
   if (!meusPedidosClienteIds.includes(novo.id)) meusPedidosClienteIds.unshift(novo.id);
   clienteUltimosDados = { nome: nomeCli || null, whatsapp: wa, cidade:cid, bairro:bai };
   salvarTodosGlobaisNoStorage();
-  // (TASK 7/8) Escreve no Firestore para profissionais de outros dispositivos tb verem
-  try { _pedidoSyncFirestore(novo); } catch(e){}
+  // (TASK 7/8) Escreve no Firestore para profissionais de outros dispositivos tb verem.
+  // (CORREÇÃO RAIZ): Não é mais fire-and-forget. Espera (await) e, se Firebase indisponível
+  // no momento, marca o pedido com flag para re-sync em lote na próxima inicialização.
+  try {
+    let sincronizado = false;
+    for (let _tent = 0; _tent < 2 && !sincronizado; _tent++) {
+      try {
+        const sr = await _pedidoSyncFirestore(novo);
+        if (sr && sr.status === 'ok') {
+          try { novo._syncType = 'localStorage_to_firestore_onCreate'; } catch(eA){}
+          try { novo._syncedAt = Date.now(); } catch(eA){}
+          try { delete novo._fsSyncPendente; } catch(eA){}
+          salvarTodosGlobaisNoStorage();
+          sincronizado = true;
+        } else if (sr && sr.status === 'skipped') {
+          // Firebase SDK nao disponivel ainda (SDK nao carregou: network lenta / bloqueador).
+          // Marcar como pendente e esperar 1s para retentar uma vez.
+          try { novo._fsSyncPendente = true; } catch(eA){}
+          salvarTodosGlobaisNoStorage();
+          if (_tent === 0) { try { await new Promise(rv => setTimeout(rv, 1100)); } catch(eSl){} }
+        }
+      } catch(eSync1){}
+    }
+    if (!sincronizado) {
+      try { novo._fsSyncPendente = true; } catch(eA){}
+      salvarTodosGlobaisNoStorage();
+    }
+  } catch(e){}
   // (TASK 8) Cria notificacoes para profissionais da mesma categoria/regiao
-  try { _notificarNovoPedidoParaProfissionais(novo); } catch(e){}
+  try { if (typeof _notificarNovoPedidoParaProfissionais === 'function') _notificarNovoPedidoParaProfissionais(novo); } catch(e){}
   renderMuralPedidos();
   try {
     const formOrc = document.getElementById('formSolicitarOrcamento');
@@ -9421,6 +9447,33 @@ async function executarDesbloqueio() {
     // com profissionais legado cadastrados sem Google).
     const senhaFallback = '';
 
+    // ============================================================
+    // (CORREÇÃO RAIZ 404 PEDIDO_NAO_ENCONTRADO): Garante que o pedido
+    // exista no Firestore ANTES de enviar o fetch do desbloqueio.
+    // Causa raiz do bug: cliente cria pedido no navegador (localStorage)
+    // mas Firebase SDK falha silenciosamente na sincronia inicial; quando
+    // outro dispositivo (profissional) clica em desbloquear, o backend
+    // (que só lê Firestore) não encontra o doc → retorna 404/422 DOMÍNIO
+    // e o frontend interpretava como "servidor indisponível / instância dormindo".
+    // Aqui re-sincronizamos o pedido de forma idempotente (merge) no FS.
+    // ============================================================
+    try {
+      const _precisaSyncPedido = !ped._syncType || ped._fsSyncPendente === true || !Number(ped._syncedAt);
+      if (_precisaSyncPedido && typeof _pedidoSyncFirestore === 'function') {
+        console.info('[FLUXO-DESBLOQUEIO] pedido sem marcador de sincronia FS. Forçando sync preflight idempotente... (ped._syncType=', ped._syncType, ' _syncedAt=', ped._syncedAt, ')');
+        try {
+          const _syncRPre = await _pedidoSyncFirestore(Object.assign({}, ped));
+          if (_syncRPre && _syncRPre.status === 'ok') {
+            try { ped._syncType = 'desbloqueio_preflight_sync'; } catch(eAssign){}
+            try { ped._syncedAt = Date.now(); } catch(eAssign){}
+            try { delete ped._fsSyncPendente; } catch(eDel){}
+            salvarTodosGlobaisNoStorage();
+            console.info('[FLUXO-DESBLOQUEIO] sync preflight pedido FS OK. docId=', _syncRPre.docId);
+          }
+        } catch(eSyncPreErr){ console.error('[FLUXO-DESBLOQUEIO] sync preflight exceção:', eSyncPreErr && eSyncPreErr.message); }
+      }
+    } catch(eSyncGeral){}
+
     if (!sessaoTok) {
       _resetBtnExecProcessando();
       toast('warning','Sessão não sincronizada','O token de sessão do profissional ainda não foi gerado. Tente novamente (ou faça login novamente com o Google se o problema persistir).', 7000);
@@ -9638,8 +9691,106 @@ async function executarDesbloqueio() {
     if (!r || statusNum < 200 || statusNum >= 300 || !resp || !resp.ok || !resp.whatsapp) {
       const err = resp && resp.error ? String(resp.error) : '';
       const msg = resp && resp.msg ? String(resp.msg) : 'Tente novamente.';
+
+      // ============ CASO ESPECÍFICO 1: PEDIDO_NAO_ENCONTRADO (causa raiz do 404 falso) ============
+      // Se o backend confirmou que o pedido NÃO EXISTE no Firestore, NÃO mostrar toast
+      // genérico de "instância acordando". Em vez disso:
+      //   (a) Forçar sync do pedido no FS por este navegador (cliente/profissional)
+      //   (b) Reenviar o fetch de desbloqueio UMA vez automaticamente
+      //   (c) Se ainda falhar, mostrar mensagem ESPECÍFICA e útil
+      if (err === 'PEDIDO_NAO_ENCONTRADO') {
+        console.warn('[FLUXO-DESBLOQUEIO] Backend retornou PEDIDO_NAO_ENCONTRADO. Iniciando autocura: sync pedido + retry 1x AUTOMÁTICO sem clique...');
+        try {
+          if (typeof _pedidoSyncFirestore === 'function' && ped) {
+            try {
+              const sCur = await _pedidoSyncFirestore(Object.assign({}, ped));
+              if (sCur && sCur.status === 'ok') {
+                try { ped._syncType = 'autocura_pedido_nao_encontrado'; } catch(eA){}
+                try { ped._syncedAt = Date.now(); } catch(eA){}
+                try { delete ped._fsSyncPendente; } catch(eA){}
+                salvarTodosGlobaisNoStorage();
+                console.info('[FLUXO-DESBLOQUEIO] autocura sync FS OK. docId=', sCur.docId);
+              }
+            } catch(eSyncCur){ console.error('[FLUXO-DESBLOQUEIO] autocura sync FS exceção:', eSyncCur && eSyncCur.message); }
+          }
+        } catch(eSyncCurWrap){}
+        try { await new Promise(rv => setTimeout(rv, 1100)); } catch(eSleep1){}
+        let chCura = null;
+        if (sessaoTok && sessaoTok.length >= 8) {
+          const bodyCura = { pedido_id:pedId, profissional_id:profissionalLogado.id, profissional_sessao:sessaoTok, profissional_senha:'' };
+          for (let _tc = 0; _tc < 2; _tc++) {
+            _urlIdxAtual = 0;
+            chCura = await _chamarBackendDesbloquear(bodyCura);
+            while (chCura && chCura._404TryNextUrl === true) { chCura = await _chamarBackendDesbloquear(bodyCura); }
+            if (chCura.fatal) break;
+            const okCura = chCura.r && chCura.r.status>=200 && chCura.r.status<300 && chCura.resp && chCura.resp.ok && chCura.resp.whatsapp;
+            if (okCura) break;
+            if (_tc === 0 && _eErroTransienteParaRetry(chCura)) { try { await new Promise(rv => setTimeout(rv, 1400)); } catch(eS){} continue; }
+            break;
+          }
+          if (!chCura.fatal && chCura.r && chCura.r.status>=200 && chCura.r.status<300 && chCura.resp && chCura.resp.ok && chCura.resp.whatsapp) {
+            // SUCESSO na autocura. Redirecionar para o fluxo de sucesso mais abaixo.
+            r = chCura.r;
+            resp = chCura.resp;
+            const waLimpo2 = String(resp.whatsapp || '').replace(/\D/g,'');
+            if (waLimpo2.length >= 10) {
+              console.info('[FLUXO-DESBLOQUEIO] autocura PEDIDO_NAO_ENCONTRADO sucedeu! Prosseguindo para fluxo de sucesso.');
+              _resetBtnExecProcessando();
+              // Continuar execução SUCESSO abaixo (goto manual via função de helper inline)
+              (function _fluxoSucessoAposAutocura(){
+                try {
+                  const cacheKey = `${profissionalLogado.id}|${pedId}`;
+                  WHATSAPP_LIBERADOS_CACHE.set(cacheKey, { whatsapp: waLimpo2, whatsapp_formatado: formataWhatsAppBrasil(waLimpo2), nome_cliente: resp.nome_cliente || ped.nomeCliente || '', unlocked_at_ms: resp.unlocked_at_ms || Date.now(), unlock_id: resp.unlock_id || null });
+                  const saldoRestanteBackend = Number.isFinite(+resp.saldo_restante) ? Math.floor(+resp.saldo_restante) : (profissionalLogado.saldoMoedas||0) - (Number(resp.custo_moedas)||0);
+                  profissionalLogado.saldoMoedas = Math.max(0, saldoRestanteBackend);
+                  const pIdx = profissionais.findIndex(p => p.id === profissionalLogado.id);
+                  if (pIdx >= 0) profissionais[pIdx].saldoMoedas = profissionalLogado.saldoMoedas;
+                  if (!Array.isArray(ped.profissionaisDesbloquearamIds)) ped.profissionaisDesbloquearamIds = [];
+                  if (!ped.profissionaisDesbloquearamIds.includes(profissionalLogado.id)) ped.profissionaisDesbloquearamIds.push(profissionalLogado.id);
+                  ped.qtdDesbloqueios = Math.max((ped.qtdDesbloqueios||0), (Number(resp.repetido) ? (ped.qtdDesbloqueios||0) : ((ped.qtdDesbloqueios||0) + 1)));
+                  if ((ped.qtdDesbloqueios||0) >= 4) { ped.finalizado = true; if (ped.status === 'aberto') ped.status = 'fechado'; }
+                  const jaTemLocal = desbloqueios.some(function(d){ return d && d.pedidoId === pedId && d.profissionalId === profissionalLogado.id; });
+                  if (!jaTemLocal) {
+                    desbloqueios.push({ id: resp.unlock_id || ('desb_' + Date.now()), pedidoId: pedId, profissionalId: profissionalLogado.id, profissionalDocId: resp.profissional_doc_id || '', custo: Number(resp.custo_moedas)||0, timestamp: Date.now(), confirmadoBackend: true, repetidoBackend: Number(resp.repetido) ? true : false });
+                  } else {
+                    const existente = desbloqueios.find(function(d){ return d && d.pedidoId === pedId && d.profissionalId === profissionalLogado.id; });
+                    if (existente) { existente.confirmadoBackend = true; existente.custo = Number(resp.custo_moedas)||existente.custo; existente.timestamp = existente.timestamp || Date.now(); }
+                  }
+                  salvarTodosGlobaisNoStorage();
+                  atualizarHeaderPorSessao();
+                  try { fecharModal('modal-desbloquear'); } catch(e){}
+                  const pNomeCli = resp.nome_cliente || ped.nomeCliente || 'Cliente';
+                  const pPrimeiroNome = String(pNomeCli||'Cliente').split(' ')[0] || 'Cliente';
+                  const waLink = `https://wa.me/55${waLimpo2}?text=${encodeURIComponent('Olá, ' + pPrimeiroNome + '! Vi seu pedido de ' + (ped.categoria || 'serviço geral') + ' no AjeitaAí e posso ajudar. Pode me passar mais detalhes por favor?')}`;
+                  toast('success','✅ Contato desbloqueado! (autocura)',`Conversa com ${pPrimeiroNome} pronta no WhatsApp. Bom atendimento!`, 8000);
+                  try { if (typeof renderMuralPedidos === 'function') renderMuralPedidos(); } catch(eR){}
+                  try { if (typeof atualizarTelaLojaProfissional === 'function') atualizarTelaLojaProfissional(); } catch(eR){}
+                  setTimeout(function(){ try { window.open(waLink, '_blank', 'noopener,noreferrer'); } catch(eOp){} }, 900);
+                } catch(eFinal){ console.error('[FLUXO-DESBLOQUEIO] exceção no fluxo sucesso autocura:', eFinal && eFinal.message); }
+              })();
+              return;
+            }
+          }
+        }
+        // Falhou mesmo após autocura → mostrar mensagem CORRETA e ESPECÍFICA.
+        _resetBtnExecProcessando();
+        toast('error','Pedido ainda não sincronizado com a nuvem',
+          msg || 'O pedido foi criado localmente mas ainda não foi salvo no servidor. Aguarde 10 segundos e tente novamente, ou peça para quem criou o pedido recarregar a página uma vez (isso força a sincronia). Se persistir, recarregue esta página também.',
+          11000);
+        return;
+      }
+
       _resetBtnExecProcessando();
-      if (_eErro404ForaDoAr(chamada) || (chamada && chamada._networkError === true)) {
+      // ============ CASO GENÉRICO: 404/5xx transitório (apenas se NÃO há erro nomeado) ============
+      // Se há `resp.error` (ex: SALDO_INSUFICIENTE, SESSAO_INVALIDA etc.), NÃO é
+      // erro de infraestrutura. Mostrar toast genérico "servidor dormindo" SÓ quando
+      // a resposta veio sem erro nomeado (ou seja, endpoint realmente não existe /
+      // caiu no 404 global do Express sem JSON estruturado).
+      const _eErroInfraestruturaTransitorio = (
+        (!resp || !resp.error) &&
+        (_eErro404ForaDoAr(chamada) || (chamada && chamada._networkError === true))
+      );
+      if (_eErroInfraestruturaTransitorio) {
         const statusReal = (r && r.status) ? r.status : (chamada && chamada._networkError ? 'REDE' : '?');
         toast('error','Servidor temporariamente indisponível (HTTP '+statusReal+')',
           'O servidor do Pix/Ajeitaí está respondendo com falha transitória (status '+statusReal+'). Isso geralmente passa em 30 segundos enquanto a instância acorda. Tente novamente em 30 segundos. Se continuar, feche e abra a página.',
