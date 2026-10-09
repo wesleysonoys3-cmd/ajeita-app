@@ -2995,6 +2995,81 @@ app.post('/api/profissional/pedido/desbloquear-atomico',  _handlerDesbloquearAto
 // possíveis de encoding. Dispensa middleware, é mais rápido.
 app.post(/\/api\/profissional\/pedido\/desbloquear-at.{1,5}mico$/i, _handlerDesbloquearAtomicoPedidos);
 
+// (CORREÇÃO 2026-10-09 — CAMADA 2 FINAL: Endpoint fallback de persistência de pedido via Admin SDK)
+// Motivo: Profissional NÃO FAZ login no Firebase Auth SDK do navegador (só faz login via Google Sign-In
+// no próprio servidor + sessao_token). Regras de segurança Firestore padrão exigem request.auth != null
+// para escrita em pedidos/. Então o preflight/autocura do frontend tentando setDoc direto no navegador do
+// profissional SEMPRE falha com permission-denied/unauthenticated (o erro que estava aparecendo em
+// msgExtraFinal como "Erro ao gravar no Firestore..."). SOLUÇÃO: endpoint autenticado que escreve via
+// Admin SDK (ignora regras de segurança). Também garante que PROFISSIONAL está autenticado (same auth
+// pipeline do desbloqueio). Idempotente (merge:true). Resposta c/ status HTTP 200 {ok:true, docId,
+// escreveu_em_fs:true} c/ docId canônico.
+async function _handlerGarantirPedidoFs(req, res) {
+  const _tsInicioMs = Date.now();
+  try { req.setTimeout(45000); } catch(eST){}
+  try { if (res && res.setTimeout) res.setTimeout(45000); } catch(eST2){}
+  const PASSO_ERRO = function(codHttp, codigoErro, msgExtra) {
+    try {
+      const _dur = Date.now() - _tsInicioMs;
+      console.log('[GARANTIR_PEDIDO_FS_FIM_ERRO ts=' + _tsInicioMs + ' durMs=' + _dur + '] codHttp=' + codHttp + ' codigoErro=' + String(codigoErro || '?') + ' msg=' + String(msgExtra || '').slice(0,140));
+    } catch(eL){}
+    return res.status(codHttp).json({ ok:false, error: codigoErro, msg: msgExtra || 'Falha ao garantir pedido no Firestore.', escreveu_em_fs:false });
+  };
+  try {
+    if (!dbFirestore) return PASSO_ERRO(503, 'FIRESTORE_INDISPONIVEL_BACKEND', 'Admin SDK Firestore indisponível no servidor.');
+    if (!req.body) return PASSO_ERRO(400, 'PARAMETROS_OBRIGATORIOS', 'Body obrigatório ausente.');
+    const pedido = req.body.pedido || null;
+    const pedidoId = String((pedido && pedido.id) || req.body.pedido_id || '').trim();
+    const profissionalId = String(req.body.profissional_id || '').trim();
+    const sessaoTok = String(req.body.profissional_sessao || '').trim();
+    const adminSenha = String(req.body.admin_senha || '').trim();
+    if (!pedidoId) return PASSO_ERRO(400, 'PARAMETROS_OBRIGATORIOS', 'pedido.id ou pedido_id obrigatório.');
+    if (!profissionalId) return PASSO_ERRO(400, 'PARAMETROS_OBRIGATORIOS', 'profissional_id obrigatório.');
+    if (!sessaoTok || sessaoTok.length < 8) return PASSO_ERRO(400, 'PARAMETROS_OBRIGATORIOS', 'profissional_sessao obrigatória (mínimo 8 chars).');
+    if (!pedido || typeof pedido !== 'object') return PASSO_ERRO(400, 'PARAMETROS_OBRIGATORIOS', 'Campo {pedido:{...}} obrigatório (objeto completo para mergear no doc).');
+    // ---- AUTENTICAÇÃO PROFISSIONAL (mesmo pipeline do desbloqueio) ----
+    let profissionalDocId = null;
+    let profissionalDocData = null;
+    let _authDurMs = 0;
+    try {
+      const _authInicio = Date.now();
+      const ar = await _buscarProfissionalAutenticadoMultiCriterioParalelo({
+        profissionalIdCanonicoLocal: profissionalId,
+        sessaoTokenRecebido: sessaoTok,
+        adminSenha: adminSenha
+      });
+      _authDurMs = Date.now() - _authInicio;
+      if (!ar || ar.autorizado !== true || !ar.docId) return PASSO_ERRO(401, 'PROFISSIONAL_NAO_AUTENTICADO', 'Profissional não autenticado ou sessão expirada (auth demorou: ' + _authDurMs + 'ms). Saia e entre novamente.');
+      profissionalDocId = ar.docId;
+      profissionalDocData = ar.docData || {};
+    } catch(eAuth){
+      return PASSO_ERRO(500, 'ERRO_AUTENTICACAO_PROFISSIONAL', 'Erro ao autenticar profissional.');
+    }
+    // ---- ESCREVE DOC VIA ADMIN SDK (merge:true, idempotente) ----
+    try {
+      const docRef = dbFirestore.collection('pedidos').doc(pedidoId);
+      const payload = Object.assign({}, pedido || {}, {
+        _ultimaSincroniaViaBackendProfissionalAt_ms: Date.now(),
+        _sincronizadoPorProfissional_docId: profissionalDocId,
+        _syncType: 'backend_profissional_fallback_garantir_pedido_fs',
+        _syncedAt: Date.now()
+      });
+      await docRef.set(payload, { merge: true });
+      try {
+        console.log('[GARANTIR_PEDIDO_FS_FIM_OK ts=' + _tsInicioMs + ' durMs=' + (Date.now() - _tsInicioMs) + ' authMs=' + _authDurMs + '] docId=' + String(pedidoId).slice(0,60) + ' profId=' + String(profissionalDocId || '').slice(0,50) + ' adminBypass=' + String(!!adminSenha));
+      } catch(eL){}
+      return res.status(200).json({ ok:true, docId:pedidoId, escreveu_em_fs:true, auth_ms:_authDurMs });
+    } catch(eSetFs){
+      return PASSO_ERRO(500, 'ERRO_ESCRITA_FIRESTORE_ADMIN', 'Erro Admin SDK ao escrever no Firestore: ' + String(eSetFs && eSetFs.message || eSetFs).slice(0,200));
+    }
+  } catch(eGeral){
+    try { console.error('[GARANTIR_PEDIDO_FS_ERRO_GERAL] Erro:', eGeral && eGeral.stack ? String(eGeral.stack).slice(0,1400) : String(eGeral)); } catch(eCL){}
+    return PASSO_ERRO(500, 'ERRO_DESCONHECIDO', 'Erro geral ao garantir pedido no Firestore.');
+  }
+}
+app.post('/api/profissional/pedido/garantir-pedido-fs', _handlerGarantirPedidoFs);
+app.post('/api/profissional/pedido/garantir-pedido-fs', _handlerGarantirPedidoFs);
+
 // (CORREÇÃO MÍNIMA PARA 404 UTF-8): Alias fallback normalizador.
 // Proxies reversos (ex: Render → nginx) enviam o caractere "ô" codificado de
 // formas diferentes (NFC, NFD, %C3%B4 etc.) e o literal "/desbloquear-atômico"

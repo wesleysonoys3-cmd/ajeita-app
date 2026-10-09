@@ -7073,6 +7073,79 @@ async function _pedidoSyncFirestore(pedidoObj) {
   } catch(e){ return { status:'erro', err: e }; }
 }
 
+// (CORREÇÃO 2026-10-09 CAMADA FINAL): Endpoint fallback de persistência de pedido via backend Admin SDK.
+// Quando o navegador do profissional NÃO está autenticado no Firebase Auth SDK (sessão Google do próprio
+// servidor não loga usuário no SDK FS → regras de segurança padrão exigem request.auth!=null → setDoc
+// SEMPRE falha com permission-denied/unauthenticated), esta função chama o backend Admin SDK.
+// Usa mesmo body de autenticação do desbloquear (profissional_id, profissional_sessao).
+// Retorna: {status:'ok', docId} quando sucede; {status:'erro', err, httpStatus, resp} quando falha;
+//          {status:'skipped', reason} se não tem dados para enviar.
+async function _garantirPedidoViaBackend(pedidoObj) {
+  try {
+    if (!pedidoObj || typeof pedidoObj !== 'object') return { status:'skipped', reason:'pedido_nulo' };
+    const profId = String((profissionalLogado && profissionalLogado.id) || '').trim();
+    const sessaoTok = String((profissionalLogado && profissionalLogado.sessao_token_ultima) || '').trim();
+    const pedId = String(pedidoObj.id || '').trim();
+    if (!profId || !pedId) return { status:'skipped', reason:'sem_ids_para_envio' };
+    const bodyEnv = {
+      pedido: pedidoObj,
+      pedido_id: pedId,
+      profissional_id: profId,
+      profissional_sessao: sessaoTok,
+      profissional_senha: ''
+    };
+    let ultimaUrl = null;
+    // Usa a própria estratégia de URLs do garantir-pedido-fs (agora correta abaixo)
+    const urlsTestar = _montarUrlsGarantirPedidoFs(bodyEnv);
+    let rFinal = null;
+    let respFinal = null;
+    let erroUltimo = null;
+    let httpStatus = 0;
+    for (let _ui = 0; _ui < urlsTestar.length; _ui++) {
+      ultimaUrl = urlsTestar[_ui];
+      try {
+        const r = await fetch(ultimaUrl, { method:'POST', headers:_getHeadersFetchPadrao(), body: JSON.stringify(bodyEnv), credentials:'include' });
+        rFinal = r;
+        httpStatus = Number(r.status)||0;
+        try { respFinal = await r.json(); } catch(ePj){ respFinal = null; }
+        if (httpStatus >= 200 && httpStatus < 300 && respFinal && respFinal.ok === true) {
+          try {
+            pedidoObj._syncType = 'backend_profissional_fallback_garantir_pedido_fs';
+          } catch(eA){}
+          try { pedidoObj._syncedAt = Date.now(); } catch(eA){}
+          try { delete pedidoObj._fsSyncPendente; } catch(eD){}
+          try { salvarTodosGlobaisNoStorage(); } catch(eS){}
+          return { status:'ok', docId: pedId, auth_ms: Number(respFinal.auth_ms)||0 };
+        }
+        if (httpStatus >= 400 && httpStatus !== 404) break;
+        if (respFinal && respFinal.error && respFinal.error.length) break;
+      } catch(eNet){ erroUltimo = eNet; }
+    }
+    return { status:'erro', err: erroUltimo || new Error('resposta_backend_nao_ok'), httpStatus:httpStatus, resp: respFinal, _tentouUrl: ultimaUrl };
+  } catch(eGeral){ return { status:'erro', err: eGeral }; }
+}
+
+// Helper: monta URLs do endpoint /garantir-pedido-fs usando mesma estratégia de path normalizado + cache-bust
+// do desbloquear (3 URLs idênticas em conteúdo, 2 normalizações de path + cache-bust).
+function _montarUrlsGarantirPedidoFs(bodyEnv) {
+  const base = BACKEND_URLS_PRIORIDADE && BACKEND_URLS_PRIORIDADE.length ? BACKEND_URLS_PRIORIDADE[0] : BACKEND_PIX_URL;
+  const suffixes = [
+    '/api/profissional/pedido/garantir-pedido-fs',
+    '/api/profissional/pedido/garantir-pedido-fs',
+    '/api/profissional/pedido/garantir-pedido-fs'
+  ];
+  const out = [];
+  suffixes.forEach(function(s, idx){
+    let u = base.replace(/\/+$/, '') + s;
+    if (idx === 1) { u += (u.indexOf('?') >= 0 ? '&' : '?') + '_nc=' + Date.now() + '_' + idx; }
+    if (idx === 2 && bodyEnv && typeof bodyEnv === 'object' && bodyEnv.pedido_id) {
+      try { u += (u.indexOf('?') >= 0 ? '&' : '?') + 'pid=' + encodeURIComponent(String(bodyEnv.pedido_id)); } catch(e){}
+    }
+    out.push(u);
+  });
+  return out;
+}
+
 // =============== (TASK 7) FUNÇÕES DETALHE DO PEDIDO E ISOLAMENTO ===============
 
 // Retorna true se o usuário atual tem permissão de VER este pedido completo (fotos e whats).
@@ -9497,14 +9570,38 @@ async function executarDesbloqueio() {
             try { await new Promise(function(rv){ setTimeout(rv, 750); }); } catch(eSl){}
           } else if (_syncRPre && _syncRPre.status === 'skipped') {
             // Firebase SDK não está disponível neste navegador.
-            // O pedido pode ter sido sincronizado por OUTRO navegador antes;
-            // prosseguimos mesmo assim (fetch normal).
-            console.warn('[FLUXO-DESBLOQUEIO] sync preflight SKIPPED (Firebase SDK indisponível neste navegador). Prosseguindo com fetch normal...');
+            // → TENTA FALLBACK VIA BACKEND ADMIN SDK (endpoint /garantir-pedido-fs).
+            //   Admin SDK ignora regras de segurança client-side.
+            console.warn('[FLUXO-DESBLOQUEIO] sync preflight SKIPPED (Firebase SDK indisponível). Tentando FALLBACK via backend /garantir-pedido-fs ...');
+            try {
+              if (typeof _garantirPedidoViaBackend === 'function') {
+                const fbResp = await _garantirPedidoViaBackend(ped);
+                if (fbResp && fbResp.status === 'ok') {
+                  console.info('[FLUXO-DESBLOQUEIO] preflight: FALLBACK BACKEND OK. docId=', fbResp.docId, ' auth_ms=', fbResp.auth_ms);
+                  try { await new Promise(function(rv){ setTimeout(rv, 700); }); } catch(eS){}
+                } else {
+                  console.warn('[FLUXO-DESBLOQUEIO] preflight: fallback backend TAMBÉM falhou. status=', fbResp && fbResp.status, ' resp=', fbResp);
+                }
+              } else { console.warn('[FLUXO-DESBLOQUEIO] preflight: _garantirPedidoViaBackend indefinida, pulando fallback.'); }
+            } catch(eFbFallback){ console.error('[FLUXO-DESBLOQUEIO] preflight fallback backend exceção:', eFbFallback && eFbFallback.message); }
           } else if (_syncRPre && _syncRPre.status === 'erro') {
             // Falha REAL ao escrever (regras, offline etc.).
-            // Ainda assim enviamos o fetch (talvez o doc já exista no FS por sincronia antiga
-            // ou por outro dispositivo).
-            console.warn('[FLUXO-DESBLOQUEIO] sync preflight ERRO ao gravar FS:', _syncRPre._erroNome || (_syncRPre.err && _syncRPre.err.message));
+            // → MESMA FALLBACK via backend Admin SDK (contorna regras de segurança client-side).
+            console.warn('[FLUXO-DESBLOQUEIO] sync preflight ERRO ao gravar FS (provavelmente regras permission-denied / unauthenticated): ', _syncRPre._erroNome || (_syncRPre.err && _syncRPre.err.message), '. Tentando FALLBACK via backend /garantir-pedido-fs ...');
+            try {
+              if (typeof _garantirPedidoViaBackend === 'function') {
+                const fbResp = await _garantirPedidoViaBackend(ped);
+                if (fbResp && fbResp.status === 'ok') {
+                  console.info('[FLUXO-DESBLOQUEIO] preflight ERRO → fallback BACKEND OK. docId=', fbResp.docId);
+                  // Admin SDK escreve DIRETO no servidor (não passa por cache local do SDK do navegador).
+                  // Pequeno buffer de 450ms só para garantir propagação entre nós do Firestore.
+                  try { await new Promise(function(rv){ setTimeout(rv, 450); }); } catch(eS){}
+                } else {
+                  console.warn('[FLUXO-DESBLOQUEIO] preflight ERRO → fallback backend TAMBÉM falhou. status=', fbResp && fbResp.status, ' resp=', fbResp);
+                }
+              }
+            } catch(eFbFallback2){ console.error('[FLUXO-DESBLOQUEIO] preflight ERRO fallback backend exceção:', eFbFallback2 && eFbFallback2.message); }
+            // Mesmo que ambos falhem, prosseguimos (talvez o doc já exista no FS por sincronia antiga).
           }
         } catch(eSyncPreErr){ console.error('[FLUXO-DESBLOQUEIO] sync preflight exceção:', eSyncPreErr && eSyncPreErr.message); }
       }
@@ -9747,10 +9844,40 @@ async function executarDesbloqueio() {
                 try { delete ped._fsSyncPendente; } catch(eA){}
                 salvarTodosGlobaisNoStorage();
                 console.info('[FLUXO-DESBLOQUEIO] autocura sync FS OK. docId=', _autocuraSyncR.docId);
-              } else if (_autocuraSyncR && _autocuraSyncR.status === 'skipped') {
-                console.warn('[FLUXO-DESBLOQUEIO] autocura sync SKIPPED (Firebase SDK indisponível NESTE navegador). O pedido precisa ser sincronizado no navegador do cliente que o criou.');
-              } else if (_autocuraSyncR && _autocuraSyncR.status === 'erro') {
-                console.warn('[FLUXO-DESBLOQUEIO] autocura sync ERRO FS:', _autocuraSyncR._erroNome || (_autocuraSyncR.err && _autocuraSyncR.err.message));
+              } else {
+                // (CORREÇÃO FINAL 2026-10-09): _pedidoSyncFirestore NÃO escreveu
+                // (status skipped SDK indisponível OU erro provavelmente permission-denied
+                // por request.auth == null no navegador do profissional).
+                // → TENTA FALLBACK DEFINITIVA VIA BACKEND ADMIN SDK /garantir-pedido-fs.
+                // Admin SDK ignora regras client-side (escreve DIRETO no servidor).
+                console.warn('[FLUXO-DESBLOQUEIO] autocura sync FS status=' + (_autocuraSyncR && _autocuraSyncR.status) + '. Tentando FALLBACK VIA BACKEND ADMIN SDK /garantir-pedido-fs (escreve DIRETO no servidor, contorna regras client-side)...');
+                try {
+                  if (typeof _garantirPedidoViaBackend === 'function' && ped) {
+                    const fbResp = await _garantirPedidoViaBackend(ped);
+                    if (fbResp && fbResp.status === 'ok') {
+                      try { ped._syncType = 'autocura_pedido_nao_encontrado_fallback_backend_admin'; } catch(eA){}
+                      try { ped._syncedAt = Date.now(); } catch(eA){}
+                      try { delete ped._fsSyncPendente; } catch(eA){}
+                      salvarTodosGlobaisNoStorage();
+                      console.info('[FLUXO-DESBLOQUEIO] autocura: FALLBACK BACKEND ADMIN OK. docId=', fbResp.docId, ' auth_ms=', fbResp.auth_ms);
+                      // Admin SDK escreve DIRETO no servidor (não passa por cache cliente).
+                      // Buffer menor 700ms p/ garantir replicação entre nós FS.
+                      try { await new Promise(rv => setTimeout(rv, 700)); } catch(eS){}
+                      // Marca explicitamente o sync como OK (para pular lógica "se SDK indisponível" abaixo).
+                      _autocuraSyncR = Object.assign({}, (_autocuraSyncR || {}), { status:'ok', docId: fbResp.docId, viaBackendAdmin: true, auth_ms: fbResp.auth_ms });
+                    } else {
+                      console.warn('[FLUXO-DESBLOQUEIO] autocura: fallback backend TAMBÉM falhou. status=', fbResp && fbResp.status, ' httpStatus=', fbResp && fbResp.httpStatus, ' resp=', fbResp && fbResp.resp);
+                    }
+                  } else { console.warn('[FLUXO-DESBLOQUEIO] autocura: _garantirPedidoViaBackend indefinida, pulando.'); }
+                } catch(eFbCur){ console.error('[FLUXO-DESBLOQUEIO] autocura fallback backend exceção:', eFbCur && eFbCur.message); }
+                if (!_autocuraSyncR || _autocuraSyncR.status !== 'ok') {
+                  // Nem FS direto nem backend fallback funcionaram.
+                  if (_autocuraSyncR && _autocuraSyncR.status === 'skipped') {
+                    console.warn('[FLUXO-DESBLOQUEIO] autocura sync SKIPPED (Firebase SDK indisponível NESTE navegador) e fallback backend também não.');
+                  } else if (_autocuraSyncR && _autocuraSyncR.status === 'erro') {
+                    console.warn('[FLUXO-DESBLOQUEIO] autocura sync ERRO FS (e fallback backend também não):', _autocuraSyncR._erroNome || (_autocuraSyncR.err && _autocuraSyncR.err.message));
+                  }
+                }
               }
             } catch(eSyncCur){ console.error('[FLUXO-DESBLOQUEIO] autocura sync FS exceção:', eSyncCur && eSyncCur.message); }
           }
